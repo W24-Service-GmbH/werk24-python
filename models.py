@@ -5,8 +5,9 @@ external API.
 import base64
 import hashlib
 from enum import Enum
-from math import radians, cos, pi
-from typing import Union, Dict, List
+from math import cos, degrees, pi, radians
+from typing import Dict, List, Union
+
 from pydantic import BaseModel
 
 
@@ -21,13 +22,19 @@ class W24UnitPositionQuantity(str, Enum):
 class W24Angle(BaseModel):
     """ W24Angle always in radians
     """
-    angle: float
+    radians: float
 
     @staticmethod
     def from_degree(angle_in_degree):
         """ Create a new W24Angle object from a degree measure
         """
-        return W24Angle(angle=radians(angle_in_degree))
+        return W24Angle(radians=radians(angle_in_degree))
+
+    @property
+    def degrees(self):
+        """ obtain the angle in degrees
+        """
+        return degrees(self.radians)
 
 
 class W24Measure(BaseModel):
