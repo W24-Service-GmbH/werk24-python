@@ -77,6 +77,7 @@ class W24MaterialShape(str, Enum):
     """
     ROD_ROUND = "rod_round"
     ROD_HEXAGON = "rod_hexagon"
+    ROD_SQUARE = "rod_square"
 
 
 class W24MaterialStandard(str, Enum):
