@@ -18,6 +18,18 @@ class W24UnitPositionQuantity(str, Enum):
     KILOGRAMM = "kilogramm"
 
 
+class W24Angle(BaseModel):
+    """ W24Angle always in radians
+    """
+    angle: float
+
+    @staticmethod
+    def from_degree(angle_in_degree):
+        """ Create a new W24Angle object from a degree measure
+        """
+        return W24Angle(angle=radians(angle_in_degree))
+
+
 class W24Measure(BaseModel):
     """ Tolerated measure with positve and negative tolerances.
     All measures are in Millimeter
@@ -123,8 +135,10 @@ class W24Thread(BaseModel):
     it does not contain any information about the diameter
     """
     direction: W24ThreadDirection = W24ThreadDirection.RIGHT
-    thread_standard: W24ThreadStandard
-    thread_designation: str
+    standard: W24ThreadStandard
+    designation: str
+    angle: W24Angle = None
+    pitch: float = None
 
 
 class W24GeometryType(str, Enum):
@@ -158,18 +172,6 @@ class W24Radius(BaseModel):
     """
     value: float
     radius_type: W24RadiusType
-
-
-class W24Angle(BaseModel):
-    """ W24Angle always in radians
-    """
-    angle: float
-
-    @staticmethod
-    def from_degree(angle_in_degree):
-        """ Create a new W24Angle object from a degree measure
-        """
-        return W24Angle(angle=radians(angle_in_degree))
 
 
 class W24Chamfer(BaseModel):
