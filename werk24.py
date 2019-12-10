@@ -400,7 +400,7 @@ class W24Document(BaseModel):
 
     schema_version: str = "0.02alpha"
     parts: List[W24Part] = []
-    images: Dict[str, W24Attachment] = {}
+    attachments: Dict[str, W24Attachment] = {}
     request_id: str
 
     unassociated_position_groups: List[W24PositionGroup] = []
