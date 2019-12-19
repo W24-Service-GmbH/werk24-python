@@ -78,6 +78,7 @@ class W24MaterialShape(str, Enum):
     ROD_ROUND = "rod_round"
     ROD_HEXAGON = "rod_hexagon"
     ROD_SQUARE = "rod_square"
+    ROD_RECTANGLE = "rod_rectangle"
 
 
 class W24MaterialStandard(str, Enum):
@@ -254,6 +255,7 @@ class W24ShapeType(str, Enum):
     CIRCLE = "CIRCLE"
     SQUARE = "SQUARE"
     HEXAGON = "HEXAGON"
+    RECTANGLE = "RECTANGLE"
 
 
 class W24Shape(BaseModel):
@@ -282,6 +284,21 @@ class W24ShapeCircle(W24Shape):
         return self.diameter
 
 
+class W24ShapeRectangle(W24Shape):
+    """ 2D Shape of a Circle
+    """
+    width: W24Measure
+    height: W24Measure
+    shape_type = W24ShapeType.RECTANGLE
+
+    @property
+    def maximal_diameter(self) -> W24Measure:
+        if self.width.value > self.height.value:
+            return self.width
+
+        return self.height
+
+
 class W24ShapeHexagon(W24Shape):
     """ 2D Shape of a Hexagon
     """
@@ -298,7 +315,7 @@ class W24VolumeTurnMill(W24Volume):
     describes a 3D Volume in a way that is convenient for
     Turned/Milled parts.
     """
-    left_shape: Union[W24ShapeCircle, W24ShapeHexagon]
+    left_shape: Union[W24ShapeCircle, W24ShapeHexagon, W24ShapeRectangle]
     left_chamfer: W24Chamfer = None
     left_surface: W24Surface = None
 
@@ -307,7 +324,7 @@ class W24VolumeTurnMill(W24Volume):
     shell_surface: W24Surface = None
     shell_thread: W24Thread = None
 
-    right_shape: Union[W24ShapeCircle, W24ShapeHexagon]
+    right_shape: Union[W24ShapeCircle, W24ShapeHexagon, W24ShapeRectangle]
     right_chamfer: W24Chamfer = None
     right_surface: W24Surface = None
 
