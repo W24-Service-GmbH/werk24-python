@@ -7,7 +7,7 @@ import hashlib
 from enum import Enum
 from math import cos, degrees, pi, radians
 from typing import Dict, List, Union
-
+import datetime
 from pydantic import BaseModel
 
 
@@ -45,8 +45,40 @@ class W24Measure(BaseModel):
     negative tolerances.
     """
     value: float
+    fit_size: str = None
     positive_tolerance: float = None
     negative_tolerance: float = None
+
+    def __str__(self) -> str:
+        """ Return the Measure in a human-readable format
+        """
+
+        # start with the value
+        result = str(self.value)
+
+        # add the fit size
+        if self.fit_size is not None:
+            result += " {}".format(self.fit_size)
+
+        # add the positive and negative tolerances
+        # start with the +- case in which the
+        # positive and negative tolerances are of
+        # equal size
+        if self.positive_tolerance is not None \
+            and self.negative_tolerance is not None \
+                and - 1 * self.negative_tolerance == self.positive_tolerance:
+            result += " +-{}".format(self.positive_tolerance)
+
+        # add the positive tolerance
+        elif self.positive_tolerance is not None:
+            result += " +{}".format(self.positive_tolerance)
+
+        # or the negative
+        elif self.negative_tolerance is not None:
+            result += " {}".format(self.negative_tolerance)
+
+        # return
+        return result
 
 
 class W24Position(BaseModel):
@@ -67,9 +99,9 @@ class W24SheetId(BaseModel):
     2. The respective revision id
     3. The date of the drawing
     """
-    drawing_id: str = None
-    drawing_revision: str = None
-    drawing_date: str = None
+    sheet_id: str = None
+    revision: str = None
+    date: datetime.date = None
 
 
 class W24MaterialShape(str, Enum):
@@ -150,6 +182,14 @@ class W24Thread(BaseModel):
     pitch: float = None
 
 
+class W24MeasureTolerance(BaseModel):
+    start_element: str
+    start_surface: str
+    end_element: str
+    end_surface: str
+    measure: W24Measure
+
+
 class W24GeometryType(str, Enum):
     """ Enum of all the supported GeometryTypes
     """
@@ -164,6 +204,7 @@ class W24Geometry(BaseModel):
     overall_x_measure: W24Measure
     overall_y_measure: W24Measure
     overall_z_measure: W24Measure
+    measure_tolerances: List[W24MeasureTolerance] = []
 
 
 class W24RadiusType(str, Enum):
@@ -247,6 +288,7 @@ class W24Volume(BaseModel):
     """ W24Volume is the base model for volumes.
     Each GeometryType derives a volume from it.
     """
+    name: str
 
 
 class W24ShapeType(str, Enum):
@@ -315,6 +357,7 @@ class W24VolumeTurnMill(W24Volume):
     describes a 3D Volume in a way that is convenient for
     Turned/Milled parts.
     """
+
     left_shape: Union[W24ShapeCircle, W24ShapeHexagon, W24ShapeRectangle]
     left_chamfer: W24Chamfer = None
     left_surface: W24Surface = None
@@ -404,8 +447,8 @@ class W24Part(BaseModel):
     In such cases, Werk24 will return all possible parts,
     even if they are not refered to by a position group.
     """
-    drawing_id: W24SheetId = None
-    drawing_designation: str = None
+    sheet_id: W24SheetId = None
+    designation: str = None
 
     geometry: Union[W24GeometryTurnMill] = None
 
