@@ -1,0 +1,8 @@
+from enum import Enum
+
+
+class W24AskType(str, Enum):
+    THUMBNAIL_PAGE = "THUMBNAIL_PAGE"
+    THUMBNAIL_SHEET = "THUMBNAIL_SHEET"
+    THUMBNAIL_CANVAS = "THUMBNAIL_CANVAS"
+    MEASURES = "MEASURES"
