@@ -4,7 +4,7 @@ from .measure import W24Measure
 from .attachment import W24Attachment
 
 
-class W24IoCallbackResponse(BaseModel):
+class W24DrawingReadCallback(BaseModel):
     callback_secret: str
     thumbnail_page: Optional[W24Attachment] = None
     thumbnail_sheet: Optional[W24Attachment] = None
