@@ -21,11 +21,9 @@ class W24DrawingReadRequest(BaseModel):
     """
     drawing: W24AttachmentDrawing
     model: Optional[W24AttachmentModel] = None
-    demands: List[Union[
+    asks: List[Union[
         W24AskMeasures,
         W24AskThumbnailCanvas,
         W24AskThumbnailPage,
         W24AskThumbnailSheet]] = []
     architecture: W24Architecture
-    callback_url: HttpUrl
-    callback_secret: str

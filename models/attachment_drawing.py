@@ -20,7 +20,7 @@ class W24AttachmentDrawing(W24Attachment):
     a mime-validator
     """
 
-    @validator('base64_content')
+    @validator('content_b64')
     def mime_type_must_be_image_or_pdf(cls, v):
         """ Check the mime type of the drawing
         on the client-side

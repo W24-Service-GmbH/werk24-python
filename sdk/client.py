@@ -1,11 +1,16 @@
-import base64
-import hashlib
-import hmac
-from typing import List, Tuple, Union
+""" W24Client Module
 
-import boto3
+The module contains everything that is needed to
+communicate with the W24 API - allowing you
+to interpret the contents of your technical drawings.
+"""
+
+from typing import Callable, List, Tuple, Union
+
 import httpx
+import websockets
 
+from werk24.models.architecture import W24Architecture
 from werk24.models.ask import W24Ask
 from werk24.models.ask_measures import W24AskMeasures
 from werk24.models.ask_thumbnail import W24AskThumbnail
@@ -15,200 +20,351 @@ from werk24.models.ask_thumbnail_sheet import W24AskThumbnailSheet
 from werk24.models.attachment_drawing import W24AttachmentDrawing
 from werk24.models.attachment_model import W24AttachmentModel
 from werk24.models.drawing_read_request import W24DrawingReadRequest
+from werk24.models.drawing_read_response import W24DrawingReadResponse
+from werk24.models.drawing_read_message import W24DrawingReadMessage
+from werk24.sdk.cognito_client import CognitoClient
 
 
-class W24ClientException(Exception):
-    pass
+class UnauthorizedException(Exception):
+    """ Exception that is raised when the
+    response code is 403 - Unauthorized
+    """
 
 
-class W24Client:
+def ensure_authentication(func: Callable) -> Callable:
+    """ Decorator function that ensures that the
+    called W24Client method has access to a valid
+    JWT Token.
+
+    Arguments:
+        func {Callable} -- Method that is to be wrapped
+
+    Returns:
+        Callable -- Wrapped method
+    """
+
+    async def decorator(self, *args, **kwargs):
+
+        # ensure that register() was called
+        if self.auth_service is None:
+            raise RuntimeError(
+                "No connection to the authentication service was "
+                + "established. Please call register()")
+
+        # ensure that we have a token
+        if self.auth_service.token is None:
+            self.auth_service.login()
+
+        # call the function
+        try:
+            return await func(self, *args, **kwargs)
+
+        # if we obtain a UnauthorizedException, we
+        # have the chance that the toke painly expired.
+        # So let's try again
+        except UnauthorizedException:
+            self.auth_service.login()
+            return await func(self, *args, **kwargs)
+
+    return decorator
+
+
+class W24Client():
+    """ Simple W24Client that allows you to use
+    learn more about the content on your Technical
+    Drawings.
+    """
 
     def __init__(
             self,
-            w24io_server: str,
+            w24_server: str):
+
+        # Create an empty reference to the authentication
+        # service (currently AWS Cognito)
+        self.auth_service = None
+
+        # store the w24 info locally
+        self._w24_server = w24_server
+
+    def register(
+            self,
             cognito_region: str,
             cognito_identity_pool_id: str,
             cognito_client_id: str,
-            cognito_client_secret: str):
-        self._jwt_token = None
-        self._cognito_region = cognito_region
-        self._cognito_identity_pool_id = cognito_identity_pool_id
-        self._cognito_client_id = cognito_client_id
-        self._cognito_client_secret = cognito_client_secret
-        self._w24io_server = w24io_server
-        self._w24io_connection = None
-
-    def _make_cognito_client(self) -> boto3.session.Session.client:
-        """ Make the Cognito Client to communicate with
-        AWS Cognito
-
-        Returns:
-            boto3.session.Session.client -- Boto3 Client
-        """
-        return boto3.client(
-            "cognito-idp",
-            self._cognito_region)
-
-    def _make_cognito_secret_hash(self, username: str) -> str:
-        """ Make the keyed-hash message authentication code (HMAC) calculated using
-        the secret key of a user pool client and username plus the client  ID in the message.
+            cognito_client_secret: str,
+            username: str,
+            password: str) -> None:
+        """ Register with the authentication
+        service
 
         Arguments:
-            username {str} -- Username
+            cognito_region {str} -- Physical region
+            cognito_identity_pool_id {str} -- identity pool of W24
+            cognito_client_id {str} -- the client id of your application
+            cognito_client_secret {str} -- the client secrect of your application
+            username {str} -- the username with which you want to register
+            password {str} -- the password with which you want to register
+        """
+        # create an client instance to connect
+        # to the authentication service
+        self.auth_service = CognitoClient(
+            cognito_region,
+            cognito_identity_pool_id,
+            cognito_client_id,
+            cognito_client_secret)
+
+        # register username and password
+        self.auth_service.register(username, password)
+
+    @ensure_authentication
+    async def ping(self) -> str:
+        """ Send a ping to the W24 API and
+        expect "pong" as response. This is
+        plainly to test the connection (speed).
 
         Returns:
-            str -- Cognito Secret Hash
+            str -- "pong"
         """
+        # make the endpoint
+        endpoint = self._make_endpoint("ping")
 
-        # make the message
-        message = username + self._cognito_client_id
+        # get the pong
+        response = await self._w24_session.get(endpoint)
 
-        # make the secret
-        dig = hmac.new(
-            self._cognito_client_secret.encode("UTF-8"),
-            msg=message.encode('UTF-8'),
-            digestmod=hashlib.sha256).digest()
+        # check the status code
+        self._check_status_code(response.status_code)
 
-        # turn the secret into a str object
-        return base64.b64encode(dig).decode()
+        return response.json()
 
-    def login(self, username: str, password: str):
-        """ Login with username and password and obtain (stored internally)
-        the JWT token from the AWS Cognito service.
-
-        Arguments:
-            username {str} -- Username
-            password {str} -- Password
-        """
-
-        # make the connection to aws
-        cognito_client = self._make_cognito_client()
-
-        # make the authentication data
-        auth_data = {
-            'USERNAME': username,
-            'PASSWORD': password,
-            'SECRET_HASH': self._make_cognito_secret_hash(username)}
-
-        # get the jwt token from AWS cognito
-        resp = cognito_client.admin_initiate_auth(
-            UserPoolId=self._cognito_identity_pool_id,
-            AuthFlow='ADMIN_NO_SRP_AUTH',
-            AuthParameters=auth_data,
-            ClientId=self._cognito_client_id)
-
-        # store the jwt token
-        try:
-            self._jwt_token = resp['AuthenticationResult']['IdToken']
-        except KeyError:
-            raise W24IoClientException(
-                "Unable to obtain JWT Token from AWS Cognito.")
-
-        # now make the w24io_client connection with the
-        # jwt token
-        self._make_w24io_connection()
-
-    def _make_w24io_connection(self):
-        self._w24io_connection = httpx.AsyncClient()
-        self._w24io_connection.headers.update(
-            {"Authorization": "Bearer {}".format(self._jwt_token)})
-
-    def _make_w24io_endpoint(self, path: str) -> str:
-        return "{}/{}".format(self._w24io_server, path)
-
-    async def ping(self):
-        """ Verify the connection
-        """
-        return await self._w24io_connection.get(
-            self._make_w24io_endpoint("ping"))
-
+    @ensure_authentication
     async def read_drawing(
             self,
-            callback_url: str,
-            callback_secret: str,
             drawing: bytes,
             model: bytes = None,
-            feature_thumbnail_page: Tuple[int, int, bool] = None,
-            feature_thumbnail_sheet: Tuple[int, int, bool] = None,
-            feature_thumbnail_canvas: Tuple[int, int, bool] = None,
-            feature_measures: bool = False,
-            architecture="CPU_V1"):
+            ask_thumbnail_page: Tuple[int, int, bool] = None,
+            ask_thumbnail_sheet: Tuple[int, int, bool] = None,
+            ask_thumbnail_canvas: Tuple[int, int, bool] = None,
+            ask_measures: bool = False,
+            architecture=W24Architecture.CPU_V1):
+        """ Send a Technical Drawing to the W24 API to have it automatically
+        interpreted and read. The API will return
 
-        # make the features
-        features = self._make_w24io_request_features(
-            feature_thumbnail_page,
-            feature_thumbnail_sheet,
-            feature_thumbnail_canvas,
-            feature_measures)
+        Arguments:
+            drawing {bytes} -- binary representation of a technical drawing.
+                Please refer to the API - documentation to learn which mime
+                types are currently supported
+
+        Keyword Arguments:
+            model {bytes} -- binary represetation of the 3d model(typically step)
+                Please refer to the API - documentation to learn whcih mime
+                types are currently sypported(default: {None})
+
+            ask_thumbnail_page {Tuple[int, int, bool]} --
+                Tuple of max_width, max_height, auto_rotate indicating that
+                you wish to obtain a thumbnail of the page(default: {None})
+
+            ask_thumbnail_sheet {Tuple[int, int, bool]} --
+                Tuple of max_width, max_height, auto_rotate indicating that
+                you wish to obtain a thumbnail of the sheet(default: {None})
+
+            ask_thumbnail_canvas {Tuple[int, int, bool]} --
+                Tuple of max_width, max_height, auto_rotate indicating that
+                you wish to obtain a thumbnail of the canvas(default: {None})
+
+            ask_measures {bool} -- Ask to the Measures depicted
+                on the technical drawing(default: {False})
+
+            architecture {str} -- Architecture to be used to process
+                the request. Please refer to the API documentation for a complete
+                list of supported architectures (default: {W24Architecture.CPU_V1})
+
+        Returns:
+            W24DrawingReadResponse -- Response object obtained from the API
+                that indicates the state of your request. Be sure to pass this
+                to the read_drawing_listen method
+        """
+
+        # make the asks
+        asks = self._make_asks(
+            ask_thumbnail_page,
+            ask_thumbnail_sheet,
+            ask_thumbnail_canvas,
+            ask_measures)
+
+        # make the drawing attachment
+        drawing_attachment = self._make_attachment(
+            W24AttachmentDrawing, drawing)
+
+        # make the model attachment
+        model_attachment = self._make_attachment(
+            W24AttachmentModel, model)
 
         # make the request
         request = W24DrawingReadRequest(
-            callback_url=callback_url,
-            callback_secret=callback_secret,
-            drawing=self._make_w24io_attachment(
-                W24AttachmentDrawing,
-                drawing),
-            model=self._make_w24io_attachment(
-                W24AttachmentModel,
-                model),
-            features=features,
+            drawing=drawing_attachment,
+            model=model_attachment,
+            asks=asks,
             architecture=architecture)
 
-        # and send the requestion
-        return await self._w24io_connection.post(
-            self._make_w24io_endpoint("drawing:read"),
-            data=request.json())
+        # make the endpoint
+        endpoint = self._make_endpoint("drawing-read/ws", "ws")
+
+        async with websockets.connect(endpoint) as websocket:
+
+            # send the authentication token
+            await websocket.send(
+                W24DrawingReadMessage(
+                    action="authenticate",
+                    message=str(self.auth_service.token)).json())
+
+            # handle the unauthenticated exception
+            authentication_resp = W24DrawingReadMessage.parse_raw(await(websocket.recv()))
+            if authentication_resp.action != "authenitcation_success":
+                raise UnauthorizedException()
+
+            # send the actual drawing read request
+            await websocket.send(
+                W24DrawingReadMessage(
+                    action="read_drawing",
+                    message=request.json()).json())
+
+            # wait for the responses and interpret
+            while True:
+                await websocket.recv()
+
+    @property
+    def _w24_session(self) -> httpx.AsyncClient:
+        """Get a reference to the W24 Session
+        including the correct headers
+
+        Returns:
+            httpx.AsyncClient -- Session with correct headers
+        """
+
+        # make the client
+        session = httpx.AsyncClient()
+
+        # set the headers
+        headers = {"Authorization": f"Bearer {self.auth_service.token}"}
+        session.headers.update(headers)
+
+        # erturn the session
+        return session
+
+    def _make_endpoint(self, path: str, protocol="https") -> str:
+        """ Make the URL Endpoint of a given subpath
+
+        Arguments:
+            path {str} -- Path of the endpoint you want to call
+
+        Keyword Arguments:
+            protocol {str} -- Protocol to be used (default: https)
+
+        Returns:
+            str -- complete URL
+        """
+
+        return f"{protocol}://{self._w24_server}/{path}"
 
     @staticmethod
-    def _make_w24io_attachment(
-            model: Union[W24AttachmentDrawing, W24AttachmentModel], attachment: bytes):
+    def _make_attachment(
+            model: Union[W24AttachmentDrawing, W24AttachmentModel],
+            attachment_bytes: bytes):
+        """ Make an attachment from the supplied bytes
+        """
 
         # return None if there is no attachment
-        if attachment is None:
+        if attachment_bytes is None:
             return None
 
         # otherwise make the attachment
-        return model.from_png(attachment)
+        return model.from_bytes(attachment_bytes)
 
     @classmethod
-    def _make_w24io_request_features(
+    def _make_asks(
             cls,
-            feature_thumbnail_page,
-            feature_thumbnail_sheet,
-            feature_thumbnail_canvas,
-            feature_measures) -> List[W24Ask]:
+            ask_thumbnail_page,
+            ask_thumbnail_sheet,
+            ask_thumbnail_canvas,
+            ask_measures) -> List[W24Ask]:
+        """ Turn the arguments (easier for the sdk-user)
+        into a list of asks that can be passed to the
+        backend.
 
-        features = []
+        Arguments:
+            ask_thumbnail_page {Tuple[int, int, bool]} --
+                Tuple of max_width, max_height, auto_rotate indicating that
+                you wish to obtain a thumbnail of the page(default: {None})
+
+            ask_thumbnail_sheet {Tuple[int, int, bool]} --
+                Tuple of max_width, max_height, auto_rotate indicating that
+                you wish to obtain a thumbnail of the sheet(default: {None})
+
+            ask_thumbnail_canvas {Tuple[int, int, bool]} --
+                Tuple of max_width, max_height, auto_rotate indicating that
+                you wish to obtain a thumbnail of the canvas(default: {None})
+
+            ask_measures {bool} -- Ask to the Measures depicted
+                on the technical drawing(default: {False})
+
+        Returns:
+            List[W24Ask] -- A list with all the asks from the API
+        """
+
+        # start with an empty list
+        asks = []
 
         # add the thumbnail page
-        if feature_thumbnail_page is not None:
-            features.append(cls._make_w24io_request_feature_thumbnail(
+        if ask_thumbnail_page is not None:
+            asks.append(cls._make_w24_request_ask_thumbnail(
                 W24AskThumbnailPage,
-                feature_thumbnail_page))
+                ask_thumbnail_page))
 
         # add the thumbnail sheet
-        if feature_thumbnail_sheet is not None:
-            features.append(cls._make_w24io_request_feature_thumbnail(
+        if ask_thumbnail_sheet is not None:
+            asks.append(cls._make_w24_request_ask_thumbnail(
                 W24AskThumbnailSheet,
-                feature_thumbnail_sheet))
+                ask_thumbnail_sheet))
 
         # add the thumbnail canvas
-        if feature_thumbnail_canvas is not None:
-            features.append(cls._make_w24io_request_feature_thumbnail(
+        if ask_thumbnail_canvas is not None:
+            asks.append(cls._make_w24_request_ask_thumbnail(
                 W24AskThumbnailCanvas,
-                feature_thumbnail_canvas))
+                ask_thumbnail_canvas))
 
         # add the measures
-        if feature_measures:
-            features.append(W24AskMeasures())
+        if ask_measures:
+            asks.append(W24AskMeasures())
 
-        return features
+        return asks
 
     @staticmethod
-    def _make_w24io_request_feature_thumbnail(
-            feature_class: W24AskThumbnail,
-            feature_attrs: Tuple[int, int, bool]) -> W24AskThumbnail:
-        return feature_class(
-            maximal_width=feature_attrs[0],
-            maximal_height=feature_attrs[1],
-            auto_rotate=feature_attrs[2])
+    def _make_w24_request_ask_thumbnail(
+            ask_class: W24AskThumbnail,
+            ask_attrs: Tuple[int, int, bool]) -> W24AskThumbnail:
+        """ Small helper function to make the AskThumbnails
+
+        Arguments:
+            ask_class {W24AskThumbnail} -- Class of the Ask
+            ask_attrs {Tuple[int, int, bool]} -- Attributes
+
+        Returns:
+            W24AskThumbnail -- Instance of the Thumbnail ask
+        """
+        return ask_class(
+            maximal_width=ask_attrs[0],
+            maximal_height=ask_attrs[1],
+            auto_rotate=ask_attrs[2])
+
+    @staticmethod
+    def _check_status_code(status_code: int) -> None:
+
+        # raise an UnauthorizedException if
+        # we obtain a 403
+        if status_code == 403:
+            raise UnauthorizedException()
+
+        # if we obtain anything other than
+        # a 200, raise a runtime error
+        if status_code != 200:
+            raise RuntimeError(f"Failed with status code {status_code}!")

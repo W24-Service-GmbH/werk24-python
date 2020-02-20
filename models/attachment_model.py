@@ -21,7 +21,7 @@ class W24AttachmentModel(W24Attachment):
     a mime-validator.
     """
 
-    @validator('base64_content')
+    @validator('content_b64')
     def mime_type_must_be_step(cls, v):
         """ Check the mime type of the drawing
         on the client-side
