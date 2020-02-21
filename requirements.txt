@@ -1,0 +1,5 @@
+aioboto3>=6.5.0
+pydantic>=1.4
+python_dotenv>=0.11.0
+python_magic>=0.4.15
+websockets>=8.1

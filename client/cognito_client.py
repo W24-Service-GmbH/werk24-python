@@ -1,4 +1,4 @@
-import boto3
+import aioboto3
 import hmac
 import base64
 import hashlib
@@ -37,16 +37,14 @@ class CognitoClient:
         self._username = username
         self._password = password
 
-    def _make_cognito_client(self) -> boto3.session.Session.client:
+    def _make_cognito_client(self) -> aioboto3.session.Session.client:
         """ Make the Cognito Client to communicate with
         AWS Cognito
 
         Returns:
             boto3.session.Session.client -- Boto3 Client
         """
-        return boto3.client(
-            "cognito-idp",
-            self._cognito_region)
+        return aioboto3.client("cognito-idp", self._cognito_region)
 
     def _make_cognito_secret_hash(self, username: str) -> str:
         """ Make the keyed-hash message authentication code (HMAC) calculated using
@@ -71,7 +69,7 @@ class CognitoClient:
         # turn the secret into a str object
         return base64.b64encode(dig).decode()
 
-    def login(self):
+    async def login(self):
         """ Login with AWS Cognito
         """
 
@@ -85,7 +83,7 @@ class CognitoClient:
             'SECRET_HASH': self._make_cognito_secret_hash(self._username)}
 
         # get the jwt token from AWS cognito
-        resp = cognito_client.admin_initiate_auth(
+        resp = await cognito_client.admin_initiate_auth(
             UserPoolId=self._cognito_identity_pool_id,
             AuthFlow='ADMIN_NO_SRP_AUTH',
             AuthParameters=auth_data,

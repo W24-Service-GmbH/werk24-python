@@ -5,24 +5,25 @@ communicate with the W24 API - allowing you
 to interpret the contents of your technical drawings.
 """
 
+import json
 from typing import Callable, List, Tuple, Union
 
-import httpx
 import websockets
 
-from werk24.models.architecture import W24Architecture
-from werk24.models.ask import W24Ask
-from werk24.models.ask_measures import W24AskMeasures
-from werk24.models.ask_thumbnail import W24AskThumbnail
-from werk24.models.ask_thumbnail_canvas import W24AskThumbnailCanvas
-from werk24.models.ask_thumbnail_page import W24AskThumbnailPage
-from werk24.models.ask_thumbnail_sheet import W24AskThumbnailSheet
-from werk24.models.attachment_drawing import W24AttachmentDrawing
-from werk24.models.attachment_model import W24AttachmentModel
-from werk24.models.drawing_read_request import W24DrawingReadRequest
-from werk24.models.drawing_read_response import W24DrawingReadResponse
-from werk24.models.drawing_read_message import W24DrawingReadMessage
-from werk24.sdk.cognito_client import CognitoClient
+from models.architecture import W24Architecture
+from models.ask import W24Ask
+from models.ask_measures import W24AskMeasures
+from models.ask_thumbnail import W24AskThumbnail
+from models.ask_thumbnail_canvas import W24AskThumbnailCanvas
+from models.ask_thumbnail_page import W24AskThumbnailPage
+from models.ask_thumbnail_sheet import W24AskThumbnailSheet
+from models.attachment_drawing import W24AttachmentDrawing
+from models.attachment_model import W24AttachmentModel
+from models.drawing_read_message import W24DrawingReadMessage
+from models.drawing_read_request import W24DrawingReadRequest
+from models.drawing_read_response import W24DrawingReadResponse
+
+from .cognito_client import CognitoClient
 
 
 class UnauthorizedException(Exception):
@@ -53,7 +54,7 @@ def ensure_authentication(func: Callable) -> Callable:
 
         # ensure that we have a token
         if self.auth_service.token is None:
-            self.auth_service.login()
+            await self.auth_service.login()
 
         # call the function
         try:
@@ -63,7 +64,7 @@ def ensure_authentication(func: Callable) -> Callable:
         # have the chance that the toke painly expired.
         # So let's try again
         except UnauthorizedException:
-            self.auth_service.login()
+            await self.auth_service.login()
             return await func(self, *args, **kwargs)
 
     return decorator
@@ -77,7 +78,8 @@ class W24Client():
 
     def __init__(
             self,
-            w24_server: str):
+            w24_server: str,
+            w24_version: str = "v1"):
 
         # Create an empty reference to the authentication
         # service (currently AWS Cognito)
@@ -85,6 +87,7 @@ class W24Client():
 
         # store the w24 info locally
         self._w24_server = w24_server
+        self._w24_version = w24_version
 
     def register(
             self,
@@ -125,16 +128,17 @@ class W24Client():
         Returns:
             str -- "pong"
         """
-        # make the endpoint
-        endpoint = self._make_endpoint("ping")
 
-        # get the pong
-        response = await self._w24_session.get(endpoint)
+        # send the ping to the websocket
+        async with self._w24_session as websocket:
 
-        # check the status code
-        self._check_status_code(response.status_code)
+            # send the drawing read request
+            await websocket.send(W24DrawingReadMessage(action="ping", message="ping").json())
 
-        return response.json()
+            # wait for the responses and interpret
+            response = json.loads(await websocket.recv())
+
+        return response
 
     @ensure_authentication
     async def read_drawing(
@@ -206,23 +210,10 @@ class W24Client():
             asks=asks,
             architecture=architecture)
 
-        # make the endpoint
-        endpoint = self._make_endpoint("drawing-read/ws", "ws")
+        # connect
+        async with self._w24_session as websocket:
 
-        async with websockets.connect(endpoint) as websocket:
-
-            # send the authentication token
-            await websocket.send(
-                W24DrawingReadMessage(
-                    action="authenticate",
-                    message=str(self.auth_service.token)).json())
-
-            # handle the unauthenticated exception
-            authentication_resp = W24DrawingReadMessage.parse_raw(await(websocket.recv()))
-            if authentication_resp.action != "authenitcation_success":
-                raise UnauthorizedException()
-
-            # send the actual drawing read request
+            # send the drawing read request
             await websocket.send(
                 W24DrawingReadMessage(
                     action="read_drawing",
@@ -233,23 +224,19 @@ class W24Client():
                 await websocket.recv()
 
     @property
-    def _w24_session(self) -> httpx.AsyncClient:
+    def _w24_session(self):
         """Get a reference to the W24 Session
         including the correct headers
 
-        Returns:
-            httpx.AsyncClient -- Session with correct headers
+        TODO: update typing
+        TODO: store local reference
+
         """
-
-        # make the client
-        session = httpx.AsyncClient()
-
-        # set the headers
-        headers = {"Authorization": f"Bearer {self.auth_service.token}"}
-        session.headers.update(headers)
-
-        # erturn the session
-        return session
+        endpoint = f"wss://{self._w24_server}/{self._w24_version}"
+        print({"Auth": f"Bearer {self.auth_service.token}"})
+        return websockets.connect(
+            endpoint,
+            extra_headers=[(f"Auth", f"Bearer {self.auth_service.token}")])
 
     def _make_endpoint(self, path: str, protocol="https") -> str:
         """ Make the URL Endpoint of a given subpath
