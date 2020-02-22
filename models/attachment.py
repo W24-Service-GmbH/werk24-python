@@ -17,7 +17,7 @@ class W24Attachment(BaseModel):
         """ Create a new W24 Image instance directly from the bytes of
         a PNG file
         """
-        content_b64 = base64.b64encode(content)
+        content_b64 = base64.b64encode(content).decode("utf-8")
         attachment_hash = cls.make_attachment_hash(content_b64)
         return W24Attachment(
             attachment_hash=attachment_hash,

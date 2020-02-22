@@ -1,16 +1,20 @@
 import asyncio
 import os
-
+import base64
 from dotenv import load_dotenv
 
 from models.architecture import W24Architecture
 from models.attachment_drawing import W24AttachmentDrawing
 from models.drawing_read_request import W24DrawingReadRequest
 
-from .client import W24Client
+from .client import W24Client, logger
+import logging
 
 # load the environment variables
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
+
 
 # make the client reference
 client = W24Client(os.environ.get("W24IO_SERVER"))
@@ -30,12 +34,11 @@ def test_ping():
 
 def test_read_drawing():
 
-    read_request = W24DrawingReadRequest(
-        drawing=W24AttachmentDrawing(
-            content_b64=content_b64,
-            attachment_hash=W24AttachmentDrawing.make_attachment_hash(content_b64)),
-        architecture=W24Architecture.CPU_V1)
+    content_b64: str = "iVBORw0KGgoAAAANSUhEUgAAARAAAADoCAIAAACo3iyCAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAJdSURBVHhe7dMxAQAwEAOh+jedWvjbwQNvwJkwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTBwtn2cN8eh0bbmOQAAAABJRU5ErkJggg=="
+    content_bytes: bytes = base64.b64decode(content_b64)
+    response = asyncio.run(client.read_drawing(content_bytes))
 
 
 if __name__ == "__main__":
-    test_ping()
+    # test_ping()
+    test_read_drawing()

@@ -74,24 +74,24 @@ class CognitoClient:
         """
 
         # make the connection to aws
-        cognito_client = self._make_cognito_client()
+        async with self._make_cognito_client() as cognito_client:
 
-        # make the authentication data
-        auth_data = {
-            'USERNAME': self._username,
-            'PASSWORD': self._password,
-            'SECRET_HASH': self._make_cognito_secret_hash(self._username)}
+            # make the authentication data
+            auth_data = {
+                'USERNAME': self._username,
+                'PASSWORD': self._password,
+                'SECRET_HASH': self._make_cognito_secret_hash(self._username)}
 
-        # get the jwt token from AWS cognito
-        resp = await cognito_client.admin_initiate_auth(
-            UserPoolId=self._cognito_identity_pool_id,
-            AuthFlow='ADMIN_NO_SRP_AUTH',
-            AuthParameters=auth_data,
-            ClientId=self._cognito_client_id)
+            # get the jwt token from AWS cognito
+            resp = await cognito_client.admin_initiate_auth(
+                UserPoolId=self._cognito_identity_pool_id,
+                AuthFlow='ADMIN_NO_SRP_AUTH',
+                AuthParameters=auth_data,
+                ClientId=self._cognito_client_id)
 
-        # store the jwt token
-        try:
-            self.token = resp['AuthenticationResult']['IdToken']
-        except KeyError:
-            raise RuntimeError(
-                "Unable to obtain JWT Token from AWS Cognito.")
+            # store the jwt token
+            try:
+                self.token = resp['AuthenticationResult']['IdToken']
+            except KeyError:
+                raise RuntimeError(
+                    "Unable to obtain JWT Token from AWS Cognito.")

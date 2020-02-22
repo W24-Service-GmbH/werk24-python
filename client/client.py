@@ -9,6 +9,7 @@ import json
 from typing import Callable, List, Tuple, Union
 
 import websockets
+import logging
 
 from models.architecture import W24Architecture
 from models.ask import W24Ask
@@ -24,6 +25,10 @@ from models.drawing_read_request import W24DrawingReadRequest
 from models.drawing_read_response import W24DrawingReadResponse
 
 from .cognito_client import CognitoClient
+
+
+# make the logger
+logger = logging.getLogger('w24client')
 
 
 class UnauthorizedException(Exception):
@@ -48,6 +53,7 @@ def ensure_authentication(func: Callable) -> Callable:
 
         # ensure that register() was called
         if self.auth_service is None:
+            logger.error("Method call before register() was called")
             raise RuntimeError(
                 "No connection to the authentication service was "
                 + "established. Please call register()")
@@ -64,6 +70,7 @@ def ensure_authentication(func: Callable) -> Callable:
         # have the chance that the toke painly expired.
         # So let's try again
         except UnauthorizedException:
+            logger.warn("API call failed with UnauthorizedException.")
             await self.auth_service.login()
             return await func(self, *args, **kwargs)
 
@@ -128,6 +135,7 @@ class W24Client():
         Returns:
             str -- "pong"
         """
+        logger.info("API method ping() called")
 
         # send the ping to the websocket
         async with self._w24_session as websocket:
@@ -188,6 +196,10 @@ class W24Client():
                 to the read_drawing_listen method
         """
 
+        # give us some debug information
+        logger.info("API method read_drawing() called")
+        print("test")
+
         # make the asks
         asks = self._make_asks(
             ask_thumbnail_page,
@@ -214,26 +226,25 @@ class W24Client():
         async with self._w24_session as websocket:
 
             # send the drawing read request
-            await websocket.send(
+            response = await websocket.send(
                 W24DrawingReadMessage(
                     action="read_drawing",
                     message=request.json()).json())
+            logger.info(f"Response: {response}")
 
             # wait for the responses and interpret
             while True:
-                await websocket.recv()
+                response = await websocket.recv()
+                logger.info(f"Response: {response}")
 
     @property
-    def _w24_session(self):
+    def _w24_session(self) -> websockets.server:
         """Get a reference to the W24 Session
         including the correct headers
 
-        TODO: update typing
         TODO: store local reference
-
         """
         endpoint = f"wss://{self._w24_server}/{self._w24_version}"
-        print({"Auth": f"Bearer {self.auth_service.token}"})
         return websockets.connect(
             endpoint,
             extra_headers=[(f"Auth", f"Bearer {self.auth_service.token}")])
