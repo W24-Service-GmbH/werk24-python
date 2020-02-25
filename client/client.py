@@ -5,7 +5,6 @@ communicate with the W24 API - allowing you
 to interpret the contents of your technical drawings.
 """
 import base64
-import bjson
 import json
 from typing import Callable, List, Tuple, Union
 
@@ -208,14 +207,12 @@ class W24Client():
             # make the message
             message = W24DrawingReadMessage(
                 action="read_drawing",
-                message=bjson.dumps(request.dict()))
-
-            print(len(bjson.dumps(message.dict())))
-            print(len(base64.b64encode(bjson.dumps(message.dict()))))
+                message=request.json())
+            print(type(message.json()))
             exit()
 
             # send the drawing read request
-            response = await websocket.send(bjson.dumps(message.dict()))
+            response = await websocket.send(message.json())
             logger.info("Request submitted")
 
             # wait for the responses and interpret

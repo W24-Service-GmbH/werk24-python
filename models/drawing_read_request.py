@@ -9,6 +9,7 @@ from .ask_measures import W24AskMeasures
 from .ask_thumbnail_canvas import W24AskThumbnailCanvas
 from .ask_thumbnail_page import W24AskThumbnailPage
 from .ask_thumbnail_sheet import W24AskThumbnailSheet
+import base64
 
 
 class W24DrawingReadRequest(BaseModel):
@@ -19,6 +20,10 @@ class W24DrawingReadRequest(BaseModel):
     (iv) the architecture on which to run the algorithm
     (v) the callback url that shall be called after the
     """
+    class Config:
+        json_encoders = {
+            bytes: lambda v: base64.b64encode(v).decode()
+        }
 
     drawing: W24AttachmentDrawing
     model: Optional[W24AttachmentModel] = None

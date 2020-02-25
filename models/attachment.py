@@ -2,6 +2,7 @@ import hashlib
 
 import bson
 from pydantic import BaseModel
+import base64
 
 
 class W24Attachment(BaseModel):
@@ -11,6 +12,11 @@ class W24Attachment(BaseModel):
     """
     attachment_hash: str
     content: bytes
+
+    class Config:
+        json_encoders = {
+            bytes: lambda v: ""  # base64.b64encode(v).decode()
+        }
 
     @classmethod
     def from_bytes(cls, content: bytes) -> 'W24Attachment':
@@ -26,9 +32,6 @@ class W24Attachment(BaseModel):
     @staticmethod
     def make_attachment_hash(content: bytes) -> str:
         return hashlib.sha256(content).hexdigest()
-
-    def dumps(self) -> bytes:
-        return bson.encode(self.dict())
 
 
 W24Attachment.update_forward_refs()
