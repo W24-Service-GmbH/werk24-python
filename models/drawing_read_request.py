@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, HttpUrl
-
+import bson
 from .attachment_drawing import W24AttachmentDrawing
 from .attachment_model import W24AttachmentModel
 from .architecture import W24Architecture
@@ -19,6 +19,7 @@ class W24DrawingReadRequest(BaseModel):
     (iv) the architecture on which to run the algorithm
     (v) the callback url that shall be called after the
     """
+
     drawing: W24AttachmentDrawing
     model: Optional[W24AttachmentModel] = None
     asks: List[Union[
@@ -27,3 +28,6 @@ class W24DrawingReadRequest(BaseModel):
         W24AskThumbnailPage,
         W24AskThumbnailSheet]] = []
     architecture: W24Architecture
+
+    def dumps(self):
+        return bson.encode(self.dict())
