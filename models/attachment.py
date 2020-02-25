@@ -18,6 +18,8 @@ class W24Attachment(BaseModel):
         a PNG file
         """
         content_b64 = base64.b64encode(content)
+        print(type(content_b64))
+        exit()
         attachment_hash = cls.make_attachment_hash(content_b64)
         return W24Attachment(
             attachment_hash=attachment_hash,
