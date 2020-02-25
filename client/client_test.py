@@ -9,11 +9,24 @@ from models.drawing_read_request import W24DrawingReadRequest
 
 from .client import W24Client, logger
 import logging
-
+import io
+import mimetypes
 # load the environment variables
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
+
+
+def _get_test_drawing() -> bytes:
+    """ Obtain the bytes content of the test drawing
+    """
+    cwd = os.path.dirname(os.path.abspath(__file__))
+    test_file_path = os.path.join(cwd, "client_test_drawing.png")
+
+    with open(test_file_path, "rb") as filehandle:
+        content_bytes = filehandle.read()
+
+    return content_bytes
 
 
 # make the client reference
@@ -27,18 +40,17 @@ client.register(
     os.environ.get("W24IO_COGNITO_PASSWORD"))
 
 
-def test_ping():
-    response = asyncio.run(client.ping())
-    print(response)
-
-
 def test_read_drawing():
 
-    content_b64: str = "iVBORw0KGgoAAAANSUhEUgAAARAAAADoCAIAAACo3iyCAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAJdSURBVHhe7dMxAQAwEAOh+jedWvjbwQNvwJkwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTAQCAOBMBAIA4EwEAgDgTBwtn2cN8eh0bbmOQAAAABJRU5ErkJggg=="
-    content_bytes: bytes = base64.b64decode(content_b64)
-    response = asyncio.run(client.read_drawing(content_bytes))
+    async def read_drawing(asks, content_bytes):
+
+        generator = await client.read_drawing(asks, content_bytes)
+        async for res in generator:
+            print(res)
+
+    content_bytes = _get_test_drawing()
+    response = asyncio.run(read_drawing([], content_bytes))
 
 
 if __name__ == "__main__":
-    # test_ping()
     test_read_drawing()

@@ -10,22 +10,22 @@ class W24Attachment(BaseModel):
     or extracts from the sheet).
     """
     attachment_hash: str
-    content_b64: str
+    content: bytes
 
     @classmethod
     def from_bytes(cls, content: bytes) -> 'W24Attachment':
         """ Create a new W24 Image instance directly from the bytes of
         a PNG file
         """
-        content_b64 = base64.b64encode(content).decode("utf-8")
-        attachment_hash = cls.make_attachment_hash(content_b64)
+        # content_b64 = base64.b64encode(content).decode("utf-8")
+        attachment_hash = cls.make_attachment_hash(content)
         return W24Attachment(
             attachment_hash=attachment_hash,
-            content_b64=content_b64)
+            content=content)
 
     @staticmethod
-    def make_attachment_hash(content_b64: str) -> str:
-        return hashlib.sha256(content_b64.encode("utf-8")).hexdigest()
+    def make_attachment_hash(content: bytes) -> str:
+        return hashlib.sha256(content).hexdigest()
 
 
 W24Attachment.update_forward_refs()

@@ -1,4 +1,5 @@
 aioboto3>=6.5.0
+bjson>=0.2.9
 pydantic>=1.4
 python_dotenv>=0.11.0
 python_magic>=0.4.15

@@ -21,21 +21,19 @@ class W24AttachmentModel(W24Attachment):
     a mime-validator.
     """
 
-    @validator('content_b64')
+    @validator('content')
     def mime_type_must_be_step(cls, v):
         """ Check the mime type of the drawing
         on the client-side
         """
 
         # obtain the mime type
-        bytes_io = BytesIO(b64decode(v))
-        mime_type = magic.from_buffer(
-            bytes_io.read(MAGIC_BYTE_LENGTH),
-            mime=True)
+        test_strip = v[:MAGIC_BYTE_LENGTH]
+        mime_type = magic.from_buffer(test_strip, mime=True)
 
         # compare with the list of accepted mime types
         if mime_type not in ACCEPTED_MIME_TYPES:
-            raise ValueError(f'Model not of accepted mime type')
+            raise ValueError(f'Drawing not of accepted mime type {mime_type}')
 
         # return unchanged
         return v

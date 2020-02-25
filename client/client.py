@@ -4,7 +4,8 @@ The module contains everything that is needed to
 communicate with the W24 API - allowing you
 to interpret the contents of your technical drawings.
 """
-
+import base64
+import bjson
 import json
 from typing import Callable, List, Tuple, Union
 
@@ -64,7 +65,7 @@ def ensure_authentication(func: Callable) -> Callable:
 
         # call the function
         try:
-            return await func(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
 
         # if we obtain a UnauthorizedException, we
         # have the chance that the toke painly expired.
@@ -72,7 +73,7 @@ def ensure_authentication(func: Callable) -> Callable:
         except UnauthorizedException:
             logger.warn("API call failed with UnauthorizedException.")
             await self.auth_service.login()
-            return await func(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
 
     return decorator
 
@@ -151,12 +152,9 @@ class W24Client():
     @ensure_authentication
     async def read_drawing(
             self,
+            asks: List[W24Ask],
             drawing: bytes,
             model: bytes = None,
-            ask_thumbnail_page: Tuple[int, int, bool] = None,
-            ask_thumbnail_sheet: Tuple[int, int, bool] = None,
-            ask_thumbnail_canvas: Tuple[int, int, bool] = None,
-            ask_measures: bool = False,
             architecture=W24Architecture.CPU_V1):
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
@@ -171,20 +169,10 @@ class W24Client():
                 Please refer to the API - documentation to learn whcih mime
                 types are currently sypported(default: {None})
 
-            ask_thumbnail_page {Tuple[int, int, bool]} --
-                Tuple of max_width, max_height, auto_rotate indicating that
-                you wish to obtain a thumbnail of the page(default: {None})
-
-            ask_thumbnail_sheet {Tuple[int, int, bool]} --
-                Tuple of max_width, max_height, auto_rotate indicating that
-                you wish to obtain a thumbnail of the sheet(default: {None})
-
-            ask_thumbnail_canvas {Tuple[int, int, bool]} --
-                Tuple of max_width, max_height, auto_rotate indicating that
-                you wish to obtain a thumbnail of the canvas(default: {None})
-
-            ask_measures {bool} -- Ask to the Measures depicted
-                on the technical drawing(default: {False})
+            asks {List[W24Ask]} --
+                List of Asks that are requested from the API. They must derive
+                from the W24Ask object. Refer to the API documentation for
+                a full list of supported W24AskTypes
 
             architecture {str} -- Architecture to be used to process
                 the request. Please refer to the API documentation for a complete
@@ -198,14 +186,6 @@ class W24Client():
 
         # give us some debug information
         logger.info("API method read_drawing() called")
-        print("test")
-
-        # make the asks
-        asks = self._make_asks(
-            ask_thumbnail_page,
-            ask_thumbnail_sheet,
-            ask_thumbnail_canvas,
-            ask_measures)
 
         # make the drawing attachment
         drawing_attachment = self._make_attachment(
@@ -225,17 +205,27 @@ class W24Client():
         # connect
         async with self._w24_session as websocket:
 
+            # make the message
+            message = W24DrawingReadMessage(
+                action="read_drawing",
+                message=bjson.dumps(request.dict()))
+
+            print(len(bjson.dumps(message.dict())))
+            print(len(base64.b64encode(bjson.dumps(message.dict()))))
+            exit()
+
             # send the drawing read request
-            response = await websocket.send(
-                W24DrawingReadMessage(
-                    action="read_drawing",
-                    message=request.json()).json())
-            logger.info(f"Response: {response}")
+            response = await websocket.send(bjson.dumps(message.dict()))
+            logger.info("Request submitted")
 
             # wait for the responses and interpret
-            while True:
-                response = await websocket.recv()
-                logger.info(f"Response: {response}")
+            async for response_raw in websocket:
+
+                # parse the response
+                response = W24DrawingReadResponse.parse_raw(response_raw)
+
+                # yield the reponse
+                yield response.payload
 
     @property
     def _w24_session(self) -> websockets.server:
@@ -277,64 +267,6 @@ class W24Client():
 
         # otherwise make the attachment
         return model.from_bytes(attachment_bytes)
-
-    @classmethod
-    def _make_asks(
-            cls,
-            ask_thumbnail_page,
-            ask_thumbnail_sheet,
-            ask_thumbnail_canvas,
-            ask_measures) -> List[W24Ask]:
-        """ Turn the arguments (easier for the sdk-user)
-        into a list of asks that can be passed to the
-        backend.
-
-        Arguments:
-            ask_thumbnail_page {Tuple[int, int, bool]} --
-                Tuple of max_width, max_height, auto_rotate indicating that
-                you wish to obtain a thumbnail of the page(default: {None})
-
-            ask_thumbnail_sheet {Tuple[int, int, bool]} --
-                Tuple of max_width, max_height, auto_rotate indicating that
-                you wish to obtain a thumbnail of the sheet(default: {None})
-
-            ask_thumbnail_canvas {Tuple[int, int, bool]} --
-                Tuple of max_width, max_height, auto_rotate indicating that
-                you wish to obtain a thumbnail of the canvas(default: {None})
-
-            ask_measures {bool} -- Ask to the Measures depicted
-                on the technical drawing(default: {False})
-
-        Returns:
-            List[W24Ask] -- A list with all the asks from the API
-        """
-
-        # start with an empty list
-        asks = []
-
-        # add the thumbnail page
-        if ask_thumbnail_page is not None:
-            asks.append(cls._make_w24_request_ask_thumbnail(
-                W24AskThumbnailPage,
-                ask_thumbnail_page))
-
-        # add the thumbnail sheet
-        if ask_thumbnail_sheet is not None:
-            asks.append(cls._make_w24_request_ask_thumbnail(
-                W24AskThumbnailSheet,
-                ask_thumbnail_sheet))
-
-        # add the thumbnail canvas
-        if ask_thumbnail_canvas is not None:
-            asks.append(cls._make_w24_request_ask_thumbnail(
-                W24AskThumbnailCanvas,
-                ask_thumbnail_canvas))
-
-        # add the measures
-        if ask_measures:
-            asks.append(W24AskMeasures())
-
-        return asks
 
     @staticmethod
     def _make_w24_request_ask_thumbnail(
