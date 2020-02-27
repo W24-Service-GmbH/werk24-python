@@ -1,16 +1,12 @@
 import asyncio
+import logging
 import os
-import base64
+
 from dotenv import load_dotenv
 
-from models.architecture import W24Architecture
-from models.attachment_drawing import W24AttachmentDrawing
-from models.drawing_read_request import W24DrawingReadRequest
 
 from .client import W24Client, logger
-import logging
-import io
-import mimetypes
+
 # load the environment variables
 load_dotenv()
 
@@ -31,9 +27,10 @@ def _get_test_drawing() -> bytes:
 
 # make the client reference
 client = W24Client(
-    os.environ.get("W24IO_SERVER"),
+    os.environ.get("W24IO_SERVER_HTTPS"),
+    os.environ.get("W24IO_SERVER_WSS"),
     os.environ.get("W24IO_VERSION"))
-client.register(
+client.login(
     os.environ.get("W24IO_COGNITO_REGION"),
     os.environ.get("W24IO_COGNITO_IDENTITY_POOL_ID"),
     os.environ.get("W24IO_COGNITO_CLIENT_ID"),

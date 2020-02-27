@@ -4,12 +4,15 @@ The module contains everything that is needed to
 communicate with the W24 API - allowing you
 to interpret the contents of your technical drawings.
 """
-import base64
+import asyncio
 import json
-from typing import Callable, List, Tuple, Union
-
-import websockets
+import io
 import logging
+from typing import Callable, List, Tuple, Union
+from pydantic import ValidationError
+
+import httpx
+import websockets
 
 from models.architecture import W24Architecture
 from models.ask import W24Ask
@@ -20,21 +23,29 @@ from models.ask_thumbnail_page import W24AskThumbnailPage
 from models.ask_thumbnail_sheet import W24AskThumbnailSheet
 from models.attachment_drawing import W24AttachmentDrawing
 from models.attachment_model import W24AttachmentModel
-from models.drawing_read_message import W24DrawingReadMessage
-from models.drawing_read_request import W24DrawingReadRequest
-from models.drawing_read_response import W24DrawingReadResponse
+# from models.drawing_read_response import W24DrawingReadResponse
+from models.techread import (W24TechreadCommand, W24TechreadMessage,
+                             W24TechreadMessageType, W24TechreadRequest)
 
 from .cognito_client import CognitoClient
-
 
 # make the logger
 logger = logging.getLogger('w24client')
 
 
-class UnauthorizedException(Exception):
-    """ Exception that is raised when the
-    response code is 403 - Unauthorized
+class ClientException(Exception):
+    pass
+
+
+class UnauthorizedException(ClientException):
+    """ Exception that is raised when
+    (i) the response code is 403 - Unauthorized, or
+    (ii) the requested action was forbidden by the gateway
     """
+
+
+class UnknownException(ClientException):
+    pass
 
 
 def ensure_authentication(func: Callable) -> Callable:
@@ -85,7 +96,8 @@ class W24Client():
 
     def __init__(
             self,
-            w24_server: str,
+            w24_server_https: str,
+            w24_server_wss: str,
             w24_version: str):
 
         # Create an empty reference to the authentication
@@ -93,10 +105,11 @@ class W24Client():
         self.auth_service = None
 
         # store the w24 info locally
-        self._w24_server = w24_server
+        self._w24_server_https = w24_server_https
+        self._w24_server_wss = w24_server_wss
         self._w24_version = w24_version
 
-    def register(
+    def login(
             self,
             cognito_region: str,
             cognito_identity_pool_id: str,
@@ -104,8 +117,9 @@ class W24Client():
             cognito_client_secret: str,
             username: str,
             password: str) -> None:
-        """ Register with the authentication
-        service
+        """
+        Register with the authentication
+        service (i.e., lazy login)
 
         Arguments:
             cognito_region {str} -- Physical region
@@ -125,30 +139,6 @@ class W24Client():
 
         # register username and password
         self.auth_service.register(username, password)
-
-    @ensure_authentication
-    async def ping(self) -> str:
-        """ Send a ping to the W24 API and
-        expect "pong" as response. This is
-        plainly to test the connection (speed).
-
-        Returns:
-            str -- "pong"
-        """
-        logger.info("API method ping() called")
-
-        # send the ping to the websocket
-        async with self._w24_session as websocket:
-
-            # send the drawing read request
-            await websocket.send(W24DrawingReadMessage(
-                action="ping",
-                message="ping").json())
-
-            # wait for the responses and interpret
-            response = json.loads(await websocket.recv())
-
-        return response
 
     @ensure_authentication
     async def read_drawing(
@@ -188,55 +178,96 @@ class W24Client():
         # give us some debug information
         logger.info("API method read_drawing() called")
 
-        # make the drawing attachment
-        drawing_attachment = self._make_attachment(
-            W24AttachmentDrawing, drawing)
-
-        # make the model attachment
-        model_attachment = self._make_attachment(
-            W24AttachmentModel, model)
-
-        # make the request
-        request = W24DrawingReadRequest(
-            model=model_attachment,
-            asks=asks,
-            architecture=architecture)
-
-        # connect
+        # connect to the websocket and obtain a
+        # new request_id
         async with self._w24_session as websocket:
 
-            msg = json.dumps(
-                {"drawing": {"content": base64.b64encode(
-                    drawing).decode("utf-8")[:(80 * 1024)]}})
-
-            # dec = json.loads(msg)
-            # base64.b64decode(dec['drawing']['content'])
-
-            # make the message
-            message = W24DrawingReadMessage(
-                action="read_drawing",
-                message=msg)
-
-            # send the drawing read request
-            response = await websocket.send(message.json())
-            print(response)
+            # send the initialization request
+            await self._wss_send_command(
+                websocket,
+                "initialize",
+                W24TechreadRequest(
+                    asks=asks,
+                    architecture=architecture).json())
             logger.info("Request submitted")
 
-            yield "test"
+            # wait for the response
+            response = await self._wss_recv_message(websocket)
+            logger.info("Received request_id %s", response.request_id)
 
+            # upload drawing and model
+            asyncio.gather(*[
+                self._upload(response.request_id, 'drawing', drawing),
+                self._upload(response.request_id, 'model', model)])
+
+            # return the messages to the caller
             async for message in websocket:
-                print(message)
+                logger.info("Received message '%s'", message)
                 yield message
-            print(reponse)
 
-            # wait for the responses and interpret
-            # async for response_raw in websocket:
+    async def _wss_send_command(self, websocket: websockets.server, action: str, message: str) -> None:
+        # make the message
+        message = W24TechreadCommand(action=action, message=message)
 
-            #     # parse the response
-            #     response = W24DrawingReadResponse.parse_raw(response_raw)
+        # send the message
+        await websocket.send(message.json())
 
-            #     # yield the reponse
-            #     yield response.payload
+    async def _wss_recv_message(self, websocket: websockets.server) -> W24TechreadMessage:
+
+        # wait for the websocket to say something
+        response_raw = await websocket.recv()
+
+        # interpret and return
+        try:
+            return W24TechreadMessage.parse_raw(response_raw)
+
+        # if that failes, we are probably receiving a
+        # message from the gateway directly
+        except ValidationError:
+
+            # The Gateway responds with the format
+            # {"message": str, "connectionId":str, "requestId":str}
+            # Obtain the message
+            response = json.loads(response_raw)
+            message = response.get('message')
+
+            # raise a specific exception if the
+            # requested action was forbidden
+            if message == 'Forbidden':
+                raise UnauthorizedException("Requested Action forbidden")
+
+            # otherwise fail with an UnknownException
+            raise UnknownException(
+                "Unexpected server response '{response_raw}'.")
+
+    async def _upload(self, request_id: str, filetype: str, content: bytes) -> None:
+        """ Upload the associated files to the API endpoint
+
+        Arguments:
+            request_id {str} -- UUID4 request id that we obtained
+                from the websocket
+
+            filetype {str} -- filetype that we want to upload.
+                currently supported: drawing, model
+
+            content {bytes} -- content of the files
+
+        NOTE: the complete message size must not be larger than 10 MB
+        """
+
+        # obviously stop if there is no content
+        if content is None:
+            return
+
+        # make the endpoint
+
+        endpoint = f"https://{self._w24_server_https}/{self._w24_version}/upload/{request_id}"
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                endpoint,
+                files={filetype: io.BytesIO(content)},
+                headers=[(f"Auth", f"Bearer {self.auth_service.token}")])
+            print(response)
 
     @property
     def _w24_session(self) -> websockets.server:
@@ -245,8 +276,7 @@ class W24Client():
 
         TODO: store local reference
         """
-        endpoint = f"wss://{self._w24_server}/{self._w24_version}"
-        print(endpoint)
+        endpoint = f"wss://{self._w24_server_wss}/{self._w24_version}"
         return websockets.connect(
             endpoint,
             extra_headers=[(f"Auth", f"Bearer {self.auth_service.token}")])
@@ -264,7 +294,7 @@ class W24Client():
             str -- complete URL
         """
 
-        return f"{protocol}://{self._w24_server}/{path}"
+        return f"{protocol}://{self._w24_server_wss}/{path}"
 
     @staticmethod
     def _make_attachment(
