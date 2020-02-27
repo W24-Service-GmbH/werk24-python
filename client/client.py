@@ -86,7 +86,7 @@ class W24Client():
     def __init__(
             self,
             w24_server: str,
-            w24_version: str = "v1"):
+            w24_version: str):
 
         # Create an empty reference to the authentication
         # service (currently AWS Cognito)
@@ -141,7 +141,9 @@ class W24Client():
         async with self._w24_session as websocket:
 
             # send the drawing read request
-            await websocket.send(W24DrawingReadMessage(action="ping", message="ping").json())
+            await websocket.send(W24DrawingReadMessage(
+                action="ping",
+                message="ping").json())
 
             # wait for the responses and interpret
             response = json.loads(await websocket.recv())
@@ -196,7 +198,6 @@ class W24Client():
 
         # make the request
         request = W24DrawingReadRequest(
-            drawing=drawing_attachment,
             model=model_attachment,
             asks=asks,
             architecture=architecture)
@@ -204,25 +205,38 @@ class W24Client():
         # connect
         async with self._w24_session as websocket:
 
+            msg = json.dumps(
+                {"drawing": {"content": base64.b64encode(
+                    drawing).decode("utf-8")[:(80 * 1024)]}})
+
+            # dec = json.loads(msg)
+            # base64.b64decode(dec['drawing']['content'])
+
             # make the message
             message = W24DrawingReadMessage(
                 action="read_drawing",
-                message=request.json())
-            print(type(message.json()))
-            exit()
+                message=msg)
 
             # send the drawing read request
             response = await websocket.send(message.json())
+            print(response)
             logger.info("Request submitted")
 
+            yield "test"
+
+            async for message in websocket:
+                print(message)
+                yield message
+            print(reponse)
+
             # wait for the responses and interpret
-            async for response_raw in websocket:
+            # async for response_raw in websocket:
 
-                # parse the response
-                response = W24DrawingReadResponse.parse_raw(response_raw)
+            #     # parse the response
+            #     response = W24DrawingReadResponse.parse_raw(response_raw)
 
-                # yield the reponse
-                yield response.payload
+            #     # yield the reponse
+            #     yield response.payload
 
     @property
     def _w24_session(self) -> websockets.server:
@@ -232,6 +246,7 @@ class W24Client():
         TODO: store local reference
         """
         endpoint = f"wss://{self._w24_server}/{self._w24_version}"
+        print(endpoint)
         return websockets.connect(
             endpoint,
             extra_headers=[(f"Auth", f"Bearer {self.auth_service.token}")])

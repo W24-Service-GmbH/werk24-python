@@ -30,7 +30,9 @@ def _get_test_drawing() -> bytes:
 
 
 # make the client reference
-client = W24Client(os.environ.get("W24IO_SERVER"))
+client = W24Client(
+    os.environ.get("W24IO_SERVER"),
+    os.environ.get("W24IO_VERSION"))
 client.register(
     os.environ.get("W24IO_COGNITO_REGION"),
     os.environ.get("W24IO_COGNITO_IDENTITY_POOL_ID"),

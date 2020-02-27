@@ -15,7 +15,7 @@ class W24Attachment(BaseModel):
 
     class Config:
         json_encoders = {
-            bytes: lambda v: ""  # base64.b64encode(v).decode()
+            bytes: lambda v: base64.b64encode(v).decode("utf-8")
         }
 
     @classmethod
