@@ -4,8 +4,7 @@ import os
 
 from dotenv import load_dotenv
 
-
-from .client import W24Client, logger
+from .client import W24Client, logger, W24AskMeasures
 
 # load the environment variables
 load_dotenv()
@@ -39,17 +38,19 @@ client.login(
     os.environ.get("W24IO_COGNITO_PASSWORD"))
 
 
-def test_read_drawing():
+async def test_read_drawing(drawing_bytes):
 
-    async def read_drawing(asks, content_bytes):
+    # send out the request and make a generator
+    # that triggers when the result of an ask
+    # becomes available
+    generator = await client.read_drawing(
+        [W24AskMeasures()],
+        drawing_bytes)
 
-        generator = await client.read_drawing(asks, content_bytes)
-        async for res in generator:
-            print(res)
-
-    content_bytes = _get_test_drawing()
-    response = asyncio.run(read_drawing([], content_bytes))
+    # wait for the asks
+    async for res in generator:
+        print(res)
 
 
 if __name__ == "__main__":
-    test_read_drawing()
+    asyncio.run(test_read_drawing(_get_test_drawing()))

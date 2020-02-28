@@ -18,6 +18,7 @@ class W24TechreadCommand(BaseModel):
 class W24TechreadMessageType(str, Enum):
     TECHREAD_INITIALIZATION_SUCCESS = "TECHREAD_INITIALIZATION_SUCCESS"
     TECHREAD_STARTED = "TECHREAD_STARTED"
+    TECHREAD_COMPLETED = "TECHREAD_COMPLETED"
 
 
 class W24TechreadMessage(BaseModel):

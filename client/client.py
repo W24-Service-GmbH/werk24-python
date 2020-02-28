@@ -5,14 +5,13 @@ communicate with the W24 API - allowing you
 to interpret the contents of your technical drawings.
 """
 import asyncio
+import base64
 import json
-import io
 import logging
-from typing import Callable, List, Tuple, Union
-from pydantic import ValidationError
+from typing import Callable, List, Union
 
-import httpx
 import websockets
+from pydantic import ValidationError
 
 from models.architecture import W24Architecture
 from models.ask import W24Ask
@@ -183,22 +182,27 @@ class W24Client():
         async with self._w24_session as websocket:
 
             # send the initialization request
-            await self._wss_send_command(
+            response = await self._wss_send_command(
                 websocket,
                 "initialize",
                 W24TechreadRequest(
                     asks=asks,
                     architecture=architecture).json())
-            logger.info("Request submitted")
-
-            # wait for the response
-            response = await self._wss_recv_message(websocket)
             logger.info("Received request_id %s", response.request_id)
 
             # upload drawing and model
-            asyncio.gather(*[
+            await asyncio.gather(*[
                 self._upload(response.request_id, 'drawing', drawing),
                 self._upload(response.request_id, 'model', model)])
+            logger.info("Drawing(and model) uploaded")
+
+            # send the read request
+            response = await self._wss_send_command(
+                websocket,
+                "read",
+                "{}")
+            print(response)
+            logger.info("Reading process started")
 
             # return the messages to the caller
             async for message in websocket:
@@ -211,6 +215,9 @@ class W24Client():
 
         # send the message
         await websocket.send(message.json())
+
+        # wait for the response
+        return await self._wss_recv_message(websocket)
 
     async def _wss_recv_message(self, websocket: websockets.server) -> W24TechreadMessage:
 
@@ -238,7 +245,7 @@ class W24Client():
 
             # otherwise fail with an UnknownException
             raise UnknownException(
-                "Unexpected server response '{response_raw}'.")
+                f"Unexpected server response '{response_raw}'.")
 
     async def _upload(self, request_id: str, filetype: str, content: bytes) -> None:
         """ Upload the associated files to the API endpoint
@@ -254,20 +261,26 @@ class W24Client():
 
         NOTE: the complete message size must not be larger than 10 MB
         """
+        import aiohttp
 
         # obviously stop if there is no content
         if content is None:
             return
 
-        # make the endpoint
-
+        # make the endpoint and the headers
         endpoint = f"https://{self._w24_server_https}/{self._w24_version}/upload/{request_id}"
-        async with httpx.AsyncClient() as client:
+        headers = {"Auth": f"Bearer {self.auth_service.token}"}
+
+        # send the reuest
+        async with aiohttp.ClientSession(headers=headers) as client:
             response = await client.post(
                 endpoint,
-                files={filetype: io.BytesIO(content)},
-                headers=[(f"Auth", f"Bearer {self.auth_service.token}")])
-            print(response)
+                headers=headers,
+                data=json.dumps({"drawing": base64.b64encode(content).decode()}))
+
+        # check the response code
+        if response.status != 200:
+            raise UnknownException("Upload unsuccessfull")
 
     @property
     def _w24_session(self) -> websockets.server:
@@ -278,8 +291,8 @@ class W24Client():
         """
         endpoint = f"wss://{self._w24_server_wss}/{self._w24_version}"
         return websockets.connect(
-            endpoint,
-            extra_headers=[(f"Auth", f"Bearer {self.auth_service.token}")])
+            endpoint, extra_headers=[
+                (f"Auth", f"Bearer {self.auth_service.token}")])
 
     def _make_endpoint(self, path: str, protocol="https") -> str:
         """ Make the URL Endpoint of a given subpath
@@ -293,50 +306,4 @@ class W24Client():
         Returns:
             str -- complete URL
         """
-
         return f"{protocol}://{self._w24_server_wss}/{path}"
-
-    @staticmethod
-    def _make_attachment(
-            model: Union[W24AttachmentDrawing, W24AttachmentModel],
-            attachment_bytes: bytes):
-        """ Make an attachment from the supplied bytes
-        """
-
-        # return None if there is no attachment
-        if attachment_bytes is None:
-            return None
-
-        # otherwise make the attachment
-        return model.from_bytes(attachment_bytes)
-
-    @staticmethod
-    def _make_w24_request_ask_thumbnail(
-            ask_class: W24AskThumbnail,
-            ask_attrs: Tuple[int, int, bool]) -> W24AskThumbnail:
-        """ Small helper function to make the AskThumbnails
-
-        Arguments:
-            ask_class {W24AskThumbnail} -- Class of the Ask
-            ask_attrs {Tuple[int, int, bool]} -- Attributes
-
-        Returns:
-            W24AskThumbnail -- Instance of the Thumbnail ask
-        """
-        return ask_class(
-            maximal_width=ask_attrs[0],
-            maximal_height=ask_attrs[1],
-            auto_rotate=ask_attrs[2])
-
-    @staticmethod
-    def _check_status_code(status_code: int) -> None:
-
-        # raise an UnauthorizedException if
-        # we obtain a 403
-        if status_code == 403:
-            raise UnauthorizedException()
-
-        # if we obtain anything other than
-        # a 200, raise a runtime error
-        if status_code != 200:
-            raise RuntimeError(f"Failed with status code {status_code}!")
