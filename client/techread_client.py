@@ -5,78 +5,25 @@ communicate with the W24 API - allowing you
 to interpret the contents of your technical drawings.
 """
 import asyncio
-import json
 import logging
 from typing import List
 
-import websockets
-from pydantic import ValidationError
-
 from models.architecture import W24Architecture
 from models.ask import W24Ask
-from models.ask_measures import W24AskMeasures
-from models.ask_thumbnail import W24AskThumbnail
-from models.ask_thumbnail_canvas import W24AskThumbnailCanvas
-from models.ask_thumbnail_page import W24AskThumbnailPage
-from models.ask_thumbnail_sheet import W24AskThumbnailSheet
-from models.attachment_drawing import W24AttachmentDrawing
-from models.attachment_model import W24AttachmentModel
-# from models.drawing_read_response import W24DrawingReadResponse
-from models.techread import (W24TechreadCommand, W24TechreadMessage,
-                             W24TechreadMessageType, W24TechreadRequest)
+from models.techread import W24TechreadRequest
 
 from .auth_client import AuthClient
-from .exceptions import ServerException, UnauthorizedException
 from .techread_client_https import TechreadClientHttps
 from .techread_client_wss import TechreadClientWss
+
 # make the logger
 logger = logging.getLogger('w24client')
-
-
-# def ensure_authentication(func: Callable) -> Callable:
-#     """ Decorator function that ensures that the
-#     called W24Client method has access to a valid
-#     JWT Token.
-
-#     Arguments:
-#         func {Callable} -- Method that is to be wrapped
-
-#     Returns:
-#         Callable -- Wrapped method
-#     """
-
-#     async def decorator(self, *args, **kwargs):
-
-#         # ensure that register() was called
-#         if self.cognito_client is None:
-#             raise RuntimeError(
-#                 "No connection to the authentication service was "
-#                 + "established. Please call register()")
-
-#         # ensure that we have a token
-#         if self.cognito_client.token is None:
-#             await self.cognito_client.login()
-
-#         # call the function
-#         try:
-#             return func(self, *args, **kwargs)
-
-#         # if we obtain a UnauthorizedException, we
-#         # have the chance that the toke painly expired.
-#         # So let's try again
-#         except UnauthorizedException:
-#             await self.cognito_client.login()
-#             return func(self, *args, **kwargs)
-
-#     return decorator
 
 
 class W24TechreadClient():
     """ Simple W24Client that allows you to use
     learn more about the content on your Technical
     Drawings.
-
-    TODO: rename to TechreadClient
     """
 
     def __init__(

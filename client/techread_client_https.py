@@ -146,11 +146,6 @@ class TechreadClientHttps:
                 f"INTRUSION!!! Payload_url '%s' not allowed. INVESTIGATE!!!",
                 payload_url)
 
-        # payload_url = payload_url.replace(
-        #     "techread.w24.io/v1",
-        #     "be4d09pom7.execute-api.eu-central-1.amazonaws.com")
-        # print(payload_url)
-
         # send the get request to the endpoint
         try:
             response = await self._get(payload_url)
@@ -220,7 +215,6 @@ class TechreadClientHttps:
 
         # send the request
         response = await self._techread_session_https.post(url, data=data)
-        print(response)
 
         # check the status code of the response and
         # raise the appropriate exception

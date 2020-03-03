@@ -1,14 +1,26 @@
+"""
+Small Integration test module to check whether the Techread Client
+communicates properly with the server
+"""
 import asyncio
 import logging
 import os
+from typing import List
 
-from .techread_client import (W24AskMeasures, W24AskThumbnailPage,
-                              W24TechreadClient, W24TechreadMessage,
-                              W24TechreadMessageType, logger)
+from models.ask import W24Ask
+from models.ask_thumbnail_page import W24AskThumbnailPage
+from models.ask_thumbnail_sheet import W24AskThumbnailSheet
+from models.ask_thumbnail_drawing import W24AskThumbnailDrawing
+from models.techread import W24TechreadMessage, W24TechreadMessageType
+
+from .techread_client import W24TechreadClient
 
 # set the log level to info for the test setting
 # We recommend using logging.WARNING for production
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def _get_test_drawing() -> bytes:
@@ -23,6 +35,14 @@ def _get_test_drawing() -> bytes:
         return filehandle.read()
 
 
+def _debug_show_image(log_text, image_bytes):
+    from PIL import Image
+    import io
+    logging.info(log_text)
+    image = Image.open(io.BytesIO(image_bytes))
+    image.show(title=log_text)
+
+
 async def process_techread_message(message: W24TechreadMessage):
     """ Your custom code, that is triggered every time the
     server serves a new message
@@ -31,8 +51,13 @@ async def process_techread_message(message: W24TechreadMessage):
     # small dictionary that maps the message types to funcitons
     TYPE = W24TechreadMessageType
     messsage_type_map = {
-        TYPE.TECHREAD_STARTED: lambda msg: logging.info("Techead process started"),
-        TYPE.ASK_THUMBNAIL_PAGE: lambda msg: logging.info("Received Thumbnail of Page")}
+        TYPE.TECHREAD_STARTED: lambda msg: logging.info("Techread started"),
+        TYPE.ASK_THUMBNAIL_PAGE: lambda msg: _debug_show_image(
+            "Thumbnail_page received",
+            msg.payload_bytes),
+        TYPE.ASK_THUMBNAIL_SHEET: lambda msg: _debug_show_image(
+            "Thumbnail_sheet received",
+            msg.payload_bytes), }
 
     # get the function and execute the code
     func = messsage_type_map.get(message.message_type)
@@ -46,7 +71,7 @@ async def process_techread_message(message: W24TechreadMessage):
             f"Received unhandled message of type {message.message_type}")
 
 
-async def test_read_drawing(drawing_bytes: bytes):
+async def test_read_drawing(drawing_bytes: bytes, asks: List[W24Ask]):
 
     # make the client. This will automatically
     # fetch the authentication information
@@ -63,7 +88,7 @@ async def test_read_drawing(drawing_bytes: bytes):
         # that triggers when the result of an ask
         # becomes available
         generator = session.read_drawing(
-            [W24AskThumbnailPage()],
+            asks,
             drawing_bytes)
 
         # wait for the asks
@@ -74,6 +99,10 @@ async def test_read_drawing(drawing_bytes: bytes):
 if __name__ == "__main__":
 
     # make the request and run
+    asks = [
+        W24AskThumbnailPage(),
+        W24AskThumbnailSheet(),
+        W24AskThumbnailDrawing()]
     drawing_bytes = _get_test_drawing()
-    async_request = test_read_drawing(drawing_bytes)
+    async_request = test_read_drawing(drawing_bytes, asks)
     asyncio.run(async_request)

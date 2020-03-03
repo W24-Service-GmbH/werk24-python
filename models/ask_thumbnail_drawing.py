@@ -2,9 +2,9 @@ from .ask_thumbnail import W24AskThumbnail
 from .ask_type import W24AskType
 
 
-class W24AskThumbnailCanvas(W24AskThumbnail):
+class W24AskThumbnailDrawing(W24AskThumbnail):
     """ Requesting the W24DrawingReadFeatureThumbnailPage will add
     a thumbnail of the complete page including the border area
     to the result.
     """
-    ask_type = W24AskType.THUMBNAIL_CANVAS
+    ask_type = W24AskType.THUMBNAIL_DRAWING

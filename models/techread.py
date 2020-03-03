@@ -5,7 +5,7 @@ from pydantic import UUID4, BaseModel, HttpUrl, Json
 
 from .architecture import W24Architecture
 from .ask_measures import W24AskMeasures
-from .ask_thumbnail_canvas import W24AskThumbnailCanvas
+from .ask_thumbnail_drawing import W24AskThumbnailDrawing
 from .ask_thumbnail_page import W24AskThumbnailPage
 from .ask_thumbnail_sheet import W24AskThumbnailSheet
 
@@ -18,6 +18,7 @@ class W24TechreadCommand(BaseModel):
 class W24TechreadMessageType(str, Enum):
     ASK_THUMBNAIL_PAGE = "ASK_THUMBNAIL_PAGE"
     ASK_THUMBNAIL_SHEET = "ASK_THUMBNAIL_SHEET"
+    ASK_THUMBNAIL_DRAWING = "ASK_THUMBNAIL_DRAWING"
     TECHREAD_INITIALIZATION_SUCCESS = "TECHREAD_INITIALIZATION_SUCCESS"
     TECHREAD_COMPLETED = "TECHREAD_COMPLETED"
     TECHREAD_STARTED = "TECHREAD_STARTED"
@@ -42,7 +43,8 @@ class W24TechreadRequest(BaseModel):
 
     asks: List[Union[
         W24AskMeasures,
-        W24AskThumbnailCanvas,
         W24AskThumbnailPage,
-        W24AskThumbnailSheet]] = []
+        W24AskThumbnailSheet,
+        W24AskThumbnailDrawing
+    ]] = []
     architecture: W24Architecture
