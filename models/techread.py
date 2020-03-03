@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 
 from pydantic import UUID4, BaseModel, HttpUrl, Json
 
@@ -17,6 +17,7 @@ class W24TechreadCommand(BaseModel):
 
 class W24TechreadMessageType(str, Enum):
     ASK_THUMBNAIL_PAGE = "ASK_THUMBNAIL_PAGE"
+    ASK_THUMBNAIL_SHEET = "ASK_THUMBNAIL_SHEET"
     TECHREAD_INITIALIZATION_SUCCESS = "TECHREAD_INITIALIZATION_SUCCESS"
     TECHREAD_COMPLETED = "TECHREAD_COMPLETED"
     TECHREAD_STARTED = "TECHREAD_STARTED"
@@ -25,7 +26,7 @@ class W24TechreadMessageType(str, Enum):
 class W24TechreadMessage(BaseModel):
     request_id: Optional[UUID4]
     message_type: W24TechreadMessageType
-    payload_json: Optional[Json] = None
+    payload_dict: Optional[Dict] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes]
 
