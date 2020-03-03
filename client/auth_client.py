@@ -2,9 +2,11 @@ import aioboto3
 import hmac
 import base64
 import hashlib
+from typing import Callable
+from .exceptions import UnauthorizedException
 
 
-class CognitoClient:
+class AuthClient:
 
     def __init__(
             self,

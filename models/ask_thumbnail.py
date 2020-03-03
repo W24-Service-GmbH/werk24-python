@@ -18,6 +18,6 @@ class W24AskThumbnail(W24Ask):
     "human-consumption" (the human rotation algorithm is
     more complext than you'd expect)
     """
-    maximal_width: int = 512
-    maximal_height: int = 512
-    auto_rotate: bool = False
+    # maximal_width: int = 512
+    # maximal_height: int = 512
+    # auto_rotate: bool = False
