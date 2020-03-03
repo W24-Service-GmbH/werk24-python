@@ -16,16 +16,18 @@ class W24TechreadCommand(BaseModel):
 
 
 class W24TechreadMessageType(str, Enum):
+    ASK_THUMBNAIL_PAGE = "ASK_THUMBNAIL_PAGE"
     TECHREAD_INITIALIZATION_SUCCESS = "TECHREAD_INITIALIZATION_SUCCESS"
-    TECHREAD_STARTED = "TECHREAD_STARTED"
     TECHREAD_COMPLETED = "TECHREAD_COMPLETED"
+    TECHREAD_STARTED = "TECHREAD_STARTED"
 
 
 class W24TechreadMessage(BaseModel):
     request_id: Optional[UUID4]
     message_type: W24TechreadMessageType
-    payload_json: Optional[Json]
-    payload_url: Optional[HttpUrl]
+    payload_json: Optional[Json] = None
+    payload_url: Optional[HttpUrl] = None
+    payload_bytes: Optional[bytes]
 
 
 class W24TechreadRequest(BaseModel):
