@@ -8,7 +8,7 @@ class W24AskType(str, Enum):
     THUMBNAIL_PAGE = "THUMBNAIL_PAGE"
     THUMBNAIL_SHEET = "THUMBNAIL_SHEET"
     THUMBNAIL_DRAWING = "THUMBNAIL_DRAWING"
-    PART_OUTER_DIMENSIONS = "PART_OUTER_DIMENSIONS"
+    PART_OVERALL_DIMENSIONS = "PART_OVERALL_DIMENSIONSs"
 
 
 class W24Ask(BaseModel):
@@ -64,8 +64,8 @@ class W24AskThumbnailDrawing(W24AskThumbnail):
     ask_type = W24AskType.THUMBNAIL_DRAWING
 
 
-class W24AskPartOuterDimensions(W24Ask):
-    """ Requesting the W24AskPartOuterDimensions will
+class W24AskPartOverallDimensions(W24Ask):
+    """ Requesting the W24AskPartOverallDimensions will
     extract the outer dimensions of the extracted part
     """
-    ask_type = W24AskType.PART_OUTER_DIMENSIONS
+    ask_type = W24AskType.PART_OVERALL_DIMENSIONS
