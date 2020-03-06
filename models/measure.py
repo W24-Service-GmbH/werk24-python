@@ -10,8 +10,8 @@ class W24Measure(BaseModel):
     """
     value: float
     fit_size: str = None
-    positive_tolerance: float = None
-    negative_tolerance: float = None
+    upper_tolerance: float = None
+    lower_tolerance: float = None
 
     def __str__(self) -> str:
         """ Return the Measure in a human-readable format

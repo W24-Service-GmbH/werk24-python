@@ -1,23 +1,56 @@
 """ W24Client Module
 
-The module contains everything that is needed to
-communicate with the W24 API - allowing you
-to interpret the contents of your technical drawings.
+DESCRIPTION
+    The module contains everything that is needed to
+    communicate with the W24 API - allowing you
+    to interpret the contents of your technical drawings.
+
+AUTHOR
+    Jochen Mattes (Werk24)
+
+STYLEGUIDE
+    pylint
+
+EXAMPLE
+    # obtain the thumbnail of a page
+    import logging
+    drawing_bytes = open(...,"r").read()
+    client = W24TechreadClient.make_from_dotenv()
+    await client.read_drawing_with_callback_requests(
+        drawing_bytes,
+        [CallbackRequest(
+                ask=W24ASkThumbnailPage(),
+                callback=lambda msg: logging.info("Received Thumbnail of Page")]))
 """
 import asyncio
 import logging
-from typing import List
+from typing import Callable, Dict, List, Optional
+
+from pydantic import BaseModel
 
 from models.architecture import W24Architecture
-from models.ask import W24Ask
-from models.techread import W24TechreadRequest
+from models.ask import W24Ask, W24AskType
+from models.techread import W24TechreadMessageType, W24TechreadRequest
 
 from .auth_client import AuthClient
 from .techread_client_https import TechreadClientHttps
 from .techread_client_wss import TechreadClientWss
 
 # make the logger
-logger = logging.getLogger('w24client')
+logger = logging.getLogger('w24_techread_client')
+
+
+class CallbackRequest(BaseModel):
+    """ Small Object to keep the callback requests.
+    You can either register a callback request to an
+    ask or a message_type.
+
+    If you register an ask, be sure to use a complete W24Ask
+    definition; not just the ask type.
+    """
+    ask: Optional[W24Ask] = None
+    message_type: Optional[W24TechreadMessageType] = None
+    callback: Callable
 
 
 class W24TechreadClient():
@@ -25,6 +58,13 @@ class W24TechreadClient():
     learn more about the content on your Technical
     Drawings.
     """
+
+    message_to_ask_type: Dict[W24TechreadMessageType, W24AskType] = {
+        W24TechreadMessageType.ASK_THUMBNAIL_DRAWING: W24AskType.THUMBNAIL_DRAWING,
+        W24TechreadMessageType.ASK_THUMBNAIL_PAGE: W24AskType.THUMBNAIL_PAGE,
+        W24TechreadMessageType.ASK_THUMBNAIL_SHEET: W24AskType.THUMBNAIL_SHEET,
+        W24TechreadMessageType.ASK_PART_OVERALL_DIMENSIONS: W24AskType.PART_OVERALL_DIMENSIONS
+    }
 
     def __init__(
             self,
@@ -93,15 +133,15 @@ class W24TechreadClient():
         # return the "entered" version of self
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type, exc, traceback):
         """ Ensure that the sessions are closed
         """
 
         # close the HTTPS session
-        await self._techread_client_https.__aexit__(exc_type, exc, tb)
+        await self._techread_client_https.__aexit__(exc_type, exc, traceback)
 
         # close the WSS session
-        await self._techread_client_wss.__aexit__(exc_type, exc, tb)
+        await self._techread_client_wss.__aexit__(exc_type, exc, traceback)
 
     def login(
             self,
@@ -140,8 +180,8 @@ class W24TechreadClient():
 
     async def read_drawing(
             self,
-            asks: List[W24Ask],
             drawing: bytes,
+            asks: List[W24Ask],
             model: bytes = None,
             architecture=W24Architecture.CPU_V1):
         """ Send a Technical Drawing to the W24 API to have it automatically
@@ -197,8 +237,10 @@ class W24TechreadClient():
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         await asyncio.gather(*[
-            self._techread_client_https.upload_associated_file(response.request_id, 'drawing', drawing),
-            self._techread_client_https.upload_associated_file(response.request_id, 'model', model)])
+            self._techread_client_https.upload_associated_file(
+                response.request_id, 'drawing', drawing),
+            self._techread_client_https.upload_associated_file(
+                response.request_id, 'model', model)])
         logger.info("Drawing(and model) uploaded")
 
         # Tell Werk24 that all the files have been uploaded
@@ -275,3 +317,100 @@ class W24TechreadClient():
 
         # return the client
         return client
+
+    async def read_drawing_with_callback_requests(
+            self,
+            drawing_bytes: bytes,
+            callback_requests: List[CallbackRequest]):
+        """ Send the drawing to the API (can be PDF or image)
+        and register a number of callbacks that are triggered
+        once the asks become available.
+
+        Arguments:
+            drawing_bytes {bytes} -- Technical Drawing as Image or PDF
+            callback_requests {List[CallbackRequest]} -- List of Callback you want to obtain
+        """
+
+        # Create a new client session with the server.
+        # Each techread request requires its own session
+        async with self as session:
+
+            # filter the callback requests to only contain
+            # the ask types
+            asks_list = [
+                cur_ask.ask
+                for cur_ask in callback_requests
+                if cur_ask.ask is not None]
+
+            # send out the request and make a generator
+            # that triggers when the result of an ask
+            # becomes available
+            async for message in session.read_drawing(drawing_bytes, asks_list):
+
+                # if the message type starts with TECHREAD_, it
+                # corresponds to a process message, so check the
+                # process handlers
+                if message.message_type.startswith("TECHREAD_"):
+
+                    # check whether the message_type is associated
+                    # with a callback. If not, the message type
+                    # is simply ignored
+                    try:
+                        callback = [
+                            cb
+                            for cb in callback_requests
+                            if cb.message_type == message.message_type][0].callback
+
+                    # if there is no associated callback request,
+                    # silently ignore
+                    except IndexError:
+                        continue
+
+                # if the message tyep starts with ASK_, it corresponds
+                # to a ASK, so check the asks_dict
+                elif message.message_type.startswith("ASK_"):
+                    # translate the message_type into a ask_type
+                    cur_ask_type = self.message_to_ask_type.get(
+                        message.message_type)
+
+                    # obtain the trigger that is associated to the ask type
+                    try:
+                        callback = [
+                            cb
+                            for cb in callback_requests
+                            if cb.ask is not None and cb.ask.ask_type == cur_ask_type][0].callback
+
+                    # if the ask is not in the list, the API returned something
+                    # that the client was not asking for.
+                    except IndexError:
+                        logger.warning(
+                            "No callback associated with ask type '%s'. The original message_type was '%s'. If you did not request this ask type, please get in touch with our support team",
+                            cur_ask_type,
+                            message.message_type)
+                        continue
+
+                # if neither is true, we have an unknown message type, which
+                # probobly is being caused by an API update. We want to ensure
+                # that the user is being informed, but we do not want to break
+                # the existing functionality -> warning
+                else:
+                    logger.warning(
+                        "Ignoring unknown message type %s. Please check with our support team",
+                        message.message_type)
+
+                # if the callback is not callable, we want to warn the user,
+                # rather than throwing an exception
+                if not callable(callback):
+                    logger.warning(
+                        "You registered a non-callable trigger of type '%s' with the message_type '%s'. Please make sure that you are using a Callable (e.g, def or lambda)",
+                        type(callback),
+                        message.message_typ)
+                    continue
+
+                # if everything went well, we call the trigger with
+                # the message as payload. Be sure to call the
+                # function asymmetrically if supported
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(message)
+                else:
+                    callback(message)
