@@ -6,10 +6,11 @@ import asyncio
 import logging
 import os
 from typing import List
+import argparse
 
-from models.ask import (W24AskThumbnailDrawing, W24AskThumbnailPage,
-                        W24AskThumbnailSheet, W24AskPartOverallDimensions)
-from models.techread import W24TechreadMessageType
+from ..models.ask import (W24AskThumbnailDrawing, W24AskThumbnailPage,
+                          W24AskThumbnailSheet, W24AskPartOverallDimensions)
+from ..models.techread import W24TechreadMessageType
 
 from .techread_client import W24TechreadClient, CallbackRequest
 
@@ -21,16 +22,16 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def _get_test_drawing() -> bytes:
+def _get_drawing(file_path) -> bytes:
     """ Obtain the bytes content of the test drawing
     """
     # get the path
-    cwd = os.path.dirname(os.path.abspath(__file__))
+    # cwd = os.path.dirname(os.path.abspath(__file__))
     # test_file_path = os.path.join(cwd, "techread_client_test_drawing.png")
-    test_file_path = "../api-reader/assets/test/e2e/3764012-2.pdf"
+    # test_file_path = "../api-reader/assets/test/e2e/3764012-2.pdf"
 
     # get the content
-    with open(test_file_path, "rb") as filehandle:
+    with open(file_path, "rb") as filehandle:
         return filehandle.read()
 
 
@@ -56,6 +57,14 @@ async def test_read_drawing(
 
 
 if __name__ == "__main__":
+
+    # parse the args
+    parser = argparse.ArgumentParser(description="Talk to the TechRead API ")
+    parser.add_argument(
+        "input_file",
+        help="path to the file that is to be analyzed")
+
+    args = parser.parse_args()
 
     # tell the api what asks you are interested in,
     # and define what to do when you receive the result
@@ -84,6 +93,6 @@ if __name__ == "__main__":
                 "Outer dimensions: %s",
                 msg.payload_dict))]
 
-    drawing_bytes = _get_test_drawing()
+    drawing_bytes = _get_drawing(args.input_file)
     async_request = test_read_drawing(drawing_bytes, callback_requests)
     asyncio.run(async_request)

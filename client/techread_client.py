@@ -28,9 +28,9 @@ from typing import Callable, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from models.architecture import W24Architecture
-from models.ask import W24Ask, W24AskType
-from models.techread import W24TechreadMessageType, W24TechreadRequest
+from ..models.architecture import W24Architecture
+from ..models.ask import W24Ask, W24AskType
+from ..models.techread import W24TechreadMessageType, W24TechreadRequest
 
 from .auth_client import AuthClient
 from .techread_client_https import TechreadClientHttps

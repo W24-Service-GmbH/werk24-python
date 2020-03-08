@@ -4,7 +4,7 @@ from typing import List, Optional, Union, Dict
 from pydantic import UUID4, BaseModel, HttpUrl, Json
 
 from .architecture import W24Architecture
-from .ask import W24AskThumbnailPage, W24AskThumbnailSheet, W24AskThumbnailDrawing, W24AskPartOuterDimensions
+from .ask import W24AskThumbnailPage, W24AskThumbnailSheet, W24AskThumbnailDrawing, W24AskPartOverallDimensions
 
 
 class W24TechreadCommand(BaseModel):
@@ -44,6 +44,6 @@ class W24TechreadRequest(BaseModel):
         W24AskThumbnailPage,
         W24AskThumbnailSheet,
         W24AskThumbnailDrawing,
-        W24AskPartOuterDimensions
+        W24AskPartOverallDimensions
     ]] = []
     architecture: W24Architecture
