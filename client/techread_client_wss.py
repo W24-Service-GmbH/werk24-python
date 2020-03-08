@@ -3,9 +3,8 @@ import json
 import websockets
 from pydantic import ValidationError
 
-from models.techread import (W24TechreadCommand, W24TechreadMessage,
-                             W24TechreadRequest)
-
+from ..models.techread import (W24TechreadCommand, W24TechreadMessage,
+                               W24TechreadRequest)
 from .auth_client import AuthClient
 from .exceptions import ServerException, UnauthorizedException
 

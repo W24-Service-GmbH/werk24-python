@@ -8,9 +8,9 @@ import asyncio
 import logging
 from typing import List
 
-from models.architecture import W24Architecture
-from models.ask import W24Ask
-from models.techread import W24TechreadRequest
+from ..models.architecture import W24Architecture
+from ..models.ask import W24Ask
+from ..models.techread import W24TechreadRequest
 
 from .auth_client import AuthClient
 from .techread_client_https import TechreadClientHttps
@@ -140,8 +140,8 @@ class W24TechreadClient():
 
     async def read_drawing(
             self,
-            asks: List[W24Ask],
             drawing: bytes,
+            asks: List[W24Ask],
             model: bytes = None,
             architecture=W24Architecture.CPU_V1):
         """ Send a Technical Drawing to the W24 API to have it automatically
