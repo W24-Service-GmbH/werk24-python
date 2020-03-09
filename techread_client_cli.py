@@ -2,17 +2,15 @@
 Small Integration test module to check whether the Techread Client
 communicates properly with the server
 """
+import argparse
 import asyncio
 import logging
-import os
 from typing import List
-import argparse
 
-from ..models.ask import (W24AskThumbnailDrawing, W24AskThumbnailPage,
-                          W24AskThumbnailSheet, W24AskPartOverallDimensions)
-from ..models.techread import W24TechreadMessageType
-
-from .techread_client import W24TechreadClient, CallbackRequest
+from client.techread_client import CallbackRequest, W24TechreadClient
+from models.ask import (W24AskPartOverallDimensions, W24AskThumbnailDrawing,
+                        W24AskThumbnailPage, W24AskThumbnailSheet)
+from models.techread import W24TechreadMessageType
 
 # set the log level to info for the test setting
 # We recommend using logging.WARNING for production
@@ -20,6 +18,12 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S')
+
+# parse the args
+parser = argparse.ArgumentParser(description="Talk to the TechRead API ")
+parser.add_argument(
+    "input_file",
+    help="path to the file that is to be analyzed")
 
 
 def _get_drawing(file_path) -> bytes:
@@ -43,9 +47,7 @@ def _debug_show_image(log_text, image_bytes):
     image.show(title=log_text)
 
 
-async def test_read_drawing(
-        drawing_bytes: bytes,
-        callback_requests: List[CallbackRequest]):
+async def main(args):
 
     # make the client. This will automatically
     # fetch the authentication information
@@ -53,18 +55,15 @@ async def test_read_drawing(
     # provide you with separate .env files for
     # the development and production environments
     client = W24TechreadClient.make_from_dotenv()
-    await client.read_drawing_with_callback_requests(drawing_bytes, callback_requests)
 
-
-if __name__ == "__main__":
-
-    # parse the args
-    parser = argparse.ArgumentParser(description="Talk to the TechRead API ")
-    parser.add_argument(
-        "input_file",
-        help="path to the file that is to be analyzed")
-
-    args = parser.parse_args()
+    # check whether the architecture is deployed.
+    # If not, you can still commit a request, but
+    # will not receive any response until the
+    # architecture is deployed again
+    status = client.get_architecture_status(W24TechreadArchitecture.GPU_V1)
+    if status != W24TechreadArchitectureStatus.DEPLOYED:
+        logger.error("Architecture is not ready")
+        return
 
     # tell the api what asks you are interested in,
     # and define what to do when you receive the result
@@ -95,4 +94,9 @@ if __name__ == "__main__":
 
     drawing_bytes = _get_drawing(args.input_file)
     async_request = test_read_drawing(drawing_bytes, callback_requests)
-    asyncio.run(async_request)
+    await client.read_drawing_with_callback_requests(drawing_bytes, callback_requests)
+
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    asyncio.run(main(arg))

@@ -47,3 +47,25 @@ class W24TechreadRequest(BaseModel):
         W24AskPartOverallDimensions
     ]] = []
     architecture: W24Architecture
+
+
+class W24TechreadArchitecture(str, Enum):
+    """ List of available architectures.
+    Beware that chosing a different architecture
+    will have effects on both the speed and
+    the cost of your request.
+
+    By default only CPU_V1 is available to new users.
+    Please talk to us if you have other requirements.
+    """
+    GPU_V1 = "GPU_V1"
+
+
+class W24TechreadArchitectureStatus(str, Enum):
+    """ List of possible architecture states.
+    Most likely you will only care about DEPLOYED
+    """
+    DEPLOYING = "DEPLOYING"
+    DEPLOYED = "DEPLOYED"
+    UNDEPLOYING = "UNDEPLOYING"
+    UNDEPLOYED = "UNDEPLOYED"

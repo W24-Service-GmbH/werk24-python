@@ -28,9 +28,8 @@ from typing import Callable, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from ..models.architecture import W24Architecture
-from ..models.ask import W24Ask, W24AskType
-from ..models.techread import W24TechreadMessageType, W24TechreadRequest
+from models.ask import W24Ask, W24AskType
+from models.techread import W24TechreadMessageType, W24TechreadRequest, W24TechreadArchitecture
 
 from .auth_client import AuthClient
 from .techread_client_https import TechreadClientHttps
@@ -178,12 +177,26 @@ class W24TechreadClient():
         self._techread_client_https.register_auth_client(self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
 
+    async def get_architecture_status(self, architecture: W24TechreadArchitecture) -> W24TechreadArchitectureStatus:
+        """ Talk to the API endpoint and check whether a specific architecture
+        is currently available. This only relevant if you have booked a
+        dedicated GPU infrastructure that.
+
+        Arguments:
+            architecture {W24TechreadArchitecture} -- Architecture in question
+
+        Returns:
+            W24TechreadArchitectureStatus -- Status
+
+        """
+        return await self._techread_client_https.get_architecture_status(architecture)
+
     async def read_drawing(
             self,
             drawing: bytes,
             asks: List[W24Ask],
             model: bytes = None,
-            architecture=W24Architecture.CPU_V1):
+            architecture=W24TechreadArchitecture.GPU_V1):
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
 
@@ -204,7 +217,7 @@ class W24TechreadClient():
 
             architecture {str} -- Architecture to be used to process
                 the request. Please refer to the API documentation for a complete
-                list of supported architectures (default: {W24Architecture.CPU_V1})
+                list of supported architectures (default: {W24TechreadArchitecture.GPU_V1})
 
         Returns:
             W24DrawingReadResponse -- Response object obtained from the API
