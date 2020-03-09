@@ -3,8 +3,7 @@ import json
 import websockets
 from pydantic import ValidationError
 
-from models.techread import (W24TechreadCommand, W24TechreadMessage,
-                             W24TechreadRequest)
+from werk24.models.techread import W24TechreadCommand, W24TechreadMessage
 from .auth_client import AuthClient
 from .exceptions import ServerException, UnauthorizedException
 
@@ -33,7 +32,7 @@ class TechreadClientWss:
         # return ourselfves
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type, exc, traceback):
         """ Close the session
         """
         if self._techread_session_wss is not None:

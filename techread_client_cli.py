@@ -5,12 +5,14 @@ communicates properly with the server
 import argparse
 import asyncio
 import logging
-from typing import List
 
-from client.techread_client import CallbackRequest, W24TechreadClient
-from models.ask import (W24AskPartOverallDimensions, W24AskThumbnailDrawing,
-                        W24AskThumbnailPage, W24AskThumbnailSheet)
-from models.techread import W24TechreadMessageType
+from werk24.client.techread_client import CallbackRequest, W24TechreadClient
+from werk24.models.ask import (W24AskPartOverallDimensions,
+                               W24AskThumbnailDrawing, W24AskThumbnailPage,
+                               W24AskThumbnailSheet)
+from werk24.models.techread import (W24TechreadArchitecture,
+                                    W24TechreadArchitectureStatus,
+                                    W24TechreadMessageType)
 
 # set the log level to info for the test setting
 # We recommend using logging.WARNING for production
@@ -18,6 +20,9 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S')
+
+# get the local logger
+logger = logging.getLogger(__name__)
 
 # parse the args
 parser = argparse.ArgumentParser(description="Talk to the TechRead API ")
@@ -56,47 +61,51 @@ async def main(args):
     # the development and production environments
     client = W24TechreadClient.make_from_dotenv()
 
-    # check whether the architecture is deployed.
-    # If not, you can still commit a request, but
-    # will not receive any response until the
-    # architecture is deployed again
-    status = client.get_architecture_status(W24TechreadArchitecture.GPU_V1)
-    if status != W24TechreadArchitectureStatus.DEPLOYED:
-        logger.error("Architecture is not ready")
-        return
+    async with client as session:
 
-    # tell the api what asks you are interested in,
-    # and define what to do when you receive the result
-    callback_requests = [
-        CallbackRequest(
-            message_type=W24TechreadMessageType.TECHREAD_STARTED,
-            callback=lambda msg: logging.info("Techread started")),
-        CallbackRequest(
-            ask=W24AskThumbnailPage(),
-            callback=lambda msg: _debug_show_image(
-                "Thumbnail page received",
-                msg.payload_bytes)),
-        CallbackRequest(
-            ask=W24AskThumbnailSheet(),
-            callback=lambda msg: _debug_show_image(
-                "Thumbnail sheet received",
-                msg.payload_bytes)),
-        CallbackRequest(
-            ask=W24AskThumbnailDrawing(),
-            callback=lambda msg: _debug_show_image(
-                "Thumbnail drawing received",
-                msg.payload_bytes)),
-        CallbackRequest(
-            ask=W24AskPartOverallDimensions(),
-            callback=lambda msg: logging.info(
-                "Outer dimensions: %s",
-                msg.payload_dict))]
+        # check whether the architecture is deployed.
+        # If not, you can still commit a request, but
+        # will not receive any response until the
+        # architecture is deployed again
+        status = await session.get_architecture_status(W24TechreadArchitecture.GPU_V1)
+        if status != W24TechreadArchitectureStatus.DEPLOYED:
+            logger.error("Architecture is not ready")
+            return
 
-    drawing_bytes = _get_drawing(args.input_file)
-    async_request = test_read_drawing(drawing_bytes, callback_requests)
-    await client.read_drawing_with_callback_requests(drawing_bytes, callback_requests)
+        # tell the api what asks you are interested in,
+        # and define what to do when you receive the result
+        callback_requests = [
+            CallbackRequest(
+                message_type=W24TechreadMessageType.TECHREAD_STARTED,
+                callback=lambda msg: logging.info("Techread started")),
+            CallbackRequest(
+                ask=W24AskThumbnailPage(),
+                callback=lambda msg: _debug_show_image(
+                    "Thumbnail page received",
+                    msg.payload_bytes)),
+            CallbackRequest(
+                ask=W24AskThumbnailSheet(),
+                callback=lambda msg: _debug_show_image(
+                    "Thumbnail sheet received",
+                    msg.payload_bytes)),
+            CallbackRequest(
+                ask=W24AskThumbnailDrawing(),
+                callback=lambda msg: _debug_show_image(
+                    "Thumbnail drawing received",
+                    msg.payload_bytes)),
+            CallbackRequest(
+                ask=W24AskPartOverallDimensions(),
+                callback=lambda msg: logging.info(
+                    "Outer dimensions: %s",
+                    msg.payload_dict))]
+
+        # get the drawing
+        drawing_bytes = _get_drawing(args.input_file)
+
+        # and make the request
+        await session.read_drawing_with_callback_requests(drawing_bytes, callback_requests)
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    asyncio.run(main(arg))
+    asyncio.run(main(args))

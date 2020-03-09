@@ -28,8 +28,8 @@ from typing import Callable, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from models.ask import W24Ask, W24AskType
-from models.techread import W24TechreadMessageType, W24TechreadRequest, W24TechreadArchitecture
+from werk24.models.ask import W24Ask, W24AskType
+from werk24.models.techread import W24TechreadMessageType, W24TechreadRequest, W24TechreadArchitecture, W24TechreadArchitectureStatus
 
 from .auth_client import AuthClient
 from .techread_client_https import TechreadClientHttps

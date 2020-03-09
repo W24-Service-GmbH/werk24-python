@@ -3,7 +3,6 @@ from typing import List, Optional, Union, Dict
 
 from pydantic import UUID4, BaseModel, HttpUrl, Json
 
-from .architecture import W24Architecture
 from .ask import W24AskThumbnailPage, W24AskThumbnailSheet, W24AskThumbnailDrawing, W24AskPartOverallDimensions
 
 
@@ -31,24 +30,6 @@ class W24TechreadMessage(BaseModel):
     payload_bytes: Optional[bytes]
 
 
-class W24TechreadRequest(BaseModel):
-    """ Definition of a W24DrawingReadRequest describing
-    (i) the Technical Drawing,
-    (ii) the associated 3D-Model (optional),
-    (iii) the list of features that shall be extracted,
-    (iv) the architecture on which to run the algorithm
-    (v) the callback url that shall be called after the
-    """
-
-    asks: List[Union[
-        W24AskThumbnailPage,
-        W24AskThumbnailSheet,
-        W24AskThumbnailDrawing,
-        W24AskPartOverallDimensions
-    ]] = []
-    architecture: W24Architecture
-
-
 class W24TechreadArchitecture(str, Enum):
     """ List of available architectures.
     Beware that chosing a different architecture
@@ -69,3 +50,21 @@ class W24TechreadArchitectureStatus(str, Enum):
     DEPLOYED = "DEPLOYED"
     UNDEPLOYING = "UNDEPLOYING"
     UNDEPLOYED = "UNDEPLOYED"
+
+
+class W24TechreadRequest(BaseModel):
+    """ Definition of a W24DrawingReadRequest describing
+    (i) the Technical Drawing,
+    (ii) the associated 3D-Model (optional),
+    (iii) the list of features that shall be extracted,
+    (iv) the architecture on which to run the algorithm
+    (v) the callback url that shall be called after the
+    """
+
+    asks: List[Union[
+        W24AskThumbnailPage,
+        W24AskThumbnailSheet,
+        W24AskThumbnailDrawing,
+        W24AskPartOverallDimensions
+    ]] = []
+    architecture: W24TechreadArchitecture

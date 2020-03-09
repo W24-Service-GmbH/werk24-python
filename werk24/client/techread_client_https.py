@@ -18,9 +18,9 @@ class TechreadClientHttps:
     to the W24TechreadArchitectureStatus enum
     """
     status_map = {
-        "UP": W24TechreadArchitectureStatus.DEPLOYED,
+        "DEPLOYED": W24TechreadArchitectureStatus.DEPLOYED,
         "DEPLOYING": W24TechreadArchitectureStatus.DEPLOYING,
-        "DOWN": W24TechreadArchitectureStatus.UNDEPLOYED,
+        "UNDEPLOYED": W24TechreadArchitectureStatus.UNDEPLOYED,
         "UNDEPLOYING": W24TechreadArchitectureStatus.UNDEPLOYING}
 
     def __init__(self, techread_server_https: str, techread_version: str):
@@ -145,10 +145,11 @@ class TechreadClientHttps:
         """
 
         # make the endpoint
-        endpoint = self._make_endpoint_url(f"status")
+        endpoint = self._make_endpoint_url(
+            f"architecture_status/{architecture}")
         try:
             response = await self._get(url=endpoint)
-            result = response.json()
+            result = await response.json()
             status = result['status']
 
         # if the response cannot be interpreted as json, or does not contain the
