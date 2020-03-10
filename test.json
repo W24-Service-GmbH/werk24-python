@@ -1,0 +1,34 @@
+{
+  "requestContext": {
+    "routeKey": "initialize",
+    "authorizer": { "principalId": "de2ce36b-9254-4b4e-a534-790d469741be" },
+    "messageId": "JKXi_e4eFiACFHA=",
+    "eventType": "MESSAGE",
+    "extendedRequestId": "JKXi_HCEliAFWiA=",
+    "requestTime": "10/Mar/2020:06:52:54 +0000",
+    "messageDirection": "IN",
+    "stage": "dev",
+    "connectedAt": 1583823174195,
+    "requestTimeEpoch": 1583823174257,
+    "identity": {
+      "cognitoIdentityPoolId": None,
+      "cognitoIdentityId": None,
+      "principalOrgId": None,
+      "cognitoAuthenticationType": None,
+      "userArn": None,
+      "userAgent": "Python/3.7 websockets/8.1",
+      "accountId": None,
+      "caller": None,
+      "sourceIp": "46.128.110.95",
+      "accessKey": None,
+      "cognitoAuthenticationProvider": None,
+      "user": None
+    },
+    "requestId": "JKXi_HCEliAFWiA=",
+    "domainName": "techread-ws.w24.io",
+    "connectionId": "JKXi-e4dliACFHA=",
+    "apiId": "91edf8t7ih"
+  },
+  "body": "{\"action\": \"initialize\", \"message\": {\"asks\": [{\"ask_type\": \"PART_OVERALL_DIMENSIONSs\"}], \"architecture\": \"GPU_V1\"}}",
+  "isBase64Encoded": False
+}

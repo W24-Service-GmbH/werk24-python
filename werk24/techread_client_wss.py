@@ -124,7 +124,8 @@ class TechreadClientWss:
                 raise UnauthorizedException("Requested Action forbidden")
 
             # otherwise fail with an UnknownException
-            raise ServerException(f"Unexpected server response '{message_raw}'.")
+            raise ServerException(
+                f"Unexpected server response '%s'.", message_raw)
 
         return message
 

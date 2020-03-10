@@ -64,7 +64,7 @@ class W24TechreadRequest(BaseModel):
     (v) the callback url that shall be called after the
     """
 
-    asks: List[
-        Union[W24AskThumbnailPage, W24AskThumbnailSheet, W24AskThumbnailDrawing, W24AskPartOverallDimensions]
-    ] = []
+    asks: List[Union[W24AskThumbnailPage, W24AskThumbnailSheet,
+                     W24AskThumbnailDrawing, W24AskPartOverallDimensions]] = []
     architecture: W24TechreadArchitecture
+    # webhook: Optional[HttpUrl] = None

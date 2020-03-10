@@ -139,7 +139,8 @@ class TechreadClientHttps:
         """
 
         # make the endpoint
-        endpoint = self._make_endpoint_url(f"architecture_status/{architecture}")
+        endpoint = self._make_endpoint_url(
+            f"architecture_status/{architecture}")
         try:
             response = await self._get(url=endpoint)
             result = await response.json()
@@ -161,7 +162,8 @@ class TechreadClientHttps:
         # if we do not have the status in the map,
         # throw and exception
         except KeyError:
-            raise ServerException(f"Server returned unknown status '%s'", status)
+            raise ServerException(
+                f"Server returned unknown status '%s'", status)
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
         """ Return the payload from the server
@@ -198,7 +200,9 @@ class TechreadClientHttps:
         # This works as a defence mechanism against token theft.
         url_parsed = urlparse(payload_url)
         if url_parsed.netloc != self._techread_server:
-            raise RuntimeError(f"INTRUSION!!! Payload_url '%s' not allowed. INVESTIGATE!!!", payload_url)
+            raise RuntimeError(
+                f"INTRUSION!!! Payload_url '%s' not allowed. INVESTIGATE!!!",
+                payload_url)
 
         # send the get request to the endpoint
         try:
@@ -299,4 +303,5 @@ class TechreadClientHttps:
         # than unauthorized or 200 (OK), we trigger
         # a ServerException.
         if status_code != 200:
-            raise ServerException(f"Get Request failed '%s' with code %s", url, status_code)
+            raise ServerException(
+                f"Get Request failed '%s' with code %s", url, status_code)

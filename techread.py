@@ -6,13 +6,18 @@ import argparse
 import asyncio
 import logging
 
-from werk24.client.techread_client import CallbackRequest, W24TechreadClient
+from dotenv import load_dotenv
+
 from werk24.models.ask import (W24AskPartOverallDimensions,
                                W24AskThumbnailDrawing, W24AskThumbnailPage,
                                W24AskThumbnailSheet)
 from werk24.models.techread import (W24TechreadArchitecture,
                                     W24TechreadArchitectureStatus,
                                     W24TechreadMessageType)
+from werk24.techread_client import Hook, W24TechreadClient
+
+# load the environment variables
+load_dotenv()
 
 # set the log level to info for the test setting
 # We recommend using logging.WARNING for production
@@ -59,7 +64,7 @@ async def main(args):
     # from the environment variables. We will
     # provide you with separate .env files for
     # the development and production environments
-    client = W24TechreadClient.make_from_dotenv()
+    client = W24TechreadClient.make_from_env()
 
     async with client as session:
 
@@ -74,28 +79,28 @@ async def main(args):
 
         # tell the api what asks you are interested in,
         # and define what to do when you receive the result
-        callback_requests = [
-            CallbackRequest(
+        hooks = [
+            Hook(
                 message_type=W24TechreadMessageType.TECHREAD_STARTED,
-                callback=lambda msg: logging.info("Techread started")),
-            CallbackRequest(
+                function=lambda msg: logging.info("Techread started")),
+            Hook(
                 ask=W24AskThumbnailPage(),
-                callback=lambda msg: _debug_show_image(
+                function=lambda msg: _debug_show_image(
                     "Thumbnail page received",
                     msg.payload_bytes)),
-            CallbackRequest(
+            Hook(
                 ask=W24AskThumbnailSheet(),
-                callback=lambda msg: _debug_show_image(
+                function=lambda msg: _debug_show_image(
                     "Thumbnail sheet received",
                     msg.payload_bytes)),
-            CallbackRequest(
+            Hook(
                 ask=W24AskThumbnailDrawing(),
-                callback=lambda msg: _debug_show_image(
+                function=lambda msg: _debug_show_image(
                     "Thumbnail drawing received",
                     msg.payload_bytes)),
-            CallbackRequest(
+            Hook(
                 ask=W24AskPartOverallDimensions(),
-                callback=lambda msg: logging.info(
+                function=lambda msg: logging.info(
                     "Outer dimensions: %s",
                     msg.payload_dict))]
 
@@ -103,7 +108,9 @@ async def main(args):
         drawing_bytes = _get_drawing(args.input_file)
 
         # and make the request
-        await session.read_drawing_with_callback_requests(drawing_bytes, callback_requests)
+        await session.read_drawing_with_hooks(
+            drawing_bytes,
+            hooks)
 
 
 if __name__ == "__main__":
