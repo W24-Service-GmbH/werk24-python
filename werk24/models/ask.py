@@ -8,7 +8,7 @@ class W24AskType(str, Enum):
     THUMBNAIL_SHEET = "THUMBNAIL_SHEET"
     THUMBNAIL_DRAWING = "THUMBNAIL_DRAWING"
     PART_OVERALL_DIMENSIONS = "PART_OVERALL_DIMENSIONSs"
-    TRAIN_SILENTLY = "TRAIN_SILENTLY"
+    TRAIN = "TRAIN"
 
 
 class W24Ask(BaseModel):
@@ -75,3 +75,11 @@ class W24AskPartOverallDimensions(W24Ask):
     """
 
     ask_type = W24AskType.PART_OVERALL_DIMENSIONS
+
+
+class W24AskTrain(BaseModel):
+    """ If you submit this Ask, we will use your request
+    to train and improve our models. It does not trigger
+    a response
+    """
+    ask_type = W24AskType.TRAIN
