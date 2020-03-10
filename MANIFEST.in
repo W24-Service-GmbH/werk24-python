@@ -1,0 +1,12 @@
+include LICENSE.txt
+include README.md
+include Makefile
+graft werk24
+graft werk24/models
+global-exclude *.pyc
+global-exclude *.pyd
+global-exclude *.so
+global-exclude *.lib
+global-exclude *.dll
+global-exclude *.a
+global-exclude *.obj

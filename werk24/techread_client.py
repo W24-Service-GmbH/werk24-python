@@ -8,9 +8,6 @@ DESCRIPTION
 AUTHOR
     Jochen Mattes (Werk24)
 
-STYLEGUIDE
-    pylint
-
 EXAMPLE
     # obtain the thumbnail of a page
     import logging
@@ -22,6 +19,7 @@ EXAMPLE
                 ask=W24ASkThumbnailPage(),
                 callback=lambda msg: logging.info("Received Thumbnail of Page")]))
 """
+import os
 import asyncio
 import logging
 from typing import Callable, Dict, List, Optional
@@ -29,11 +27,13 @@ from typing import Callable, Dict, List, Optional
 from pydantic import BaseModel
 
 from werk24.models.ask import W24Ask, W24AskType
-from werk24.models.techread import W24TechreadMessageType, W24TechreadRequest, W24TechreadArchitecture, W24TechreadArchitectureStatus
+from werk24.models.techread import (W24TechreadArchitecture,
+                                    W24TechreadArchitectureStatus,
+                                    W24TechreadMessageType, W24TechreadRequest)
 
-from .auth_client import AuthClient
-from .techread_client_https import TechreadClientHttps
-from .techread_client_wss import TechreadClientWss
+from werk24.auth_client import AuthClient
+from werk24.techread_client_https import TechreadClientHttps
+from werk24.techread_client_wss import TechreadClientWss
 
 # make the logger
 logger = logging.getLogger('w24_techread_client')
@@ -47,12 +47,13 @@ class CallbackRequest(BaseModel):
     If you register an ask, be sure to use a complete W24Ask
     definition; not just the ask type.
     """
+
     ask: Optional[W24Ask] = None
     message_type: Optional[W24TechreadMessageType] = None
     callback: Callable
 
 
-class W24TechreadClient():
+class W24TechreadClient:
     """ Simple W24Client that allows you to use
     learn more about the content on your Technical
     Drawings.
@@ -62,7 +63,7 @@ class W24TechreadClient():
         W24TechreadMessageType.ASK_THUMBNAIL_DRAWING: W24AskType.THUMBNAIL_DRAWING,
         W24TechreadMessageType.ASK_THUMBNAIL_PAGE: W24AskType.THUMBNAIL_PAGE,
         W24TechreadMessageType.ASK_THUMBNAIL_SHEET: W24AskType.THUMBNAIL_SHEET,
-        W24TechreadMessageType.ASK_PART_OVERALL_DIMENSIONS: W24AskType.PART_OVERALL_DIMENSIONS
+        W24TechreadMessageType.ASK_PART_OVERALL_DIMENSIONS: W24AskType.PART_OVERALL_DIMENSIONS,
     }
 
     def __init__(
@@ -92,13 +93,11 @@ class W24TechreadClient():
 
         # Initialize an instance of the HTTPS client
         self._techread_client_https = TechreadClientHttps(
-            techread_server_https,
-            techread_version)
+            techread_server_https, techread_version)
 
         # Initialize an instance of the WEBSCOKET client
         self._techread_client_wss = TechreadClientWss(
-            techread_server_wss,
-            techread_version)
+            techread_server_wss, techread_version)
 
     async def __aenter__(self):
         """ Create the HTTPS and WSS sessions
@@ -116,8 +115,8 @@ class W24TechreadClient():
         # ensure that register() was called
         if self._auth_client is None:
             raise RuntimeError(
-                "No connection to the authentication service was "
-                + "established. Please call register()")
+                "No connection to the authentication service was " +
+                "established. Please call register()")
 
         # ensure that we have a token
         if self._auth_client.token is None:
@@ -192,11 +191,8 @@ class W24TechreadClient():
         return await self._techread_client_https.get_architecture_status(architecture)
 
     async def read_drawing(
-            self,
-            drawing: bytes,
-            asks: List[W24Ask],
-            model: bytes = None,
-            architecture=W24TechreadArchitecture.GPU_V1):
+        self, drawing: bytes, asks: List[W24Ask], model: bytes = None, architecture=W24TechreadArchitecture.GPU_V1
+    ):
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
 
@@ -229,9 +225,7 @@ class W24TechreadClient():
         logger.info("API method read_drawing() called")
 
         # make the request
-        request = W24TechreadRequest(
-            asks=asks,
-            architecture=architecture)
+        request = W24TechreadRequest(asks=asks, architecture=architecture)
 
         # send the initialization request to the server.
         # This achieves two things:
@@ -249,11 +243,12 @@ class W24TechreadClient():
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
-        await asyncio.gather(*[
-            self._techread_client_https.upload_associated_file(
-                response.request_id, 'drawing', drawing),
-            self._techread_client_https.upload_associated_file(
-                response.request_id, 'model', model)])
+        await asyncio.gather(
+            *[
+                self._techread_client_https.upload_associated_file(response.request_id, 'drawing', drawing),
+                self._techread_client_https.upload_associated_file(response.request_id, 'model', model),
+            ]
+        )
         logger.info("Drawing(and model) uploaded")
 
         # Tell Werk24 that all the files have been uploaded
@@ -281,15 +276,14 @@ class W24TechreadClient():
 
             # check whether we need to download something
             if message.payload_url is not None:
-                message.payload_bytes = await self._techread_client_https.download_payload(
-                    message.payload_url)
+                message.payload_bytes = await self._techread_client_https.download_payload(message.payload_url)
 
             # return the message to the caller for immediate
             # consumption
             yield message
 
     @staticmethod
-    def make_from_dotenv() -> "W24TechreadClient":
+    def make_from_env() -> "W24TechreadClient":
         """ Small helper function that creates a new
         W24TechreadClient from the enviorment info.
 
@@ -307,17 +301,13 @@ class W24TechreadClient():
         Returns:
             W24TechreadClient -- [description]
         """
-        import os
-        from dotenv import load_dotenv
-
-        # load the dotenv file into the os environment
-        load_dotenv()
 
         # create a reference to the client
         client = W24TechreadClient(
             os.environ.get("W24TECHREAD_SERVER_HTTPS"),
             os.environ.get("W24TECHREAD_SERVER_WSS"),
-            os.environ.get("W24TECHREAD_VERSION"))
+            os.environ.get("W24TECHREAD_VERSION"),
+        )
 
         # login with the credentials
         client.login(
@@ -326,15 +316,13 @@ class W24TechreadClient():
             os.environ.get("W24TECHREAD_AUTH_CLIENT_ID"),
             os.environ.get("W24TECHREAD_AUTH_CLIENT_SECRET"),
             os.environ.get("W24TECHREAD_AUTH_USERNAME"),
-            os.environ.get("W24TECHREAD_AUTH_PASSWORD"))
+            os.environ.get("W24TECHREAD_AUTH_PASSWORD"),
+        )
 
         # return the client
         return client
 
-    async def read_drawing_with_callback_requests(
-            self,
-            drawing_bytes: bytes,
-            callback_requests: List[CallbackRequest]):
+    async def read_drawing_with_callback_requests(self, drawing_bytes: bytes, callback_requests: List[CallbackRequest]):
         """ Send the drawing to the API (can be PDF or image)
         and register a number of callbacks that are triggered
         once the asks become available.
@@ -351,9 +339,7 @@ class W24TechreadClient():
             # filter the callback requests to only contain
             # the ask types
             asks_list = [
-                cur_ask.ask
-                for cur_ask in callback_requests
-                if cur_ask.ask is not None]
+                cur_ask.ask for cur_ask in callback_requests if cur_ask.ask is not None]
 
             # send out the request and make a generator
             # that triggers when the result of an ask
@@ -370,9 +356,7 @@ class W24TechreadClient():
                     # is simply ignored
                     try:
                         callback = [
-                            cb
-                            for cb in callback_requests
-                            if cb.message_type == message.message_type][0].callback
+                            cb for cb in callback_requests if cb.message_type == message.message_type][0].callback
 
                     # if there is no associated callback request,
                     # silently ignore
@@ -389,9 +373,8 @@ class W24TechreadClient():
                     # obtain the trigger that is associated to the ask type
                     try:
                         callback = [
-                            cb
-                            for cb in callback_requests
-                            if cb.ask is not None and cb.ask.ask_type == cur_ask_type][0].callback
+                            cb for cb in callback_requests if cb.ask is not None and cb.ask.ask_type == cur_ask_type
+                        ][0].callback
 
                     # if the ask is not in the list, the API returned something
                     # that the client was not asking for.
@@ -399,7 +382,8 @@ class W24TechreadClient():
                         logger.warning(
                             "No callback associated with ask type '%s'. The original message_type was '%s'. If you did not request this ask type, please get in touch with our support team",
                             cur_ask_type,
-                            message.message_type)
+                            message.message_type,
+                        )
                         continue
 
                 # if neither is true, we have an unknown message type, which
@@ -417,7 +401,8 @@ class W24TechreadClient():
                     logger.warning(
                         "You registered a non-callable trigger of type '%s' with the message_type '%s'. Please make sure that you are using a Callable (e.g, def or lambda)",
                         type(callback),
-                        message.message_typ)
+                        message.message_typ,
+                    )
                     continue
 
                 # if everything went well, we call the trigger with

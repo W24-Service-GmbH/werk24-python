@@ -6,13 +6,9 @@ import aioboto3
 
 
 class AuthClient:
-
     def __init__(
-            self,
-            cognito_region: str,
-            cognito_identity_pool_id: str,
-            cognito_client_id: str,
-            cognito_client_secret: str):
+        self, cognito_region: str, cognito_identity_pool_id: str, cognito_client_id: str, cognito_client_secret: str
+    ):
 
         # store the settings
         self._cognito_region = cognito_region
@@ -63,9 +59,8 @@ class AuthClient:
 
         # make the secret
         dig = hmac.new(
-            self._cognito_client_secret.encode("UTF-8"),
-            msg=message.encode('UTF-8'),
-            digestmod=hashlib.sha256).digest()
+            self._cognito_client_secret.encode("UTF-8"), msg=message.encode('UTF-8'), digestmod=hashlib.sha256
+        ).digest()
 
         # turn the secret into a str object
         return base64.b64encode(dig).decode()
@@ -81,18 +76,19 @@ class AuthClient:
             auth_data = {
                 'USERNAME': self._username,
                 'PASSWORD': self._password,
-                'SECRET_HASH': self._make_cognito_secret_hash(self._username)}
+                'SECRET_HASH': self._make_cognito_secret_hash(self._username),
+            }
 
             # get the jwt token from AWS cognito
             resp = await cognito_client.admin_initiate_auth(
                 UserPoolId=self._cognito_identity_pool_id,
                 AuthFlow='ADMIN_NO_SRP_AUTH',
                 AuthParameters=auth_data,
-                ClientId=self._cognito_client_id)
+                ClientId=self._cognito_client_id,
+            )
 
             # store the jwt token
             try:
                 self.token = resp['AuthenticationResult']['IdToken']
             except KeyError:
-                raise RuntimeError(
-                    "Unable to obtain JWT Token from AWS Cognito.")
+                raise RuntimeError("Unable to obtain JWT Token from AWS Cognito.")

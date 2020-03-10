@@ -5,11 +5,11 @@ from urllib.parse import urlparse
 import aiohttp
 from pydantic import HttpUrl
 
+from werk24.exceptions import ServerException, UnauthorizedException
 from werk24.models.techread import (W24TechreadArchitecture,
                                     W24TechreadArchitectureStatus)
 
 from .auth_client import AuthClient
-from .exceptions import ServerException, UnauthorizedException
 
 
 class TechreadClientHttps:
@@ -17,11 +17,13 @@ class TechreadClientHttps:
     """ Translation map from the server response
     to the W24TechreadArchitectureStatus enum
     """
+
     status_map = {
         "DEPLOYED": W24TechreadArchitectureStatus.DEPLOYED,
         "DEPLOYING": W24TechreadArchitectureStatus.DEPLOYING,
         "UNDEPLOYED": W24TechreadArchitectureStatus.UNDEPLOYED,
-        "UNDEPLOYING": W24TechreadArchitectureStatus.UNDEPLOYING}
+        "UNDEPLOYING": W24TechreadArchitectureStatus.UNDEPLOYING,
+    }
 
     def __init__(self, techread_server_https: str, techread_version: str):
         """ Intialize a new session with the https server
@@ -61,11 +63,7 @@ class TechreadClientHttps:
         """
         self._auth_client = auth_client
 
-    async def upload_associated_file(
-            self,
-            request_id: str,
-            file_type: str,
-            content: bytes) -> None:
+    async def upload_associated_file(self, request_id: str, file_type: str, content: bytes) -> None:
         """ Upload an associated file to the API.
         This can either be a technical drawing or a
         3D model. Potentially we will sometime extend
@@ -99,9 +97,7 @@ class TechreadClientHttps:
         # make the endpoint and the headers
         endpoint = self._make_endpoint_url(f"upload/{request_id}")
         try:
-            await self._post(
-                url=endpoint,
-                data=json.dumps({file_type: base64.b64encode(content).decode()}))
+            await self._post(url=endpoint, data=json.dumps({file_type: base64.b64encode(content).decode()}))
 
         # if any exceptions occure, pass them on
         except (UnauthorizedException, ServerException) as exception:
@@ -122,9 +118,7 @@ class TechreadClientHttps:
         """
         return f"https://{self._techread_server}/{self._techread_version}/{subpath}"
 
-    async def get_architecture_status(
-            self,
-            architecture: W24TechreadArchitecture) -> W24TechreadArchitectureStatus:
+    async def get_architecture_status(self, architecture: W24TechreadArchitecture) -> W24TechreadArchitectureStatus:
         """ Get the current status of the requested architecture
 
         Arguments:
@@ -145,8 +139,7 @@ class TechreadClientHttps:
         """
 
         # make the endpoint
-        endpoint = self._make_endpoint_url(
-            f"architecture_status/{architecture}")
+        endpoint = self._make_endpoint_url(f"architecture_status/{architecture}")
         try:
             response = await self._get(url=endpoint)
             result = await response.json()
@@ -168,8 +161,7 @@ class TechreadClientHttps:
         # if we do not have the status in the map,
         # throw and exception
         except KeyError:
-            raise ServerException(
-                f"Server returned unknown status '%s'", status)
+            raise ServerException(f"Server returned unknown status '%s'", status)
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
         """ Return the payload from the server
@@ -206,9 +198,7 @@ class TechreadClientHttps:
         # This works as a defence mechanism against token theft.
         url_parsed = urlparse(payload_url)
         if url_parsed.netloc != self._techread_server:
-            raise RuntimeError(
-                f"INTRUSION!!! Payload_url '%s' not allowed. INVESTIGATE!!!",
-                payload_url)
+            raise RuntimeError(f"INTRUSION!!! Payload_url '%s' not allowed. INVESTIGATE!!!", payload_url)
 
         # send the get request to the endpoint
         try:
@@ -309,7 +299,4 @@ class TechreadClientHttps:
         # than unauthorized or 200 (OK), we trigger
         # a ServerException.
         if status_code != 200:
-            raise ServerException(
-                f"Get Request failed '%s' with code %s",
-                url,
-                status_code)
+            raise ServerException(f"Get Request failed '%s' with code %s", url, status_code)

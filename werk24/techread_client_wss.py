@@ -3,13 +3,13 @@ import json
 import websockets
 from pydantic import ValidationError
 
+from werk24.exceptions import ServerException, UnauthorizedException
 from werk24.models.techread import W24TechreadCommand, W24TechreadMessage
+
 from .auth_client import AuthClient
-from .exceptions import ServerException, UnauthorizedException
 
 
 class TechreadClientWss:
-
     def __init__(self, techread_server_wss: str, techread_version: str):
         self._auth_client = None
         self._techread_server_wss = techread_server_wss
@@ -25,9 +25,7 @@ class TechreadClientWss:
         headers = [(f"Authorization", f"Bearer {self._auth_client.token}")]
 
         # now make the session
-        self._techread_session_wss = await websockets.connect(
-            endpoint,
-            extra_headers=headers)
+        self._techread_session_wss = await websockets.connect(endpoint, extra_headers=headers)
 
         # return ourselfves
         return self
@@ -126,8 +124,7 @@ class TechreadClientWss:
                 raise UnauthorizedException("Requested Action forbidden")
 
             # otherwise fail with an UnknownException
-            raise ServerException(
-                f"Unexpected server response '{message_raw}'.")
+            raise ServerException(f"Unexpected server response '{message_raw}'.")
 
         return message
 
