@@ -3,8 +3,8 @@ import json
 import websockets
 from pydantic import ValidationError
 
-from werk24.exceptions import ServerException, UnauthorizedException
-from werk24.models.techread import W24TechreadCommand, W24TechreadMessage
+from werk24.werk24.exceptions import ServerException, UnauthorizedException
+from werk24.werk24.models.techread import W24TechreadCommand, W24TechreadMessage
 
 from .auth_client import AuthClient
 

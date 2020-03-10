@@ -26,14 +26,16 @@ from typing import Callable, Dict, List, Optional
 
 from pydantic import BaseModel, HttpUrl
 
-from werk24.models.ask import W24Ask, W24AskType
-from werk24.models.techread import (W24TechreadArchitecture,
-                                    W24TechreadArchitectureStatus,
-                                    W24TechreadMessageType, W24TechreadRequest)
+from werk24.werk24.models.ask import W24Ask, W24AskType
+from werk24.werk24.models.techread import (
+    W24TechreadArchitecture,
+    W24TechreadArchitectureStatus,
+    W24TechreadMessageType,
+    W24TechreadRequest)
 
-from werk24.auth_client import AuthClient
-from werk24.techread_client_https import TechreadClientHttps
-from werk24.techread_client_wss import TechreadClientWss
+from werk24.werk24auth_client import AuthClient
+from werk24.werk24techread_client_https import TechreadClientHttps
+from werk24.werk24techread_client_wss import TechreadClientWss
 
 # make the logger
 logger = logging.getLogger('w24_techread_client')
