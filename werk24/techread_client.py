@@ -64,6 +64,7 @@ class W24TechreadClient:
         W24TechreadMessageType.ASK_THUMBNAIL_PAGE: W24AskType.THUMBNAIL_PAGE,
         W24TechreadMessageType.ASK_THUMBNAIL_SHEET: W24AskType.THUMBNAIL_SHEET,
         W24TechreadMessageType.ASK_PART_OVERALL_DIMENSIONS: W24AskType.PART_OVERALL_DIMENSIONS,
+        W24TechreadMessageType.ASK_TRAIN: W24AskType.TRAIN,
     }
 
     def __init__(
