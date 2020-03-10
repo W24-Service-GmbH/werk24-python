@@ -67,4 +67,4 @@ class W24TechreadRequest(BaseModel):
     asks: List[Union[W24AskThumbnailPage, W24AskThumbnailSheet,
                      W24AskThumbnailDrawing, W24AskPartOverallDimensions]] = []
     architecture: W24TechreadArchitecture
-    # webhook: Optional[HttpUrl] = None
+    webhook: Optional[HttpUrl] = None
