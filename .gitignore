@@ -4,3 +4,4 @@ __pycache__
 .env
 /build/
 werk24.egg-info
+/dist/

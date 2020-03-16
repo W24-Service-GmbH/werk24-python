@@ -5,9 +5,9 @@ from urllib.parse import urlparse
 import aiohttp
 from pydantic import HttpUrl
 
-from werk24.werk24.exceptions import ServerException, UnauthorizedException
-from werk24.werk24.models.techread import (W24TechreadArchitecture,
-                                           W24TechreadArchitectureStatus)
+from werk24.exceptions import ServerException, UnauthorizedException
+from werk24.models.techread import (W24TechreadArchitecture,
+                                    W24TechreadArchitectureStatus)
 
 from .auth_client import AuthClient
 
@@ -304,4 +304,4 @@ class TechreadClientHttps:
         # a ServerException.
         if status_code != 200:
             raise ServerException(
-                f"Get Request failed '%s' with code %s", url, status_code)
+                f"Request failed '%s' with code %s", url, status_code)
