@@ -8,15 +8,15 @@ import logging
 
 from dotenv import load_dotenv
 
-from werk24.werk24.models.ask import (
+from werk24.models.ask import (
     W24AskPartOverallDimensions,
     W24AskThumbnailDrawing,
     W24AskThumbnailPage,
     W24AskThumbnailSheet)
-from werk24.werk24.models.techread import (W24TechreadArchitecture,
-                                           W24TechreadArchitectureStatus,
-                                           W24TechreadMessageType)
-from werk24.werk24techread_client import Hook, W24TechreadClient
+from werk24.models.techread import (W24TechreadArchitecture,
+                                    W24TechreadArchitectureStatus,
+                                    W24TechreadMessageType)
+from werk24.techread_client import Hook, W24TechreadClient
 
 # load the environment variables
 load_dotenv()
