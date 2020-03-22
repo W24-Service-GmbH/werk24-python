@@ -11,5 +11,5 @@ setup(
         "pydantic >= 1.4",
         "python-dotenv>=0.10.1",
         "websockets >= 8.1"],
-    scripts=['w24_techread']
+    scripts=['w24cli']
 )
