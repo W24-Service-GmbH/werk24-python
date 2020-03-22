@@ -12,7 +12,7 @@ EXAMPLE
     # obtain the thumbnail of a page
     import logging
     drawing_bytes = open(...,"r").read()
-    client = W24TechreadClient.make_from_dotenv()
+    client = W24TechreadClient.make_from_env()
     await client.read_drawing_with_hooks(
         drawing_bytes,
         [Hook(
@@ -308,17 +308,6 @@ class W24TechreadClient:
         """ Small helper function that creates a new
         W24TechreadClient from the enviorment info.
 
-        If use_dotenv is set to True, we load the
-        data from the .env file (that you will be provided
-        with off-band). This is the standard way
-        of creating a client instance.
-
-
-        Keyword Arguments:
-            use_dotenv {bool} -- if set to True, we
-                load the environment variables from
-                the .env file (default: {True})
-
         Returns:
             W24TechreadClient -- [description]
         """
@@ -366,7 +355,7 @@ class W24TechreadClient:
             # if the message type starts with TECHREAD_, it
             # corresponds to a process message, so check the
             # process handlers
-            if message.message_type.startswith("TECHREAD_"):
+            if message.message_type.startswith("TECHREAD_") or message.message_type.startswith("ERROR_"):
 
                 # check whether the message_type is associated
                 # with a callback. If not, the message type

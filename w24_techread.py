@@ -1,6 +1,5 @@
 """
-Small Integration test module to check whether the Techread Client
-communicates properly with the server
+Command Line Interface for W24 Techread
 """
 import argparse
 import asyncio
@@ -36,6 +35,12 @@ parser = argparse.ArgumentParser(description="Talk to the TechRead API ")
 parser.add_argument(
     "input_file",
     help="path to the file that is to be analyzed")
+
+parser.add_argument(
+    "-i",
+    "--ignore-architecture-status",
+    help="flag indicating whether the architecture status should be ignored (i.e. whether the request should be sent even though the architecture is unavailable)",
+    action="store_true")
 
 
 def _get_drawing(file_path) -> bytes:
@@ -74,10 +79,11 @@ async def main(args):
         # If not, you can still commit a request, but
         # will not receive any response until the
         # architecture is deployed again
-        status = await session.get_architecture_status(W24TechreadArchitecture.GPU_V1)
-        if status != W24TechreadArchitectureStatus.DEPLOYED:
-            logger.error("Architecture is not ready")
-            return
+        if not args.ignore_architecture_status:
+            status = await session.get_architecture_status(W24TechreadArchitecture.GPU_V1)
+            if status != W24TechreadArchitectureStatus.DEPLOYED:
+                logger.error("Architecture is not ready")
+                return
 
         # tell the api what asks you are interested in,
         # and define what to do when you receive the result
@@ -104,7 +110,11 @@ async def main(args):
                 ask=W24AskPartOverallDimensions(),
                 function=lambda msg: logging.info(
                     "Outer dimensions: %s",
-                    msg.payload_dict))]
+                    msg.payload_dict)),
+            Hook(
+                message_type=W24TechreadMessageType.ERROR_INTERNAL,
+                function=lambda msg: logging.info(f"Internal Error {msg.payload_dict}")
+            )]
 
         # get the drawing
         drawing_bytes = _get_drawing(args.input_file)
