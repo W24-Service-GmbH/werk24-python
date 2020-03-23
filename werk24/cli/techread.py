@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 from werk24.models.ask import (
     W24AskPartOverallDimensions,
-    W24AskDrawingThumbnail,
+    W24AskCutThumbnail,
     W24AskPageThumbnail,
     W24AskSheetThumbnail)
 from werk24.models.techread import (W24TechreadArchitecture,
@@ -30,7 +30,6 @@ logging.basicConfig(
 
 # get the local logger
 logger = logging.getLogger(__name__)
-
 
 
 def _get_drawing(file_path) -> bytes:
@@ -55,7 +54,6 @@ def _debug_show_image(log_text, image_bytes):
 
 
 async def main(args):
-
 
     # tell the api what asks you are interested in,
     # and define what to do when you receive the result
@@ -87,10 +85,10 @@ async def main(args):
     # add the hook for the drawing thumbnail
     if args.ask_cut_thumbnail:
         hoooks += [Hook(
-                ask=W24AskCutThumbnail(),
-                function=lambda msg: _debug_show_image(
-                    "Drawing thumbnail received",
-                    msg.payload_bytes))]
+            ask=W24AskCutThumbnail(),
+            function=lambda msg: _debug_show_image(
+                "Drawing thumbnail received",
+                msg.payload_bytes))]
 
     # add the hook for the part's overall dimensions
     if args.ask_part_overall_dimensions:
@@ -105,10 +103,8 @@ async def main(args):
             function=lambda msg: print(msg))]
 
     # add a general hook to deal with internal errors
-    hooks += [Hook(
-        message_type=W24TechreadMessageType.ERROR_INTERNAL,
-        function=lambda msg: logging.error(f"Internal Error {msg.payload_dict}")
-    )]
+    hooks += [Hook(message_type=W24TechreadMessageType.ERROR_INTERNAL,
+                   function=lambda msg: logging.error(f"Internal Error {msg.payload_dict}"))]
 
     # make the client. This will automatically
     # fetch the authentication information
@@ -136,4 +132,3 @@ async def main(args):
         await session.read_drawing_with_hooks(
             drawing_bytes,
             hooks)
-

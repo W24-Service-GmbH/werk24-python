@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 """ Command Line Interface for W24
 """
-import asyncio
 import argparse
-import w24cli_techread
+import asyncio
+
+import werk24.cli.techread
 
 # parse the args
-parser = argparse.ArgumentParser(prog ="w24cli")
+parser = argparse.ArgumentParser(prog="w24cli")
 subparsers = parser.add_subparsers(
-    dest="command"
-)
+    dest="command")
 
 parser_techread = subparsers.add_parser(
     "techread",
@@ -22,49 +22,41 @@ parser_techread.add_argument(
 parser_techread.add_argument(
     "-i",
     "--ignore-architecture-status",
-    help="flag indicating whether the architecture status should be ignored (i.e. whether the request should be sent even though the architecture is unavailable)",
+    help="flag indicating whether the architecture status should be ignored(i.e. whether the request should be sent even though the architecture is unavailable)",
     action="store_true")
-
 
 parser_techread.add_argument(
     "--ask-techread-started",
-    help="flag asking for a callback when the techread process has been picked up by a worker",
+    help="ask for a callback when the techread process has been picked up by a worker",
     action="store_true")
 
 parser_techread.add_argument(
     "--ask-page-thumbnail",
-    help="flag asking for a thumbnail for each page in the document",
+    help="ask for a thumbnail for each page in the document",
     action="store_true")
 
 parser_techread.add_argument(
     "--ask-sheet-thumbnail",
-    help="flag asking the thumbnail of each sheet in the document",
+    help="ask for a thumbnail of each sheet in the document",
     action="store_true")
-
 
 parser_techread.add_argument(
     "--ask-cut-thumbnail",
-    help="flag asking the thumbnail of each cut of each sheet in the document",
+    help="ask for a thumbnail of each cut of each sheet in the document",
     action="store_true")
 
 parser_techread.add_argument(
     "--ask-part-overall-dimensions",
-    help="flag asking the overall dimensions of the part. The API will return the x,y,z dimensions as well as an enum indicating the shape",
+    help="ask for the overall dimensions of each part. The API will return the x,y,z dimensions as well as an enum indicating the shape",
     action="store_true")
-
 
 parser_techread.add_argument(
     "--ask-train",
-    help="flag asking the the API to use the document solely for training",
+    help="ask the the API to use the document solely for training. This is mainly used for internal purposes, but your are invited to submit additional files if you want to help us improve our system. Your will not be charged for these requests (but you'll also not get a response)",
     action="store_true")
-
-
-
-
-
 
 if __name__ == "__main__":
 
     args = parser.parse_args()
     if args.command == "techread":
-        asyncio.run(w24cli_techread.main(args))
+        asyncio.run(werk24.cli.techread.main(args))

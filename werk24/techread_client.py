@@ -355,7 +355,8 @@ class W24TechreadClient:
             # if the message type starts with TECHREAD_, it
             # corresponds to a process message, so check the
             # process handlers
-            if message.message_type.startswith("TECHREAD_") or message.message_type.startswith("ERROR_"):
+            if message.message_type.startswith(
+                    "TECHREAD_") or message.message_type.startswith("ERROR_"):
 
                 # check whether the message_type is associated
                 # with a callback. If not, the message type
