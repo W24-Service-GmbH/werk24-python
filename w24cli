@@ -1,131 +1,70 @@
 #!/usr/bin/env python
+""" Command Line Interface for W24
 """
-Command Line Interface for W24 Techread
-"""
-import argparse
 import asyncio
-import logging
-
-from dotenv import load_dotenv
-
-from werk24.models.ask import (
-    W24AskPartOverallDimensions,
-    W24AskThumbnailDrawing,
-    W24AskThumbnailPage,
-    W24AskThumbnailSheet)
-from werk24.models.techread import (W24TechreadArchitecture,
-                                    W24TechreadArchitectureStatus,
-                                    W24TechreadMessageType)
-from werk24.techread_client import Hook, W24TechreadClient
-
-# load the environment variables
-load_dotenv()
-
-# set the log level to info for the test setting
-# We recommend using logging.WARNING for production
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
-
-# get the local logger
-logger = logging.getLogger(__name__)
+import argparse
+import w24cli_techread
 
 # parse the args
-parser = argparse.ArgumentParser(description="Talk to the TechRead API ")
-parser.add_argument(
+parser = argparse.ArgumentParser(prog ="w24cli")
+subparsers = parser.add_subparsers(
+    dest="command"
+)
+
+parser_techread = subparsers.add_parser(
+    "techread",
+    help="Submit a Technical Drawing to Werk24 for analysis")
+
+parser_techread.add_argument(
     "input_file",
     help="path to the file that is to be analyzed")
 
-parser.add_argument(
+parser_techread.add_argument(
     "-i",
     "--ignore-architecture-status",
     help="flag indicating whether the architecture status should be ignored (i.e. whether the request should be sent even though the architecture is unavailable)",
     action="store_true")
 
 
-def _get_drawing(file_path) -> bytes:
-    """ Obtain the bytes content of the test drawing
-    """
-    # get the path
-    # cwd = os.path.dirname(os.path.abspath(__file__))
-    # test_file_path = os.path.join(cwd, "techread_client_test_drawing.png")
-    # test_file_path = "../api-reader/assets/test/e2e/3764012-2.pdf"
+parser_techread.add_argument(
+    "--ask-techread-started",
+    help="flag asking for a callback when the techread process has been picked up by a worker",
+    action="store_true")
 
-    # get the content
-    with open(file_path, "rb") as filehandle:
-        return filehandle.read()
+parser_techread.add_argument(
+    "--ask-page-thumbnail",
+    help="flag asking for a thumbnail for each page in the document",
+    action="store_true")
 
-
-def _debug_show_image(log_text, image_bytes):
-    from PIL import Image
-    import io
-    logging.info(log_text)
-    image = Image.open(io.BytesIO(image_bytes))
-    image.show(title=log_text)
+parser_techread.add_argument(
+    "--ask-sheet-thumbnail",
+    help="flag asking the thumbnail of each sheet in the document",
+    action="store_true")
 
 
-async def main(args):
+parser_techread.add_argument(
+    "--ask-cut-thumbnail",
+    help="flag asking the thumbnail of each cut of each sheet in the document",
+    action="store_true")
 
-    # make the client. This will automatically
-    # fetch the authentication information
-    # from the environment variables. We will
-    # provide you with separate .env files for
-    # the development and production environments
-    client = W24TechreadClient.make_from_env()
+parser_techread.add_argument(
+    "--ask-part-overall-dimensions",
+    help="flag asking the overall dimensions of the part. The API will return the x,y,z dimensions as well as an enum indicating the shape",
+    action="store_true")
 
-    async with client as session:
 
-        # check whether the architecture is deployed.
-        # If not, you can still commit a request, but
-        # will not receive any response until the
-        # architecture is deployed again
-        if not args.ignore_architecture_status:
-            status = await session.get_architecture_status(W24TechreadArchitecture.GPU_V1)
-            if status != W24TechreadArchitectureStatus.DEPLOYED:
-                logger.error("Architecture is not ready")
-                return
+parser_techread.add_argument(
+    "--ask-train",
+    help="flag asking the the API to use the document solely for training",
+    action="store_true")
 
-        # tell the api what asks you are interested in,
-        # and define what to do when you receive the result
-        hooks = [
-            Hook(
-                message_type=W24TechreadMessageType.TECHREAD_STARTED,
-                function=lambda msg: logging.info("Techread started")),
-            Hook(
-                ask=W24AskThumbnailPage(),
-                function=lambda msg: _debug_show_image(
-                    "Thumbnail page received",
-                    msg.payload_bytes)),
-            Hook(
-                ask=W24AskThumbnailSheet(),
-                function=lambda msg: _debug_show_image(
-                    "Thumbnail sheet received",
-                    msg.payload_bytes)),
-            Hook(
-                ask=W24AskThumbnailDrawing(),
-                function=lambda msg: _debug_show_image(
-                    "Thumbnail drawing received",
-                    msg.payload_bytes)),
-            Hook(
-                ask=W24AskPartOverallDimensions(),
-                function=lambda msg: logging.info(
-                    "Outer dimensions: %s",
-                    msg.payload_dict)),
-            Hook(
-                message_type=W24TechreadMessageType.ERROR_INTERNAL,
-                function=lambda msg: logging.info(f"Internal Error {msg.payload_dict}")
-            )]
 
-        # get the drawing
-        drawing_bytes = _get_drawing(args.input_file)
 
-        # and make the request
-        await session.read_drawing_with_hooks(
-            drawing_bytes,
-            hooks)
+
 
 
 if __name__ == "__main__":
+
     args = parser.parse_args()
-    asyncio.run(main(args))
+    if args.command == "techread":
+        asyncio.run(w24cli_techread.main(args))

@@ -42,7 +42,7 @@ class W24AskThumbnail(W24Ask):
     # auto_rotate: bool = False
 
 
-class W24AskThumbnailPage(W24AskThumbnail):
+class W24AskPageThumbnail(W24AskThumbnail):
     """ Requesting the W24DrawingReadFeatureThumbnailPage will add
     a thumbnail of the complete page including the border area
     to the result.
@@ -51,7 +51,7 @@ class W24AskThumbnailPage(W24AskThumbnail):
     ask_type = W24AskType.THUMBNAIL_PAGE
 
 
-class W24AskThumbnailSheet(W24AskThumbnail):
+class W24AskSheetThumbnail(W24AskThumbnail):
     """ Requesting the W24DrawingReadFeatureThumbnailPage will add
     a thumbnail of the complete page including the border area
     to the result.
@@ -60,7 +60,7 @@ class W24AskThumbnailSheet(W24AskThumbnail):
     ask_type = W24AskType.THUMBNAIL_SHEET
 
 
-class W24AskThumbnailDrawing(W24AskThumbnail):
+class W24AskCutThumbnail(W24AskThumbnail):
     """ Requesting the W24DrawingReadFeatureThumbnailPage will add
     a thumbnail of the complete page including the border area
     to the result.

@@ -3,8 +3,7 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import UUID4, BaseModel, HttpUrl, Json
 
-from .ask import (W24AskPartOverallDimensions, W24AskThumbnailDrawing,
-                  W24AskThumbnailPage, W24AskThumbnailSheet)
+from .ask import W24Ask
 
 
 class W24TechreadCommand(BaseModel):
@@ -65,7 +64,6 @@ class W24TechreadRequest(BaseModel):
     (v) the callback url that shall be called after the
     """
 
-    asks: List[Union[W24AskThumbnailPage, W24AskThumbnailSheet,
-                     W24AskThumbnailDrawing, W24AskPartOverallDimensions]] = []
+    asks: List[W24Ask] = []
     architecture: W24TechreadArchitecture
     webhook: Optional[HttpUrl] = None
