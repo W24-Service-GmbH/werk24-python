@@ -5,7 +5,7 @@ setup(
     name="werk24",
     version="0.1.6",
     author="Jochen Mattes",
-    packages=["werk24", "werk24.models"],
+    packages=["werk24", "werk24.models", "werk24.cli"],
     install_requires=[
         "aioboto3 >= 6.5.0",
         "pydantic >= 1.4",
