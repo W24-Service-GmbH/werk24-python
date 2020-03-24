@@ -1,4 +1,4 @@
-aioboto3>=6.5.0
+aioboto3>=6.4.1
 pydantic>=1.4
 python-dotenv>=0.10.1
 websockets>=8.1
