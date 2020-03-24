@@ -4,10 +4,16 @@ from pydantic import BaseModel
 
 
 class W24AskType(str, Enum):
-    THUMBNAIL_PAGE = "THUMBNAIL_PAGE"
-    THUMBNAIL_SHEET = "THUMBNAIL_SHEET"
-    THUMBNAIL_DRAWING = "THUMBNAIL_DRAWING"
-    PART_OVERALL_DIMENSIONS = "PART_OVERALL_DIMENSIONSs"
+    PAGE_THUMBNAIL = "PAGE_THUMBNAIL"
+
+    SHEET_EXPORT_ONSHAPE = "SHEET_EXPORT_ONSHAPE"
+    SHEET_THUMBNAIL = "SHEET_THUMBNAIL"
+
+    PLANE_THUMBNAIL = "PLANE_THUMBNAIL"
+
+    VARIANT_OVERALL_DIMENSIONS = "VARIANT_OVERALL_DIMENSIONS"
+    VARIANT_EXPORT_STL = "VARIANT_EXPORT_STL"
+
     TRAIN = "TRAIN"
 
 
@@ -43,38 +49,49 @@ class W24AskThumbnail(W24Ask):
 
 
 class W24AskPageThumbnail(W24AskThumbnail):
-    """ Requesting the W24DrawingReadFeatureThumbnailPage will add
-    a thumbnail of the complete page including the border area
-    to the result.
+    """ Requests a thumbnail of
+    the complete page including the border area
     """
 
-    ask_type = W24AskType.THUMBNAIL_PAGE
+    ask_type = W24AskType.PAGE_THUMBNAIL
 
 
 class W24AskSheetThumbnail(W24AskThumbnail):
-    """ Requesting the W24DrawingReadFeatureThumbnailPage will add
-    a thumbnail of the complete page including the border area
-    to the result.
+    """ Requests a thumbnail of
+    each sheet in the document.
     """
 
-    ask_type = W24AskType.THUMBNAIL_SHEET
+    ask_type = W24AskType.SHEET_THUMBNAIL
 
 
-class W24AskCutThumbnail(W24AskThumbnail):
-    """ Requesting the W24DrawingReadFeatureThumbnailPage will add
-    a thumbnail of the complete page including the border area
-    to the result.
+class W24AskSheetExportOnshape(W24Ask):
+    """Requests the export of each submitted sheet
+    to onshape (onshape.com)
+    """
+    ask_type = W24AskType.SHEET_EXPORT_ONSHAPE
+
+
+class W24AskPlaneThumbnail(W24AskThumbnail):
+    """ The W24AskPlaneThumbnail requests a thumbnail
+    of each plane on each sheet in the document.
     """
 
-    ask_type = W24AskType.THUMBNAIL_DRAWING
+    ask_type = W24AskType.PLANE_THUMBNAIL
 
 
-class W24AskPartOverallDimensions(W24Ask):
-    """ Requesting the W24AskPartOverallDimensions will
+class W24AskVariantOverallDimensions(W24Ask):
+    """ Requesting the W24AskVariantOverallDimensions will
     extract the outer dimensions of the extracted part
     """
 
-    ask_type = W24AskType.PART_OVERALL_DIMENSIONS
+    ask_type = W24AskType.VARIANT_OVERALL_DIMENSIONS
+
+
+class W24AskVariantExportSTL(W24Ask):
+    """ Requests an export of the Variant as STL File
+    """
+
+    ask_type = W24AskType.VARIANT_EXPORT_STL
 
 
 class W24AskTrain(BaseModel):

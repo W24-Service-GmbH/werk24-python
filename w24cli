@@ -41,13 +41,13 @@ parser_techread.add_argument(
     action="store_true")
 
 parser_techread.add_argument(
-    "--ask-cut-thumbnail",
-    help="ask for a thumbnail of each cut of each sheet in the document",
+    "--ask-plane-thumbnail",
+    help="ask for a thumbnail of each plane of each sheet in the document",
     action="store_true")
 
 parser_techread.add_argument(
-    "--ask-part-overall-dimensions",
-    help="ask for the overall dimensions of each part. The API will return the x,y,z dimensions as well as an enum indicating the shape",
+    "--ask-variant-overall-dimensions",
+    help="ask for the overall dimensions of each variant. The API will return the x,y,z dimensions as well as an enum indicating the shape",
     action="store_true")
 
 parser_techread.add_argument(

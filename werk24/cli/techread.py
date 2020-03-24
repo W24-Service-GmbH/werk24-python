@@ -9,10 +9,11 @@ import logging
 from dotenv import load_dotenv
 
 from werk24.models.ask import (
-    W24AskPartOverallDimensions,
-    W24AskCutThumbnail,
+    W24AskVariantOverallDimensions,
+    W24AskPlaneThumbnail,
     W24AskPageThumbnail,
-    W24AskSheetThumbnail)
+    W24AskSheetThumbnail,
+    W24AskTrain)
 from werk24.models.techread import (W24TechreadArchitecture,
                                     W24TechreadArchitectureStatus,
                                     W24TechreadMessageType)
@@ -83,17 +84,17 @@ async def main(args):
                 msg.payload_bytes))]
 
     # add the hook for the drawing thumbnail
-    if args.ask_cut_thumbnail:
-        hoooks += [Hook(
-            ask=W24AskCutThumbnail(),
+    if args.ask_plane_thumbnail:
+        hooks += [Hook(
+            ask=W24AskPlaneThumbnail(),
             function=lambda msg: _debug_show_image(
                 "Drawing thumbnail received",
                 msg.payload_bytes))]
 
     # add the hook for the part's overall dimensions
-    if args.ask_part_overall_dimensions:
+    if args.ask_variant_overall_dimensions:
         hooks += [Hook(
-            ask=W24AskPartOverallDimensions(),
+            ask=W24AskVariantOverallDimensions(),
             function=lambda msg: print(msg))]
 
     # add the hook for the training ask
