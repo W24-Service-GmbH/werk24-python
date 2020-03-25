@@ -9,7 +9,9 @@ import werk24.cli.techread
 # parse the args
 parser = argparse.ArgumentParser(prog="w24cli")
 subparsers = parser.add_subparsers(
-    dest="command")
+    dest="command",
+    help="Subcommand. Currently supported: techread")
+subparsers.required = True
 
 parser_techread = subparsers.add_parser(
     "techread",
