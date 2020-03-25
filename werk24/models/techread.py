@@ -67,3 +67,4 @@ class W24TechreadRequest(BaseModel):
     asks: List[W24Ask] = []
     architecture: W24TechreadArchitecture
     webhook: Optional[HttpUrl] = None
+    development_key: str = None

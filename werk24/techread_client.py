@@ -73,7 +73,8 @@ class W24TechreadClient:
             self,
             techread_server_https: str,
             techread_server_wss: str,
-            techread_version: str):
+            techread_version: str,
+            development_key: str = None):
         """ Initialize a new W24TechreadClient. If you wonder
         about any of the attributes, have a look at the .env
         file that we provided to you. They contain all the
@@ -88,7 +89,17 @@ class W24TechreadClient:
 
             techread_version {str} -- version that you want to
                 connect to
+
+            development_key {str} -- key that allows you to submit
+                your request to one of the internal architectures.
+                You can try guessing or bruteforcing this key;
+                we'll just charge you for every request you submit and
+                transfer the money to the holiday bonus account.
+
         """
+
+        # save the development_key
+        self._development_key = development_key
 
         # Create an empty reference to the authentication
         # service (currently AWS Cognito)
@@ -241,7 +252,8 @@ class W24TechreadClient:
         # make the request
         request = W24TechreadRequest(
             asks=asks,
-            architecture=architecture)
+            architecture=architecture,
+            development_key=self._development_key)
 
         # send the initialization request to the server.
         # This achieves two things:
