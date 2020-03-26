@@ -95,7 +95,6 @@ class W24TechreadClient:
                 You can try guessing or bruteforcing this key;
                 we'll just charge you for every request you submit and
                 transfer the money to the holiday bonus account.
-
         """
 
         # save the development_key
@@ -249,6 +248,11 @@ class W24TechreadClient:
         # give us some debug information
         logger.info("API method read_drawing() called")
 
+        # tell us when a development key is being used
+        if self._development_key:
+            logger.info("Using development key %s***",
+                        self._development_key[8:])
+
         # make the request
         request = W24TechreadRequest(
             asks=asks,
@@ -357,7 +361,9 @@ class W24TechreadClient:
         # filter the callback requests to only contain
         # the ask types
         asks_list = [
-            cur_ask.ask for cur_ask in hooks if cur_ask.ask is not None]
+            cur_ask.ask
+            for cur_ask in hooks
+            if cur_ask.ask is not None]
 
         # send out the request and make a generator
         # that triggers when the result of an ask

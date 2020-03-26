@@ -125,7 +125,8 @@ class TechreadClientWss:
 
             # otherwise fail with an UnknownException
             raise ServerException(
-                f"Unexpected server response '%s'.", message_raw)
+                f"Unexpected server response '%s'.",
+                message_raw)
 
         return message
 
