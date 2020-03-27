@@ -13,6 +13,12 @@ class UnknownException(TechreadException):
     pass
 
 
+class RequestTooLargeException(TechreadException):
+    """ Raised when the request exceeds the maximal
+    request size (at the time of writing 6MB).
+    """
+
+
 class ServerException(TechreadException):
     """ Exception that is raised, when the server responded in an unexpected way.
     """

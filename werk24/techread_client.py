@@ -19,21 +19,20 @@ EXAMPLE
                 ask=W24ASkThumbnailPage(),
                 callback=lambda msg: logging.info("Received Thumbnail of Page")]))
 """
-import os
 import asyncio
 import logging
+import os
 from typing import Callable, Dict, List, Optional
 
 from pydantic import BaseModel, HttpUrl
 
-from werk24.models.ask import W24Ask, W24AskType
-from werk24.models.techread import (
-    W24TechreadArchitecture,
-    W24TechreadArchitectureStatus,
-    W24TechreadMessageType,
-    W24TechreadRequest)
-
 from werk24.auth_client import AuthClient
+from werk24.exceptions import RequestTooLargeException, ServerException
+from werk24.models.ask import W24Ask, W24AskType
+from werk24.models.techread import (W24TechreadMessage,
+                                    W24TechreadArchitecture,
+                                    W24TechreadArchitectureStatus,
+                                    W24TechreadMessageType, W24TechreadRequest)
 from werk24.techread_client_https import TechreadClientHttps
 from werk24.techread_client_wss import TechreadClientWss
 
@@ -209,7 +208,7 @@ class W24TechreadClient:
             asks: List[W24Ask],
             model: bytes = None,
             architecture: W24TechreadArchitecture = W24TechreadArchitecture.GPU_V1,
-            webhook: HttpUrl = None):
+            webhook: HttpUrl = None) -> None:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
 
@@ -239,10 +238,15 @@ class W24TechreadClient:
                 connection to register the request. If you have the requirement
                 of going pure-HTTPS, let us know.
 
-        Returns:
-            W24DrawingReadResponse -- Response object obtained from the API
+        Yields:
+            W24TechreadMessage -- Response object obtained from the API
                 that indicates the state of your request. Be sure to pass this
                 to the read_drawing_listen method
+
+        Raises:
+            DrawingTooLarge -- Exception is raised when the drawing was too large
+                to be processed. At the time of writing. The upload limit lies at
+                6 MB (including overhead).
         """
 
         # give us some debug information
@@ -251,7 +255,7 @@ class W24TechreadClient:
         # tell us when a development key is being used
         if self._development_key:
             logger.info("Using development key %s***",
-                        self._development_key[8:])
+                        self._development_key[:8])
 
         # make the request
         request = W24TechreadRequest(
@@ -275,13 +279,17 @@ class W24TechreadClient:
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
-        await asyncio.gather(
-            *[
+        try:
+            await asyncio.gather(*[
                 self._techread_client_https.upload_associated_file(response.request_id, 'drawing', drawing),
                 self._techread_client_https.upload_associated_file(response.request_id, 'model', model),
-            ]
-        )
-        logger.info("Drawing(and model) uploaded")
+            ])
+            logger.info("Drawing(and model) uploaded")
+
+        # explicitly reraise the exception if the payload is too
+        # large
+        except RequestTooLargeException:
+            raise
 
         # Tell Werk24 that all the files have been uploaded
         # correctly and the reading process can be started.
@@ -356,6 +364,10 @@ class W24TechreadClient:
         Arguments:
             drawing_bytes {bytes} -- Technical Drawing as Image or PDF
             hooks {List[Hook]} -- List of Callback you want to obtain
+
+        Raises:
+            ServerException -- Raised when the server returns an ERROR
+                message
         """
 
         # filter the callback requests to only contain
@@ -365,79 +377,114 @@ class W24TechreadClient:
             for cur_ask in hooks
             if cur_ask.ask is not None]
 
-        # send out the request and make a generator
-        # that triggers when the result of an ask
-        # becomes available
-        async for message in self.read_drawing(drawing_bytes, asks_list):
+        try:
+            # send out the request and make a generator
+            # that triggers when the result of an ask
+            # becomes available
+            async for message in self.read_drawing(drawing_bytes, asks_list):
+                await self._call_hooks_for_message(message, hooks)
 
-            # if the message type starts with TECHREAD_, it
-            # corresponds to a process message, so check the
-            # process handlers
-            if message.message_type.startswith(
-                    "TECHREAD_") or message.message_type.startswith("ERROR_"):
+        # explicitly reraise server exceptions
+        except ServerException:
+            raise
 
-                # check whether the message_type is associated
-                # with a callback. If not, the message type
-                # is simply ignored
-                try:
-                    hook_function = [
-                        h
-                        for h in hooks
-                        if h.message_type == message.message_type][0].function
+        # explicitly reraise RequestTooLargeException
+        except RequestTooLargeException:
+            raise
 
-                # if there is no associated callback request,
-                # silently ignore
-                except IndexError:
-                    continue
+    async def _call_hooks_for_message(
+        self,
+        message: W24TechreadMessage,
+        hooks: List[Hook]
+    ) -> None:
+        """ Find the correct hook for the read reseponse and
+        call the corresponding hook.
 
-            # if the message tyep starts with ASK_, it corresponds
-            # to a ASK, so check the asks_dict
-            elif message.message_type.startswith("ASK_"):
-                # translate the message_type into a ask_type
-                cur_ask_type = self.message_to_ask_type.get(
-                    message.message_type)
+        Arguments:
+            message {W24TechreadMessage} -- Messsage returned from the
+                read_drawing method
 
-                # obtain the trigger that is associated to the ask type
-                try:
-                    hook_function = [
-                        h
-                        for h in hooks
-                        if h.ask is not None and h.ask.ask_type == cur_ask_type
-                    ][0].function
+            hooks {List[Hook]} -- List of hooks from which we need to
+                pick the suited one
 
-                # if the ask is not in the list, the API returned something
-                # that the client was not asking for.
-                except IndexError:
-                    logger.warning(
-                        "No callback associated with ask type '%s'. The original message_type was '%s'. If you did not request this ask type, please get in touch with our support team",
-                        cur_ask_type,
-                        message.message_type,
-                    )
-                    continue
+        Raises:
+            ServerException: raised when the server returns an ERROR
+                message
+        """
 
-            # if neither is true, we have an unknown message type, which
-            # probobly is being caused by an API update. We want to ensure
-            # that the user is being informed, but we do not want to break
-            # the existing functionality -> warning
-            else:
+        # if the message type starts with TECHREAD_, it
+        # corresponds to a process message, so check the
+        # process handlers
+        if message.message_type_main == "TECHREAD":
+
+            # check whether the message_type is associated
+            # with a callback. If not, the message type
+            # is simply ignored
+            try:
+                hook_function = [
+                    h
+                    for h in hooks
+                    if h.message_type == message.message_type][0].function
+
+            # if there is no associated callback request,
+            # silently ignore
+            except IndexError:
+                return
+
+        # if the message type starts with ERROR_, we raise a
+        # server exception that corresponds
+        elif message.message_type_main == "ERROR":
+            raise ServerException(message)
+
+        # if the message tyep starts with ASK_, it corresponds
+        # to a ASK, so check the asks_dict
+        elif message.message_type_main == "ASK":
+
+            # translate the message_type into a ask_type
+            cur_ask_type = self.message_to_ask_type.get(
+                message.message_type)
+
+            # obtain the trigger that is associated to the ask type
+            try:
+                hook_function = [
+                    h
+                    for h in hooks
+                    if h.ask is not None and h.ask.ask_type == cur_ask_type
+                ][0].function
+
+            # if the ask is not in the list, the API returned something
+            # that the client was not asking for.
+            except IndexError:
                 logger.warning(
-                    "Ignoring unknown message type %s. Please check with our support team",
-                    message.message_type)
-
-            # if the callback is not callable, we want to warn the user,
-            # rather than throwing an exception
-            if not callable(hook_function):
-                logger.warning(
-                    "You registered a non-callable trigger of type '%s' with the message_type '%s'. Please make sure that you are using a Callable (e.g, def or lambda)",
-                    type(hook_function),
-                    message.message_typ,
+                    "No callback associated with ask type '%s'. The original message_type was '%s'. If you did not request this ask type, please get in touch with our support team",
+                    cur_ask_type,
+                    message.message_type,
                 )
-                continue
+                return
 
-            # if everything went well, we call the trigger with
-            # the message as payload. Be sure to call the
-            # function asymmetrically if supported
-            if asyncio.iscoroutinefunction(hook_function):
-                await hook_function(message)
-            else:
-                hook_function(message)
+        # if neither is true, we have an unknown message type, which
+        # probobly is being caused by an API update. We want to ensure
+        # that the user is being informed, but we do not want to break
+        # the existing functionality -> warning
+        else:
+            logger.warning(
+                "Ignoring unknown message type %s. Please check with our support team",
+                message.message_type)
+
+        # if the callback is not callable, we want to warn the user,
+        # rather than throwing an exception
+        if not callable(hook_function):
+            logger.warning(
+                "You registered a non-callable trigger of type '%s' with the message_type '%s'. Please make sure that you are using a Callable (e.g, def or lambda)",
+                type(hook_function),
+                message.message_typ,
+            )
+            return
+
+        # if everything went well, we call the trigger with
+        # the message as payload. Be sure to call the
+        # function asymmetrically if supported
+        if asyncio.iscoroutinefunction(hook_function):
+            await hook_function(message)
+        else:
+            hook_function(message)

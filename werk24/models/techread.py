@@ -30,6 +30,10 @@ class W24TechreadMessage(BaseModel):
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes]
 
+    @property
+    def message_type_main(self):
+        return self.message_type.value.split("_", 1)[0]
+
 
 class W24TechreadArchitecture(str, Enum):
     """ List of available architectures.

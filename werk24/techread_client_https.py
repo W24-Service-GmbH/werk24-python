@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import aiohttp
 from pydantic import HttpUrl
 
-from werk24.exceptions import ServerException, UnauthorizedException
+from werk24.exceptions import ServerException, UnauthorizedException, RequestTooLargeException
 from werk24.models.techread import (W24TechreadArchitecture,
                                     W24TechreadArchitectureStatus)
 
@@ -85,6 +85,9 @@ class TechreadClientHttps:
             UnauthorizedException: Raised when the token
                 or the requested file have expired
 
+            RequestTooLargeException: Raised when the status
+                code was 413
+
             ServerException: Raised when the status code
                 returned by the server is not 200
         """
@@ -99,9 +102,17 @@ class TechreadClientHttps:
         try:
             await self._post(url=endpoint, data=json.dumps({file_type: base64.b64encode(content).decode()}))
 
-        # if any exceptions occure, pass them on
-        except (UnauthorizedException, ServerException) as exception:
-            raise exception
+        # reraise the exception if we are unauhtorizer
+        except UnauthorizedException:
+            raise
+
+        # reraise the exception if the request is too large
+        except RequestTooLargeException:
+            raise
+
+        # rereaise the remaining server exceptions
+        except ServerException:
+            raise
 
     def _make_endpoint_url(self, subpath):
         """ Make the endpoint url of the subpath.
@@ -208,10 +219,17 @@ class TechreadClientHttps:
         try:
             response = await self._get(payload_url)
 
-        # if an exception occured,
-        # raise it again
-        except ServerException as exception:
-            raise exception
+        # reraise the exception if we are unauthorized
+        except UnauthorizedException:
+            raise
+
+        # reraise the exception if the request is too large
+        except RequestTooLargeException:
+            raise
+
+        # rereaise the remaining server exceptions
+        except ServerException:
+            raise
 
         # otherwise return the response text
         return base64.b64decode(await response.text())
@@ -242,7 +260,7 @@ class TechreadClientHttps:
         # check the status code of the response and
         # raise the appropriate exception
         try:
-            self._check_status_code(url, response.status)
+            self._raise_for_status(url, response.status)
         except (UnauthorizedException, ServerException) as exception:
             raise exception
 
@@ -267,8 +285,11 @@ class TechreadClientHttps:
             ServerException: Raised when the status code
                 returned by the server is not 200
 
+            RequestTooLargeException: Raised when the status
+                code was 413
+
         Returns:
-            ??? -- [description]
+            ??? -- Post request response
         """
 
         # send the request
@@ -276,16 +297,31 @@ class TechreadClientHttps:
 
         # check the status code of the response and
         # raise the appropriate exception
-        try:
-            self._check_status_code(url, response.status)
-        except (UnauthorizedException, ServerException) as exception:
-            raise exception
+        self._raise_for_status(url, response.status)
 
         # return the response
         return response
 
     @staticmethod
-    def _check_status_code(url, status_code):
+    def _raise_for_status(url: str, status_code: int):
+        """ Raise the correct exception depending on the
+        status code
+
+        Arguments:
+            url {str} -- requested url
+            status_code {int} -- response status code
+
+        Raises:
+            UnauthorizedException: Raised when the token
+                or the requested file have expired
+
+            ServerException: Raised when the status code
+                returned by the server is not 200
+
+            RequestTooLargeException: Raised when the status
+                code was 413
+
+        """
         # raise an unauthorized exception if the
         # status code is
         # * 401 (Unauthorized) or
@@ -298,6 +334,11 @@ class TechreadClientHttps:
         # Makes brute force attacks more expensive
         if status_code in [401, 403]:
             raise UnauthorizedException()
+
+        # if the request code is 413, we have submitted
+        # a file that is too large.
+        elif status_code == 413:
+            raise RequestTooLargeException()
 
         # If the resposne code is anything other
         # than unauthorized or 200 (OK), we trigger
