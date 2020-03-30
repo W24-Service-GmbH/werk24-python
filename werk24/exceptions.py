@@ -14,11 +14,32 @@ class UnknownException(TechreadException):
 
 
 class RequestTooLargeException(TechreadException):
-    """ Raised when the request exceeds the maximal
+    """ Raised RequestTooLargeException the request exceeds the maximal
     request size (at the time of writing 6MB).
     """
 
 
 class ServerException(TechreadException):
     """ Exception that is raised, when the server responded in an unexpected way.
+    """
+
+
+class BadRequestException(TechreadException):
+    """ Raised when the request body cannot be interpreted by the server.
+    This indicates that
+    (i) someone has fiddled with with request body, or
+    (ii) the server API version has been updated and the integration tests
+        did not catch the problem.
+    If you encounter this exception, please let us know
+    """
+
+
+class ResourceNotFoundException(TechreadException):
+    """ Raised when we encounter a 404
+    """
+
+
+class UnsupportedMediaTypeException(TechreadException):
+    """ Raised when the uploaded file has a format
+    that is not supported by the api
     """

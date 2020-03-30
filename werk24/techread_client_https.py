@@ -5,7 +5,13 @@ from urllib.parse import urlparse
 import aiohttp
 from pydantic import HttpUrl
 
-from werk24.exceptions import ServerException, UnauthorizedException, RequestTooLargeException
+from werk24.exceptions import (
+    BadRequestException,
+    RequestTooLargeException,
+    ResourceNotFoundException,
+    ServerException,
+    UnauthorizedException,
+    UnsupportedMediaTypeException)
 from werk24.models.techread import (W24TechreadArchitecture,
                                     W24TechreadArchitectureStatus)
 
@@ -82,14 +88,31 @@ class TechreadClientHttps:
             content {bytes} -- content of the file as bytes
 
         Raises:
+
+            BadRequestException: Raised when the request body
+                cannot be interpreted. This normally indicates
+                that the API version has been updated and that
+                we missed a corner case. If you encounter this
+                exception, it is very likely our mistake. Please
+                get in touch!
+
             UnauthorizedException: Raised when the token
                 or the requested file have expired
+
+            ResourceNotFoundException: Raised when you are requesting
+                an endpoint that does not exist. Again, you should
+                not encounter this, but if you do, let us know.
 
             RequestTooLargeException: Raised when the status
                 code was 413
 
-            ServerException: Raised when the status code
-                returned by the server is not 200
+            UnsupportedMediaTypException: Raised when the file you
+                submitted cannot be read (because its media type
+                is not supported by the API).
+
+            ServerException: Raised for all other status codes
+                that are not 2xx
+
         """
 
         # Check if the content variable is empty.
@@ -103,15 +126,8 @@ class TechreadClientHttps:
             await self._post(url=endpoint, data=json.dumps({file_type: base64.b64encode(content).decode()}))
 
         # reraise the exception if we are unauhtorizer
-        except UnauthorizedException:
-            raise
-
-        # reraise the exception if the request is too large
-        except RequestTooLargeException:
-            raise
-
-        # rereaise the remaining server exceptions
-        except ServerException:
+        except (UnauthorizedException, RequestTooLargeException,
+                ServerException, BadRequestException, ResourceNotFoundException):
             raise
 
     def _make_endpoint_url(self, subpath):
@@ -137,12 +153,30 @@ class TechreadClientHttps:
 
         Raises:
 
-            ServerException: Raised when the server responded
-                in a way we did not anticipate (i.e., when
-                the status code is anything other than 200)
+            BadRequestException: Raised when the request body
+                cannot be interpreted. This normally indicates
+                that the API version has been updated and that
+                we missed a corner case. If you encounter this
+                exception, it is very likely our mistake. Please
+                get in touch!
 
-            UnauthorizedException: Did you request a resource, that you
-                were not supposed to?
+            UnauthorizedException: Raised when the token
+                or the requested file have expired
+
+            ResourceNotFoundException: Raised when you are requesting
+                an endpoint that does not exist. Again, you should
+                not encounter this, but if you do, let us know.
+
+            RequestTooLargeException: Raised when the status
+                code was 413
+
+            UnsupportedMediaTypException: Raised when the file you
+                submitted cannot be read (because its media type
+                is not supported by the API).
+
+            ServerException: Raised for all other status codes
+                that are not 2xx, or the response format cannot
+                be interpreted
 
         Returns:
             W24TechreadArchitectureStatus -- Status
@@ -162,9 +196,10 @@ class TechreadClientHttps:
         except (ValueError, KeyError):
             raise ServerException("Server response format unexpected")
 
-        # pass on the standard exceptions
-        except (UnauthorizedException, ServerException) as exception:
-            raise exception
+        # reraise the exceptions
+        except (UnauthorizedException, RequestTooLargeException,
+                ServerException, BadRequestException, ResourceNotFoundException):
+            raise
 
         # translate the respose
         try:
@@ -195,13 +230,29 @@ class TechreadClientHttps:
                 at 3am if it must be. Even if its Christmas
                 and Easter on the same day.
 
-            ServerException: Raised when the server responded
-                in a way we did not anticipate (i.e., when
-                the status code is anything other than 200)
+            BadRequestException: Raised when the request body
+                cannot be interpreted. This normally indicates
+                that the API version has been updated and that
+                we missed a corner case. If you encounter this
+                exception, it is very likely our mistake. Please
+                get in touch!
 
-            UnauthorizedException: Did you request a resource, that you
-                were not supposed to?
+            UnauthorizedException: Raised when the token
+                or the requested file have expired
 
+            ResourceNotFoundException: Raised when you are requesting
+                an endpoint that does not exist. Again, you should
+                not encounter this, but if you do, let us know.
+
+            RequestTooLargeException: Raised when the status
+                code was 413
+
+            UnsupportedMediaTypException: Raised when the file you
+                submitted cannot be read (because its media type
+                is not supported by the API).
+
+            ServerException: Raised for all other status codes
+                that are not 2xx
         Returns:
             bytes -- Payload
         """
@@ -219,16 +270,9 @@ class TechreadClientHttps:
         try:
             response = await self._get(payload_url)
 
-        # reraise the exception if we are unauthorized
-        except UnauthorizedException:
-            raise
-
-        # reraise the exception if the request is too large
-        except RequestTooLargeException:
-            raise
-
-        # rereaise the remaining server exceptions
-        except ServerException:
+        # reraise the exceptions
+        except (UnauthorizedException, RequestTooLargeException,
+                ServerException, BadRequestException, ResourceNotFoundException):
             raise
 
         # otherwise return the response text
@@ -244,11 +288,29 @@ class TechreadClientHttps:
             url {HttpUrl} -- URL that is to be requested
 
         Raises:
+            BadRequestException: Raised when the request body
+                cannot be interpreted. This normally indicates
+                that the API version has been updated and that
+                we missed a corner case. If you encounter this
+                exception, it is very likely our mistake. Please
+                get in touch!
+
             UnauthorizedException: Raised when the token
                 or the requested file have expired
 
-            ServerException: Raised when the status code
-                returned by the server is not 200
+            ResourceNotFoundException: Raised when you are requesting
+                an endpoint that does not exist. Again, you should
+                not encounter this, but if you do, let us know.
+
+            RequestTooLargeException: Raised when the status
+                code was 413
+
+            UnsupportedMediaTypException: Raised when the file you
+                submitted cannot be read (because its media type
+                is not supported by the API).
+
+            ServerException: Raised for all other status codes
+                that are not 2xx
 
         Returns:
             ??? -- [description]
@@ -279,14 +341,29 @@ class TechreadClientHttps:
             data {str} -- Data that is sent in the request body
 
         Raises:
+            BadRequestException: Raised when the request body
+                cannot be interpreted. This normally indicates
+                that the API version has been updated and that
+                we missed a corner case. If you encounter this
+                exception, it is very likely our mistake. Please
+                get in touch!
+
             UnauthorizedException: Raised when the token
                 or the requested file have expired
 
-            ServerException: Raised when the status code
-                returned by the server is not 200
+            ResourceNotFoundException: Raised when you are requesting
+                an endpoint that does not exist. Again, you should
+                not encounter this, but if you do, let us know.
 
             RequestTooLargeException: Raised when the status
                 code was 413
+
+            UnsupportedMediaTypException: Raised when the file you
+                submitted cannot be read (because its media type
+                is not supported by the API).
+
+            ServerException: Raised for all other status codes
+                that are not 2xx
 
         Returns:
             ??? -- Post request response
@@ -312,37 +389,69 @@ class TechreadClientHttps:
             status_code {int} -- response status code
 
         Raises:
+            BadRequestException: Raised when the request body
+                cannot be interpreted. This normally indicates
+                that the API version has been updated and that
+                we missed a corner case. If you encounter this
+                exception, it is very likely our mistake. Please
+                get in touch!
+
             UnauthorizedException: Raised when the token
                 or the requested file have expired
 
-            ServerException: Raised when the status code
-                returned by the server is not 200
+            ResourceNotFoundException: Raised when you are requesting
+                an endpoint that does not exist. Again, you should
+                not encounter this, but if you do, let us know.
 
             RequestTooLargeException: Raised when the status
                 code was 413
 
+            UnsupportedMediaTypException: Raised when the file you
+                submitted cannot be read (because its media type
+                is not supported by the API).
+
+            ServerException: Raised for all other status codes
+                that are not 2xx
+
         """
+
+        # raise a bad request exception if the status
+        # code 400 was returned. This normally indicates
+        # that the API has been updated and the integration
+        # tests have missed a case
+        if status_code == 400:
+            raise BadRequestException()
+
         # raise an unauthorized exception if the
         # status code is
         # * 401 (Unauthorized) or
         # * 403 (Forbidden)
-        #
+        elif status_code in [401, 403]:
+            raise UnauthorizedException()
+
         # NOTE: a 404 does not occur, as the
         # server does not want to tell you
         # whether the file does not exist
         # or whether your token is wrong.
-        # Makes brute force attacks more expensive
-        if status_code in [401, 403]:
-            raise UnauthorizedException()
+        # Makes brute force attacks more expensive.
+        # We deal with it anyway so we can change
+        # in the future
+        if status_code == 404:
+            raise ResourceNotFoundException()
 
-        # if the request code is 413, we have submitted
+        # if the status code is 413, you have submitted
         # a file that is too large.
         elif status_code == 413:
             raise RequestTooLargeException()
 
+        # if the status code is 415, you have submitted
+        # a file whose media type is not supported by the API
+        elif status_code == 415:
+            raise UnsupportedMediaTypException()
+
         # If the resposne code is anything other
         # than unauthorized or 200 (OK), we trigger
         # a ServerException.
-        if status_code != 200:
+        if not (200 <= status_code <= 299):
             raise ServerException(
                 f"Request failed '%s' with code %s", url, status_code)
