@@ -24,6 +24,8 @@ class TechreadClientHttps:
     to the W24TechreadArchitectureStatus enum
     """
 
+    MAX_REQUEST_PAYLOAD = 6 * 1024 * 1024  # 6MB
+
     status_map = {
         "DEPLOYED": W24TechreadArchitectureStatus.DEPLOYED,
         "DEPLOYING": W24TechreadArchitectureStatus.DEPLOYING,
@@ -69,7 +71,11 @@ class TechreadClientHttps:
         """
         self._auth_client = auth_client
 
-    async def upload_associated_file(self, request_id: str, file_type: str, content: bytes) -> None:
+    async def upload_associated_file(
+            self,
+            request_id: str,
+            file_type: str,
+            content: bytes) -> None:
         """ Upload an associated file to the API.
         This can either be a technical drawing or a
         3D model. Potentially we will sometime extend
@@ -120,10 +126,22 @@ class TechreadClientHttps:
         if content is None:
             return
 
+        # make the data
+        data = json.dumps({
+            file_type: base64.b64encode(content).decode()
+        })
+
+        # check whether the payload is too large
+        if len(data) > self.MAX_REQUEST_PAYLOAD:
+            raise RequestTooLargeException()
+
         # make the endpoint and the headers
         endpoint = self._make_endpoint_url(f"upload/{request_id}")
         try:
-            await self._post(url=endpoint, data=json.dumps({file_type: base64.b64encode(content).decode()}))
+            await self._post(
+                url=endpoint,
+                data=data
+            )
 
         # reraise the exception if we are unauhtorizer
         except (UnauthorizedException, RequestTooLargeException,

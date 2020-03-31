@@ -4,6 +4,8 @@ import hmac
 
 import aioboto3
 
+from werk24.exceptions import UnauthorizedException
+
 
 class AuthClient:
     def __init__(
@@ -72,6 +74,11 @@ class AuthClient:
     async def login(self):
         """ Login with AWS Cognito
         """
+
+        # there is no point in trying to log in if there is no
+        # username or password
+        if self._username is None or self._password is None:
+            raise UnauthorizedException("No username / password provided")
 
         # make the connection to aws
         async with self._make_cognito_client() as cognito_client:
