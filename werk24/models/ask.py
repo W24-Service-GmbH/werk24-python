@@ -9,7 +9,7 @@ class W24AskType(str, Enum):
     SHEET_EXPORT_ONSHAPE = "SHEET_EXPORT_ONSHAPE"
     SHEET_THUMBNAIL = "SHEET_THUMBNAIL"
 
-    PLANE_THUMBNAIL = "PLANE_THUMBNAIL"
+    SECTIONAL_THUMBNAIL = "SECTIONAL_THUMBNAIL"
 
     VARIANT_OVERALL_DIMENSIONS = "VARIANT_OVERALL_DIMENSIONS"
     VARIANT_EXPORT_STL = "VARIANT_EXPORT_STL"
@@ -73,10 +73,10 @@ class W24AskSheetExportOnshape(W24Ask):
 
 class W24AskPlaneThumbnail(W24AskThumbnail):
     """ The W24AskPlaneThumbnail requests a thumbnail
-    of each plane on each sheet in the document.
+    of each sectional on each sheet in the document.
     """
 
-    ask_type = W24AskType.PLANE_THUMBNAIL
+    ask_type = W24AskType.SECTIONAL_THUMBNAIL
 
 
 class W24AskVariantOverallDimensions(W24Ask):

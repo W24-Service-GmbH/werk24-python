@@ -61,7 +61,7 @@ class W24TechreadClient:
     """
 
     message_to_ask_type: Dict[W24TechreadMessageType, W24AskType] = {
-        W24TechreadMessageType.ASK_PLANE_THUMBNAIL: W24AskType.PLANE_THUMBNAIL,
+        W24TechreadMessageType.ASK_SECTIONAL_THUMBNAIL: W24AskType.SECTIONAL_THUMBNAIL,
         W24TechreadMessageType.ASK_PAGE_THUMBNAIL: W24AskType.PAGE_THUMBNAIL,
         W24TechreadMessageType.ASK_SHEET_THUMBNAIL: W24AskType.SHEET_THUMBNAIL,
         W24TechreadMessageType.ASK_VARIANT_OVERALL_DIMENSIONS: W24AskType.VARIANT_OVERALL_DIMENSIONS,

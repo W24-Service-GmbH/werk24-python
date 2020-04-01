@@ -43,8 +43,8 @@ parser_techread.add_argument(
     action="store_true")
 
 parser_techread.add_argument(
-    "--ask-plane-thumbnail",
-    help="ask for a thumbnail of each plane of each sheet in the document",
+    "--ask-sectional-thumbnail",
+    help="ask for a thumbnail of each sectional of each sheet in the document",
     action="store_true")
 
 parser_techread.add_argument(

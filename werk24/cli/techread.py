@@ -80,7 +80,7 @@ async def main(args):
                 msg.payload_bytes))]
 
     # add the hook for the drawing thumbnail
-    if args.ask_plane_thumbnail:
+    if args.ask_sectional_thumbnail:
         hooks += [Hook(
             ask=W24AskPlaneThumbnail(),
             function=lambda msg: _debug_show_image(

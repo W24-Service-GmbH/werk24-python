@@ -23,7 +23,7 @@ class TechreadTest(aiounittest.AsyncTestCase):
         args.ask_techread_started = True
         args.ask_page_thumbnail = True
         args.ask_sheet_thumbnail = True
-        args.ask_plane_thumbnail = True
+        args.ask_sectional_thumbnail = True
         args.ask_variant_overall_dimensions = True
         args.ask_train = True
         return args
@@ -56,6 +56,6 @@ class TechreadTest(aiounittest.AsyncTestCase):
         # and compare
         assert W24AskType.PAGE_THUMBNAIL in ask_types
         assert W24AskType.SHEET_THUMBNAIL in ask_types
-        assert W24AskType.PLANE_THUMBNAIL in ask_types
+        assert W24AskType.SECTIONAL_THUMBNAIL in ask_types
         assert W24AskType.VARIANT_OVERALL_DIMENSIONS in ask_types
         assert W24AskType.TRAIN in ask_types
