@@ -1,17 +1,15 @@
 import base64
 import json
+from typing import Optional
 from urllib.parse import urlparse
 
 import aiohttp
 from pydantic import HttpUrl
 
-from werk24.exceptions import (
-    BadRequestException,
-    RequestTooLargeException,
-    ResourceNotFoundException,
-    ServerException,
-    UnauthorizedException,
-    UnsupportedMediaTypeException)
+from werk24.exceptions import (BadRequestException, RequestTooLargeException,
+                               ResourceNotFoundException, ServerException,
+                               UnauthorizedException,
+                               UnsupportedMediaTypeException)
 from werk24.models.techread import (W24TechreadArchitecture,
                                     W24TechreadArchitectureStatus)
 
@@ -42,15 +40,16 @@ class TechreadClientHttps:
         """
         self._techread_server = techread_server_https
         self._techread_version = techread_version
-        self._techread_session_https = None
-        self._auth_client = None
+        self._techread_session_https: Optional[aiohttp.ClientSession] = None
+        self._auth_client: Optional[AuthClient] = None
 
     async def __aenter__(self):
         """ Create a new HTTP session that is being used for the whole
         connection. Be sure to keep the session alive.
 
         Returns:
-            TechreadClientHttps -- TechreadClientHttps version with active session
+            TechreadClientHttps -- TechreadClientHttps version with active
+                session
         """
         headers = {"Authorization": f"Bearer {self._auth_client.token}"}
         self._techread_session_https = aiohttp.ClientSession(headers=headers)
@@ -145,7 +144,8 @@ class TechreadClientHttps:
 
         # reraise the exception if we are unauhtorizer
         except (UnauthorizedException, RequestTooLargeException,
-                ServerException, BadRequestException, ResourceNotFoundException):
+                ServerException, BadRequestException,
+                ResourceNotFoundException):
             raise
 
     def _make_endpoint_url(self, subpath):
@@ -161,9 +161,15 @@ class TechreadClientHttps:
             HttpUrl -- Fully qualified url including
                 the server name and api version
         """
-        return f"https://{self._techread_server}/{self._techread_version}/{subpath}"
+        return "https://{}/{}/{}".format(
+            self._techread_server,
+            self._techread_version,
+            subpath)
 
-    async def get_architecture_status(self, architecture: W24TechreadArchitecture) -> W24TechreadArchitectureStatus:
+    async def get_architecture_status(
+        self,
+        architecture: W24TechreadArchitecture
+    ) -> W24TechreadArchitectureStatus:
         """ Get the current status of the requested architecture
 
         Arguments:
@@ -209,14 +215,15 @@ class TechreadClientHttps:
             result = await response.json()
             status = result['status']
 
-        # if the response cannot be interpreted as json, or does not contain the
-        # requested key, raise a Server Exception
+        # if the response cannot be interpreted as json, or does not contain
+        # the requested key, raise a Server Exception
         except (ValueError, KeyError):
             raise ServerException("Server response format unexpected")
 
         # reraise the exceptions
         except (UnauthorizedException, RequestTooLargeException,
-                ServerException, BadRequestException, ResourceNotFoundException):
+                ServerException, BadRequestException,
+                ResourceNotFoundException):
             raise
 
         # translate the respose
@@ -290,7 +297,8 @@ class TechreadClientHttps:
 
         # reraise the exceptions
         except (UnauthorizedException, RequestTooLargeException,
-                ServerException, BadRequestException, ResourceNotFoundException):
+                ServerException, BadRequestException,
+                ResourceNotFoundException):
             raise
 
         # otherwise return the response text
@@ -333,6 +341,11 @@ class TechreadClientHttps:
         Returns:
             ??? -- [description]
         """
+
+        # ensure that the session was started
+        if self._techread_session_https is None:
+            raise RuntimeError(
+                "You executed a command without opening a session")
 
         # send the request
         response = await self._techread_session_https.get(url)
@@ -386,6 +399,11 @@ class TechreadClientHttps:
         Returns:
             ??? -- Post request response
         """
+
+        # ensure that the session was started
+        if self._techread_session_https is None:
+            raise RuntimeError(
+                "You executed a command without opening a session")
 
         # send the request
         response = await self._techread_session_https.post(url, data=data)
@@ -444,7 +462,7 @@ class TechreadClientHttps:
         # status code is
         # * 401 (Unauthorized) or
         # * 403 (Forbidden)
-        elif status_code in [401, 403]:
+        if status_code in [401, 403]:
             raise UnauthorizedException()
 
         # NOTE: a 404 does not occur, as the
@@ -459,13 +477,13 @@ class TechreadClientHttps:
 
         # if the status code is 413, you have submitted
         # a file that is too large.
-        elif status_code == 413:
+        if status_code == 413:
             raise RequestTooLargeException()
 
         # if the status code is 415, you have submitted
         # a file whose media type is not supported by the API
-        elif status_code == 415:
-            raise UnsupportedMediaTypException()
+        if status_code == 415:
+            raise UnsupportedMediaTypeException()
 
         # If the resposne code is anything other
         # than unauthorized or 200 (OK), we trigger

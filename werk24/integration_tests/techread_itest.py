@@ -1,11 +1,13 @@
-import mock
-import unittest
-from werk24.techread_client import W24TechreadClient, W24TechreadArchitecture, W24TechreadArchitectureStatus, W24TechreadMessageType
-from werk24.models.ask import *
-from dotenv import load_dotenv
 import aiounittest
 import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+from werk24.models.ask import W24AskPageThumbnail
+from werk24.techread_client import (W24TechreadArchitecture,
+                                    W24TechreadArchitectureStatus,
+                                    W24TechreadClient, W24TechreadMessageType)
 
 
 class TechreadIntegrationTest(aiounittest.AsyncTestCase):
@@ -37,7 +39,7 @@ class TechreadIntegrationTest(aiounittest.AsyncTestCase):
         """ load the environment variables and test that they
         are available
         """
-        load_dotenv()
+        load_dotenv(".werk24")
         for cur_env in self.envs_required:
             self.assertIsNotNone(os.environ.get(cur_env))
 
@@ -74,8 +76,8 @@ class TechreadIntegrationTest(aiounittest.AsyncTestCase):
 
             # and make the request
             is_first_message = True
-            async for message in session.read_drawing(drawing_bytes, asks_list):
-                print(message)
+            async for message in session.read_drawing(
+                    drawing_bytes, asks_list):
 
                 # the first message needs to be a TECHREAD_STARTED
                 if is_first_message:

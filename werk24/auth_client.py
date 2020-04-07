@@ -1,3 +1,6 @@
+""" Module handling the authentication
+"""
+from typing import Optional
 import base64
 import hashlib
 import hmac
@@ -8,6 +11,18 @@ from werk24.exceptions import UnauthorizedException
 
 
 class AuthClient:
+    """ Client Module that handles the authentication
+    with AWS Cognito.
+
+    Raises:
+        UnauthorizedException: Raised when the user credentials are not
+            accepted by AWS Cognito
+
+        RuntimeError: Raised when the server behaves in a very unexpected
+            way; e.g., when AWS changed the protocol
+
+    """
+
     def __init__(
             self,
             cognito_region: str,
@@ -22,8 +37,8 @@ class AuthClient:
         self._cognito_client_secret = cognito_client_secret
 
         # make empty references to the username and password
-        self._username = None
-        self._password = None
+        self._username: Optional[str] = None
+        self._password: Optional[str] = None
 
         # make an empty reference ot the jwt_token
         self.token = None
@@ -49,8 +64,9 @@ class AuthClient:
         return aioboto3.client("cognito-idp", self._cognito_region)
 
     def _make_cognito_secret_hash(self, username: str) -> str:
-        """ Make the keyed-hash message authentication code (HMAC) calculated using
-        the secret key of a user pool client and username plus the client  ID in the message.
+        """ Make the keyed-hash message authentication code (HMAC) calculated
+        using the secret key of a user pool client and username plus the client
+        ID in the message.
 
         Arguments:
             username {str} -- Username

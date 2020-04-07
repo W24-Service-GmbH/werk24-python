@@ -17,7 +17,8 @@ EXAMPLE
         drawing_bytes,
         [Hook(
                 ask=W24ASkThumbnailPage(),
-                callback=lambda msg: logging.info("Received Thumbnail of Page")]))
+                callback=lambda msg: logging.info("Received Thumbnail of Page")
+        ]))
 """
 import asyncio
 import logging
@@ -61,10 +62,14 @@ class W24TechreadClient:
     """
 
     message_to_ask_type: Dict[W24TechreadMessageType, W24AskType] = {
-        W24TechreadMessageType.ASK_SECTIONAL_THUMBNAIL: W24AskType.SECTIONAL_THUMBNAIL,
-        W24TechreadMessageType.ASK_PAGE_THUMBNAIL: W24AskType.PAGE_THUMBNAIL,
-        W24TechreadMessageType.ASK_SHEET_THUMBNAIL: W24AskType.SHEET_THUMBNAIL,
-        W24TechreadMessageType.ASK_VARIANT_OVERALL_DIMENSIONS: W24AskType.VARIANT_OVERALL_DIMENSIONS,
+        W24TechreadMessageType.ASK_SECTIONAL_THUMBNAIL:
+            W24AskType.SECTIONAL_THUMBNAIL,
+        W24TechreadMessageType.ASK_PAGE_THUMBNAIL:
+            W24AskType.PAGE_THUMBNAIL,
+        W24TechreadMessageType.ASK_SHEET_THUMBNAIL:
+            W24AskType.SHEET_THUMBNAIL,
+        W24TechreadMessageType.ASK_VARIANT_OVERALL_DIMENSIONS:
+            W24AskType.VARIANT_OVERALL_DIMENSIONS,
         W24TechreadMessageType.ASK_TRAIN: W24AskType.TRAIN,
     }
 
@@ -169,7 +174,8 @@ class W24TechreadClient:
             cognito_region {str} -- Physical region
             cognito_identity_pool_id {str} -- identity pool of W24
             cognito_client_id {str} -- the client id of your application
-            cognito_client_secret {str} -- the client secrect of your application
+            cognito_client_secret {str} -- the client secrect of your
+                application
             username {str} -- the username with which you want to register
             password {str} -- the password with which you want to register
         """
@@ -188,7 +194,10 @@ class W24TechreadClient:
         self._techread_client_https.register_auth_client(self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
 
-    async def get_architecture_status(self, architecture: W24TechreadArchitecture) -> W24TechreadArchitectureStatus:
+    async def get_architecture_status(
+        self,
+        architecture: W24TechreadArchitecture
+    ) -> W24TechreadArchitectureStatus:
         """ Talk to the API endpoint and check whether a specific architecture
         is currently available. This only relevant if you have booked a
         dedicated GPU infrastructure that.
@@ -200,15 +209,17 @@ class W24TechreadClient:
             W24TechreadArchitectureStatus -- Status
 
         """
-        return await self._techread_client_https.get_architecture_status(architecture)
+        return await self._techread_client_https.get_architecture_status(
+            architecture)
 
     async def read_drawing(
-            self,
-            drawing: bytes,
-            asks: List[W24Ask],
-            model: bytes = None,
-            architecture: W24TechreadArchitecture = W24TechreadArchitecture.GPU_V1,
-            webhook: HttpUrl = None) -> None:
+        self,
+        drawing: bytes,
+        asks: List[W24Ask],
+        model: bytes = None,
+        architecture: W24TechreadArchitecture = W24TechreadArchitecture.GPU_V1,
+        webhook: HttpUrl = None
+    ) -> None:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
 
@@ -218,7 +229,8 @@ class W24TechreadClient:
                 types are currently supported
 
         Keyword Arguments:
-            model {bytes} -- binary represetation of the 3d model(typically step)
+            model {bytes} -- binary represetation of the 3d model (typically
+                step)
                 Please refer to the API - documentation to learn whcih mime
                 types are currently sypported(default: {None})
 
@@ -228,8 +240,9 @@ class W24TechreadClient:
                 a full list of supported W24AskTypes
 
             architecture {str} -- Architecture to be used to process
-                the request. Please refer to the API documentation for a complete
-                list of supported architectures (default: {W24TechreadArchitecture.GPU_V1})
+                the request. Please refer to the API documentation for a
+                complete list of supported architectures
+                (default: {W24TechreadArchitecture.GPU_V1})
 
             webhook {HttpUrl} --  URL that shall be called whenever another
                 ask becomes available. Setting this value will automatically
@@ -244,9 +257,9 @@ class W24TechreadClient:
                 to the read_drawing_listen method
 
         Raises:
-            DrawingTooLarge -- Exception is raised when the drawing was too large
-                to be processed. At the time of writing. The upload limit lies at
-                6 MB (including overhead).
+            DrawingTooLarge -- Exception is raised when the drawing was too
+                large to be processed. At the time of writing. The upload
+                limit lies at 6 MB (including overhead).
         """
 
         # give us some debug information
@@ -270,7 +283,9 @@ class W24TechreadClient:
         # 2. The server will create a new request_id
         #    that you will need when uploading the
         #    associated files
-        await self._techread_client_wss.send_command("initialize", request.json())
+        await self._techread_client_wss.send_command(
+            "initialize",
+            request.json())
 
         # Wait for the response (i.e,. the request id)
         response = await self._techread_client_wss.recv_message()
@@ -280,10 +295,12 @@ class W24TechreadClient:
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
-            await asyncio.gather(*[
-                self._techread_client_https.upload_associated_file(response.request_id, 'drawing', drawing),
-                self._techread_client_https.upload_associated_file(response.request_id, 'model', model),
-            ])
+            await asyncio.gather(
+                self._techread_client_https.upload_associated_file(
+                    response.request_id, 'drawing', drawing),
+                self._techread_client_https.upload_associated_file(
+                    response.request_id, 'model', model)
+            )
             logger.info("Drawing(and model) uploaded")
 
         # explicitly reraise the exception if the payload is too
@@ -321,7 +338,8 @@ class W24TechreadClient:
 
             # check whether we need to download something
             if message.payload_url is not None:
-                message.payload_bytes = await self._techread_client_https.download_payload(message.payload_url)
+                message.payload_bytes = await self._techread_client_https \
+                    .download_payload(message.payload_url)
 
             # return the message to the caller for immediate
             # consumption
@@ -356,7 +374,11 @@ class W24TechreadClient:
         # return the client
         return client
 
-    async def read_drawing_with_hooks(self, drawing_bytes: bytes, hooks: List[Hook]):
+    async def read_drawing_with_hooks(
+        self,
+        drawing_bytes: bytes,
+        hooks: List[Hook]
+    ) -> None:
         """ Send the drawing to the API (can be PDF or image)
         and register a number of callbacks that are triggered
         once the asks become available.
@@ -456,7 +478,7 @@ class W24TechreadClient:
             # that the client was not asking for.
             except IndexError:
                 logger.warning(
-                    "No callback associated with ask type '%s'. The original message_type was '%s'. If you did not request this ask type, please get in touch with our support team",
+                    "No callback associated with ask type '%s'. The original message_type was '%s'. If you did not request this ask type, please get in touch with our support team",  # noqa
                     cur_ask_type,
                     message.message_type,
                 )
@@ -468,14 +490,14 @@ class W24TechreadClient:
         # the existing functionality -> warning
         else:
             logger.warning(
-                "Ignoring unknown message type %s. Please check with our support team",
+                "Ignoring unknown message type %s. Please check with our support team",  # noqa
                 message.message_type)
 
         # if the callback is not callable, we want to warn the user,
         # rather than throwing an exception
         if not callable(hook_function):
             logger.warning(
-                "You registered a non-callable trigger of type '%s' with the message_type '%s'. Please make sure that you are using a Callable (e.g, def or lambda)",
+                "You registered a non-callable trigger of type '%s' with the message_type '%s'. Please make sure that you are using a Callable (e.g, def or lambda)",  # noqa
                 type(hook_function),
                 message.message_typ,
             )

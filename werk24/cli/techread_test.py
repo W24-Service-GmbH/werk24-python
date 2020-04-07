@@ -1,10 +1,8 @@
-import asyncio
-import unittest
+
 import argparse
 import mock
 import aiounittest
 from werk24.cli.techread import main
-import werk24.techread_client
 from werk24.models.ask import W24AskType
 
 

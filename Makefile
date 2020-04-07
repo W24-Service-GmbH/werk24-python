@@ -11,3 +11,10 @@ install:
 format:
 	$(isort)
 	$(autopep8)
+
+.PHONY: push
+push:
+	nose2
+	git add .
+	git commit
+	git push

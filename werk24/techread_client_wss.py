@@ -2,6 +2,7 @@ import json
 
 import websockets
 from pydantic import ValidationError
+from websockets.client import WebSocketClientProtocol
 
 from werk24.exceptions import ServerException, UnauthorizedException
 from werk24.models.techread import W24TechreadCommand, W24TechreadMessage
@@ -14,18 +15,29 @@ class TechreadClientWss:
         self._auth_client = None
         self._techread_server_wss = techread_server_wss
         self._techread_version = techread_version
-        self._techread_session_wss: websockets.client.WebSocketClientProtocol = None
+        self._techread_session_wss: WebSocketClientProtocol = None
 
-    async def __aenter__(self):
+    async def __aenter__(
+        self
+    )-> 'TechreadClientWss':
+        """ Enter the session with the wss server
+
+        Returns:
+            TechreadClientWss -- instance with activated session
+        """
 
         # make the endpoint
-        endpoint = f"wss://{self._techread_server_wss}/{self._techread_version}"
+        endpoint = "wss://{}/{}".format(
+            self._techread_server_wss,
+            self._techread_version)
 
         # make the ehaders
         headers = [(f"Authorization", f"Bearer {self._auth_client.token}")]
 
         # now make the session
-        self._techread_session_wss = await websockets.connect(endpoint, extra_headers=headers)
+        self._techread_session_wss = await websockets.connect(
+            endpoint,
+            extra_headers=headers)
 
         # return ourselfves
         return self

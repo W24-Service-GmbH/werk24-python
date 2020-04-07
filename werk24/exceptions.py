@@ -1,5 +1,12 @@
+""" Module for all exceptions
+"""
+
+
 class TechreadException(Exception):
-    pass
+    """ Base Exception for all Exceptions raised by
+    the Techread functionality
+
+    """
 
 
 class UnauthorizedException(TechreadException):
@@ -20,7 +27,8 @@ class RequestTooLargeException(TechreadException):
 
 
 class ServerException(TechreadException):
-    """ Exception that is raised, when the server responded in an unexpected way.
+    """ Exception that is raised, when the server responded in an unexpected
+    way.
     """
 
 

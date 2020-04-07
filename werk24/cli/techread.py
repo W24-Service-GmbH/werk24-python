@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 from werk24.models.ask import (
     W24AskVariantOverallDimensions,
-    W24AskPlaneThumbnail,
+    W24AskSectionalThumbnail,
     W24AskPageThumbnail,
     W24AskSheetThumbnail,
     W24AskTrain)
@@ -82,7 +82,7 @@ async def main(args):
     # add the hook for the drawing thumbnail
     if args.ask_sectional_thumbnail:
         hooks += [Hook(
-            ask=W24AskPlaneThumbnail(),
+            ask=W24AskSectionalThumbnail(),
             function=lambda msg: _debug_show_image(
                 "Drawing thumbnail received",
                 msg.payload_bytes))]
