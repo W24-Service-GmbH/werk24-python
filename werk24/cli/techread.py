@@ -27,7 +27,7 @@ load_dotenv()
 # We recommend using logging.WARNING for production
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+    format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',  # noqa
     datefmt='%Y-%m-%d %H:%M:%S')
 
 # get the local logger
@@ -101,7 +101,8 @@ async def main(args):
 
     # add a general hook to deal with internal errors
     hooks += [Hook(message_type=W24TechreadMessageType.ERROR_INTERNAL,
-                   function=lambda msg: logging.error(f"Internal Error {msg.payload_dict}"))]
+                   function=lambda msg:
+                   logging.error(f"Internal Error {msg.payload_dict}"))]
 
     # make the client. This will automatically
     # fetch the authentication information
@@ -117,7 +118,8 @@ async def main(args):
         # will not receive any response until the
         # architecture is deployed again
         if not args.ignore_architecture_status:
-            status = await session.get_architecture_status(W24TechreadArchitecture.GPU_V1)
+            status = await session.get_architecture_status(
+                W24TechreadArchitecture.GPU_V1)
             if status != W24TechreadArchitectureStatus.DEPLOYED:
                 logger.error("Architecture is not ready")
                 return
@@ -133,4 +135,4 @@ async def main(args):
 
         except RequestTooLargeException:
             logger.error(
-                "Request was too large to be processed. Please check the documentation for current limits.")
+                "Request was too large to be processed. Please check the documentation for current limits.")  # noqa
