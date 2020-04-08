@@ -1,11 +1,11 @@
 import base64
 import json
-from typing import Optional
+from typing import Optional, Type
+from types import TracebackType
 from urllib.parse import urlparse
 
 import aiohttp
-from pydantic import HttpUrl
-
+from pydantic import HttpUrl, UUID4
 from werk24.exceptions import (BadRequestException, RequestTooLargeException,
                                ResourceNotFoundException, ServerException,
                                UnauthorizedException,
@@ -43,19 +43,38 @@ class TechreadClientHttps:
         self._techread_session_https: Optional[aiohttp.ClientSession] = None
         self._auth_client: Optional[AuthClient] = None
 
-    async def __aenter__(self):
+    async def __aenter__(
+            self
+    ) -> 'TechreadClientHttps':
         """ Create a new HTTP session that is being used for the whole
         connection. Be sure to keep the session alive.
+
+        Raises:
+            RuntimeError  -- Raise when the developer enters the session
+                without having called register_auth_client()
 
         Returns:
             TechreadClientHttps -- TechreadClientHttps version with active
                 session
         """
+
+        # make sure that we have an AuthClient
+        if self._auth_client is None:
+            raise RuntimeError(
+                "You need to call register_auth_client() before you can start"
+                + " the session")
+
         headers = {"Authorization": f"Bearer {self._auth_client.token}"}
         self._techread_session_https = aiohttp.ClientSession(headers=headers)
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(
+            self,
+            exc_type: Optional[Type[BaseException]],
+            exc_value: Optional[BaseException],
+            traceback: Optional[TracebackType]
+    ) -> None:
+
         """ Close the session
         """
         if self._techread_session_https is not None:
@@ -72,9 +91,9 @@ class TechreadClientHttps:
 
     async def upload_associated_file(
             self,
-            request_id: str,
+            request_id: UUID4,
             file_type: str,
-            content: bytes) -> None:
+            content: Optional[bytes]) -> None:
         """ Upload an associated file to the API.
         This can either be a technical drawing or a
         3D model. Potentially we will sometime extend
@@ -146,9 +165,12 @@ class TechreadClientHttps:
         except (UnauthorizedException, RequestTooLargeException,
                 ServerException, BadRequestException,
                 ResourceNotFoundException):
-            raise
+            raise  # noqa
 
-    def _make_endpoint_url(self, subpath):
+    def _make_endpoint_url(
+            self,
+            subpath: str
+    ) -> str:
         """ Make the endpoint url of the subpath.
         This will create a fully valid http url
         that can be used in the post and get requests
@@ -158,7 +180,7 @@ class TechreadClientHttps:
                 the TechreadAPI
 
         Returns:
-            HttpUrl -- Fully qualified url including
+            str -- Fully qualified url including
                 the server name and api version
         """
         return "https://{}/{}/{}".format(
@@ -167,8 +189,8 @@ class TechreadClientHttps:
             subpath)
 
     async def get_architecture_status(
-        self,
-        architecture: W24TechreadArchitecture
+            self,
+            architecture: W24TechreadArchitecture
     ) -> W24TechreadArchitectureStatus:
         """ Get the current status of the requested architecture
 
@@ -304,14 +326,17 @@ class TechreadClientHttps:
         # otherwise return the response text
         return base64.b64decode(await response.text())
 
-    async def _get(self, url: HttpUrl):
+    async def _get(
+            self,
+            url: str
+    ) -> aiohttp.ClientResponse:
         """ Send a GET request request and return the
         response object. The method automatically
         injects the authentication token into the
         request.
 
         Arguments:
-            url {HttpUrl} -- URL that is to be requested
+            url {str} -- URL that is to be requested
 
         Raises:
             BadRequestException: Raised when the request body
@@ -339,7 +364,7 @@ class TechreadClientHttps:
                 that are not 2xx
 
         Returns:
-            ??? -- [description]
+            aiohttp.ClientResponse -- Client response for the get request
         """
 
         # ensure that the session was started
@@ -360,16 +385,20 @@ class TechreadClientHttps:
         # if the call was successful, return
         return response
 
-    async def _post(self, url: HttpUrl, data: str):
+    async def _post(
+            self,
+            url: str,
+            data: str
+    ) -> aiohttp.ClientResponse:
         """ Send a POST request request and return the
         response object. The method automatically
         injects the authentication token into the
         request.
 
         Arguments:
-            url {HttpUrl} -- URL that is to be requested
+            url {str} - - URL that is to be requested
 
-            data {str} -- Data that is sent in the request body
+            data {str} - - Data that is sent in the request body
 
         Raises:
             BadRequestException: Raised when the request body
@@ -390,14 +419,14 @@ class TechreadClientHttps:
                 code was 413
 
             UnsupportedMediaTypException: Raised when the file you
-                submitted cannot be read (because its media type
+                submitted cannot be read(because its media type
                 is not supported by the API).
 
             ServerException: Raised for all other status codes
                 that are not 2xx
 
         Returns:
-            ??? -- Post request response
+            aiohttp.ClientResponse - - Client response for the post request
         """
 
         # ensure that the session was started
@@ -416,13 +445,16 @@ class TechreadClientHttps:
         return response
 
     @staticmethod
-    def _raise_for_status(url: str, status_code: int):
+    def _raise_for_status(
+            url: str,
+            status_code: int
+    ) -> None:
         """ Raise the correct exception depending on the
         status code
 
         Arguments:
-            url {str} -- requested url
-            status_code {int} -- response status code
+            url {str} - - requested url
+            status_code {int} - - response status code
 
         Raises:
             BadRequestException: Raised when the request body
@@ -443,7 +475,7 @@ class TechreadClientHttps:
                 code was 413
 
             UnsupportedMediaTypException: Raised when the file you
-                submitted cannot be read (because its media type
+                submitted cannot be read(because its media type
                 is not supported by the API).
 
             ServerException: Raised for all other status codes

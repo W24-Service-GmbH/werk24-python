@@ -13,6 +13,8 @@ class W24AskType(str, Enum):
 
     SECTIONAL_THUMBNAIL = "SECTIONAL_THUMBNAIL"
 
+    VARIANT_TABLE_THUMBNAIL = "VARIANT_TABLE_THUMBNAIL"
+
     VARIANT_OVERALL_DIMENSIONS = "VARIANT_OVERALL_DIMENSIONS"
     VARIANT_EXPORT_STL = "VARIANT_EXPORT_STL"
 
@@ -85,8 +87,14 @@ class W24AskSectionalThumbnail(W24AskThumbnail):
     """ The W24AskPlaneThumbnail requests a thumbnail
     of each sectional on each sheet in the document.
     """
-
     ask_type = W24AskType.SECTIONAL_THUMBNAIL
+
+
+class W24AskVariantTableThumbnail(W24AskThumbnail):
+    """ The W24AskVariantTableThumbnail requests a thumbnail
+    of each variant table on the sheet.
+    """
+    ask_type = W24AskType.VARIANT_TABLE_THUMBNAIL
 
 
 class W24AskVariantOverallDimensions(W24Ask):

@@ -4,6 +4,9 @@ import mock
 import aiounittest
 from werk24.cli.techread import main
 from werk24.models.ask import W24AskType
+from dotenv import load_dotenv
+
+load_dotenv(".werk24")
 
 
 class TechreadTest(aiounittest.AsyncTestCase):

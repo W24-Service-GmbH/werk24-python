@@ -1,9 +1,10 @@
 import json
+from types import TracebackType
+from typing import Optional, Type, AsyncGenerator
 
 import websockets
 from pydantic import ValidationError
 from websockets.client import WebSocketClientProtocol
-
 from werk24.exceptions import ServerException, UnauthorizedException
 from werk24.models.techread import W24TechreadCommand, W24TechreadMessage
 
@@ -12,19 +13,29 @@ from .auth_client import AuthClient
 
 class TechreadClientWss:
     def __init__(self, techread_server_wss: str, techread_version: str):
-        self._auth_client = None
+        self._auth_client: Optional[AuthClient] = None
         self._techread_server_wss = techread_server_wss
         self._techread_version = techread_version
-        self._techread_session_wss: WebSocketClientProtocol = None
+        self._techread_session_wss: Optional[WebSocketClientProtocol] = None
 
     async def __aenter__(
         self
     )-> 'TechreadClientWss':
         """ Enter the session with the wss server
 
+        Raises:
+            RuntimeError  -- Raise when the developer enters the session
+                without having called register_auth_client()
+
         Returns:
             TechreadClientWss -- instance with activated session
         """
+
+        # make sure that we have an AuthClient
+        if self._auth_client is None:
+            raise RuntimeError(
+                "You need to call register_auth_client() before you can start"
+                + " the session")
 
         # make the endpoint
         endpoint = "wss://{}/{}".format(
@@ -42,7 +53,13 @@ class TechreadClientWss:
         # return ourselfves
         return self
 
-    async def __aexit__(self, exc_type, exc, traceback):
+    async def __aexit__(
+            self,
+            exc_type: Optional[Type[BaseException]],
+            exc_value: Optional[BaseException],
+            traceback: Optional[TracebackType]
+    ) -> None:
+
         """ Close the session
         """
         if self._techread_session_wss is not None:
@@ -57,7 +74,11 @@ class TechreadClientWss:
         """
         self._auth_client = auth_client
 
-    async def send_command(self, action: str, message: str = "{}"):
+    async def send_command(
+            self,
+            action: str,
+            message: str = "{}"
+    ) -> None:
         """ Send a command to the websocket.
 
         The function wrapps your action and message into
@@ -72,23 +93,42 @@ class TechreadClientWss:
             message {str} -- Auxilliary data that you wnat to send along
                 with the message. To keep it easily expandable, we use
                 a json encoded string.
-        """
-        # make the message
-        message = W24TechreadCommand(action=action, message=message)
 
-        # send the message
-        await self._techread_session_wss.send(message.json())
+        Raises:
+            RuntimeError  -- Raise when the developer tries to send a command
+                without entering the profile
+        """
+
+        # make sure that we have an AuthClient
+        if self._techread_session_wss is None:
+            raise RuntimeError(
+                "You need to call enter the profile before sending a command")
+
+        # make the command
+        command = W24TechreadCommand(action=action, message=message)
+
+        # send the the command
+        await self._techread_session_wss.send(command.json())
 
     async def recv_message(self) -> W24TechreadMessage:
         """ Receive a message from the websocket and interpret
         the result as W24TechreadMessage
 
+        Raises:
+            RuntimeError  -- Raise when the developer tries to send a command
+                without entering the profile
+
         Returns:
             W24TechreadMessage -- interpreted message
         """
 
+        # make sure that we have an AuthClient
+        if self._techread_session_wss is None:
+            raise RuntimeError(
+                "You need to call enter the profile before receiving command")
+
         # wait for the websocket to say something
-        message_raw = await self._techread_session_wss.recv()
+        message_raw = str(await self._techread_session_wss.recv())
 
         # process the message
         message = await self._process_message(message_raw)
@@ -142,17 +182,26 @@ class TechreadClientWss:
 
         return message
 
-    async def listen(self) -> None:
+    async def listen(self) -> AsyncGenerator:
         """ Simple generator that waits for
         messages on the websocket, interprets
         them and yields them
 
         Yields:
             W24TechreadMessage -- interpreted message from the socket
+
+        Raises:
+            RuntimeError  -- Raise when the developer tries to send a command
+                without entering the profile
         """
+
+        # make sure that we have an AuthClient
+        if self._techread_session_wss is None:
+            raise RuntimeError(
+                "You need to call enter the profile before listening")
 
         # wait for incoming messages
         async for message_raw in self._techread_session_wss:
 
             # process the message and return them to the caller
-            yield await self._process_message(message_raw)
+            yield await self._process_message(str(message_raw))

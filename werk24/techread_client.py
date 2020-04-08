@@ -23,16 +23,17 @@ EXAMPLE
 import asyncio
 import logging
 import os
-from typing import Callable, Dict, List, Optional
+from types import TracebackType
+from typing import AsyncGenerator, Callable, Dict, List, Optional, Type
 
 from pydantic import BaseModel, HttpUrl
-
 from werk24.auth_client import AuthClient
 from werk24.exceptions import RequestTooLargeException, ServerException
-from werk24.models.ask import W24Ask, W24AskType
-from werk24.models.techread import (W24TechreadMessage,
-                                    W24TechreadArchitecture,
+from werk24.models.ask import W24Ask
+from werk24.models.techread import (W24TechreadArchitecture,
                                     W24TechreadArchitectureStatus,
+                                    W24TechreadMessage,
+                                    W24TechreadMessageSubtype,
                                     W24TechreadMessageType, W24TechreadRequest)
 from werk24.techread_client_https import TechreadClientHttps
 from werk24.techread_client_wss import TechreadClientWss
@@ -50,8 +51,9 @@ class Hook(BaseModel):
     definition; not just the ask type.
     """
 
-    ask: Optional[W24Ask] = None
-    message_type: Optional[W24TechreadMessageType] = None
+    message_type: Optional[W24TechreadMessageType]
+    message_subtype: Optional[W24TechreadMessageSubtype]
+    ask: Optional[W24Ask]
     function: Callable
 
 
@@ -60,18 +62,6 @@ class W24TechreadClient:
     learn more about the content on your Technical
     Drawings.
     """
-
-    message_to_ask_type: Dict[W24TechreadMessageType, W24AskType] = {
-        W24TechreadMessageType.ASK_SECTIONAL_THUMBNAIL:
-            W24AskType.SECTIONAL_THUMBNAIL,
-        W24TechreadMessageType.ASK_PAGE_THUMBNAIL:
-            W24AskType.PAGE_THUMBNAIL,
-        W24TechreadMessageType.ASK_SHEET_THUMBNAIL:
-            W24AskType.SHEET_THUMBNAIL,
-        W24TechreadMessageType.ASK_VARIANT_OVERALL_DIMENSIONS:
-            W24AskType.VARIANT_OVERALL_DIMENSIONS,
-        W24TechreadMessageType.ASK_TRAIN: W24AskType.TRAIN,
-    }
 
     def __init__(
             self,
@@ -106,7 +96,7 @@ class W24TechreadClient:
 
         # Create an empty reference to the authentication
         # service (currently AWS Cognito)
-        self._auth_client = None
+        self._auth_client: Optional[AuthClient] = None
 
         # Initialize an instance of the HTTPS client
         self._techread_client_https = TechreadClientHttps(
@@ -116,7 +106,9 @@ class W24TechreadClient:
         self._techread_client_wss = TechreadClientWss(
             techread_server_wss, techread_version)
 
-    async def __aenter__(self):
+    async def __aenter__(
+            self
+    )-> 'W24TechreadClient':
         """ Create the HTTPS and WSS sessions
 
         Raises:
@@ -148,15 +140,23 @@ class W24TechreadClient:
         # return the "entered" version of self
         return self
 
-    async def __aexit__(self, exc_type, exc, traceback):
+    async def __aexit__(
+            self,
+            exc_type: Optional[Type[BaseException]],
+            exc_value: Optional[BaseException],
+            traceback: Optional[TracebackType]
+    ) -> None:
+
         """ Ensure that the sessions are closed
         """
 
         # close the HTTPS session
-        await self._techread_client_https.__aexit__(exc_type, exc, traceback)
+        await self._techread_client_https.__aexit__(
+            exc_type, exc_value, traceback)
 
         # close the WSS session
-        await self._techread_client_wss.__aexit__(exc_type, exc, traceback)
+        await self._techread_client_wss.__aexit__(
+            exc_type, exc_value, traceback)
 
     def login(
             self,
@@ -165,7 +165,8 @@ class W24TechreadClient:
             cognito_client_id: str,
             cognito_client_secret: str,
             username: str,
-            password: str) -> None:
+            password: str
+    ) -> None:
         """
         Register with the authentication
         service (i.e., lazy login)
@@ -195,8 +196,8 @@ class W24TechreadClient:
         self._techread_client_wss.register_auth_client(self._auth_client)
 
     async def get_architecture_status(
-        self,
-        architecture: W24TechreadArchitecture
+            self,
+            architecture: W24TechreadArchitecture
     ) -> W24TechreadArchitectureStatus:
         """ Talk to the API endpoint and check whether a specific architecture
         is currently available. This only relevant if you have booked a
@@ -213,13 +214,13 @@ class W24TechreadClient:
             architecture)
 
     async def read_drawing(
-        self,
-        drawing: bytes,
-        asks: List[W24Ask],
-        model: bytes = None,
-        architecture: W24TechreadArchitecture = W24TechreadArchitecture.GPU_V1,
-        webhook: HttpUrl = None
-    ) -> None:
+            self,
+            drawing: bytes,
+            asks: List[W24Ask],
+            model: bytes = None,
+            architecture: W24TechreadArchitecture = W24TechreadArchitecture.GPU_V1,  # noqa
+            webhook: HttpUrl = None
+    ) -> AsyncGenerator:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
 
@@ -351,33 +352,54 @@ class W24TechreadClient:
         W24TechreadClient from the enviorment info.
 
         Returns:
-            W24TechreadClient -- [description]
+            W24TechreadClient -- The techread Client
         """
+
+        # make a list of all environment variables
+        keys = [
+            "W24TECHREAD_SERVER_HTTPS",
+            "W24TECHREAD_SERVER_WSS",
+            "W24TECHREAD_VERSION",
+            "W24TECHREAD_AUTH_REGION",
+            "W24TECHREAD_AUTH_IDENTITY_POOL_ID",
+            "W24TECHREAD_AUTH_CLIENT_ID",
+            "W24TECHREAD_AUTH_CLIENT_SECRET",
+            "W24TECHREAD_AUTH_USERNAME",
+            "W24TECHREAD_AUTH_PASSWORD"
+        ]
+
+        # get the variables from the environment and ensure that they
+        # are set. If not, raise an exception
+        environs: Dict[str, str] = {}
+        for cur_key in keys:
+            cur_val = os.environ.get(cur_key)
+            if cur_val is None:
+                raise RuntimeError(f"{cur_key} not set")
+            environs[cur_key] = cur_val
 
         # create a reference to the client
         client = W24TechreadClient(
-            os.environ.get("W24TECHREAD_SERVER_HTTPS"),
-            os.environ.get("W24TECHREAD_SERVER_WSS"),
-            os.environ.get("W24TECHREAD_VERSION"),
+            environs['W24TECHREAD_SERVER_HTTPS'],
+            environs['W24TECHREAD_SERVER_WSS'],
+            environs['W24TECHREAD_VERSION']
         )
 
         # login with the credentials
         client.login(
-            os.environ.get("W24TECHREAD_AUTH_REGION"),
-            os.environ.get("W24TECHREAD_AUTH_IDENTITY_POOL_ID"),
-            os.environ.get("W24TECHREAD_AUTH_CLIENT_ID"),
-            os.environ.get("W24TECHREAD_AUTH_CLIENT_SECRET"),
-            os.environ.get("W24TECHREAD_AUTH_USERNAME"),
-            os.environ.get("W24TECHREAD_AUTH_PASSWORD"),
-        )
+            environs["W24TECHREAD_AUTH_REGION"],
+            environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
+            environs["W24TECHREAD_AUTH_CLIENT_ID"],
+            environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
+            environs["W24TECHREAD_AUTH_USERNAME"],
+            environs["W24TECHREAD_AUTH_PASSWORD"])
 
         # return the client
         return client
 
     async def read_drawing_with_hooks(
-        self,
-        drawing_bytes: bytes,
-        hooks: List[Hook]
+            self,
+            drawing_bytes: bytes,
+            hooks: List[Hook]
     ) -> None:
         """ Send the drawing to the API (can be PDF or image)
         and register a number of callbacks that are triggered
@@ -415,9 +437,9 @@ class W24TechreadClient:
             raise
 
     async def _call_hooks_for_message(
-        self,
-        message: W24TechreadMessage,
-        hooks: List[Hook]
+            self,
+            message: W24TechreadMessage,
+            hooks: List[Hook]
     ) -> None:
         """ Find the correct hook for the read reseponse and
         call the corresponding hook.
@@ -434,73 +456,18 @@ class W24TechreadClient:
                 message
         """
 
-        # if the message type starts with TECHREAD_, it
-        # corresponds to a process message, so check the
-        # process handlers
-        if message.message_type_main == "TECHREAD":
+        # get the hook function that corresponds to the message
+        hook_function = self._get_hook_function_for_message(message, hooks)
 
-            # check whether the message_type is associated
-            # with a callback. If not, the message type
-            # is simply ignored
-            try:
-                hook_function = [
-                    h
-                    for h in hooks
-                    if h.message_type == message.message_type][0].function
-
-            # if there is no associated callback request,
-            # silently ignore
-            except IndexError:
-                return
-
-        # if the message type starts with ERROR_, we raise a
-        # server exception that corresponds
-        elif message.message_type_main == "ERROR":
-            raise ServerException(message)
-
-        # if the message tyep starts with ASK_, it corresponds
-        # to a ASK, so check the asks_dict
-        elif message.message_type_main == "ASK":
-
-            # translate the message_type into a ask_type
-            cur_ask_type = self.message_to_ask_type.get(
-                message.message_type)
-
-            # obtain the trigger that is associated to the ask type
-            try:
-                hook_function = [
-                    h
-                    for h in hooks
-                    if h.ask is not None and h.ask.ask_type == cur_ask_type
-                ][0].function
-
-            # if the ask is not in the list, the API returned something
-            # that the client was not asking for.
-            except IndexError:
-                logger.warning(
-                    "No callback associated with ask type '%s'. The original message_type was '%s'. If you did not request this ask type, please get in touch with our support team",  # noqa
-                    cur_ask_type,
-                    message.message_type,
-                )
-                return
-
-        # if neither is true, we have an unknown message type, which
-        # probobly is being caused by an API update. We want to ensure
-        # that the user is being informed, but we do not want to break
-        # the existing functionality -> warning
-        else:
-            logger.warning(
-                "Ignoring unknown message type %s. Please check with our support team",  # noqa
-                message.message_type)
-
-        # if the callback is not callable, we want to warn the user,
+        # if the hook_function is not callable, we want to warn the user,
         # rather than throwing an exception
         if not callable(hook_function):
             logger.warning(
-                "You registered a non-callable trigger of type '%s' with the message_type '%s'. Please make sure that you are using a Callable (e.g, def or lambda)",  # noqa
+                "You registered a non-callable trigger of type '%s' with " +
+                "the message_type '%s'. Please make sure that you are using " +
+                "a Callable (e.g, def or lambda)",
                 type(hook_function),
-                message.message_typ,
-            )
+                message.message_type)
             return
 
         # if everything went well, we call the trigger with
@@ -510,3 +477,50 @@ class W24TechreadClient:
             await hook_function(message)
         else:
             hook_function(message)
+
+    def _get_hook_function_for_message(
+            self,
+            message: W24TechreadMessage,
+            hooks: List[Hook]
+    ) -> Optional[Callable]:
+        """ Get the hook function that corresponds to the message
+        type.
+
+        Arguments:
+            message {W24TechreadMessage} -- Messsage returned from the
+                read_drawing method
+
+            hooks {List[Hook]} -- List of hooks from which we need to
+                pick the suited one
+
+        Returns:
+            Optional[Callable] -- Hook function that should be called
+        """
+
+        # because we allow the user to define the ask itself in the definition
+        # of the hoook we need to make some extra effort when filtering
+        if message.message_type == W24TechreadMessageType.ASK:
+            def hook_filter(hook: Hook) -> bool:
+                return hook.ask is not None \
+                    and message.message_subtype.value \
+                    == hook.ask.ask_type.value
+
+        # if the message is of any other type, we just need to
+        # compare the the message_type and message_subtype
+        else:
+            def hook_filter(hook: Hook) -> bool:
+                return message.message_type.value == hook.message_type \
+                    and message.message_subtype == hook.message_subtype
+
+        # return the first positive case
+        for cur_hook in filter(hook_filter, hooks):
+            return cur_hook.function
+
+        # if we are still here, we have an unknown message type, which
+        # probobly is being caused by an API update. We want to ensure
+        # that the user is being informed, but we do not want to break
+        # the existing functionality -> warning
+        logger.warning(
+            "Ignoring unknown message type %s. Please check with our support team",  # noqa
+            message.message_type)
+        return None

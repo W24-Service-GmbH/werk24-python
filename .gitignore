@@ -1,6 +1,6 @@
 .vscode
-.werk24
 .mypy_cache
+.werk24
 __pycache__
 *.pyc
 .python-version

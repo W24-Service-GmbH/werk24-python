@@ -3,37 +3,57 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import UUID4, BaseModel, HttpUrl, Json
 
-from .ask import W24Ask
+from .ask import W24Ask, W24AskType
 
 
 class W24TechreadCommand(BaseModel):
+    """ Command that is sent from the client to the Server
+    """
     action: str
     message: Json
 
 
 class W24TechreadMessageType(str, Enum):
-    ASK_PAGE_THUMBNAIL = "ASK_PAGE_THUMBNAIL"
-    ASK_SHEET_THUMBNAIL = "ASK_SHEET_THUMBNAIL"
-    ASK_CANVAS_THUMBNAIL = "ASK_CANVAS_THUMBNAIL"
-    ASK_SECTIONAL_THUMBNAIL = "ASK_SECTIONAL_THUMBNAIL"
-    ASK_TRAIN = "ASK_TRAIN"
-    ASK_VARIANT_OVERALL_DIMENSIONS = "ASK_VARIANT_OVERALL_DIMENSIONS"
-    TECHREAD_INITIALIZATION_SUCCESS = "TECHREAD_INITIALIZATION_SUCCESS"
-    TECHREAD_COMPLETED = "TECHREAD_COMPLETED"
-    TECHREAD_STARTED = "TECHREAD_STARTED"
-    ERROR_INTERNAL = "ERROR_INTERNAL"
+    """ Message Type of the message that is sent
+    from the server to the client
+    """
+    ASK = "ASK"
+    ERROR = "ERROR"
+    PROGRESS = "PROGRESS"
+
+
+class W24TechreadMessageSubtypeError(str, Enum):
+    """ Message SubtypeError
+    """
+    INTERNAL = "INTERNAL"
+
+
+class W24TechreadMessageSubtypeProgress(str, Enum):
+    """ Message Subtype Progress
+    """
+    INITIALIZATION_SUCCESS = "INITIALIZATION_SUCCESS"
+    COMPLETED = "COMPLETED"
+    STARTED = "STARTED"
+
+
+W24TechreadMessageSubtypeAsk = W24AskType
+
+
+W24TechreadMessageSubtype = Union[W24TechreadMessageSubtypeError,
+                                  W24TechreadMessageSubtypeProgress,
+                                  W24TechreadMessageSubtypeAsk]
 
 
 class W24TechreadMessage(BaseModel):
-    request_id: Optional[UUID4]
+    """ Messages that is sent from the Server to the
+    client
+    """
+    request_id: UUID4
     message_type: W24TechreadMessageType
+    message_subtype: W24TechreadMessageSubtype
     payload_dict: Optional[Dict] = None
     payload_url: Optional[HttpUrl] = None
-    payload_bytes: Optional[bytes]
-
-    @property
-    def message_type_main(self):
-        return self.message_type.value.split("_", 1)[0]
+    payload_bytes: Optional[bytes] = None
 
 
 class W24TechreadArchitecture(str, Enum):
@@ -72,4 +92,4 @@ class W24TechreadRequest(BaseModel):
     asks: List[W24Ask] = []
     architecture: W24TechreadArchitecture
     webhook: Optional[HttpUrl] = None
-    development_key: str = None
+    development_key: Optional[str] = None

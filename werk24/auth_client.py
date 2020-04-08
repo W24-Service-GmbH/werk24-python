@@ -87,7 +87,9 @@ class AuthClient:
         # turn the secret into a str object
         return base64.b64encode(dig).decode()
 
-    async def login(self):
+    async def login(
+            self
+    ) -> None:
         """ Login with AWS Cognito
         """
 
