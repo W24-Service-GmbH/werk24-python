@@ -96,7 +96,7 @@ class W24TechreadClient:
 
         # Create an empty reference to the authentication
         # service (currently AWS Cognito)
-        self._auth_client: Optional[AuthClient] = None
+        self._auth_client: AuthClient
 
         # Initialize an instance of the HTTPS client
         self._techread_client_https = TechreadClientHttps(

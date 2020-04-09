@@ -19,7 +19,7 @@ class TechreadClientWss:
         self._techread_session_wss: Optional[WebSocketClientProtocol] = None
 
     async def __aenter__(
-        self
+            self
     )-> 'TechreadClientWss':
         """ Enter the session with the wss server
 
