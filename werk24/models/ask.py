@@ -1,6 +1,7 @@
 from enum import Enum
-
-from pydantic import BaseModel
+from typing import List
+from .measure import W24Measure
+from pydantic import BaseModel, UUID4
 
 
 class W24AskType(str, Enum):
@@ -15,6 +16,7 @@ class W24AskType(str, Enum):
 
     VARIANT_TABLE_THUMBNAIL = "VARIANT_TABLE_THUMBNAIL"
 
+    VARIANT_MEASURES = "VARIANT_MEASURES"
     VARIANT_OVERALL_DIMENSIONS = "VARIANT_OVERALL_DIMENSIONS"
     VARIANT_EXPORT_STL = "VARIANT_EXPORT_STL"
 
@@ -25,7 +27,6 @@ class W24Ask(BaseModel):
     """ Base model for all possible demand
     in a W24Demand
     """
-
     ask_type: W24AskType
 
 
@@ -46,7 +47,6 @@ class W24AskThumbnail(W24Ask):
     "human-consumption" (the human rotation algorithm is
     more complext than you'd expect)
     """
-
     # maximal_width: int = 512
     # maximal_height: int = 512
     # auto_rotate: bool = False
@@ -95,6 +95,25 @@ class W24AskVariantTableThumbnail(W24AskThumbnail):
     of each variant table on the sheet.
     """
     ask_type = W24AskType.VARIANT_TABLE_THUMBNAIL
+
+
+class W24AskVariantMeasures(W24Ask):
+    """ With this Ask you are requesting the complete
+    list of all measures that were detected for the
+    variant
+    """
+    ask_type = W24AskType.VARIANT_MEASURES
+
+
+class W24AskVariantMeasuresResponse(BaseModel):
+    """ Response object corresponding to the
+    W24AskVariantMeasures ask.
+
+    NOTE: Be aware that requesting the measures will
+    yield one responds for each variant
+    """
+    variant_id: UUID4
+    measures: List[W24Measure]
 
 
 class W24AskVariantOverallDimensions(W24Ask):
