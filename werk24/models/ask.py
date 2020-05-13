@@ -113,6 +113,7 @@ class W24AskVariantMeasuresResponse(BaseModel):
     yield one responds for each variant
     """
     variant_id: UUID4
+    sectional_id: UUID4
     measures: List[W24Measure]
 
 

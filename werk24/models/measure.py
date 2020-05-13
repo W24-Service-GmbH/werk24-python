@@ -51,7 +51,7 @@ class W24Measure(BaseModel):
     negative tolerances.
     """
 
-    pixel_line: Tuple[Tuple[float, float]]
+    line: Tuple[Tuple[float, float], Tuple[float, float]]
     """ Relative x-y coordinates of the Start/End point of the Measure in the
     Pixel Coordinate system that the Measure is associated to.
     Typically this will be the W24AskVariantMeasuresResponse.
@@ -115,7 +115,7 @@ class W24Measure(BaseModel):
     """
 
     thread_pitch: Optional[float] = None
-    """ Thread pitch in mm
+    """ Thread pitch in mm.
     """
 
     thread_handedness: Optional[W24MeasureThreadHandedness] = None
