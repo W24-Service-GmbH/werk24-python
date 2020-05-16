@@ -1,3 +1,6 @@
+""" Defintion of all the W24Measure object and all its requirements.
+
+"""
 from enum import Enum
 from typing import Optional, Tuple, List
 
@@ -29,6 +32,10 @@ class W24MeasureThreadHandedness(str, Enum):
 
 
 class W24MeasureWarningType(str, Enum):
+    """ List of all warnings that can be associated with
+    the returned measures.
+    """
+
     UNCONVENTIONAL_TOLERANCE_ORDER = "UNCONVENTIONAL_TOLERANCE_ORDER"
     """ The UNCONVENTIONAL_TOLERANCE_ORDER warning is raised
     when the first-mentioned tolerance is lower than the second-mentioned.

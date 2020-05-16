@@ -1,100 +1,106 @@
+""" Defintion of all W24Ask types that are understood by the Werk24 API.
+"""
 from enum import Enum
 from typing import List
+
+from pydantic import UUID4, BaseModel
+
 from .measure import W24Measure
-from pydantic import BaseModel, UUID4
 
 
 class W24AskType(str, Enum):
-    PAGE_THUMBNAIL = "PAGE_THUMBNAIL"
+    """ List of all Ask Type supported by the current
+    API version.
 
-    SHEET_EXPORT_ONSHAPE = "SHEET_EXPORT_ONSHAPE"
+    """
+    PAGE_THUMBNAIL = "PAGE_THUMBNAIL"
+    """ Thumbnail of the overall page - rotated and with
+    surrounding white space removed """
+
     SHEET_THUMBNAIL = "SHEET_THUMBNAIL"
+    """ Thumbnail of the sheet (i.e., the part of the
+    page that is described by the surrounding frame) """
 
     CANVAS_THUMBNAIL = "CANVAS_THUMBNAIL"
+    """ Thumbnail of the canvas (i.e., the part of the
+    sheet that contains the geometry)
+    """
 
     SECTIONAL_THUMBNAIL = "SECTIONAL_THUMBNAIL"
-
-    VARIANT_TABLE_THUMBNAIL = "VARIANT_TABLE_THUMBNAIL"
+    """ Thumbnail of a sectional on the canvas.
+    Here the sectional describes both cuts and perspectives
+    """
 
     VARIANT_MEASURES = "VARIANT_MEASURES"
-    VARIANT_OVERALL_DIMENSIONS = "VARIANT_OVERALL_DIMENSIONS"
-    VARIANT_EXPORT_STL = "VARIANT_EXPORT_STL"
+    """ List of Measures that were found on the Sectionals
+    """
 
     TRAIN = "TRAIN"
+    """ Supplying the request for training only without
+    expecting a response.
+    """
 
 
 class W24Ask(BaseModel):
-    """ Base model for all possible demand
-    in a W24Demand
+    """ Base model from wich all Asks inherit
     """
     ask_type: W24AskType
 
 
-class W24AskThumbnail(W24Ask):
-    """ Base model for features that request a
-    thumbnail.
+class W24AskThumbnailFileFormat(str, Enum):
+    """ List of supported File Formats in which
+    the Thumbnail can be supplied.
 
-    maximal_width and maximal_height describe the maximal
-    dimensions of the thumbnail (in pixel).
-
-    Beware that the resulting image dimensions depend
-    on many factors, such as:
-    (i) resolution of the original image,
-    (ii) rotation of the sheet on the page,
-    (iii) noise level of the image, etc.
-
-    Setting auto_rotate to True will rotate the image for
-    "human-consumption" (the human rotation algorithm is
-    more complext than you'd expect)
+    NOTE: At this stage, the API only supports JPEG.
+    This prepares the support for additional format
+    (e.g. TIFF)
     """
-    # maximal_width: int = 512
-    # maximal_height: int = 512
-    # auto_rotate: bool = False
+    JPEG = "JPEG"
+
+
+class W24AskThumbnail(W24Ask):
+    """ Base model for features that request a thumbnail.
+
+    NOTE: At this stage, the API will return a high-resolution
+    image. Future releases will allow the defintion of the
+    maximal dimensions.
+    """
+    file_format: W24AskThumbnailFileFormat = W24AskThumbnailFileFormat.JPEG
 
 
 class W24AskPageThumbnail(W24AskThumbnail):
-    """ Requests a thumbnail of
-    the complete page including the border area
-    """
+    """ Requests a thumbnail for each page in the document;
+    rotated, and with the surrounding white-space removed.
 
+    NOTE: when you supply a white-on-black document, the thumbnail
+    will be black-on-white.
+    """
     ask_type = W24AskType.PAGE_THUMBNAIL
 
 
 class W24AskSheetThumbnail(W24AskThumbnail):
-    """ Requests a thumbnail of
-    each sheet in the document.
+    """ Requests a thumbnail of each sheet on each page in
+    the document. The sheet will only contain the pixels within
+    the main frame that surrounds the canvas and header fields.
     """
-
     ask_type = W24AskType.SHEET_THUMBNAIL
 
 
-class W24AskSheetExportOnshape(W24Ask):
-    """Requests the export of each submitted sheet
-    to onshape (onshape.com)
-    """
-    ask_type = W24AskType.SHEET_EXPORT_ONSHAPE
-
-
 class W24AskCanvasThumbnail(W24AskThumbnail):
-    """ Requests a thumbnail of
-    the complete page including the border area
+    """ Requests a thumbnail of each canvas in each sheet.
+    The canvas describes the "drawing area" of the sheet.
     """
-
     ask_type = W24AskType.PAGE_THUMBNAIL
 
 
 class W24AskSectionalThumbnail(W24AskThumbnail):
     """ The W24AskPlaneThumbnail requests a thumbnail
     of each sectional on each sheet in the document.
+
+    NOTE: we have chosen the term sectional to describe
+    both cuts and perspectives
     """
     ask_type = W24AskType.SECTIONAL_THUMBNAIL
-
-
-class W24AskVariantTableThumbnail(W24AskThumbnail):
-    """ The W24AskVariantTableThumbnail requests a thumbnail
-    of each variant table on the sheet.
-    """
-    ask_type = W24AskType.VARIANT_TABLE_THUMBNAIL
 
 
 class W24AskVariantMeasures(W24Ask):
@@ -117,24 +123,9 @@ class W24AskVariantMeasuresResponse(BaseModel):
     measures: List[W24Measure]
 
 
-class W24AskVariantOverallDimensions(W24Ask):
-    """ Requesting the W24AskVariantOverallDimensions will
-    extract the outer dimensions of the extracted part
-    """
-
-    ask_type = W24AskType.VARIANT_OVERALL_DIMENSIONS
-
-
-class W24AskVariantExportSTL(W24Ask):
-    """ Requests an export of the Variant as STL File
-    """
-
-    ask_type = W24AskType.VARIANT_EXPORT_STL
-
-
 class W24AskTrain(BaseModel):
     """ If you submit this Ask, we will use your request
-    to train and improve our models. It does not trigger
-    a response
+    to train and improve our models.
+    It does not trigger a response
     """
     ask_type = W24AskType.TRAIN

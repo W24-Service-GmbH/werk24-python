@@ -10,14 +10,13 @@ AUTHOR
 
 EXAMPLE
     # obtain the thumbnail of a page
-    import logging
     drawing_bytes = open(...,"r").read()
     client = W24TechreadClient.make_from_env()
     await client.read_drawing_with_hooks(
         drawing_bytes,
         [Hook(
                 ask=W24ASkThumbnailPage(),
-                callback=lambda msg: logging.info("Received Thumbnail of Page")
+                callback=lambda msg: print("Received Thumbnail of Page")
         ]))
 """
 import asyncio
@@ -26,20 +25,19 @@ import os
 from types import TracebackType
 from typing import AsyncGenerator, Callable, Dict, List, Optional, Type
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from werk24.auth_client import AuthClient
 from werk24.exceptions import RequestTooLargeException, ServerException
 from werk24.models.ask import W24Ask
-from werk24.models.techread import (W24TechreadArchitecture,
-                                    W24TechreadArchitectureStatus,
-                                    W24TechreadMessage,
+from werk24.models.techread import (W24TechreadAction, W24TechreadMessage,
                                     W24TechreadMessageSubtype,
                                     W24TechreadMessageType, W24TechreadRequest)
 from werk24.techread_client_https import TechreadClientHttps
 from werk24.techread_client_wss import TechreadClientWss
 
 # make the logger
-logger = logging.getLogger('w24_techread_client')
+logger = logging.getLogger(  # pylint: disable=invalid-name
+    'w24_techread_client')
 
 
 class Hook(BaseModel):
@@ -195,31 +193,11 @@ class W24TechreadClient:
         self._techread_client_https.register_auth_client(self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
 
-    async def get_architecture_status(
-            self,
-            architecture: W24TechreadArchitecture
-    ) -> W24TechreadArchitectureStatus:
-        """ Talk to the API endpoint and check whether a specific architecture
-        is currently available. This only relevant if you have booked a
-        dedicated GPU infrastructure that.
-
-        Arguments:
-            architecture {W24TechreadArchitecture} -- Architecture in question
-
-        Returns:
-            W24TechreadArchitectureStatus -- Status
-
-        """
-        return await self._techread_client_https.get_architecture_status(
-            architecture)
-
     async def read_drawing(
             self,
             drawing: bytes,
             asks: List[W24Ask],
-            model: bytes = None,
-            architecture: W24TechreadArchitecture = W24TechreadArchitecture.GPU_V1,  # noqa
-            webhook: HttpUrl = None
+            model: bytes = None
     ) -> AsyncGenerator:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
@@ -239,18 +217,6 @@ class W24TechreadClient:
                 List of Asks that are requested from the API. They must derive
                 from the W24Ask object. Refer to the API documentation for
                 a full list of supported W24AskTypes
-
-            architecture {str} -- Architecture to be used to process
-                the request. Please refer to the API documentation for a
-                complete list of supported architectures
-                (default: {W24TechreadArchitecture.GPU_V1})
-
-            webhook {HttpUrl} --  URL that shall be called whenever another
-                ask becomes available. Setting this value will automatically
-                stop the websocket connection and return the values through
-                the webhook. NOTE: you will still need to use the websockets
-                connection to register the request. If you have the requirement
-                of going pure-HTTPS, let us know.
 
         Yields:
             W24TechreadMessage -- Response object obtained from the API
@@ -274,7 +240,6 @@ class W24TechreadClient:
         # make the request
         request = W24TechreadRequest(
             asks=asks,
-            architecture=architecture,
             development_key=self._development_key)
 
         # send the initialization request to the server.
@@ -285,7 +250,7 @@ class W24TechreadClient:
         #    that you will need when uploading the
         #    associated files
         await self._techread_client_wss.send_command(
-            "initialize",
+            W24TechreadAction.INITIALIZE,
             request.json())
 
         # Wait for the response (i.e,. the request id)
@@ -306,7 +271,7 @@ class W24TechreadClient:
 
         # explicitly reraise the exception if the payload is too
         # large
-        except RequestTooLargeException:
+        except RequestTooLargeException:  # pylint: disable=try-except-raise
             raise
 
         # Tell Werk24 that all the files have been uploaded
@@ -320,13 +285,10 @@ class W24TechreadClient:
         # find a way of handing over the tcp connection :)
         # PS: The AWS API Gatway for websockets might help you
         # here.
-        await self._techread_client_wss.send_command("read", "{}")
+        await self._techread_client_wss.send_command(
+            W24TechreadAction.READ,
+            "{}")
         logger.info("Reading process started")
-
-        # If the user set a webhook, we will not wait for
-        # responses from the websocket (they will not come).
-        if webhook is not None:
-            return
 
         # Wait for incoming messages from the server.
         # They will tell you when the individual
@@ -429,11 +391,11 @@ class W24TechreadClient:
                 await self._call_hooks_for_message(message, hooks)
 
         # explicitly reraise server exceptions
-        except ServerException:
+        except ServerException:  # pylint: disable=try-except-raise
             raise
 
         # explicitly reraise RequestTooLargeException
-        except RequestTooLargeException:
+        except RequestTooLargeException:  # pylint: disable=try-except-raise
             raise
 
     async def _call_hooks_for_message(
@@ -463,8 +425,8 @@ class W24TechreadClient:
         # rather than throwing an exception
         if not callable(hook_function):
             logger.warning(
-                "You registered a non-callable trigger of type '%s' with " +
-                "the message_type '%s'. Please make sure that you are using " +
+                "You registered a non-callable trigger of type '%s' with "
+                "the message_type '%s'. Please make sure that you are using "
                 "a Callable (e.g, def or lambda)",
                 type(hook_function),
                 message.message_type)
@@ -478,8 +440,8 @@ class W24TechreadClient:
         else:
             hook_function(message)
 
+    @staticmethod
     def _get_hook_function_for_message(
-            self,
             message: W24TechreadMessage,
             hooks: List[Hook]
     ) -> Optional[Callable]:

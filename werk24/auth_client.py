@@ -20,7 +20,6 @@ class AuthClient:
 
         RuntimeError: Raised when the server behaves in a very unexpected
             way; e.g., when AWS changed the protocol
-
     """
 
     def __init__(

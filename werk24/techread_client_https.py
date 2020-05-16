@@ -1,3 +1,5 @@
+""" HTTPS-part of the Werk24 client
+"""
 import base64
 import json
 from typing import Optional, Type
@@ -10,8 +12,6 @@ from werk24.exceptions import (BadRequestException, RequestTooLargeException,
                                ResourceNotFoundException, ServerException,
                                UnauthorizedException,
                                UnsupportedMediaTypeException)
-from werk24.models.techread import (W24TechreadArchitecture,
-                                    W24TechreadArchitectureStatus)
 
 from .auth_client import AuthClient
 
@@ -23,13 +23,6 @@ class TechreadClientHttps:
     """
 
     MAX_REQUEST_PAYLOAD = 6 * 1024 * 1024  # 6MB
-
-    status_map = {
-        "DEPLOYED": W24TechreadArchitectureStatus.DEPLOYED,
-        "DEPLOYING": W24TechreadArchitectureStatus.DEPLOYING,
-        "UNDEPLOYED": W24TechreadArchitectureStatus.UNDEPLOYED,
-        "UNDEPLOYING": W24TechreadArchitectureStatus.UNDEPLOYING,
-    }
 
     def __init__(self, techread_server_https: str, techread_version: str):
         """ Intialize a new session with the https server
@@ -162,7 +155,8 @@ class TechreadClientHttps:
             )
 
         # reraise the exception if we are unauhtorizer
-        except (UnauthorizedException, RequestTooLargeException,
+        except (UnauthorizedException,  # pylint: disable=try-except-raise
+                RequestTooLargeException,
                 ServerException, BadRequestException,
                 ResourceNotFoundException):
             raise  # noqa
@@ -187,76 +181,6 @@ class TechreadClientHttps:
             self._techread_server,
             self._techread_version,
             subpath)
-
-    async def get_architecture_status(
-            self,
-            architecture: W24TechreadArchitecture
-    ) -> W24TechreadArchitectureStatus:
-        """ Get the current status of the requested architecture
-
-        Arguments:
-            architecture {W24TechreadArchitecture} -- Architecture in question
-
-        Raises:
-
-            BadRequestException: Raised when the request body
-                cannot be interpreted. This normally indicates
-                that the API version has been updated and that
-                we missed a corner case. If you encounter this
-                exception, it is very likely our mistake. Please
-                get in touch!
-
-            UnauthorizedException: Raised when the token
-                or the requested file have expired
-
-            ResourceNotFoundException: Raised when you are requesting
-                an endpoint that does not exist. Again, you should
-                not encounter this, but if you do, let us know.
-
-            RequestTooLargeException: Raised when the status
-                code was 413
-
-            UnsupportedMediaTypException: Raised when the file you
-                submitted cannot be read (because its media type
-                is not supported by the API).
-
-            ServerException: Raised for all other status codes
-                that are not 2xx, or the response format cannot
-                be interpreted
-
-        Returns:
-            W24TechreadArchitectureStatus -- Status
-
-        """
-
-        # make the endpoint
-        endpoint = self._make_endpoint_url(
-            f"architecture_status/{architecture}")
-        try:
-            response = await self._get(url=endpoint)
-            result = await response.json()
-            status = result['status']
-
-        # if the response cannot be interpreted as json, or does not contain
-        # the requested key, raise a Server Exception
-        except (ValueError, KeyError):
-            raise ServerException("Server response format unexpected")
-
-        # reraise the exceptions
-        except (UnauthorizedException, RequestTooLargeException,
-                ServerException, BadRequestException,
-                ResourceNotFoundException):
-            raise
-
-        # translate the respose
-        try:
-            return self.status_map[status]
-
-        # if we do not have the status in the map,
-        # throw and exception
-        except KeyError:
-            raise ServerException(
-                f"Server returned unknown status '%s'", status)
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
         """ Return the payload from the server
@@ -318,7 +242,8 @@ class TechreadClientHttps:
             response = await self._get(payload_url)
 
         # reraise the exceptions
-        except (UnauthorizedException, RequestTooLargeException,
+        except (UnauthorizedException,  # pylint: disable=try-except-raise
+                RequestTooLargeException,
                 ServerException, BadRequestException,
                 ResourceNotFoundException):
             raise
@@ -520,6 +445,6 @@ class TechreadClientHttps:
         # If the resposne code is anything other
         # than unauthorized or 200 (OK), we trigger
         # a ServerException.
-        if not (200 <= status_code <= 299):
+        if not 200 <= status_code <= 299:
             raise ServerException(
                 f"Request failed '%s' with code %s", url, status_code)

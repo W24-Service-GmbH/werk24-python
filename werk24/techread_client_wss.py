@@ -1,3 +1,5 @@
+""" Websocket-part of the Werk24 client
+"""
 import json
 from types import TracebackType
 from typing import Optional, Type, AsyncGenerator
@@ -12,6 +14,10 @@ from .auth_client import AuthClient
 
 
 class TechreadClientWss:
+    """ TechreadClient subpart that handles the websocket
+    communication with the server.
+    """
+
     def __init__(self, techread_server_wss: str, techread_version: str):
         self._auth_client: Optional[AuthClient] = None
         self._techread_server_wss = techread_server_wss

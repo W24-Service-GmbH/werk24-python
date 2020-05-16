@@ -17,7 +17,8 @@ class UnauthorizedException(TechreadException):
 
 
 class UnknownException(TechreadException):
-    pass
+    """ A developer's favorite exception
+    """
 
 
 class RequestTooLargeException(TechreadException):
