@@ -25,12 +25,6 @@ def main() -> None:
         help="path to the file that is to be analyzed")
 
     parser_techread.add_argument(
-        "-i",
-        "--ignore-architecture-status",
-        help="flag indicating whether the architecture status should be ignored(i.e. whether the request should be sent even though the architecture is unavailable)",  # noqa
-        action="store_true")
-
-    parser_techread.add_argument(
         "--ask-techread-started",
         help="ask for a callback when the techread process has been picked up by a worker",  # noqa
         action="store_true")
@@ -48,11 +42,6 @@ def main() -> None:
     parser_techread.add_argument(
         "--ask-sectional-thumbnail",
         help="ask for a thumbnail of each sectional of each sheet in the document",  # noqa
-        action="store_true")
-
-    parser_techread.add_argument(
-        "--ask-variant-overall-dimensions",
-        help="ask for the overall dimensions of each variant. The API will return the x,y,z dimensions as well as an enum indicating the shape",  # noqa
         action="store_true")
 
     parser_techread.add_argument(

@@ -8,15 +8,12 @@ from typing import List
 from dotenv import load_dotenv
 
 from werk24.models.ask import (
-    W24AskVariantOverallDimensions,
     W24AskSectionalThumbnail,
     W24AskPageThumbnail,
     W24AskSheetThumbnail,
     W24AskTrain)
 from werk24.exceptions import RequestTooLargeException
 from werk24.models.techread import (
-    W24TechreadArchitecture,
-    W24TechreadArchitectureStatus,
     W24TechreadMessageType,
     W24TechreadMessageSubtypeError,
     W24TechreadMessageSubtypeProgress)
@@ -67,17 +64,6 @@ async def main(
     client = W24TechreadClient.make_from_env()
 
     async with client as session:
-
-        # check whether the architecture is deployed.
-        # If not, you can still commit a request, but
-        # will not receive any response until the
-        # architecture is deployed again
-        if not args.ignore_architecture_status:
-            status = await session.get_architecture_status(
-                W24TechreadArchitecture.GPU_V1)
-            if status != W24TechreadArchitectureStatus.DEPLOYED:
-                logger.error("Architecture is not ready")
-                return
 
         # get the drawing
         drawing_bytes = _get_drawing(args.input_file)
@@ -133,13 +119,6 @@ def _make_hooks_from_args(
             function=lambda msg: _debug_show_image(
                 "Drawing thumbnail received",
                 msg.payload_bytes))]
-
-    # add the hook for the part's overall dimensions
-    if args.ask_variant_overall_dimensions:
-        hooks += [Hook(
-            ask=W24AskVariantOverallDimensions(),
-            function=print)]
-
     # add the hook for the training ask
     if args.ask_train:
         hooks += [Hook(
