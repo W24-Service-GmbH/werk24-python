@@ -17,7 +17,7 @@ setup(
         "pydantic >= 1.4",
         "python-dotenv>=0.10.1",
         "websockets >= 8.1"],
-    scripts=['w24cli'],
+    scripts=['werk24/cli/w24cli'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
