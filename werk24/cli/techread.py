@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-"""
-Command Line Interface for W24 Techread
+""" Command Line Interface for W24 Techread
 """
 import argparse
 import logging
@@ -11,7 +9,7 @@ from werk24.models.ask import (
     W24AskSectionalThumbnail,
     W24AskPageThumbnail,
     W24AskSheetThumbnail,
-    W24AskTrain)
+    W24AskVariantMeasures)
 from werk24.exceptions import RequestTooLargeException
 from werk24.models.techread import (
     W24TechreadMessageType,
@@ -119,6 +117,15 @@ def _make_hooks_from_args(
             function=lambda msg: _debug_show_image(
                 "Drawing thumbnail received",
                 msg.payload_bytes))]
+
+    # add the hook for the variant measures
+    if args.ask_sectional_thumbnail:
+        hooks += [Hook(
+            ask=W24AskVariantMeasures(),
+            function=lambda msg: print(
+                "Received Ask Variant Measures\n",
+                msg.payload_dict
+            ))]
 
     # add a general hook to deal with internal errors
     hooks += [Hook(message_type=W24TechreadMessageType.ERROR,

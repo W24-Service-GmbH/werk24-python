@@ -487,6 +487,6 @@ class W24TechreadClient:
         # that the user is being informed, but we do not want to break
         # the existing functionality -> warning
         logger.warning(
-            "Ignoring unknown message type %s. Please check with our support team",  # noqa
+            "Ignoring message of type %s - no hook registered",  # noqa
             message.message_type)
         return None
