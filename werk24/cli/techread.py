@@ -119,11 +119,6 @@ def _make_hooks_from_args(
             function=lambda msg: _debug_show_image(
                 "Drawing thumbnail received",
                 msg.payload_bytes))]
-    # add the hook for the training ask
-    if args.ask_train:
-        hooks += [Hook(
-            ask=W24AskTrain(),
-            function=print)]
 
     # add a general hook to deal with internal errors
     hooks += [Hook(message_type=W24TechreadMessageType.ERROR,
