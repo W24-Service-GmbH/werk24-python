@@ -45,8 +45,8 @@ def main() -> None:
         action="store_true")
 
     parser_techread.add_argument(
-        "--ask-train",
-        help="ask the the API to use the document solely for training. This is mainly used for internal purposes, but your are invited to submit additional files if you want to help us improve our system. Your will not be charged for these requests (but you'll also not get a response)",  # noqa
+        "--ask-variant-overall-dimensions",
+        help="ask for the overall dimensions of each variant. The API will return the x,y,z dimensions as well as an enum indicating the shape",  # noqa
         action="store_true")
 
     args = parser.parse_args()

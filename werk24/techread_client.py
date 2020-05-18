@@ -250,7 +250,7 @@ class W24TechreadClient:
         #    that you will need when uploading the
         #    associated files
         await self._techread_client_wss.send_command(
-            W24TechreadAction.INITIALIZE,
+            W24TechreadAction.INITIALIZE.value,
             request.json())
 
         # Wait for the response (i.e,. the request id)
@@ -286,7 +286,7 @@ class W24TechreadClient:
         # PS: The AWS API Gatway for websockets might help you
         # here.
         await self._techread_client_wss.send_command(
-            W24TechreadAction.READ,
+            W24TechreadAction.READ.value,
             "{}")
         logger.info("Reading process started")
 

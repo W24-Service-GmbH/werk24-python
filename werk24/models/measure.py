@@ -70,7 +70,7 @@ class W24Measure(BaseModel):
     """
 
     label: str
-    """ String representation of the label that is derived from
+    """ String representation of the label for human consumption
     """
 
     size: float

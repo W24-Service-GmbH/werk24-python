@@ -20,7 +20,7 @@ from werk24.models.techread import (
 from werk24.techread_client import Hook, W24TechreadClient
 
 # load the environment variables
-load_dotenv()
+load_dotenv(".werk24")
 
 # set the log level to info for the test setting
 # We recommend using logging.WARNING for production

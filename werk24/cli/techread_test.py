@@ -58,5 +58,4 @@ class TechreadTest(aiounittest.AsyncTestCase):
         assert W24AskType.PAGE_THUMBNAIL in ask_types
         assert W24AskType.SHEET_THUMBNAIL in ask_types
         assert W24AskType.SECTIONAL_THUMBNAIL in ask_types
-        assert W24AskType.VARIANT_OVERALL_DIMENSIONS in ask_types
         assert W24AskType.TRAIN in ask_types
