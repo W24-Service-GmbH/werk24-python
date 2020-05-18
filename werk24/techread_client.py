@@ -421,6 +421,10 @@ class W24TechreadClient:
         # get the hook function that corresponds to the message
         hook_function = self._get_hook_function_for_message(message, hooks)
 
+        # if no hook is registered, ignore
+        if hook_function is None:
+            return
+
         # if the hook_function is not callable, we want to warn the user,
         # rather than throwing an exception
         if not callable(hook_function):
