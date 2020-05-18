@@ -119,7 +119,7 @@ def _make_hooks_from_args(
                 msg.payload_bytes))]
 
     # add the hook for the variant measures
-    if args.ask_sectional_thumbnail:
+    if args.ask_variant_measures:
         hooks += [Hook(
             ask=W24AskVariantMeasures(),
             function=lambda msg: print(
