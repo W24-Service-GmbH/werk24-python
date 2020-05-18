@@ -8,6 +8,11 @@ setup(
     author_email="info@werk24.biz",
     description="Werk24 Client to read PDF- and Image-based Technical Drawings / Engineering Drawings",
     url="https://www.werk24.biz",
+    entry_points={
+        "console_scripts": [
+            "w24cli = werk24.cli.w24cli:main",
+        ]
+    },
     packages=[
         "werk24",
         "werk24.models",
