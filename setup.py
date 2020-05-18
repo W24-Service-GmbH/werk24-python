@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="werk24",
-    version="0.2.0",
+    version="0.2.1",
     author="W24 Service GmbH",
     author_email="info@werk24.biz",
     description="Werk24 Client to read PDF- and Image-based Technical Drawings / Engineering Drawings",
