@@ -8,7 +8,7 @@ With the API are able to obtain:
 - Thumbnails of the Page / Canvas / Sectionals (Cuts and Perspectives)
 - Measures incl. tolerances
 
-Check our website at https://www.werk24.biz
+Check our website at [https://www.werk24.biz](https://www.werk24.biz).
 The project is persistently improved. Get in touch with us to obtain your API key.
 
 ## Installation
