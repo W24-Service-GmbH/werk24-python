@@ -6,7 +6,8 @@ setup(
     version="0.2.1",
     author="W24 Service GmbH",
     author_email="info@werk24.biz",
-    description="Werk24 Client to read PDF- and Image-based Technical Drawings / Engineering Drawings",
+    description="Werk24 Client to read PDF- and Image-based "
+    "Technical Drawings / Engineering Drawings",
     url="https://www.werk24.biz",
     entry_points={
         "console_scripts": [
@@ -25,4 +26,5 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
-        "Topic :: Scientific/Engineering :: Image Recognition"])
+        "Topic :: Scientific/Engineering :: Image Recognition"],
+    python_requires='>=3.7.4',)

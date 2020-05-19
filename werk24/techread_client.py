@@ -160,6 +160,7 @@ class W24TechreadClient:
             self,
             cognito_region: str,
             cognito_identity_pool_id: str,
+            cognito_user_pool_id: str,
             cognito_client_id: str,
             cognito_client_secret: str,
             username: str,
@@ -183,6 +184,7 @@ class W24TechreadClient:
         self._auth_client = AuthClient(
             cognito_region,
             cognito_identity_pool_id,
+            cognito_user_pool_id,
             cognito_client_id,
             cognito_client_secret)
 
@@ -322,12 +324,13 @@ class W24TechreadClient:
             "W24TECHREAD_SERVER_HTTPS",
             "W24TECHREAD_SERVER_WSS",
             "W24TECHREAD_VERSION",
-            "W24TECHREAD_AUTH_REGION",
-            "W24TECHREAD_AUTH_IDENTITY_POOL_ID",
             "W24TECHREAD_AUTH_CLIENT_ID",
             "W24TECHREAD_AUTH_CLIENT_SECRET",
+            "W24TECHREAD_AUTH_IDENTITY_POOL_ID",
+            "W24TECHREAD_AUTH_USER_POOL_ID",
             "W24TECHREAD_AUTH_USERNAME",
-            "W24TECHREAD_AUTH_PASSWORD"
+            "W24TECHREAD_AUTH_PASSWORD",
+            "W24TECHREAD_AUTH_REGION"
         ]
 
         # get the variables from the environment and ensure that they
@@ -350,6 +353,7 @@ class W24TechreadClient:
         client.login(
             environs["W24TECHREAD_AUTH_REGION"],
             environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
+            environs["W24TECHREAD_AUTH_USER_POOL_ID"],
             environs["W24TECHREAD_AUTH_CLIENT_ID"],
             environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
             environs["W24TECHREAD_AUTH_USERNAME"],

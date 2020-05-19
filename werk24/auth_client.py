@@ -1,6 +1,6 @@
 """ Module handling the authentication
 """
-from typing import Optional
+from typing import Optional, Tuple
 import base64
 import hashlib
 import hmac
@@ -26,12 +26,14 @@ class AuthClient:
             self,
             cognito_region: str,
             cognito_identity_pool_id: str,
+            cognito_user_pool_id: str,
             cognito_client_id: str,
             cognito_client_secret: str):
 
         # store the settings
         self._cognito_region = cognito_region
         self._cognito_identity_pool_id = cognito_identity_pool_id
+        self._cognito_user_pool_id = cognito_user_pool_id
         self._cognito_client_id = cognito_client_id
         self._cognito_client_secret = cognito_client_secret
 
@@ -53,14 +55,66 @@ class AuthClient:
         self._username = username
         self._password = password
 
-    def _make_cognito_client(self) -> aioboto3.session.Session.client:
+    async def _get_generic_identity(self) -> Tuple[str, str]:
+        """ The AWS Cognito User Pools can only be accessed with
+        credentials (even if they are generic). This function
+        calls the AWS Cognito IDENTITY POOL to obtain the generic
+        and unpriviledged credientials
+
+        Raises:
+            UnauthorizedException: Raise when we are not able to
+                obtain unpriviledged credentials
+
+        Returns:
+            Tuple[str, str] -- Access Key, Secret Key Tuple
+        """
+
+        # make the identity client
+        identity_client = aioboto3.client(
+            'cognito-identity',
+            self._cognito_region)
+
+        try:
+
+            # get a fresh identity id
+            identity_response = await identity_client.get_id(
+                IdentityPoolId=self._cognito_identity_pool_id)
+            identity_id = identity_response['IdentityId']
+
+            # obtain the associated credentionals and return
+            response = await identity_client.get_credentials_for_identity(
+                IdentityId=identity_id)
+            access_key = response['Credentials']['AccessKeyId']
+            secret_key = response['Credentials']['SecretKey']
+
+        # if we were not able to obtain the access key / secret key,
+        # then something with the AWS API went wrong. In turn that means
+        # that we cannot authenticate the user and must stop
+        except KeyError:
+            raise UnauthorizedException(
+                "Cannot obtain Cognito Identity Pool Credentials")
+
+        # return
+        return access_key, secret_key
+
+    async def _make_cognito_client(self) -> aioboto3.session.Session.client:
         """ Make the Cognito Client to communicate with
         AWS Cognito
 
         Returns:
             boto3.session.Session.client -- Boto3 Client
         """
-        return aioboto3.client("cognito-idp", self._cognito_region)
+
+        # before we can aws cognito USER POOL client, we need
+        # to obtain a generic identity from the IDENTIY POOL
+        access_key, secret_key = await self._get_generic_identity()
+
+        # with this information, we can now generate the client
+        return aioboto3.client(
+            "cognito-idp",
+            region_name=self._cognito_region,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key)
 
     def _make_cognito_secret_hash(self, username: str) -> str:
         """ Make the keyed-hash message authentication code (HMAC) calculated
@@ -98,7 +152,8 @@ class AuthClient:
             raise UnauthorizedException("No username / password provided")
 
         # make the connection to aws
-        async with self._make_cognito_client() as cognito_client:
+        cognito_client = await self._make_cognito_client()
+        async with cognito_client as cognito_session:
 
             # make the authentication data
             auth_data = {
@@ -108,7 +163,7 @@ class AuthClient:
             }
 
             # get the jwt token from AWS cognito
-            resp = await cognito_client.initiate_auth(
+            resp = await cognito_session.initiate_auth(
                 AuthFlow='USER_PASSWORD_AUTH',
                 AuthParameters=auth_data,
                 ClientId=self._cognito_client_id)
