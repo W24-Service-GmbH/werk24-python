@@ -149,19 +149,19 @@ def _make_hooks_from_args(
             ))]
 
     # add a general hook to deal with internal errors
-    hook_internal_errors = Hook(
+    hook_error_internal = Hook(
         message_type=W24TechreadMessageType.ERROR,
         message_subtype=W24TechreadMessageSubtypeError.INTERNAL,
         function=lambda msg:
         logger.error("Internal Error %s", msg.payload_dict))
-    hooks.append(hook_internal_errors)
+    hooks.append(hook_error_internal)
 
     # add a gneral hook to deal with PROGRESS messages
-    hook_progress = Hook(
+    hook_progress_started = Hook(
         messaage_type=W24TechreadMessageType.PROGRESS,
         message_subtype=W24TechreadMessageSubtypeProgress
-        .INITIALIZATION_SUCCESS,
-        function=lambda msg: logger.info("Techread initialized"))
-    hooks.append(hook_progress)
+        .STARTED,
+        function=lambda msg: logger.info("Techread process started"))
+    hooks.append(hook_progress_started)
 
     return hooks
