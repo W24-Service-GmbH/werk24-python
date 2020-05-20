@@ -481,10 +481,8 @@ class W24TechreadClient:
             def hook_filter(hook: Hook) -> bool:
                 return hook.message_type is not None \
                     and hook.message_subtype is not None \
-                    and message.message_type.value \
-                    == hook.message_type.value \
-                    and message.message_subtype.value \
-                    == hook.message_subtype.value
+                    and message.message_type == hook.message_type \
+                    and message.message_subtype == hook.message_subtype
 
         # return the first positive case
         for cur_hook in filter(hook_filter, hooks):
@@ -498,4 +496,5 @@ class W24TechreadClient:
             "Ignoring message of type %s:%s - no hook registered",  # noqa
             message.message_type,
             message.message_subtype)
+        print(hooks)
         return None
