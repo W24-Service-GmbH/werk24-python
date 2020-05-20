@@ -290,7 +290,7 @@ class W24TechreadClient:
         await self._techread_client_wss.send_command(
             W24TechreadAction.READ.value,
             "{}")
-        logger.info("Reading process started")
+        logger.info("Techread request submitted")
 
         # Wait for incoming messages from the server.
         # They will tell you when the individual
