@@ -467,8 +467,8 @@ class W24TechreadClient:
             Optional[Callable] -- Hook function that should be called
         """
 
-        # because we allow the user to define the ask in the definition
-        # of the hoook we need to make some extra effort when filtering
+        # because we allow the user to define the ask in the hook,
+        # we need to make some extra effort when filtering
         if message.message_type == W24TechreadMessageType.ASK:
             def hook_filter(hook: Hook) -> bool:
                 return hook.ask is not None \
@@ -479,8 +479,12 @@ class W24TechreadClient:
         # compare the the message_type and message_subtype
         else:
             def hook_filter(hook: Hook) -> bool:
-                return message.message_type.value == hook.message_type \
-                    and message.message_subtype == hook.message_subtype
+                return hook.message_type is not None \
+                    and hook.message_subtype is not None \
+                    and message.message_type.value \
+                    == hook.message_type.value \
+                    and message.message_subtype.value \
+                    == hook.message_subtype.value
 
         # return the first positive case
         for cur_hook in filter(hook_filter, hooks):
