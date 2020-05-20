@@ -496,5 +496,4 @@ class W24TechreadClient:
             "Ignoring message of type %s:%s - no hook registered",  # noqa
             message.message_type,
             message.message_subtype)
-        print(hooks)
         return None
