@@ -467,7 +467,7 @@ class W24TechreadClient:
             Optional[Callable] -- Hook function that should be called
         """
 
-        # because we allow the user to define the ask itself in the definition
+        # because we allow the user to define the ask in the definition
         # of the hoook we need to make some extra effort when filtering
         if message.message_type == W24TechreadMessageType.ASK:
             def hook_filter(hook: Hook) -> bool:
