@@ -159,9 +159,9 @@ def _make_hooks_from_args(
     # add a gneral hook to deal with PROGRESS messages
     hook_progress = Hook(
         messaage_type=W24TechreadMessageType.PROGRESS,
-        message_subtype=W24TechreadMessageSubtypeProgress.STARTED,
-        function=lambda msg:
-        logger.info("Techread process started"))
+        message_subtype=W24TechreadMessageSubtypeProgress
+        .INITIALIZATION_SUCCESS,
+        function=lambda msg: logger.info("Techread initialized"))
     hooks.append(hook_progress)
 
     return hooks
