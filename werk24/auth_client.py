@@ -74,27 +74,34 @@ class AuthClient:
             'cognito-identity',
             self._cognito_region)
 
-        try:
+        # obtain the identity credentials
+        async with identity_client as identity_session:
 
-            # get a fresh identity id
-            identity_response = await identity_client.get_id(
+            # get a new identity id
+            identity_response = await identity_session.get_id(
                 IdentityPoolId=self._cognito_identity_pool_id)
-            identity_id = identity_response['IdentityId']
+            identity_id = identity_response.get('IdentityId')
+            if identity_id is None:
+                raise UnauthorizedException(
+                    "Unable to obtain IdentityId from Cognito Identity Pool")
 
-            # obtain the associated credentionals and return
-            response = await identity_client.get_credentials_for_identity(
-                IdentityId=identity_id)
-            access_key = response['Credentials']['AccessKeyId']
-            secret_key = response['Credentials']['SecretKey']
+            # obtain the associated credentials
+            credentials_response = await identity_session \
+                .get_credentials_for_identity(IdentityId=identity_id)
+            credentials = credentials_response.get('Credentials')
+            if credentials is None:
+                raise UnauthorizedException(
+                    "Unable to obtain Credentials from Cognito Identity Pool")
 
-        # if we were not able to obtain the access key / secret key,
-        # then something with the AWS API went wrong. In turn that means
-        # that we cannot authenticate the user and must stop
-        except KeyError:
+        # get the access key / secret key
+        access_key = credentials.get('AccessKeyId')
+        secret_key = credentials.get('SecretKey')
+        if access_key is None or secret_key is None:
             raise UnauthorizedException(
-                "Cannot obtain Cognito Identity Pool Credentials")
+                "Unable to obtain Access and Secret Key from "
+                "Cognito Identity Pool")
 
-        # return
+        # that's it
         return access_key, secret_key
 
     async def _make_cognito_client(self) -> aioboto3.session.Session.client:

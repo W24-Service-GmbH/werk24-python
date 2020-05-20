@@ -1,9 +1,16 @@
+from os import path
 from setuptools import setup
 
+NAME = "werk24"
+VERSION = "0.2.2"
+
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md')) as f:
+    long_description = f.read()
 
 setup(
-    name="werk24",
-    version="0.2.2",
+    name=NAME,
+    version=VERSION,
     author="W24 Service GmbH",
     author_email="info@werk24.biz",
     description="Werk24 Client to read PDF- and Image-based "
@@ -31,5 +38,7 @@ setup(
     python_requires='>=3.7.4',
     project_urls={
         "Documentation": "https://werk24.github.io/docs/"
-    }
+    },
+    long_description_content_type='text/markdown',
+    long_description=long_description,
 )
