@@ -331,12 +331,14 @@ class W24TechreadClient:
             W24TechreadClient -- The techread Client
         """
         # load the licences file if requested
+        environ_raw: Dict[str, Optional[str]]
         if license_path is None:
-            environ_raw = os.environ
+            environ_raw = dict(os.environ)
         else:
             try:
-                with open(license_path) as fh:
-                    environ_raw = dotenv.dotenv_values(fh.read())
+                with open(license_path, 'r') as file_handle:
+                    content = file_handle.read()
+                    environ_raw = dotenv.dotenv_values(content)
             except FileNotFoundError:
                 raise
 
@@ -358,7 +360,7 @@ class W24TechreadClient:
         # are set. If not, raise an exception
         environs: Dict[str, str] = {}
         for cur_key in keys:
-            cur_val = environs_raw.get(cur_key)
+            cur_val = environ_raw.get(cur_key)
             if cur_val is None:
                 raise RuntimeError(f"{cur_key} not set")
             environs[cur_key] = cur_val
