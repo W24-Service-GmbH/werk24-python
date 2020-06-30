@@ -313,7 +313,8 @@ class W24TechreadClient:
 
     @staticmethod
     def make_from_env(
-            license_path: Optional[str] = ".werk24") -> "W24TechreadClient":
+            license_path: Optional[str] = ".werk24"
+    ) -> "W24TechreadClient":
         """ Small helper function that creates a new
         W24TechreadClient from the enviorment info.
 
@@ -336,9 +337,7 @@ class W24TechreadClient:
             environ_raw = dict(os.environ)
         else:
             try:
-                with open(license_path, 'r') as file_handle:
-                    content = file_handle.read()
-                    environ_raw = dotenv.dotenv_values(content)
+                environ_raw = dotenv.dotenv_values(license_path)
             except FileNotFoundError:
                 raise
 
