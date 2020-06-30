@@ -25,6 +25,7 @@ import os
 from types import TracebackType
 from typing import AsyncGenerator, Callable, Dict, List, Optional, Type
 
+import dotenv
 from pydantic import BaseModel
 from werk24.auth_client import AuthClient
 from werk24.exceptions import RequestTooLargeException, ServerException
@@ -311,13 +312,23 @@ class W24TechreadClient:
             yield message
 
     @staticmethod
-    def make_from_env() -> "W24TechreadClient":
+    def make_from_env(
+            license_path: Optional[str] = ".werk24") -> "W24TechreadClient":
         """ Small helper function that creates a new
         W24TechreadClient from the enviorment info.
+
+        Arguments:
+            license_path:{Optional[str]} -- path to the License file.
+                By default we are looking for a .werk24 file in the current
+                cwd. If argument is set to None, we are not loading any
+                file and relying on the ENVIRONMENT variables only
 
         Returns:
             W24TechreadClient -- The techread Client
         """
+        # load the licences file if requested
+        if license_path is not None:
+            dotenv.load_dotenv(license_path)
 
         # make a list of all environment variables
         keys = [
