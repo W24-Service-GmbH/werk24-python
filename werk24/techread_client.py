@@ -323,12 +323,22 @@ class W24TechreadClient:
                 cwd. If argument is set to None, we are not loading any
                 file and relying on the ENVIRONMENT variables only
 
+        Raises:
+            FileNotFoundError -- Raised when you pass a path to a license file
+                that does not exist
+
         Returns:
             W24TechreadClient -- The techread Client
         """
         # load the licences file if requested
-        if license_path is not None:
-            dotenv.load_dotenv(license_path)
+        if license_path is None:
+            environ_raw = os.environ
+        else:
+            try:
+                with open(license_path) as fh:
+                    environ_raw = dotenv.dotenv_values(fh.read())
+            except FileNotFoundError:
+                raise
 
         # make a list of all environment variables
         keys = [
@@ -348,7 +358,7 @@ class W24TechreadClient:
         # are set. If not, raise an exception
         environs: Dict[str, str] = {}
         for cur_key in keys:
-            cur_val = os.environ.get(cur_key)
+            cur_val = environs_raw.get(cur_key)
             if cur_val is None:
                 raise RuntimeError(f"{cur_key} not set")
             environs[cur_key] = cur_val
