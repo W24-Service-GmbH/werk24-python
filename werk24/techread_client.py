@@ -336,10 +336,7 @@ class W24TechreadClient:
         if license_path is None:
             environ_raw = dict(os.environ)
         else:
-            try:
-                environ_raw = dotenv.dotenv_values(license_path)
-            except FileNotFoundError:
-                raise
+            environ_raw = dotenv.dotenv_values(license_path)
 
         # make a list of all environment variables
         keys = [

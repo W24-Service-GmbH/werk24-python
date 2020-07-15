@@ -1,16 +1,33 @@
+import re
 from os import path
+
 from setuptools import setup
 
+VERSIONFILE = "werk24/_version.py"
 NAME = "werk24"
-VERSION = "0.2.2"
 
-this_directory = path.abspath(path.dirname(__file__))
-with open(path.join(this_directory, 'README.md')) as f:
-    long_description = f.read()
+
+def _get_version(version_file: str)->str:
+    version_pattern = r"^__version__ = ['\"]([^'\"]*)['\"]"
+    with open(version_file, "rt") as file_handle:
+        match = re.search(version_pattern, file_handle.read(), re.M)
+    if match:
+        return match.group(1)
+
+    raise RuntimeError(
+        "Unable to find version string in %s." %
+        (VERSIONFILE,))
+
+
+def _get_description() -> str:
+    this_directory = path.abspath(path.dirname(__file__))
+    with open(path.join(this_directory, 'README.md')) as file_handle:
+        return file_handle.read()
+
 
 setup(
     name=NAME,
-    version=VERSION,
+    version=_get_version(VERSIONFILE),
     author="W24 Service GmbH",
     author_email="info@werk24.biz",
     description="Werk24 Client to read PDF- and Image-based "
@@ -40,5 +57,5 @@ setup(
         "Documentation": "https://werk24.github.io/docs/"
     },
     long_description_content_type='text/markdown',
-    long_description=long_description,
+    long_description=_get_description(),
 )

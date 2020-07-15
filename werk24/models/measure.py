@@ -1,67 +1,90 @@
-""" Defintion of all the W24Measure object and all its requirements.
 
+""" Defintion of all the W24Measure class its support structures
+
+
+Author: Jochen Mattes - Werk24
 """
-from enum import Enum
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
 
 from pydantic import BaseModel
 
+from .measure_warning import W24MeasureWarning
+from .thread import W24Thread
+from .unit import W24UnitLength
+from .size_tolerance import W24SizeTolerance, W24SizeToleranceGeneral
+from .chamfer import W24Chamfer
+from .size import W24Size
 
-class W24MeasureThreadType(str, Enum):
-    """ Enum capturing all supported Thread Types
+
+class W24MeasureLabel(BaseModel):
+    """ Abstract base class for all MeasureItem Children
     """
 
-    METRIC_STANDARD_THREAD = "METRIC_STANDARD_THREAD"
-    """ Metric Standard Thread
-    (typically indicated by an 'M'-prefix
+    blurb: str
+    """ String representation of the item for human consumption
     """
 
+    quantity: int = 1
+    """ Quantity for spacings
+    e.g., (2x)
 
-class W24MeasureThreadHandedness(str, Enum):
-    """ Enum describing the direction of the
-    thread
+    NOTE: Currently only the indicated measure will be detected and
+    returned. Future implementation could detect the spacings and
+    return individual measures for the respective spacings.
+    When we implement this feature, we will add an attribute to the
+    ASK, which allows you to control the behavior.
     """
 
-    LEFT = "LEFT"
-    """ Left-handed Thread
+    size: W24Size
+    """ Size of measure as refered to in the drawing.
+
+    NOTE: Sizes are always assocated with units! This becomes important
+    to remember when you are dealing with mixed-unit drawings (e.g.,
+    an adapter bolt that has an ISO thread and an UTC tapped hole).
+    To avoid any loss of precision, we return the size in the unit
+    that was indicated on the drawing.
     """
 
-    RIGHT = "RIGHT"
-    """ Right-handed Thread
+    size_tolerance: Optional[W24SizeTolerance] = W24SizeToleranceGeneral()
+    """ Tolerance details.
+    Default: General tolerances
+
+    NOTE: by default we are refering to the general tolerances of the drawing.
+    Currently the W24SizeToleranceGeneral object is a stub.
+    Future implementations might go one step further and quote the
+    applicable general tolerance as refered to in the data fields.
+
+    NOTE: if the W24MeasureLabel describes a "Theoretically Exact Measure",
+    i.e, the label is surrounded by a box, like: "[15]", the size_tolerance
+    refers to a W24SizeToleranceTheoreticallyExact object (and is NOT None)
     """
 
+    thread: Optional[W24Thread] = None
+    """ Optional thread details.
 
-class W24MeasureWarningType(str, Enum):
-    """ List of all warnings that can be associated with
-    the returned measures.
+    NOTE: the thread details describe the complete thread description
+    and follow the respective standards. In consequence, the thread
+    diameter of an ISO-thread will be indicated in millimeter,
+    while the thread diameter of an UTS thread will be in inch.
+
     """
 
-    UNCONVENTIONAL_TOLERANCE_ORDER = "UNCONVENTIONAL_TOLERANCE_ORDER"
-    """ The UNCONVENTIONAL_TOLERANCE_ORDER warning is raised
-    when the first-mentioned tolerance is lower than the second-mentioned.
-    Example: 3 -0.1/+0.1 (rather than 3 +0.1/-0.1)
+    chamfer: Optional[W24Chamfer] = None
+    """ Optional Chamfer
     """
 
-
-class W24MeasureWarning(BaseModel):
-    """ Warnings are issued when something about the label
-    or measure is not conforming with convention
+    unit: Optional[W24UnitLength] = None
+    """ Length unit of the size
     """
-    warning_type: W24MeasureWarningType
 
 
 class W24Measure(BaseModel):
-    """ Tolerated measure with positve and negative tolerances.
-    All measures are in Millimeter
-
-    NOTE: Fit measures are translated into positive and
-    negative tolerances.
+    """ Tolerated measure
     """
 
     line: Tuple[Tuple[float, float], Tuple[float, float]]
-    """ Relative x-y coordinates of the Start/End point of the Measure in the
-    Pixel Coordinate system that the Measure is associated to.
-    Typically this will be the W24AskVariantMeasuresResponse.
+    """ Tuple of the measure's start- and end-coordinates
+    in the Pixel Coordinate system of the sectional.
 
     The coordinates are normalized by the width and height of the
     associated object (e.g., the sectional). If you want to obtain
@@ -69,65 +92,8 @@ class W24Measure(BaseModel):
     the following offsets: sectional + canvas + sheet.
     """
 
-    label: str
-    """ String representation of the label for human consumption
-    """
-
-    size: float
-    """ Size of the measure as (signed) float in mm.
-
-    NOTE: For Wrench_sizes this will reflect the actual distance
-    that the measure describes even if the label reads "SW...",
-    but is associated with the short edge distance
-
-    NOTE: For Whitworth_sizes this will reflect the associacted
-    value in mm. If you want to obtain the whitworth_size in inches,
-    you'll find it in the whitworth_size
-    """
-
-    fit_size: Optional[str] = None
-    """ Fit size according to ISO 286-1 / ISO 286-2.
-
-    NOTE: this value will only be set when the technical
-    drawing explicitly states it. The API does not translate
-    tolerance groups into fit_size equivalents.
-    """
-
-    tolerance_upper: Optional[float] = None
-    """ Signed upper tolerance as stated in the drawing.
-
-    NOTE: When a fit size is present, this tolerance will be
-    unset. If you need the API to behave in a different way,
-    please get in touch with a suggestion how to handle
-    inconsistencies between the tolerances and the fit_size
-    """
-
-    tolerance_lower: Optional[float] = None
-    """ Lower Tolerance (See tolerance_upper) """
-
-    chamfer_angle: Optional[float] = None
-    """ Chamfer angle in degree as indicated on the label
-    """
-
-    wrench_size: Optional[float] = None
-    """ Wrench Size in mm
-    """
-
-    whitworth_size: Optional[float] = None
-    """ Whitworth Size in inch
-    """
-
-    thread_type: Optional[W24MeasureThreadType] = None
-    """ Thread type described by the measure
-    """
-
-    thread_pitch: Optional[float] = None
-    """ Thread pitch in mm.
-    """
-
-    thread_handedness: Optional[W24MeasureThreadHandedness] = None
-    """ Handedness of the thread. Defaults to RIGHT if not
-    explicitly stated on the drawing
+    label: W24MeasureLabel
+    """ Measure Label
     """
 
     warnings: List[W24MeasureWarning] = []

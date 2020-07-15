@@ -5,6 +5,7 @@ from typing import List
 
 from pydantic import UUID4, BaseModel
 
+from .gdt import W24GDT
 from .measure import W24Measure
 
 
@@ -33,6 +34,12 @@ class W24AskType(str, Enum):
 
     VARIANT_MEASURES = "VARIANT_MEASURES"
     """ List of Measures that were found on the Sectionals
+    associated with the variant
+    """
+
+    VARIANT_GDTS = "VARIANT_GDTS"
+    """ List of Geometric Dimensions and Tolerations detected
+    on the Sectionals associated with the variant
     """
 
     TRAIN = "TRAIN"
@@ -116,11 +123,31 @@ class W24AskVariantMeasuresResponse(BaseModel):
     W24AskVariantMeasures ask.
 
     NOTE: Be aware that requesting the measures will
-    yield one responds for each variant
+    yield one responds for each variant and sectional
     """
     variant_id: UUID4
     sectional_id: UUID4
     measures: List[W24Measure]
+
+
+class W24AskVariantGDTs(W24Ask):
+    """ This Ask requests the complete
+    list of all Geometric Dimensions and Tolerations
+    that were detected on the variant.
+    """
+    ask_type = W24AskType.VARIANT_GDTS
+
+
+class W24AskVariantGDTsResponse(BaseModel):
+    """ Response object corresponding ot hte
+    W24AskVariantGDTs.
+
+    NOTE: Be aware that requesting the measures will
+    yield one responds for each variant and sectional
+    """
+    variant_id: UUID4
+    sectional_id: UUID4
+    gdts: List[W24GDT]
 
 
 class W24AskTrain(BaseModel):

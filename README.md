@@ -1,12 +1,12 @@
 # Werk24 Client
 
-- Understand the content of your PDF- and image-based Technical Drawings with a simple API call.
+* Understand the content of your PDF- and image-based Technical Drawings with a simple API call.
 
 Werk24 offers an easy to use API to extract information from PDF- and image-based Technical Drawings.
 With the API are able to obtain:
 
-- Thumbnails of the Page / Canvas / Sectionals (Cuts and Perspectives)
-- Measures incl. tolerances
+* Thumbnails of the Page / Canvas / Sectionals (Cuts and Perspectives)
+* Measures incl. tolerances
 
 Check our website at [https://www.werk24.biz](https://www.werk24.biz).
 The project is persistently improved. Get in touch with us to obtain your API key.
@@ -36,25 +36,16 @@ To get a first impression, you can run the CLI:
     import asyncio
     from werk24 import W24TechreadClient, W24AskVariantOverallDimensions, Hook
 
-    # get the drawing
-    with open(drawing_path, "rb") as drawing_handle
-        drawing_bytes = drawing_handle.read()
+    from werk24 import Hook, W24TechreadClient,W24AskVariantMeasures
 
-    async def main(drawing_path:str) -> None:
+    # get the drawing_bytes
+    document_bytes = ...
 
-        # define the hooks
-        hooks = [Hook(ask=W24AskVariantOverallDimensions(),function=print)]
+    # define what you want to learn about the drawing, and what function
+    # should be called when a response arrives
+    hooks = [Hook(ask=W24AskVariantMeasures(), function=print)]
 
-        # make the session and start the reading process
-        client = W24TechreadClient.make_from_env()
-        async with client as session
-            session.read_drawing_with_hooks(drawing_bytes, hooks)
-
-    if  __name__ == "__main__":
-        try:
-            drawing_path = sys.argv[1]
-
-        except KeyError:
-            sys.exit("Drawing Path Required as first argument")
-
-        asyncio.run(main(drawing_path))
+    # make the call
+    client = W24TechreadClient.make_from_env()
+    async with client as session:
+        await session.read_drawing_with_hooks(document_bytes,hooks)
