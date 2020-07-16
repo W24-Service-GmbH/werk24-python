@@ -49,7 +49,7 @@ class W24ThreadISOMetric(W24Thread):
     * DIN 13-2 to DIN 13-10 threads (i.e., diameter 1..1000mm)
     * DIN 158-1 (i.e., cone-shaped threads)
     """
-    item_type = W24ThreadType.ISO_METRIC
+    thread_type = W24ThreadType.ISO_METRIC
 
     diameter: float
     """ Diameter of the thread in mm.
@@ -118,36 +118,36 @@ class W24ThreadUTS(W24Thread):
 class W24ThreadUTSCoarse(W24ThreadUTS):
     """ Unified National Coarse Thread
     """
-    item_type = W24ThreadType.UTS_COARSE
+    thread_type = W24ThreadType.UTS_COARSE
 
 
 class W24ThreadUTSFine(W24ThreadUTS):
     """ Unified National Fine Thread
     """
-    item_type = W24ThreadType.UTS_FINE
+    thread_type = W24ThreadType.UTS_FINE
 
 
 class W24ThreadUTSExtrafine(W24ThreadUTS):
     """ Unified National Extrafine Thread
     """
-    item_type = W24ThreadType.UTS_EXTRAFINE
+    thread_type = W24ThreadType.UTS_EXTRAFINE
 
 
 class W24ThreadUTSSpecial(W24ThreadUTS):
     """ Unified National Special Thread
     """
-    item_type = W24ThreadType.UTS_SPECIAL
+    thread_type = W24ThreadType.UTS_SPECIAL
 
 
 class W24ThreadWhitworth(W24Thread):
     """ Whitworth Thread following ISO 228-1
     """
-    item_type = W24ThreadType.WHITWORTH
+    thread_type = W24ThreadType.WHITWORTH
 
     whitworth_size: float
     """ Size number (for historic reasons not proportional to size)
     """
 
-    # tolerance: Optional[str] = None
+    tolerance_class: Optional[str] = None
     """ Tolerance field A implemented in the future
     """  # pylint: disable=pointless-string-statement

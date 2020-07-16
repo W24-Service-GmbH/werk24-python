@@ -45,7 +45,11 @@ class W24MeasureLabel(BaseModel):
     that was indicated on the drawing.
     """
 
-    size_tolerance: Optional[W24SizeTolerance] = W24SizeToleranceGeneral()
+    unit: Optional[W24UnitLength] = None
+    """ Length unit of the size
+    """
+
+    size_tolerance: W24SizeTolerance = W24SizeToleranceGeneral()
     """ Tolerance details.
     Default: General tolerances
 
@@ -71,10 +75,6 @@ class W24MeasureLabel(BaseModel):
 
     chamfer: Optional[W24Chamfer] = None
     """ Optional Chamfer
-    """
-
-    unit: Optional[W24UnitLength] = None
-    """ Length unit of the size
     """
 
 

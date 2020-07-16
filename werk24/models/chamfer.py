@@ -13,6 +13,10 @@ class W24Chamfer(BaseModel):
     Future implementations wil take this into account.
     """
 
+    blurb: str
+    """ String representation for human consumption
+    """
+
     angle: float
     """ Chamfer angle in degrees
 
