@@ -3,6 +3,7 @@
 import argparse
 import io
 import logging
+import sys
 from typing import List
 
 from dotenv import load_dotenv
@@ -12,7 +13,7 @@ from werk24.models.ask import (W24AskPageThumbnail, W24AskSectionalThumbnail,
 from werk24.models.techread import (W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
-from werk24.techread_client import Hook, W24TechreadClient
+from werk24.techread_client import Hook, LicenseError, W24TechreadClient
 
 # load the environment variables
 load_dotenv(".werk24")
@@ -80,7 +81,13 @@ async def main(
     # from the environment variables. We will
     # provide you with separate .env files for
     # the development and production environments
-    client = W24TechreadClient.make_from_env()
+    try:
+        client = W24TechreadClient.make_from_env()
+
+    # If a license error occured, let the user know.
+    except LicenseError as exception:
+        print(f"LICENSE ERROR: {exception}")
+        sys.exit()
 
     async with client as session:
 

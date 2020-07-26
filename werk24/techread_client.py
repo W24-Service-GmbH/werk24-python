@@ -41,6 +41,12 @@ logger = logging.getLogger(  # pylint: disable=invalid-name
     'w24_techread_client')
 
 
+class LicenseError(Exception):
+    """ Error raised when the license information is
+    incorrect
+    """
+
+
 class Hook(BaseModel):
     """ Small Object to keep the callback requests.
     You can either register a callback request to an
@@ -331,12 +337,15 @@ class W24TechreadClient:
         Returns:
             W24TechreadClient -- The techread Client
         """
-        # load the licences file if requested
+
+        # First priority: look for the local license path
         environ_raw: Dict[str, Optional[str]]
-        if license_path is None:
-            environ_raw = dict(os.environ)
-        else:
+        if license_path is not None and os.path.exists(license_path):
             environ_raw = dotenv.dotenv_values(license_path)
+
+        # Second priority: use the environment variables
+        else:
+            environ_raw = dict(os.environ)
 
         # make a list of all environment variables
         keys = [
@@ -355,11 +364,23 @@ class W24TechreadClient:
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
         environs: Dict[str, str] = {}
+        environ_success = True
         for cur_key in keys:
             cur_val = environ_raw.get(cur_key)
             if cur_val is None:
-                raise RuntimeError(f"{cur_key} not set")
+                environ_success = False
+                break
             environs[cur_key] = cur_val
+
+        # raise an exception if this was not successful
+        if not environ_success:
+            raise LicenseError(
+                "The License information could neither be "
+                "found in the local environment variables, nor in the "
+                "local '.werk24' file. Please make sure that you are "
+                "calling the client from the directory that contains "
+                "your '.werk24' file and that the license file "
+                "name does not contain a prefix.")
 
         # create a reference to the client
         client = W24TechreadClient(

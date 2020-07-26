@@ -49,3 +49,9 @@ To get a first impression, you can run the CLI:
     client = W24TechreadClient.make_from_env()
     async with client as session:
         await session.read_drawing_with_hooks(document_bytes,hooks)
+
+## Release Notes
+
+### 0.2.5
+
+* Fix: Better error message if license file not found.

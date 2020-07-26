@@ -7,8 +7,11 @@ from pydantic import BaseModel
 class W24SizeToleranceType(str, Enum):
     """ Enum of the supported tolerances
     """
+    APPROXIMATION = "APPROXIMATION"
     FIT_SIZE_ISO = "FIT_SIZE_ISO"
     GENERAL_TOLERANCES = "GENERAL_TOLERANCES"
+    MINIMUM = "MINIMUM"
+    MAXIMUM = "MAXIUM"
     OFF_SIZE = "OFF_SIZE"
     THEORETICALLY_EXACT = "THEORETICALLY_EXACT"
 
@@ -80,3 +83,33 @@ class W24SizeToleranceTheoreticallyExact(W24SizeTolerance):
     In these situations the toleration takes priority.
     """
     toleration_type = W24SizeToleranceType.THEORETICALLY_EXACT
+
+
+class W24SizeMinimum(W24SizeTolerance):
+    """ Minimum Size of a measure
+
+    Example:
+        min. 15
+    """
+
+    toleration_type = W24SizeToleranceType.MINIMUM
+
+
+class W24SizeMaximum(W24SizeTolerance):
+    """ Maximum Size of a measure
+
+    Example:
+        max 15
+    """
+
+    toleration_type = W24SizeToleranceType.MINIMUM
+
+
+class W24SizeApproximation(W24SizeTolerance):
+    """ Approximation of a measure
+
+    Example:
+        ~ 15
+        ca. 14
+    """
+    toleration_type = W24SizeToleranceType.APPROXIMATION
