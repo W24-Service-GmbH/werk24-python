@@ -85,7 +85,7 @@ class W24SizeToleranceTheoreticallyExact(W24SizeTolerance):
     toleration_type = W24SizeToleranceType.THEORETICALLY_EXACT
 
 
-class W24SizeMinimum(W24SizeTolerance):
+class W24SizeToleranceMinimum(W24SizeTolerance):
     """ Minimum Size of a measure
 
     Example:
@@ -95,7 +95,7 @@ class W24SizeMinimum(W24SizeTolerance):
     toleration_type = W24SizeToleranceType.MINIMUM
 
 
-class W24SizeMaximum(W24SizeTolerance):
+class W24SizeToleranceMaximum(W24SizeTolerance):
     """ Maximum Size of a measure
 
     Example:
@@ -105,7 +105,7 @@ class W24SizeMaximum(W24SizeTolerance):
     toleration_type = W24SizeToleranceType.MINIMUM
 
 
-class W24SizeApproximation(W24SizeTolerance):
+class W24SizeToleranceApproximation(W24SizeTolerance):
     """ Approximation of a measure
 
     Example:
