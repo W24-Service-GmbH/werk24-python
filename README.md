@@ -1,5 +1,7 @@
 # Werk24 Client
 
+[![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
+
 * Understand the content of your PDF- and image-based Technical Drawings with a simple API call.
 
 Werk24 offers an easy to use API to extract information from PDF- and image-based Technical Drawings.
@@ -7,6 +9,7 @@ With the API are able to obtain:
 
 * Thumbnails of the Page / Canvas / Sectionals (Cuts and Perspectives)
 * Measures incl. tolerances
+* Geometric Dimensioning and Tolerancing Frames
 
 Check our website at [https://www.werk24.biz](https://www.werk24.biz).
 The project is persistently improved. Get in touch with us to obtain your API key.
