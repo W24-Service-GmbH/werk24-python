@@ -53,7 +53,7 @@ class TechreadIntegrationTest(aiounittest.AsyncTestCase):
             W24AskPageThumbnail()
         ]
 
-    async def test_techread(self)-> None:
+    async def test_techread(self) -> None:
 
         # start a session
         async with self.client as session:

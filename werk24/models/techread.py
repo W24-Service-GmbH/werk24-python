@@ -31,12 +31,20 @@ class W24TechreadMessageType(str, Enum):
     ASK = "ASK"
     ERROR = "ERROR"
     PROGRESS = "PROGRESS"
+    REJECTION = "REJECTION"
 
 
 class W24TechreadMessageSubtypeError(str, Enum):
     """ Message Subtype for the MessageType: ERROR
     """
     INTERNAL = "INTERNAL"
+
+
+class W24TechreadMessageSubtypeRejection(str, Enum):
+    """ Message Subtype for the MessageType: REJECTION
+    """
+    COMPLEXITY_EXCEEDED = "COMPLEXITY_EXCEEDED"
+    PAPER_SIZE_LIMIT_EXCEEDED = "PAPER_SIZE_LIMIT_EXCEEDED"
 
 
 class W24TechreadMessageSubtypeProgress(str, Enum):

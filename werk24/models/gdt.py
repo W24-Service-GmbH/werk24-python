@@ -93,12 +93,12 @@ class W24GDTZoneOffset(BaseModel):
     e.g., UZ+0.15, UZ-0.2, UZ+0.1:0.2
     """
 
-    offset_min: float
+    # offset_min: float
     """ signed offset with the smaller absolute value
     e.g., -0.1
     """
 
-    offset_max: float
+    # offset_max: float
     """ signed offset with the larger absolute value
     e.g., -0.3
     """
@@ -114,6 +114,24 @@ class W24GDTZoneValue(BaseModel):
     """ String representation for human consumption
     e.g., 0.05/12x10°
     """
+
+    width_min: float
+    """ Minimal width """
+
+    width_max: Optional[float]
+    """ Optional maximal width """
+
+    extend_quantity: Optional[int]
+    """ Optional quantity of the spacing """
+
+    extend_shape: Optional[W24GDTZoneShape]
+    """ Optional shape of the extend """
+
+    extend: Optional[float]
+    """ Optional extend """
+
+    extend_angle: Optional[float]
+    """ Optional angle of the extend spacing """
 
 
 class W24GDTFilterType(str, Enum):
@@ -137,18 +155,18 @@ class W24GDTFilter(BaseModel, abc.ABC):
     """
 
 
-class W24GDTFilterG(W24GDTFilter):
-    """ Gaussian Feature filter without contraints
-    """
-    filter_type = W24GDTFilterType.GAUSSIAN
+# class W24GDTFilterG(W24GDTFilter):
+#     """ Gaussian Feature filter without contraints
+#     """
+#     filter_type = W24GDTFilterType.GAUSSIAN
 
-    wavelength_min: float
-    """ Minimum wavelength in wavers/revolution
-    """
+#     wavelength_min: float
+#     """ Minimum wavelength in wavers/revolution
+#     """
 
-    wavelength_max: float
-    """ Maximum wavelength in wavers/revolution
-    """
+#     wavelength_max: float
+#     """ Maximum wavelength in wavers/revolution
+#     """
 
 
 class W24GDTReferenceAssociation(str, Enum):
@@ -325,7 +343,7 @@ class W24GDT(BaseModel):
     """ Representation of the GDT frame
     """
 
-    measure_label: Optional[W24MeasureLabel] = None
+    # measure_label: Optional[W24MeasureLabel] = None
     """ Optional size dimension, typically annotated
     above the feature control frame.
 

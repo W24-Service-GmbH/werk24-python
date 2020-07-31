@@ -52,6 +52,11 @@ To get a first impression, you can run the CLI:
 
 ## Release Notes
 
-### 0.2.5
+### 0.3.0b1 (2020-07-31)
 
-* Fix: Better error message if license file not found.
+* Features:
+  + Support of Geometric Dimensioning and Tolerancing (GD&T) in accordances with ISO 1101 and ASME Y14.5
+  + Support of Document Rejection Reasons: COMPLEXITY EXCEEDED, PAPER_SIZE_LIMIT_EXCEEDED
+
+* Fixes:
+  + Better error message if license file not found.
