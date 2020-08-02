@@ -55,6 +55,11 @@ To get a first impression, you can run the CLI:
 
 ## Release Notes
 
+### 0.3.0 (2020-08-02)
+
+* Fixes:
+  + Fixes diameter symbol of W24GDTZoneShape
+
 ### 0.3.0b1 (2020-07-31)
 
 * Features:
