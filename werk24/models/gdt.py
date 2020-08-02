@@ -58,7 +58,7 @@ class W24GDTZoneCombination(str, Enum):
 class W24GDTZoneShape(str, Enum):
     """ Enum of all zone shapes
     """
-    DIAMETER = "⌀"
+    DIAMETER = "Ø"
     DIAMETER_SPHERE = "S⌀"
 
 
