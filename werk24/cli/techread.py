@@ -8,8 +8,12 @@ from typing import List
 
 from dotenv import load_dotenv
 from werk24.exceptions import RequestTooLargeException
-from werk24.models.ask import (W24AskPageThumbnail, W24AskSectionalThumbnail,
-                               W24AskSheetThumbnail, W24AskVariantMeasures)
+from werk24.models.ask import (
+    W24AskPageThumbnail,
+    W24AskSectionalThumbnail,
+    W24AskSheetThumbnail,
+    W24AskVariantMeasures,
+    W24AskVariantGDTs)
 from werk24.models.techread import (W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
@@ -152,6 +156,15 @@ def _make_hooks_from_args(
             ask=W24AskVariantMeasures(),
             function=lambda msg: print(
                 "Received Ask Variant Measures\n",
+                msg.payload_dict
+            ))]
+
+        # add the hook for the variant measures
+    if args.ask_variant_gdts:
+        hooks += [Hook(
+            ask=W24AskVariantGDTs(),
+            function=lambda msg: print(
+                "Received Ask Variant GDTs\n",
                 msg.payload_dict
             ))]
 
