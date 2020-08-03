@@ -52,19 +52,3 @@ To get a first impression, you can run the CLI:
     client = W24TechreadClient.make_from_env()
     async with client as session:
         await session.read_drawing_with_hooks(document_bytes,hooks)
-
-## Release Notes
-
-### 0.3.0 (2020-08-02)
-
-* Fixes:
-  + Fixes diameter symbol of W24GDTZoneShape
-
-### 0.3.0b1 (2020-07-31)
-
-* Features:
-  + Support of Geometric Dimensioning and Tolerancing (GD&T) in accordances with ISO 1101 and ASME Y14.5
-  + Support of Document Rejection Reasons: COMPLEXITY EXCEEDED, PAPER_SIZE_LIMIT_EXCEEDED
-
-* Fixes:
-  + Better error message if license file not found.
