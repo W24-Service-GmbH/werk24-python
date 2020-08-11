@@ -52,7 +52,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Image Recognition"],
-    python_requires='>=3.7.4',
+    python_requires='>=3.7.1',
     project_urls={
         "Documentation": "https://werk24.github.io/docs/"
     },
