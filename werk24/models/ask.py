@@ -97,7 +97,7 @@ class W24AskCanvasThumbnail(W24AskThumbnail):
     """ Requests a thumbnail of each canvas in each sheet.
     The canvas describes the "drawing area" of the sheet.
     """
-    ask_type = W24AskType.PAGE_THUMBNAIL
+    ask_type = W24AskType.CANVAS_THUMBNAIL
 
 
 class W24AskSectionalThumbnail(W24AskThumbnail):

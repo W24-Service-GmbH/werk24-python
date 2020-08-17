@@ -8,12 +8,9 @@ from typing import List
 
 from dotenv import load_dotenv
 from werk24.exceptions import RequestTooLargeException
-from werk24.models.ask import (
-    W24AskPageThumbnail,
-    W24AskSectionalThumbnail,
-    W24AskSheetThumbnail,
-    W24AskVariantMeasures,
-    W24AskVariantGDTs)
+from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
+                               W24AskSectionalThumbnail, W24AskSheetThumbnail,
+                               W24AskVariantGDTs, W24AskVariantMeasures)
 from werk24.models.techread import (W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
@@ -68,7 +65,7 @@ def _debug_show_image(
 
 
 async def main(
-        args: argparse.Namespace
+    args: argparse.Namespace
 ) -> None:
     """ Run the Techread command with the CLI arguments
 
@@ -120,11 +117,6 @@ def _make_hooks_from_args(
 
     # add the hook to get the information that the techread
     # process was started
-    if args.ask_techread_started:
-        hooks += [Hook(
-            message_type=W24TechreadMessageType.PROGRESS,
-            message_subtype=W24TechreadMessageSubtypeProgress.STARTED,
-            function=print)]
 
     # add the hook for the page thumbnail
     if args.ask_page_thumbnail:
@@ -140,6 +132,14 @@ def _make_hooks_from_args(
             ask=W24AskSheetThumbnail(),
             function=lambda msg: _debug_show_image(
                 "Sheet Thumbnail received",
+                msg.payload_bytes))]
+
+    # add the hook for the sheet thumbnail
+    if args.ask_canvas_thumbnail:
+        hooks += [Hook(
+            ask=W24AskCanvasThumbnail(),
+            function=lambda msg: _debug_show_image(
+                "Canvas Thumbnail received",
                 msg.payload_bytes))]
 
     # add the hook for the drawing thumbnail

@@ -38,7 +38,7 @@ class AuthClient:
         self._cognito_client_secret = cognito_client_secret
 
         # make empty references to the username and password
-        self._username: Optional[str] = None
+        self.username: Optional[str] = None
         self._password: Optional[str] = None
 
         # make an empty reference ot the jwt_token
@@ -52,7 +52,7 @@ class AuthClient:
             username {str} -- Username
             password {str} -- Password
         """
-        self._username = username
+        self.username = username
         self._password = password
 
     async def _get_generic_identity(self) -> Tuple[str, str]:
@@ -155,7 +155,7 @@ class AuthClient:
 
         # there is no point in trying to log in if there is no
         # username or password
-        if self._username is None or self._password is None:
+        if self.username is None or self._password is None:
             raise UnauthorizedException("No username / password provided")
 
         # make the connection to aws
@@ -164,9 +164,9 @@ class AuthClient:
 
             # make the authentication data
             auth_data = {
-                'USERNAME': self._username,
+                'USERNAME': self.username,
                 'PASSWORD': self._password,
-                'SECRET_HASH': self._make_cognito_secret_hash(self._username),
+                'SECRET_HASH': self._make_cognito_secret_hash(self.username),
             }
 
             # get the jwt token from AWS cognito

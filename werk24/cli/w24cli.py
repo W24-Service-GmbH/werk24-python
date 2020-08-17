@@ -40,6 +40,11 @@ def main() -> None:
         action="store_true")
 
     parser_techread.add_argument(
+        "--ask-canvas-thumbnail",
+        help="ask for a thumbnail of each canvas in the document",
+        action="store_true")
+
+    parser_techread.add_argument(
         "--ask-sectional-thumbnail",
         help="ask for a thumbnail of each sectional of each sheet in the document",  # noqa
         action="store_true")

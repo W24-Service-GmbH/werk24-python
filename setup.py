@@ -36,7 +36,11 @@ setup(
     entry_points={
         "console_scripts": [
             "w24cli=werk24.cli.w24cli:main",
+            "w24gui=werk24.gui.w24gui:main",
         ]
+    },
+    extras_require={
+        "gui": ["PyQt5"]
     },
     license='Business Source License 1.1',
     packages=[
