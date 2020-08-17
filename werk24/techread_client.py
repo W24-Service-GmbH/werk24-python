@@ -202,6 +202,15 @@ class W24TechreadClient:
         self._techread_client_https.register_auth_client(self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
 
+    @property
+    def username(self) -> str:
+        """ Make the username accessable to the CLI and GUI
+
+        Returns:
+            str: username of the currently registered user
+        """
+        return self._auth_client.username
+
     async def read_drawing(
             self,
             drawing: bytes,
