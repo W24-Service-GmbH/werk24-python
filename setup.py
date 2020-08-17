@@ -49,6 +49,7 @@ setup(
         "werk24.gui",
         "werk24.models",
     ],
+    package_data={"werk24": ["assets/*.png"]},
     install_requires=[
         "aioboto3 >= 6.4.1",
         "pydantic >= 1.4",
