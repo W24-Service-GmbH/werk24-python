@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import asyncio
-import ctypes
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -51,9 +50,15 @@ EXTENSIONS_SUPPORTED = ["JPG", "JPEG", "PDF", "PNG", "TIF", "TIFF"]
 # TODO: mid-term we want to obtain this from the API ... support will grow
 
 # Set the windows details
-# TODO: test on macOS
-myappid = f"werk24.techread.gui.{__version__}"
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+try:
+    import ctypes
+    myappid = f"werk24.techread.gui.{__version__}"
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+# This will fail with either an attribute error or an import error
+# depending on the operating system we are dealing with
+except (AttributeError, ImportError):
+    pass
 
 
 class W24Gui(QMainWindow):

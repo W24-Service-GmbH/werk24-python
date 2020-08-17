@@ -40,14 +40,15 @@ setup(
         ]
     },
     extras_require={
-        "gui": ["PyQt5"]
+        "gui": ["PyQt5", "pillow", "qscintilla"]
     },
     license='Business Source License 1.1',
     packages=[
         "werk24",
-        "werk24.models",
         "werk24.cli",
-        "werk24.gui"],
+        "werk24.gui",
+        "werk24.models",
+    ],
     install_requires=[
         "aioboto3 >= 6.4.1",
         "pydantic >= 1.4",
