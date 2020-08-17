@@ -46,7 +46,8 @@ setup(
     packages=[
         "werk24",
         "werk24.models",
-        "werk24.cli"],
+        "werk24.cli",
+        "werk24.gui"],
     install_requires=[
         "aioboto3 >= 6.4.1",
         "pydantic >= 1.4",
