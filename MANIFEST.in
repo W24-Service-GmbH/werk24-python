@@ -1,6 +1,7 @@
 include LICENSE.txt
 include README.md
 include Makefile
+recursive-include assets *.png
 graft assets
 graft werk24
 graft werk24/models
