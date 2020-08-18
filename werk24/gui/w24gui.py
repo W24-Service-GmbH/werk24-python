@@ -488,6 +488,7 @@ class W24Gui(QMainWindow):
         self.api_feed.add_image(message.payload_bytes)
         message.payload_bytes = b"--- binary --"
         self.api_feed.add_json(message.json())
+        self.api_feed.add_line()
 
     def _receive_ask_sheet_thumbnail(
             self,
@@ -503,6 +504,7 @@ class W24Gui(QMainWindow):
         self.api_feed.add_image(message.payload_bytes)
         message.payload_bytes = b"--- binary --"
         self.api_feed.add_json(message.json())
+        self.api_feed.add_line()
 
     def _receive_ask_canvas_thumbnail(
             self,
@@ -518,6 +520,7 @@ class W24Gui(QMainWindow):
         self.api_feed.add_image(message.payload_bytes)
         message.payload_bytes = b"--- binary --"
         self.api_feed.add_json(message.json())
+        self.api_feed.add_line()
 
     def _receive_ask_sectional_thumbnail(
             self,
@@ -546,6 +549,7 @@ class W24Gui(QMainWindow):
         # after we stored it..., censor and print
         message.payload_bytes = b"--- binary --"
         self.api_feed.add_json(message.json())
+        self.api_feed.add_line()
 
     def _receive_ask_variant_measures(
             self,
@@ -578,6 +582,7 @@ class W24Gui(QMainWindow):
             sectional_bytes, message.payload_dict.get('measures'))
 
         self.api_feed.add_image(sectional_bytes_w_measures)
+        self.api_feed.add_line()
 
     def _receive_ask_variant_gdts(
             self,
@@ -614,6 +619,7 @@ class W24Gui(QMainWindow):
             sectional_bytes, message.payload_dict.get('gdts'))
 
         self.api_feed.add_image(sectional_bytes_w_measures)
+        self.api_feed.add_line()
 
     def _receive_error(
             self,
@@ -627,6 +633,7 @@ class W24Gui(QMainWindow):
         """
         self.api_feed.add_headline("ERROR")
         self.api_feed.add_json(message.json())
+        self.api_feed.add_line()
 
     def _receive_progress_started(
             self,
@@ -640,6 +647,7 @@ class W24Gui(QMainWindow):
         """
         self.api_feed.add_headline("Progress")
         self.api_feed.add_json(message.json())
+        self.api_feed.add_line()
 
 
 def main() -> None:

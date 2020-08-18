@@ -2,9 +2,16 @@ from typing import Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QImage, QPixmap
-from PyQt5.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout
-from werk24.gui.json_editor import W24GuiJsonEditor
+from PyQt5.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout, QFrame
+# from werk24.gui.json_editor import W24GuiJsonEditor
 from werk24.gui.style import ft_headline
+
+
+class QHLine(QFrame):
+    def __init__(self) -> None:
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
 
 
 class W24GuiEventFeed(QVBoxLayout):
@@ -63,9 +70,10 @@ class W24GuiEventFeed(QVBoxLayout):
         Args:
             json (str): Json as string
         """
-        json_editor = W24GuiJsonEditor()
-        json_editor.setText(json)
-        self.addWidget(json_editor)
+        text = QLabel(json)
+        # json_editor = W24GuiJsonEditor()
+        # json_editor.setText(json)
+        self.addWidget(text)
 
     def add_headline(
             self,
@@ -108,3 +116,10 @@ class W24GuiEventFeed(QVBoxLayout):
 
         # and add
         self.addWidget(pixmap_label)
+
+    def add_line(
+            self
+    ) -> None:
+        """ Add a simple separation line
+        """
+        self.addWidget(QHLine())
