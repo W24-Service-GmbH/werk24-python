@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import asyncio
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
