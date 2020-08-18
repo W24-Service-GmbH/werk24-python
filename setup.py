@@ -40,7 +40,7 @@ setup(
         ]
     },
     extras_require={
-        "gui": ["PyQt5", "pillow", "qscintilla"]
+        "gui": ["PyQt5", "pillow"]
     },
     license='Business Source License 1.1',
     packages=[
