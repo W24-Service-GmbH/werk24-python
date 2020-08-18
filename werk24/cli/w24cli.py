@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """ Command Line Interface for W24
 """
 import argparse
