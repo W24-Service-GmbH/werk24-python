@@ -42,7 +42,7 @@ setup(
     extras_require={
         "gui": ["PyQt5", "pillow"]
     },
-    license='Business Source License 1.1',
+    license='commercial',
     packages=[
         "werk24",
         "werk24.cli",
