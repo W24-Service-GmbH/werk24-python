@@ -1,8 +1,10 @@
+import os
 from typing import Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QImage, QPixmap
-from PyQt5.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout, QFrame
+from PyQt5.QtWidgets import (QFrame, QGridLayout, QLabel, QTableWidget,
+                             QVBoxLayout)
 # from werk24.gui.json_editor import W24GuiJsonEditor
 from werk24.gui.style import ft_headline
 
@@ -24,32 +26,27 @@ class W24GuiEventFeed(QVBoxLayout):
         """ Add a welcome message that is shown to the
         user before they submitted the first request
         """
+        path_cur = os.path.dirname(os.path.abspath(__file__))
+        path_logo = os.path.join(
+            path_cur,
+            "..",
+            "assets",
+            "images",
+            "logo-625.png")
 
-        qimage = QImage("assets/logo-625.png")
+        qimage = QImage(path_logo)
         pixmap = QPixmap(qimage)
         pixmap_label = QLabel()
         pixmap_label.setPixmap(pixmap)
 
-        grid = QGridLayout()
-        grid.setColumnMinimumWidth(10, 0)
-        grid.setAlignment(Qt.AlignTop)
-        # grid.addWidget(pixmap_label, 1, 1, 3, 3)
-
-        grid.addWidget(QLabel(""), 0, 0)
-        grid.addWidget(QLabel(""), 0, 1)
-        grid.addWidget(QLabel(""), 0, 2)
-        grid.addWidget(QLabel(""), 1, 0)
-        grid.addWidget(pixmap_label, 1, 1)
-        grid.addWidget(QLabel(""), 1, 2)
-        grid.addWidget(QLabel(""), 2, 0)
+        grid = QVBoxLayout()
+        grid.addWidget(pixmap_label)
         grid.addWidget(
-            QLabel("Thank you for using the W24 Services.\n "
+            QLabel("Thank you for using W24 Services.\n"
                    "STEP 1: Use the checkboxes on the left to decide "
                    "which asks you want to submit to the API.\n"
-                   "STEP 2: Pick the file you want to analyse "),
-            2,
-            1)
-        grid.addWidget(QLabel(""), 2, 2)
+                   "STEP 2: Pick the file you want to analyse"))
+        self.addStretch(1)
 
         frame = QFrame()
         frame.setLayout(grid)
@@ -59,7 +56,10 @@ class W24GuiEventFeed(QVBoxLayout):
         """ Remove all widgets in the event feed
         """
         for i in reversed(range(self.count())):
-            self.itemAt(i).widget().setParent(None)
+            try:
+                self.itemAt(i).widget().setParent(None)
+            except AttributeError:
+                pass
 
     def add_json(
             self,
@@ -87,6 +87,19 @@ class W24GuiEventFeed(QVBoxLayout):
         lb_headline = QLabel(headline)
         lb_headline.setFont(ft_headline)
         self.addWidget(lb_headline)
+
+    def add_table(
+            self,
+            table: QTableWidget
+    ) -> None:
+        """ Add a table to the feed.
+        This would probably be a result table for the measures,
+        the gd&ts or any future features
+
+        Args:
+            table (QTableWidget): Table in question
+        """
+        self.addWidget(table)
 
     def add_image(
             self,

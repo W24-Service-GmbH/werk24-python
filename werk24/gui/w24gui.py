@@ -1,3 +1,4 @@
+import os
 import asyncio
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -5,13 +6,17 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from werk24._version import __version__
 from werk24.cli.techread import _get_drawing
 from werk24.exceptions import RequestTooLargeException
-from werk24.gui import illustrator
+from werk24.gui import event_illustrator
+from werk24.gui.measure_table import W24GuiMeasureTable
 from werk24.gui.event_feed import W24GuiEventFeed
 from werk24.gui.style import ft_headline
 from werk24.gui.worker import W24GuiWorker, W24GuiWorkerSignals
 from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
                                W24AskSectionalThumbnail, W24AskSheetThumbnail,
                                W24AskVariantGDTs, W24AskVariantMeasures)
+from werk24.models.measure import W24Measure
+from werk24.models.gdt import W24GDT
+from werk24.gui.gdt_table import W24GuiGdtTable
 from werk24.models.techread import (W24TechreadMessage,
                                     W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
@@ -239,12 +244,13 @@ class W24Gui(QMainWindow):
     def _set_window_icons(self) -> None:
         """ Set the window icons
         """
+        path_cur = os.path.dirname(os.path.abspath(__file__))
+        path_img = os.path.join(path_cur, "..", "assets", "images")
+
         app_icon = QIcon()
-        app_icon.addFile('assets/favicon-16x16.png', QSize(16, 16))
-        app_icon.addFile('assets/favicon-24x24.png', QSize(24, 24))
-        app_icon.addFile('assets/favicon-32x32.png', QSize(32, 32))
-        app_icon.addFile('assets/favicon-48x48.png', QSize(48, 48))
-        app_icon.addFile('assets/favicon-256x256.png', QSize(256, 256))
+        for width in [16, 24, 32, 48, 256]:
+            icon_path = os.path.join(path_img, f"favicon-{width}x{width}.png")
+            app_icon.addFile(icon_path, QSize(width, width))
         self.setWindowIcon(app_icon)
 
     def _change_ask_page_thumbnail(self, state: QState) -> None:
@@ -572,16 +578,26 @@ class W24Gui(QMainWindow):
         if sectional_id is None:
             return
 
-        sectional_bytes = self.sectional_thumbnails.get(sectional_id)
-        if sectional_bytes is None:
+        # now get the measure list from the payload and stop
+        # the execution if the payload is None
+        measure_list_raw = message.payload_dict.get('measures')
+        if measure_list_raw is None or not measure_list_raw:
             return
+
+        # if we have a payload, translate it into usable objects
+        measure_list = [W24Measure.parse_obj(m) for m in measure_list_raw]
 
         # if we really have sectional_bytes and measures, illustrate
         # the results
-        sectional_bytes_w_measures = illustrator.illustrate_sectional_measures(
-            sectional_bytes, message.payload_dict.get('measures'))
+        sectional_bytes = self.sectional_thumbnails.get(sectional_id)
+        if sectional_bytes is not None:
+            sectional_bytes_w_measures = event_illustrator\
+                .illustrate_sectional_measures(sectional_bytes, measure_list)
+            self.api_feed.add_image(sectional_bytes_w_measures)
 
-        self.api_feed.add_image(sectional_bytes_w_measures)
+        # add the table for the measures
+        measure_table = W24GuiMeasureTable.from_measure_list(measure_list)
+        self.api_feed.add_table(measure_table)
         self.api_feed.add_line()
 
     def _receive_ask_variant_gdts(
@@ -601,24 +617,28 @@ class W24Gui(QMainWindow):
         if message.payload_dict is None:
             return
 
-        # check whether we have an stored version of the sectional
-        if message.payload_dict is None:
-            return
-
         sectional_id = message.payload_dict.get('sectional_id')
         if sectional_id is None:
             return
 
-        sectional_bytes = self.sectional_thumbnails.get(sectional_id)
-        if sectional_bytes is None:
+        # now get the measure list from the payload and stop
+        # the execution if the payload is None
+        gdt_list_raw = message.payload_dict.get('gdts')
+        if gdt_list_raw is None or not gdt_list_raw:
             return
 
-        # if we really have sectional_bytes and measures, illustrate
-        # the results
-        sectional_bytes_w_measures = illustrator.illustrate_sectional_gdts(
-            sectional_bytes, message.payload_dict.get('gdts'))
+        # if we have a payload, translate it into usable objects
+        gdt_list = [W24GDT.parse_obj(m) for m in gdt_list_raw]
+        sectional_bytes = self.sectional_thumbnails.get(sectional_id)
+        if sectional_bytes is not None:
+            sectional_bytes_w_measures = event_illustrator.\
+                illustrate_sectional_gdts(
+                    sectional_bytes, gdt_list)
+            self.api_feed.add_image(sectional_bytes_w_measures)
 
-        self.api_feed.add_image(sectional_bytes_w_measures)
+        # add the table for the measures
+        measure_table = W24GuiGdtTable.from_gdt_list(gdt_list)
+        self.api_feed.add_table(measure_table)
         self.api_feed.add_line()
 
     def _receive_error(
