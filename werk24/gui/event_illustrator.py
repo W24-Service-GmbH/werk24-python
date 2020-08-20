@@ -1,14 +1,19 @@
 import io
-from typing import Any, Dict, List, Tuple
+import os
+from typing import List, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
-from werk24.models.gdt import W24GDT
+from werk24.models.gdt import W24GDT, W24GDTCharacteristic
 from werk24.models.measure import W24Measure
 
-try:
-    font = ImageFont.truetype('arial.ttf', 30)
-except IOError:
-    font = ImageFont.load_default()
+path_cur = os.path.dirname(os.path.abspath(__file__))
+path_font = os.path.join(
+    path_cur,
+    "..",
+    "assets",
+    "fonts",
+    "STIX2Text-Regular.otf")
+font = ImageFont.truetype(path_font, 30)
 
 
 def _load_image(image_bytes: bytes) -> Tuple[Image.Image, ImageDraw.ImageDraw]:
@@ -27,8 +32,7 @@ def illustrate_sectional_gdts(
     img, draw = _load_image(sectional_bytes)
     width, height = img.size
 
-    for cur_gdt_obj in gdts:
-        cur_gdt = W24GDT.parse_obj(cur_gdt_obj)
+    for cur_gdt in gdts:
 
         # make a shorter handle for the polygon, and
         # make sure that the polygon does exist and
@@ -57,10 +61,19 @@ def illustrate_sectional_gdts(
         if left == float("inf") or top == float("inf"):
             continue
 
+        # replace the special characters by something
+        # that is more easily digestable
+        blurb = cur_gdt.frame.blurb
+        trans_table = str.maketrans(
+            {k.value: k.name
+             for k in W24GDTCharacteristic
+             if len(k.value) == 1})
+        blurb = blurb.translate(trans_table)
+
         # cur_measure.label.blurb
         draw.text(
             [x_center, y_center],
-            cur_gdt.frame.blurb,
+            blurb,
             fill=(0, 200, 0),
             font=font)
 
@@ -69,7 +82,7 @@ def illustrate_sectional_gdts(
 
 def illustrate_sectional_measures(
         sectional_bytes: bytes,
-        measures: List[Dict[str, Any]]
+        measures: List[W24Measure]
 ) -> bytes:
 
     # open the image from the bytes buffer
@@ -77,13 +90,11 @@ def illustrate_sectional_measures(
     img, draw = _load_image(sectional_bytes)
     width, height = img.size
 
-    for cur_measure_obj in measures:
-        # parse the measure as local W24Measure
-        cur_measure = W24Measure.parse_obj(cur_measure_obj)
-        cur_line = cur_measure.line
+    for cur_measure in measures:
 
         # draw a line that corresponds to the
         # measure line
+        cur_line = cur_measure.line
         draw.line(
             [cur_line[0][0] * width,
              cur_line[0][1] * height,

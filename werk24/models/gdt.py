@@ -4,8 +4,6 @@ from typing import List, Optional, Tuple
 
 from pydantic import BaseModel
 
-from .measure import W24MeasureLabel
-
 
 class W24GDTCharacteristic(str, Enum):
     """ Enum of all possible Characteristics
