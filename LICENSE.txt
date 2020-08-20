@@ -1,0 +1,10 @@
+
+Parameters
+
+Licensor:             W24 Service GmbH
+Licensed Work:        Werk24 Techread Client
+                      The Licensed Work is (c) 2020 W24 Service GmbH
+Use Grant:            The Software may only be used in combination with a
+                      commerical license: https://werk24.biz
+
+                      Refer to assets/fonts/STIX_2.0.2_license.pdf for a font-specific license.
