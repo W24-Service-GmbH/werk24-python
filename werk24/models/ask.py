@@ -1,7 +1,7 @@
 """ Defintion of all W24Ask types that are understood by the Werk24 API.
 """
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import UUID4, BaseModel
 
@@ -40,6 +40,11 @@ class W24AskType(str, Enum):
     VARIANT_GDTS = "VARIANT_GDTS"
     """ List of Geometric Dimensions and Tolerations detected
     on the Sectionals associated with the variant
+    """
+
+    VARIANT_MATERIAL = "VARIANT_MATERIAL"
+    """ Material that was detected on the data fields of the
+    drawing or within a variant table
     """
 
     TRAIN = "TRAIN"
@@ -116,6 +121,25 @@ class W24AskVariantMeasures(W24Ask):
     variant
     """
     ask_type = W24AskType.VARIANT_MEASURES
+
+
+class W24AskVariantMaterial(W24Ask):
+    """ This ask requests the material of the
+    individual variant.
+
+    !!! This Ask will not be answered by
+    !!! the API at this stage. Stay tuned
+    !!! for updates
+    """
+    ask_type = W24AskType.VARIANT_MATERIAL
+
+    material_hint: Optional[str] = None
+    """ If your user is already asked about the
+    meterial, or if you have any additional
+    informationa about the material, you
+    can submit it here. This will make the
+    reading more stable.
+    """
 
 
 class W24AskVariantMeasuresResponse(BaseModel):
