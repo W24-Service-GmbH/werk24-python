@@ -1,13 +1,14 @@
 """ Module handling the authentication
 """
-from typing import Optional, Tuple
 import base64
 import hashlib
 import hmac
+import sys
+from typing import Optional, Tuple
 
 import aioboto3
-
 from werk24.exceptions import UnauthorizedException
+from boto3.exceptions import NotAuthorizedException
 
 
 class AuthClient:
@@ -170,10 +171,19 @@ class AuthClient:
             }
 
             # get the jwt token from AWS cognito
-            resp = await cognito_session.initiate_auth(
-                AuthFlow='USER_PASSWORD_AUTH',
-                AuthParameters=auth_data,
-                ClientId=self._cognito_client_id)
+            try:
+                resp = await cognito_session.initiate_auth(
+                    AuthFlow='USER_PASSWORD_AUTH',
+                    AuthParameters=auth_data,
+                    ClientId=self._cognito_client_id)
+
+            # We will receive an error message directly from AWS Cognito
+            # if anything goes wrong. The error message will be valuable,
+            # as it allows the user to differentiate between disabled
+            # accounts and incorrect credentials
+            except NotAuthorizedException as e:
+                print(str(e))
+                sys.exit(1)
 
             # store the jwt token
             try:
