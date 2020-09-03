@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 
 
 class W24GDTCharacteristic(str, Enum):
@@ -255,6 +255,9 @@ class W24GDTState(str, Enum):
 class W24GDTFrame(BaseModel):
     """ Representation of the Geometric Dimensioning
     and Toleration frame
+    """
+    gdt_id: Optional[UUID4] = None
+    """ Unique id of the GDT
     """
 
     blurb: str

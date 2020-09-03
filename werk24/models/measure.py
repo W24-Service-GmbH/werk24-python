@@ -6,7 +6,7 @@ Author: Jochen Mattes - Werk24
 """
 from typing import List, Optional, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 
 from .measure_warning import W24MeasureWarning
 from .thread import W24Thread
@@ -80,6 +80,10 @@ class W24MeasureLabel(BaseModel):
 
 class W24Measure(BaseModel):
     """ Tolerated measure
+    """
+
+    measure_id: Optional[UUID4] = None
+    """ Unique id of measure
     """
 
     line: Tuple[Tuple[float, float], Tuple[float, float]]

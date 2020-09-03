@@ -7,6 +7,7 @@ from pydantic import UUID4, BaseModel
 
 from .gdt import W24GDT
 from .measure import W24Measure
+from .leader import W24Leader
 
 
 class W24AskType(str, Enum):
@@ -45,6 +46,10 @@ class W24AskType(str, Enum):
     VARIANT_MATERIAL = "VARIANT_MATERIAL"
     """ Material that was detected on the data fields of the
     drawing or within a variant table
+    """
+
+    VARIANT_LEADERS = "VARIANT_LEADERS"
+    """ List of Leaders that were detected on the Sectional
     """
 
     TRAIN = "TRAIN"
@@ -121,6 +126,24 @@ class W24AskVariantMeasures(W24Ask):
     variant
     """
     ask_type = W24AskType.VARIANT_MEASURES
+
+
+class W24AskVariantLeaders(W24Ask):
+    """ With this Ask you are requesting the complete
+    list of all leaders that were detected on the
+    variant
+    """
+    ask_type = W24AskType.VARIANT_LEADERS
+
+
+class W24AskVariantLeadersResponse(BaseModel):
+    """ Response object corresponding to hte
+    W24AskVariantLeaders.
+
+    """
+    variant_id: UUID4
+    sectional_id: UUID4
+    leaders: List[W24Leader]
 
 
 class W24AskVariantMaterial(W24Ask):
