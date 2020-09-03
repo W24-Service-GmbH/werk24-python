@@ -8,7 +8,6 @@ from typing import Optional, Tuple
 
 import aioboto3
 from werk24.exceptions import UnauthorizedException
-from boto3.exceptions import NotAuthorizedException
 
 
 class AuthClient:
@@ -181,7 +180,7 @@ class AuthClient:
             # if anything goes wrong. The error message will be valuable,
             # as it allows the user to differentiate between disabled
             # accounts and incorrect credentials
-            except NotAuthorizedException as e:
+            except cognito_client.exceptions.NotAuthorizedException as e:
                 print(str(e))
                 sys.exit(1)
 
