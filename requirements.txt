@@ -1,4 +1,4 @@
-aiohttp==3.6.2
+aiohttp>=3.6.2
 aioboto3>=6.4.1
 pydantic>=1.4
 python-dotenv>=0.10.1
