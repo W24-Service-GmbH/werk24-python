@@ -55,11 +55,15 @@ class W24GuiEventFeed(QVBoxLayout):
     def clear(self) -> None:
         """ Remove all widgets in the event feed
         """
-        for i in reversed(range(self.count())):
-            try:
-                self.itemAt(i).widget().setParent(None)
-            except AttributeError:
-                pass
+        # for i in reversed(range(self.count())):
+        #     try:
+        #         print(type(self.itemAt(i).widget()))
+        #         #self.itemAt(i).widget().setParent(None)
+        #         self.removeWidget(self.itemAt(i).widget())
+        #     except AttributeError:
+        #         pass
+        # print("AS")
+        pass
 
     def add_json(
             self,
