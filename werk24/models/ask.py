@@ -127,6 +127,16 @@ class W24AskVariantMeasures(W24Ask):
     """
     ask_type = W24AskType.VARIANT_MEASURES
 
+    confidence_min: float = 0.2
+    """ Werk24 calculates internal confidence scores
+    for each measure. Depending on your use-case you
+    might want to consider or discard low-confidence
+    results. This parameter allows you to filter the
+    results. The resulting W24Measure objects also
+    contain a confidence score that allows you to filter
+    even further.
+    """
+
 
 class W24AskVariantLeaders(W24Ask):
     """ With this Ask you are requesting the complete

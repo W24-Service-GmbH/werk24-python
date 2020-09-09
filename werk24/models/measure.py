@@ -104,3 +104,11 @@ class W24Measure(BaseModel):
     """ List of Warnings that are associated with the
     measure. See W24MeasureWarning for details
     """
+
+    confidence: float
+    """ Werk24 calculates an internal confidence score for
+    each measure. Depending on your use-case, you might want
+    to consider or discard low-confidence measures. This
+    value allows you to do so. The value ranges from
+    0.0 to 1.0
+    """
