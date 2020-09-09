@@ -49,6 +49,13 @@ except ImportError:
     sys.exit(0)
 
 
+try:
+    # get more meaningful segmentation fault messages
+    import faulthandler
+    faulthandler.enable()
+except ImportError:
+    pass
+
 EXTENSIONS_SUPPORTED = ["JPG", "JPEG", "PDF", "PNG", "TIF", "TIFF"]
 """ List of all the supported file extensions. """
 # TODO: mid-term we want to obtain this from the API ... support will grow
@@ -299,14 +306,15 @@ class W24Gui(QMainWindow):
         # user starts a second parallel request
         self.bt_input_file.setEnabled(False)
 
+        # reset the local stores
+        self.sectional_thumbnails = {}
+
         # clear the feed and give some information that
         # we now have started processing the file in
         # question
         self.api_feed.clear()
+        self.api_feed.add_line()
         self.api_feed.add_headline(f"Reading file '{input_file[0]}'")
-
-        # reset the local stores
-        self.sectional_thumbnails = {}
 
         # otherwise we want to update the filename and start
         # the techread request
@@ -331,7 +339,13 @@ class W24Gui(QMainWindow):
             hooks (List[Hook]): List of all the hooks to
                 call when data becomdes availabel
         """
-        asyncio.run(self._start_techread_request_async(input_file, hooks))
+    
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self._start_techread_request_async(input_file, hooks))
+        try:
+            loop.close()
+        except RunTimeError:
+            pass
 
     async def _start_techread_request_async(
             self,
@@ -363,6 +377,7 @@ class W24Gui(QMainWindow):
                 self._warn(
                     "Request was too large to be processed. " +
                     "Please check the documentation for current limits.")
+                
 
         # finaly tell the system that the request is done
         self.signals.completion.emit()
