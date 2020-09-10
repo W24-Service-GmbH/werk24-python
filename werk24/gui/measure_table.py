@@ -21,7 +21,8 @@ class W24GuiMeasureTable(QTableWidget):
             "Thread": cls._format_measure_thread,
             "Chamfer": cls._format_measure_chamfer,
             "Start": cls._format_measure_start,
-            "Stop": cls._format_measure_stop
+            "Stop": cls._format_measure_stop,
+            "Confidence": cls._format_measure_confidence
         }
 
         # make the associated table
@@ -42,6 +43,10 @@ class W24GuiMeasureTable(QTableWidget):
         table_widget.setGeometry(0, 0, 200, 200)
         table_widget.resizeRowsToContents()
         return table_widget
+
+    @staticmethod
+    def _format_measure_confidence(measure: W24Measure) -> str:
+        return f"{measure.confidence}"
 
     @staticmethod
     def _format_measure_blurb(measure: W24Measure) -> str:

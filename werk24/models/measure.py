@@ -105,7 +105,7 @@ class W24Measure(BaseModel):
     measure. See W24MeasureWarning for details
     """
 
-    confidence: float
+    confidence: float = 0.0
     """ Werk24 calculates an internal confidence score for
     each measure. Depending on your use-case, you might want
     to consider or discard low-confidence measures. This
