@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import UUID4, BaseModel, HttpUrl, Json
 
-from .ask import W24Ask, W24AskType
+from .ask import W24AskType, W24AskUnion
 
 
 class W24TechreadAction(str, Enum):
@@ -112,11 +112,11 @@ class W24TechreadRequest(BaseModel):
     the technical drawing).
 
     """
-    asks: List[W24Ask] = []
+    asks: List[W24AskUnion] = []
     """ List of asks """
 
     development_key: Optional[str] = None
     """ The development_key is used for internal purposes.
     It wil give you access to pre-release versions of our software.
-    You will only understand the details if you
+    You will only understand the details if you...
     """

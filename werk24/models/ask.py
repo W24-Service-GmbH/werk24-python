@@ -1,7 +1,7 @@
 """ Defintion of all W24Ask types that are understood by the Werk24 API.
 """
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import UUID4, BaseModel
 
@@ -138,6 +138,18 @@ class W24AskVariantMeasures(W24Ask):
     """
 
 
+class W24AskVariantMeasuresResponse(BaseModel):
+    """ Response object corresponding to the
+    W24AskVariantMeasures ask.
+
+    NOTE: Be aware that requesting the measures will
+    yield one responds for each variant and sectional
+    """
+    variant_id: UUID4
+    sectional_id: UUID4
+    measures: List[W24Measure]
+
+
 class W24AskVariantLeaders(W24Ask):
     """ With this Ask you are requesting the complete
     list of all leaders that were detected on the
@@ -175,18 +187,6 @@ class W24AskVariantMaterial(W24Ask):
     """
 
 
-class W24AskVariantMeasuresResponse(BaseModel):
-    """ Response object corresponding to the
-    W24AskVariantMeasures ask.
-
-    NOTE: Be aware that requesting the measures will
-    yield one responds for each variant and sectional
-    """
-    variant_id: UUID4
-    sectional_id: UUID4
-    measures: List[W24Measure]
-
-
 class W24AskVariantGDTs(W24Ask):
     """ This Ask requests the complete
     list of all Geometric Dimensions and Tolerations
@@ -213,3 +213,16 @@ class W24AskTrain(BaseModel):
     It does not trigger a response
     """
     ask_type = W24AskType.TRAIN
+
+
+W24AskUnion = Union[
+    W24AskCanvasThumbnail,
+    W24AskPageThumbnail,
+    W24AskSectionalThumbnail,
+    W24AskSheetThumbnail,
+    W24AskTrain,
+    W24AskVariantGDTs,
+    W24AskVariantLeaders,
+    W24AskVariantMaterial,
+]
+""" Union of all W24Asks to ensure proper deserialization """
