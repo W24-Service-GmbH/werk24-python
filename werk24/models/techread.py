@@ -110,8 +110,8 @@ class W24TechreadRequest(BaseModel):
     """ Definition of a W24DrawingReadRequest containing
     all the asks (i.e., things you want to learn about
     the technical drawing).
-
     """
+
     asks: List[W24AskUnion] = []
     """ List of asks """
 
@@ -119,4 +119,9 @@ class W24TechreadRequest(BaseModel):
     """ The development_key is used for internal purposes.
     It wil give you access to pre-release versions of our software.
     You will only understand the details if you...
+    """
+
+    client_version = "legacy"
+    """ Current version of the client. For backward compatibility,
+    this defaults to 'legacy'
     """

@@ -255,7 +255,7 @@ class W24TechreadClient:
             logger.info("Using development key %s***",
                         self._development_key[:8])
 
-        # make the request
+        # make the request object
         request = W24TechreadRequest(
             asks=asks,
             development_key=self._development_key)
@@ -282,8 +282,8 @@ class W24TechreadClient:
             await asyncio.gather(
                 self._techread_client_https.upload_associated_file(
                     response.request_id, 'drawing', drawing),
-                self._techread_client_https.upload_associated_file(
-                    response.request_id, 'model', model)
+                # self._techread_client_https.upload_associated_file(
+                #     response.request_id, 'model', model)
             )
             logger.info("Drawing(and model) uploaded")
 
