@@ -38,20 +38,15 @@ To get a first impression, you can run the CLI:
 
 ## Example
 
-    import sys
-    import asyncio
-    from werk24 import W24TechreadClient, W24AskVariantOverallDimensions, Hook
+    from werk24 import Hook, W24TechreadClient, W24AskVariantMeasures
 
-    from werk24 import Hook, W24TechreadClient,W24AskVariantMeasures
+    async def read_measures_from_drawing(document_bytes:bytes) -> None:
 
-    # get the drawing_bytes
-    document_bytes = ...
+        # define what you want to learn about the drawing, and what function
+        # should be called when a response arrives
+        hooks = [Hook(ask=W24AskVariantMeasures(), function=print)]
 
-    # define what you want to learn about the drawing, and what function
-    # should be called when a response arrives
-    hooks = [Hook(ask=W24AskVariantMeasures(), function=print)]
-
-    # make the call
-    client = W24TechreadClient.make_from_env()
-    async with client as session:
-        await session.read_drawing_with_hooks(document_bytes,hooks)
+        # make the call
+        client = W24TechreadClient.make_from_env()
+        async with client as session:
+            await session.read_drawing_with_hooks(document_bytes,hooks)
