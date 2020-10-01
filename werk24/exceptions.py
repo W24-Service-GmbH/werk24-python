@@ -52,3 +52,9 @@ class UnsupportedMediaTypeException(TechreadException):
     """ Raised when the uploaded file has a format
     that is not supported by the api
     """
+
+
+class LicenseError(Exception):
+    """ Error raised when the license information is
+    incorrect
+    """

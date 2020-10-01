@@ -29,8 +29,8 @@ import dotenv
 from pydantic import BaseModel
 
 from werk24.auth_client import AuthClient
-from werk24.exceptions import (RequestTooLargeException, ServerException,
-                               UnauthorizedException)
+from werk24.exceptions import (LicenseError, RequestTooLargeException,
+                               ServerException, UnauthorizedException)
 from werk24.models.ask import W24Ask
 from werk24.models.techread import (W24TechreadAction, W24TechreadMessage,
                                     W24TechreadMessageSubtype,
@@ -41,12 +41,6 @@ from werk24.techread_client_wss import TechreadClientWss
 # make the logger
 logger = logging.getLogger(  # pylint: disable=invalid-name
     'w24_techread_client')
-
-
-class LicenseError(Exception):
-    """ Error raised when the license information is
-    incorrect
-    """
 
 
 class Hook(BaseModel):
@@ -402,18 +396,17 @@ class W24TechreadClient:
             environs['W24TECHREAD_VERSION']
         )
 
-        # login with the credentials
-        try:
-            client.login(
-                environs["W24TECHREAD_AUTH_REGION"],
-                environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
-                environs["W24TECHREAD_AUTH_USER_POOL_ID"],
-                environs["W24TECHREAD_AUTH_CLIENT_ID"],
-                environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
-                environs["W24TECHREAD_AUTH_USERNAME"],
-                environs["W24TECHREAD_AUTH_PASSWORD"])
-        except UnauthorizedException:  # pylint: disable=try-except-raise
-            raise
+        # login with the credentials. This will in effect
+        # only set the variabels in the authorizer. It will
+        # not trigger a network request
+        client.login(
+            environs["W24TECHREAD_AUTH_REGION"],
+            environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
+            environs["W24TECHREAD_AUTH_USER_POOL_ID"],
+            environs["W24TECHREAD_AUTH_CLIENT_ID"],
+            environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
+            environs["W24TECHREAD_AUTH_USERNAME"],
+            environs["W24TECHREAD_AUTH_PASSWORD"])
 
         # return the client
         return client
