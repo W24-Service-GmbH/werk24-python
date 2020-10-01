@@ -3,7 +3,7 @@
 import base64
 import hashlib
 import hmac
-import sys
+from botocore.exceptions import ClientError
 from typing import Optional, Tuple
 
 import aioboto3
@@ -70,26 +70,31 @@ class AuthClient:
         """
 
         # make the identity client
-        identity_client = aioboto3.client(
-            'cognito-identity',
-            self._cognito_region)
+        try:
+            identity_client = aioboto3.client(
+                'cognito-identity',
+                self._cognito_region)
+        except ClientError:
+            raise UnauthorizedException("Invalid Cognito configuration")
 
         # obtain the identity credentials
         async with identity_client as identity_session:
 
             # get a new identity id
-            identity_response = await identity_session.get_id(
-                IdentityPoolId=self._cognito_identity_pool_id)
-            identity_id = identity_response.get('IdentityId')
-            if identity_id is None:
+            try:
+                identity_response = await identity_session.get_id(
+                    IdentityPoolId=self._cognito_identity_pool_id)
+                identity_id = identity_response['IdentityId']
+            except (ClientError, KeyError):
                 raise UnauthorizedException(
                     "Unable to obtain IdentityId from Cognito Identity Pool")
 
             # obtain the associated credentials
-            credentials_response = await identity_session \
-                .get_credentials_for_identity(IdentityId=identity_id)
-            credentials = credentials_response.get('Credentials')
-            if credentials is None:
+            try:
+                credentials_response = await identity_session \
+                    .get_credentials_for_identity(IdentityId=identity_id)
+                credentials = credentials_response['Credentials']
+            except (ClientError, KeyError):
                 raise UnauthorizedException(
                     "Unable to obtain Credentials from Cognito Identity Pool")
 
@@ -117,11 +122,14 @@ class AuthClient:
         access_key, secret_key = await self._get_generic_identity()
 
         # with this information, we can now generate the client
-        return aioboto3.client(
-            "cognito-idp",
-            region_name=self._cognito_region,
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key)
+        try:
+            return aioboto3.client(
+                "cognito-idp",
+                region_name=self._cognito_region,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key)
+        except ClientError:
+            raise UnauthorizedException("Cognito IDP Client Error")
 
     def _make_cognito_secret_hash(self, username: str) -> str:
         """ Make the keyed-hash message authentication code (HMAC) calculated
