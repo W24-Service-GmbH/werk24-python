@@ -1,6 +1,8 @@
 # Werk24 Client
 
 [![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
+[![pypi](https://img.shields.io/badge/<scrutinizer/coverage/:vcs/:user/:repo/:branch?)](https://pypi.python.org/pypi/werk24)
+[![pypi](https://img.shields.io/codecov/c/github/werk24/werk24-python?color=%2334D058)](https://codecov.io/gh/werk24/werk24-python)
 
 * Understand the content of your PDF- and image-based Technical Drawings with a simple API call.
 
