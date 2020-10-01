@@ -30,7 +30,7 @@ from pydantic import BaseModel
 
 from werk24.auth_client import AuthClient
 from werk24.exceptions import (LicenseError, RequestTooLargeException,
-                               ServerException, UnauthorizedException)
+                               ServerException)
 from werk24.models.ask import W24Ask
 from werk24.models.techread import (W24TechreadAction, W24TechreadMessage,
                                     W24TechreadMessageSubtype,

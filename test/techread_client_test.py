@@ -50,3 +50,8 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
         with self.assertRaises(UnauthorizedException):
             async with client:
                 pass
+
+    # async def test_read_drawing(self):
+    #     """ Test basic read_drawing functionality
+
+    #     User Story: As API user, I want to
