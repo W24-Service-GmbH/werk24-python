@@ -1,4 +1,4 @@
-name: Test
+name: Tests | python3.7 | python3.8
 
 on:
   push:
