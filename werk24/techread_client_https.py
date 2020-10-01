@@ -1,17 +1,18 @@
 """ HTTPS-part of the Werk24 client
 """
 import base64
-import json
-from typing import Optional, Type
 from types import TracebackType
+from typing import Optional, Type, Union, Dict
 from urllib.parse import urlparse
 
 import aiohttp
-from pydantic import HttpUrl, UUID4
+from pydantic import UUID4, HttpUrl
+
 from werk24.exceptions import (BadRequestException, RequestTooLargeException,
                                ResourceNotFoundException, ServerException,
                                UnauthorizedException,
                                UnsupportedMediaTypeException)
+from werk24.models.techread import W24PresignedPost
 
 from .auth_client import AuthClient
 
@@ -84,8 +85,7 @@ class TechreadClientHttps:
 
     async def upload_associated_file(
             self,
-            request_id: UUID4,
-            file_type: str,
+            presigned_post: W24PresignedPost,
             content: Optional[bytes]) -> None:
         """ Upload an associated file to the API.
         This can either be a technical drawing or a
@@ -137,29 +137,24 @@ class TechreadClientHttps:
         if content is None:
             return
 
-        # make the data
-        data = json.dumps({
-            file_type: base64.b64encode(content).decode()
-        })
+        # generate the form data by merging the presigned
+        # fields with the file
+        form = aiohttp.FormData()
+        for key, value in presigned_post.fields_.items():
+            form.add_field(key, value)
+        form.add_field('file', content)
 
-        # check whether the payload is too large
-        if len(data) > self.MAX_REQUEST_PAYLOAD:
-            raise RequestTooLargeException()
+        # create a new fresh session that does not
+        # carry the authentication token
+        async with aiohttp.ClientSession() as session:
+            response = await session.request(
+                'post',
+                presigned_post.url,
+                data=form)
 
-        # make the endpoint and the headers
-        endpoint = self._make_endpoint_url(f"upload/{request_id}")
-        try:
-            await self._post(
-                url=endpoint,
-                data=data
-            )
-
-        # reraise the exception if we are unauhtorizer
-        except (UnauthorizedException,  # pylint: disable=try-except-raise
-                RequestTooLargeException,
-                ServerException, BadRequestException,
-                ResourceNotFoundException):
-            raise  # noqa
+        # check the status code of the response and
+        # raise the appropriate exception
+        self._raise_for_status(presigned_post.url, response.status)
 
     def _make_endpoint_url(
             self,
@@ -234,7 +229,7 @@ class TechreadClientHttps:
         url_parsed = urlparse(payload_url)
         if url_parsed.netloc != self._techread_server:
             raise RuntimeError(
-                f"INTRUSION!!! Payload_url '%s' not allowed. INVESTIGATE!!!",
+                "INTRUSION!!! Payload_url '%s' not allowed. INVESTIGATE!!!",
                 payload_url)
 
         # send the get request to the endpoint
@@ -308,65 +303,6 @@ class TechreadClientHttps:
             raise exception
 
         # if the call was successful, return
-        return response
-
-    async def _post(
-            self,
-            url: str,
-            data: str
-    ) -> aiohttp.ClientResponse:
-        """ Send a POST request request and return the
-        response object. The method automatically
-        injects the authentication token into the
-        request.
-
-        Arguments:
-            url {str} - - URL that is to be requested
-
-            data {str} - - Data that is sent in the request body
-
-        Raises:
-            BadRequestException: Raised when the request body
-                cannot be interpreted. This normally indicates
-                that the API version has been updated and that
-                we missed a corner case. If you encounter this
-                exception, it is very likely our mistake. Please
-                get in touch!
-
-            UnauthorizedException: Raised when the token
-                or the requested file have expired
-
-            ResourceNotFoundException: Raised when you are requesting
-                an endpoint that does not exist. Again, you should
-                not encounter this, but if you do, let us know.
-
-            RequestTooLargeException: Raised when the status
-                code was 413
-
-            UnsupportedMediaTypException: Raised when the file you
-                submitted cannot be read(because its media type
-                is not supported by the API).
-
-            ServerException: Raised for all other status codes
-                that are not 2xx
-
-        Returns:
-            aiohttp.ClientResponse - - Client response for the post request
-        """
-
-        # ensure that the session was started
-        if self._techread_session_https is None:
-            raise RuntimeError(
-                "You executed a command without opening a session")
-
-        # send the request
-        response = await self._techread_session_https.post(url, data=data)
-
-        # check the status code of the response and
-        # raise the appropriate exception
-        self._raise_for_status(url, response.status)
-
-        # return the response
         return response
 
     @staticmethod
