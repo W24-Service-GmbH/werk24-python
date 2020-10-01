@@ -2,11 +2,11 @@
 """
 import base64
 from types import TracebackType
-from typing import Optional, Type, Union, Dict
+from typing import Optional, Type
 from urllib.parse import urlparse
 
 import aiohttp
-from pydantic import UUID4, HttpUrl
+from pydantic import HttpUrl
 
 from werk24.exceptions import (BadRequestException, RequestTooLargeException,
                                ResourceNotFoundException, ServerException,
@@ -229,8 +229,8 @@ class TechreadClientHttps:
         url_parsed = urlparse(payload_url)
         if url_parsed.netloc != self._techread_server:
             raise RuntimeError(
-                "INTRUSION!!! Payload_url '%s' not allowed. INVESTIGATE!!!",
-                payload_url)
+                "INTRUSION!!! ",
+                f"Payload_url '{payload_url}' not allowed. INVESTIGATE!!!")
 
         # send the get request to the endpoint
         try:
@@ -383,4 +383,4 @@ class TechreadClientHttps:
         # a ServerException.
         if not 200 <= status_code <= 299:
             raise ServerException(
-                f"Request failed '%s' with code %s", url, status_code)
+                f"Request failed '{url}' with code {status_code}")
