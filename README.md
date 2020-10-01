@@ -25,7 +25,7 @@ Pip installation
 
 ## Documentation
 
-See [https://werk24.github.io/docs/](https://werk24.git
+See [https://werk24.github.io/docs/](https://werk24.github.io/docs/)
 
 ## CLI
 
