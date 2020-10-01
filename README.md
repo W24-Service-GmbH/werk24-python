@@ -3,7 +3,7 @@
 [![pypi](https://img.shields.io/pypi/dm/werk24)](https://pypi.python.org/pypi/werk24)
 [![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
 [![pypi](https://img.shields.io/codecov/c/github/werk24/werk24-python?color=%2334D058)](https://codecov.io/gh/werk24/werk24-python)
-![Test](https://github.com/werk24/werk24-python/workflows/Test/badge.svg?branch=master&event=push)
+![Tests | python3.7 | python3.8](https://github.com/werk24/werk24-python/workflows/Test/badge.svg?branch=master&event=push)
 
 - Understand the content of your PDF- and image-based Technical Drawings with a simple API call.
 
