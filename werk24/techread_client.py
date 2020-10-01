@@ -27,8 +27,10 @@ from typing import AsyncGenerator, Callable, Dict, List, Optional, Type
 
 import dotenv
 from pydantic import BaseModel
+
 from werk24.auth_client import AuthClient
-from werk24.exceptions import RequestTooLargeException, ServerException
+from werk24.exceptions import (RequestTooLargeException, ServerException,
+                               UnauthorizedException)
 from werk24.models.ask import W24Ask
 from werk24.models.techread import (W24TechreadAction, W24TechreadMessage,
                                     W24TechreadMessageSubtype,
@@ -203,7 +205,7 @@ class W24TechreadClient:
         self._techread_client_wss.register_auth_client(self._auth_client)
 
     @property
-    def username(self) -> str:
+    def username(self) -> Optional[str]:
         """ Make the username accessable to the CLI and GUI
 
         Returns:
@@ -342,6 +344,8 @@ class W24TechreadClient:
         Raises:
             FileNotFoundError -- Raised when you pass a path to a license file
                 that does not exist
+            UnauthorizedException -- Raised when the credentials were not
+                accepted by the API
 
         Returns:
             W24TechreadClient -- The techread Client
@@ -399,14 +403,17 @@ class W24TechreadClient:
         )
 
         # login with the credentials
-        client.login(
-            environs["W24TECHREAD_AUTH_REGION"],
-            environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
-            environs["W24TECHREAD_AUTH_USER_POOL_ID"],
-            environs["W24TECHREAD_AUTH_CLIENT_ID"],
-            environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
-            environs["W24TECHREAD_AUTH_USERNAME"],
-            environs["W24TECHREAD_AUTH_PASSWORD"])
+        try:
+            client.login(
+                environs["W24TECHREAD_AUTH_REGION"],
+                environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
+                environs["W24TECHREAD_AUTH_USER_POOL_ID"],
+                environs["W24TECHREAD_AUTH_CLIENT_ID"],
+                environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
+                environs["W24TECHREAD_AUTH_USERNAME"],
+                environs["W24TECHREAD_AUTH_PASSWORD"])
+        except UnauthorizedException:  # pylint: disable=try-except-raise
+            raise
 
         # return the client
         return client

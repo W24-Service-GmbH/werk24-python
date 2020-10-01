@@ -49,7 +49,7 @@ class TechreadClientWss:
             self._techread_version)
 
         # make the ehaders
-        headers = [(f"Authorization", f"Bearer {self._auth_client.token}")]
+        headers = [("Authorization", f"Bearer {self._auth_client.token}")]
 
         # now make the session
         self._techread_session_wss = await websockets.connect(
@@ -142,7 +142,8 @@ class TechreadClientWss:
         # and finally return
         return message
 
-    async def _process_message(self, message_raw: str) -> W24TechreadMessage:
+    @staticmethod
+    async def _process_message(message_raw: str) -> W24TechreadMessage:
         """ Interpret the raw websocket message and
         turn it inot a W24TechreadMessage
 
@@ -183,8 +184,7 @@ class TechreadClientWss:
 
             # otherwise fail with an UnknownException
             raise ServerException(
-                f"Unexpected server response '%s'.",
-                message_raw)
+                f"Unexpected server response '{message_raw}'.")
 
         return message
 

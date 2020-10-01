@@ -151,6 +151,10 @@ class AuthClient:
             self
     ) -> None:
         """ Login with AWS Cognito
+
+        Raises:
+            UnauthorizedException: Raised when the user credentials
+                were not accepted by Cognito
         """
 
         # there is no point in trying to log in if there is no
@@ -180,13 +184,12 @@ class AuthClient:
             # if anything goes wrong. The error message will be valuable,
             # as it allows the user to differentiate between disabled
             # accounts and incorrect credentials
-            except cognito_client.exceptions.NotAuthorizedException as e:
-                print(str(e))
-                sys.exit(1)
+            except cognito_client.exceptions.NotAuthorizedException:
+                raise UnauthorizedException()
 
             # store the jwt token
             try:
                 self.token = resp['AuthenticationResult']['IdToken']
             except KeyError:
-                raise RuntimeError(
+                raise UnauthorizedException(
                     "Unable to obtain JWT Token from AWS Cognito.")
