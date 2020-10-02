@@ -23,7 +23,7 @@ import asyncio
 import logging
 import os
 from types import TracebackType
-from typing import AsyncGenerator, Callable, Dict, List, Optional, Type
+from typing import AsyncGenerator, Callable, List, Optional, Type
 
 import dotenv
 from pydantic import BaseModel
@@ -41,6 +41,21 @@ from werk24.techread_client_wss import TechreadClientWss
 # make the logger
 logger = logging.getLogger(  # pylint: disable=invalid-name
     'w24_techread_client')
+
+ENVIRONS = [
+    "W24TECHREAD_SERVER_HTTPS",
+    "W24TECHREAD_SERVER_WSS",
+    "W24TECHREAD_VERSION",
+    "W24TECHREAD_AUTH_CLIENT_ID",
+    "W24TECHREAD_AUTH_CLIENT_SECRET",
+    "W24TECHREAD_AUTH_IDENTITY_POOL_ID",
+    "W24TECHREAD_AUTH_USER_POOL_ID",
+    "W24TECHREAD_AUTH_USERNAME",
+    "W24TECHREAD_AUTH_PASSWORD",
+    "W24TECHREAD_AUTH_REGION"
+]
+""" List of the environment variables used by the
+client """
 
 
 class Hook(BaseModel):
@@ -159,7 +174,7 @@ class W24TechreadClient:
         await self._techread_client_wss.__aexit__(
             exc_type, exc_value, traceback)
 
-    def login(
+    def register(
             self,
             cognito_region: str,
             cognito_identity_pool_id: str,
@@ -346,41 +361,44 @@ class W24TechreadClient:
         """
 
         # First priority: look for the local license path
-        environ_raw: Dict[str, Optional[str]]
-        if license_path is not None and os.path.exists(license_path):
-            environ_raw = dotenv.dotenv_values(license_path)
+        if license_path is not None:
+            if os.path.exists(license_path):
+                environ_raw = {
+                    k: v
+                    for k, v in dotenv.dotenv_values(license_path).items()
+                    if v is not None}
+            else:
+                environ_raw = {}
 
         # Second priority: use the environment variables
         else:
             environ_raw = dict(os.environ)
 
-        # make a list of all environment variables
-        keys = [
-            "W24TECHREAD_SERVER_HTTPS",
-            "W24TECHREAD_SERVER_WSS",
-            "W24TECHREAD_VERSION",
-            "W24TECHREAD_AUTH_CLIENT_ID",
-            "W24TECHREAD_AUTH_CLIENT_SECRET",
-            "W24TECHREAD_AUTH_IDENTITY_POOL_ID",
-            "W24TECHREAD_AUTH_USER_POOL_ID",
-            "W24TECHREAD_AUTH_USERNAME",
-            "W24TECHREAD_AUTH_PASSWORD",
-            "W24TECHREAD_AUTH_REGION"
-        ]
-
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
-        environs: Dict[str, str] = {}
-        environ_success = True
-        for cur_key in keys:
-            cur_val = environ_raw.get(cur_key)
-            if cur_val is None:
-                environ_success = False
-                break
-            environs[cur_key] = cur_val
+        try:
+            environs = {cur_key: environ_raw[cur_key]
+                        for cur_key in ENVIRONS}
 
-        # raise an exception if this was not successful
-        if not environ_success:
+            # create a reference to the client
+            client = W24TechreadClient(
+                environs['W24TECHREAD_SERVER_HTTPS'],
+                environs['W24TECHREAD_SERVER_WSS'],
+                environs['W24TECHREAD_VERSION'])
+
+            # register the credentials. This will in effect
+            # only set the variabels in the authorizer. It will
+            # not trigger a network request
+            client.register(
+                environs['W24TECHREAD_AUTH_REGION'],
+                environs['W24TECHREAD_AUTH_IDENTITY_POOL_ID'],
+                environs['W24TECHREAD_AUTH_USER_POOL_ID'],
+                environs['W24TECHREAD_AUTH_CLIENT_ID'],
+                environs['W24TECHREAD_AUTH_CLIENT_SECRET'],
+                environs['W24TECHREAD_AUTH_USERNAME'],
+                environs['W24TECHREAD_AUTH_PASSWORD'])
+
+        except KeyError:
             raise LicenseError(
                 "The License information could neither be "
                 "found in the local environment variables, nor in the "
@@ -388,25 +406,6 @@ class W24TechreadClient:
                 "calling the client from the directory that contains "
                 "your '.werk24' file and that the license file "
                 "name does not contain a prefix.")
-
-        # create a reference to the client
-        client = W24TechreadClient(
-            environs['W24TECHREAD_SERVER_HTTPS'],
-            environs['W24TECHREAD_SERVER_WSS'],
-            environs['W24TECHREAD_VERSION']
-        )
-
-        # login with the credentials. This will in effect
-        # only set the variabels in the authorizer. It will
-        # not trigger a network request
-        client.login(
-            environs["W24TECHREAD_AUTH_REGION"],
-            environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
-            environs["W24TECHREAD_AUTH_USER_POOL_ID"],
-            environs["W24TECHREAD_AUTH_CLIENT_ID"],
-            environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
-            environs["W24TECHREAD_AUTH_USERNAME"],
-            environs["W24TECHREAD_AUTH_PASSWORD"])
 
         # return the client
         return client
