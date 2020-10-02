@@ -178,8 +178,7 @@ class AuthClient:
             auth_data = {
                 'USERNAME': self.username,
                 'PASSWORD': self._password,
-                'SECRET_HASH': self._make_cognito_secret_hash(self.username),
-            }
+                'SECRET_HASH': self._make_cognito_secret_hash(self.username)}
 
             # get the jwt token from AWS cognito
             try:
@@ -192,7 +191,7 @@ class AuthClient:
             # if anything goes wrong. The error message will be valuable,
             # as it allows the user to differentiate between disabled
             # accounts and incorrect credentials
-            except cognito_client.exceptions.NotAuthorizedException:
+            except cognito_session.exceptions.NotAuthorizedException:
                 raise UnauthorizedException()
 
             # store the jwt token
