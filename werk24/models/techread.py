@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from pydantic import UUID4, BaseModel, Field, HttpUrl, Json
+from werk24._version import __version__
 
 from .ask import W24AskType, W24AskUnion
 
@@ -121,7 +122,7 @@ class W24TechreadRequest(BaseModel):
     You will only understand the details if you...
     """
 
-    client_version = "legacy"
+    client_version = __version__
     """ Current version of the client. For backward compatibility,
     this defaults to 'legacy'
     """
