@@ -1,0 +1,40 @@
+name: Tests | python3.7 | python3.8
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install nose2
+        run: pip install nose2
+      - name: Install Dependencies
+        run: python -m pip install -r ./test/requirements.txt
+      - name: Test
+        env:
+          W24TECHREAD_AUTH_REGION: ${{ secrets.W24TECHREAD_AUTH_REGION }}
+          W24TECHREAD_AUTH_IDENTITY_POOL_ID=: ${{ secrets.W24TECHREAD_AUTH_IDENTITY_POOL_ID }}
+          W24TECHREAD_AUTH_USER_POOL_ID: ${{ secrets.W24TECHREAD_AUTH_USER_POOL_ID }}
+          W24TECHREAD_AUTH_CLIENT_ID: ${{ secrets.W24TECHREAD_AUTH_CLIENT_ID }}
+          W24TECHREAD_AUTH_CLIENT_SECRET: ${{ secrets.W24TECHREAD_AUTH_CLIENT_SECRET }}
+          W24TECHREAD_AUTH_USERNAME: ${{ secrets.W24TECHREAD_AUTH_USERNAME }}
+          W24TECHREAD_AUTH_PASSWORD: ${{ secrets.W24TECHREAD_AUTH_PASSWORD }}
+          W24TECHREAD_SERVER_HTTPS: ${{ secrets.W24TECHREAD_SERVER_HTTPS }}
+          W24TECHREAD_SERVER_WSS: ${{ secrets.W24TECHREAD_SERVER_WSS }}
+          W24TECHREAD_VERSION: ${{ secrets.W24TECHREAD_VERSION }}
+        run: nose2
+      - name: Upload coverage
+        uses: codecov/codecov-action@v1
