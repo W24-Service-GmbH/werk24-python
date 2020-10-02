@@ -1,11 +1,12 @@
 from uuid import UUID
 
 import aiounittest
-from werk24.models.ask import W24AskPageThumbnail
+from werk24._version import __version__
 from werk24.exceptions import LicenseError, UnauthorizedException
+from werk24.models.ask import W24AskPageThumbnail
 from werk24.models.techread import (W24AskType,
                                     W24TechreadMessageSubtypeProgress,
-                                    W24TechreadMessageType)
+                                    W24TechreadMessageType, W24TechreadRequest)
 from werk24.techread_client import W24TechreadClient
 
 from .utils import CWD, get_drawing
@@ -80,3 +81,16 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
             # check whether we close the iteration correctly
             with self.assertRaises(StopAsyncIteration):
                 await request.__anext__()
+
+    async def test_client_version(self) -> None:
+        """ Test whether Client sends version
+
+        User Story: As Werk24 API developer I want to
+        know which client versionns are still being used,
+        so that I can decide whether it is safe to deprecate
+        an old feature
+
+        Github Issue #1
+        """
+        request = W24TechreadRequest(asks=[])
+        self.assertEqual(__version__, request.client_version)
