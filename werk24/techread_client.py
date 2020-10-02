@@ -32,7 +32,9 @@ from werk24.auth_client import AuthClient
 from werk24.exceptions import (LicenseError, RequestTooLargeException,
                                ServerException)
 from werk24.models.ask import W24Ask
-from werk24.models.techread import (W24TechreadAction, W24TechreadMessage,
+from werk24.models.techread import (W24TechreadAction,
+                                    W24TechreadInitResponse,
+                                    W24TechreadMessage,
                                     W24TechreadMessageSubtype,
                                     W24TechreadMessageType, W24TechreadRequest)
 from werk24.techread_client_https import TechreadClientHttps
@@ -286,17 +288,18 @@ class W24TechreadClient:
         response = await self._techread_client_wss.recv_message()
         logger.info("Received request_id %s", response.request_id)
 
+        # interpret the payload
+        init_response = W24TechreadInitResponse.parse_obj(
+            response.payload_dict)
+
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
-            await asyncio.gather(
-                self._techread_client_https.upload_associated_file(
-                    response.request_id, 'drawing', drawing),
-                # self._techread_client_https.upload_associated_file(
-                #     response.request_id, 'model', model)
-            )
-            logger.info("Drawing(and model) uploaded")
+            await self._techread_client_https.upload_associated_file(
+                init_response.drawing_presigned_post,
+                drawing)
+            logger.info("Drawing uploaded")
 
         # explicitly reraise the exception if the payload is too
         # large

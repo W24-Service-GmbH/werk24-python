@@ -31,7 +31,6 @@ logging.basicConfig(
 # get the local logger
 logger = logging.getLogger(__name__)  # pylint:disable = invalid-name
 
-
 # make the configuration of what hooks we want to handle and how
 HookConfig = namedtuple("HookkConfig", "arg ask function")
 hook_config = [
