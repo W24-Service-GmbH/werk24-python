@@ -4,7 +4,7 @@ the W24 Techread API.
 from enum import Enum
 from typing import Dict, List, Optional, Union
 
-from pydantic import UUID4, BaseModel, HttpUrl, Json
+from pydantic import UUID4, BaseModel, Field, HttpUrl, Json
 
 from .ask import W24AskType, W24AskUnion
 
@@ -70,7 +70,7 @@ MessageTypes
 
 
 class W24TechreadMessage(BaseModel):
-    """ Message format for messages that are send
+    """ Message format for messages that are sent
     from the server to the client.
     """
     request_id: UUID4
@@ -125,3 +125,25 @@ class W24TechreadRequest(BaseModel):
     """ Current version of the client. For backward compatibility,
     this defaults to 'legacy'
     """
+
+
+class W24PresignedPost(BaseModel):
+    """ Details of the presigned post
+    """
+
+    fields_: Dict[str, str] = Field(alias='fields', default={})
+    """ Dictionary of fields """
+
+    url: HttpUrl
+    """ Url to which the request shall be sent """
+
+
+class W24TechreadInitResponse(BaseModel):
+    """ API response to the Initialize request
+    """
+
+    drawing_presigned_post: W24PresignedPost
+    """ Presigned Post for uploading the drawing """
+
+    model_presigned_post: W24PresignedPost
+    """ Presigned Post for uploading the model """
