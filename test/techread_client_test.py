@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import aiounittest
-from build.lib.werk24.models.ask import W24AskPageThumbnail
+from werk24.models.ask import W24AskPageThumbnail
 from werk24.exceptions import LicenseError, UnauthorizedException
 from werk24.models.techread import (W24AskType,
                                     W24TechreadMessageSubtypeProgress,
