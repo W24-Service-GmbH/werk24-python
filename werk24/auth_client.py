@@ -74,29 +74,22 @@ class AuthClient:
             identity_client = aioboto3.client(
                 'cognito-identity',
                 self._cognito_region)
-        except ClientError:
-            raise UnauthorizedException("Invalid Cognito configuration")
 
-        # obtain the identity credentials
-        async with identity_client as identity_session:
+            # obtain the identity credentials
+            async with identity_client as identity_session:
 
-            # get a new identity id
-            try:
+                # get a new identity id
                 identity_response = await identity_session.get_id(
                     IdentityPoolId=self._cognito_identity_pool_id)
                 identity_id = identity_response['IdentityId']
-            except (ClientError, KeyError):
-                raise UnauthorizedException(
-                    "Unable to obtain IdentityId from Cognito Identity Pool")
 
-            # obtain the associated credentials
-            try:
+                # obtain the associated credentials
                 credentials_response = await identity_session \
                     .get_credentials_for_identity(IdentityId=identity_id)
                 credentials = credentials_response['Credentials']
-            except (ClientError, KeyError):
-                raise UnauthorizedException(
-                    "Unable to obtain Credentials from Cognito Identity Pool")
+
+        except (ClientError, KeyError):
+            raise UnauthorizedException("Invalid Cognito configuration")
 
         # get the access key / secret key
         access_key = credentials.get('AccessKeyId')
