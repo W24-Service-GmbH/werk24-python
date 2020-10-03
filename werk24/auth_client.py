@@ -88,8 +88,11 @@ class AuthClient:
                     .get_credentials_for_identity(IdentityId=identity_id)
                 credentials = credentials_response['Credentials']
 
-        except (ClientError, KeyError):
+        except KeyError:
             raise UnauthorizedException("Invalid Cognito configuration")
+
+        except ClientError:  # pylint: disable=try-except-raise
+            raise
 
         # get the access key / secret key
         access_key = credentials.get('AccessKeyId')
@@ -110,12 +113,12 @@ class AuthClient:
             boto3.session.Session.client -- Boto3 Client
         """
 
-        # before we can aws cognito USER POOL client, we need
-        # to obtain a generic identity from the IDENTIY POOL
-        access_key, secret_key = await self._get_generic_identity()
-
-        # with this information, we can now generate the client
         try:
+            # before we can aws cognito USER POOL client, we need
+            # to obtain a generic identity from the IDENTIY POOL
+            access_key, secret_key = await self._get_generic_identity()
+
+            # with this information, we can now generate the client
             return aioboto3.client(
                 "cognito-idp",
                 region_name=self._cognito_region,
