@@ -262,7 +262,7 @@ class W24TechreadClient:
         logger.info("API method read_drawing() called")
 
         # tell us when a development key is being used
-        if self._development_key:
+        if self._development_key:  # pragma: no cover
             logger.info("Using development key %s***",
                         self._development_key[:8])
 
