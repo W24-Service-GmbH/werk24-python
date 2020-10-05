@@ -132,11 +132,6 @@ class TechreadClientHttps:
 
         """
 
-        # Check if the content variable is empty.
-        # If so, silently return
-        if content is None:
-            return
-
         # generate the form data by merging the presigned
         # fields with the file
         form = aiohttp.FormData()
