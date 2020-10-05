@@ -114,7 +114,7 @@ class W24TechreadClient:
 
         # Create an empty reference to the authentication
         # service (currently AWS Cognito)
-        self._auth_client: AuthClient
+        self._auth_client: Optional[AuthClient] = None
 
         # Initialize an instance of the HTTPS client
         self._techread_client_https = TechreadClientHttps(
@@ -139,15 +139,13 @@ class W24TechreadClient:
                 active sessions
         """
 
-        # ensure that register() was called
-        if self._auth_client is None:
+        # ensure that we have a token
+        try:
+            await self._auth_client.login()  # type: ignore
+        except AttributeError:
             raise RuntimeError(
                 "No connection to the authentication service was " +
                 "established. Please call register()")
-
-        # ensure that we have a token
-        if self._auth_client.token is None:
-            await self._auth_client.login()
 
         # enter the https session
         await self._techread_client_https.__aenter__()
@@ -264,7 +262,7 @@ class W24TechreadClient:
         logger.info("API method read_drawing() called")
 
         # tell us when a development key is being used
-        if self._development_key:
+        if self._development_key:  # pragma: no cover
             logger.info("Using development key %s***",
                         self._development_key[:8])
 
