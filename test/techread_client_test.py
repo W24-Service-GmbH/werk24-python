@@ -1,9 +1,13 @@
 import os
+from unittest import mock
 
 import aiounittest
 from werk24._version import __version__
+from werk24.exceptions import RequestTooLargeException
+from werk24.models.ask import W24AskPageThumbnail
 from werk24.models.techread import W24TechreadRequest
 from werk24.techread_client import W24TechreadClient
+from werk24.techread_client_https import TechreadClientHttps
 
 
 class TestTechreadClient(aiounittest.AsyncTestCase):
@@ -39,3 +43,13 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
         with self.assertRaises(RuntimeError):
             async with client:
                 pass
+
+    async def test_client_usernames(self):
+        """ Test access username
+
+        User Story: As API user I want to access my own username,
+        so that I can verify that the login process worked correctly.
+        """
+        client = W24TechreadClient.make_from_env(None)
+        async with client as session:
+            self.assertEqual(type(session.username), str)

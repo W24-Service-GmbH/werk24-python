@@ -2,3 +2,4 @@
 [run]
 omit =
     werk24/gui/*
+    werk24/cli/*

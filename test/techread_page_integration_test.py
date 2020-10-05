@@ -1,3 +1,4 @@
+from unittest import mock
 from uuid import UUID
 
 import aiounittest
@@ -5,7 +6,7 @@ from werk24.models.ask import W24AskPageThumbnail
 from werk24.models.techread import (W24AskType,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
-from werk24.techread_client import W24TechreadClient
+from werk24.techread_client import Hook, W24TechreadClient
 
 from .utils import CWD, get_drawing
 
@@ -53,3 +54,25 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
             # check whether we close the iteration correctly
             with self.assertRaises(StopAsyncIteration):
                 await request.__anext__()
+
+    async def test_read_drawing_with_hooks(self):
+        """ Test basic read drawing with hooks functionality
+
+        User Story: As API user, I want to initiate a basic
+        read request and receive the responses on the hooks
+        so that I can implement asyncronous feedback loops
+        with my user
+        """
+        callback = mock.Mock()
+        hooks = [Hook(
+            ask=W24AskPageThumbnail(),
+            function=callback
+        )]
+
+        client = W24TechreadClient.make_from_env(None)
+        async with client as session:
+            await session.read_drawing_with_hooks(
+                DRAWING,
+                hooks=hooks)
+
+        self.assertTrue(callback.called)
