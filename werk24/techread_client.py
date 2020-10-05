@@ -114,7 +114,7 @@ class W24TechreadClient:
 
         # Create an empty reference to the authentication
         # service (currently AWS Cognito)
-        self._auth_client: AuthClient
+        self._auth_client: Optional[AuthClient] = None
 
         # Initialize an instance of the HTTPS client
         self._techread_client_https = TechreadClientHttps(
@@ -139,15 +139,13 @@ class W24TechreadClient:
                 active sessions
         """
 
-        # ensure that register() was called
-        if self._auth_client is None:
+        # ensure that we have a token
+        try:
+            await self._auth_client.login()  # type: ignore
+        except AttributeError:
             raise RuntimeError(
                 "No connection to the authentication service was " +
                 "established. Please call register()")
-
-        # ensure that we have a token
-        if self._auth_client.token is None:
-            await self._auth_client.login()
 
         # enter the https session
         await self._techread_client_https.__aenter__()
