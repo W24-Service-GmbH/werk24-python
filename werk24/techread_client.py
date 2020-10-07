@@ -15,7 +15,7 @@ EXAMPLE
     await client.read_drawing_with_hooks(
         drawing_bytes,
         [Hook(
-                ask=W24ASkThumbnailPage(),
+                ask=W24AskPageThumbnail(),
                 callback=lambda msg: print("Received Thumbnail of Page")
         ]))
 """
