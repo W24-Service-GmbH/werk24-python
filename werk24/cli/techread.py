@@ -43,7 +43,7 @@ hook_config = [
         W24AskSheetThumbnail,
         lambda m: _show_image("Sheet Thumbnail", m.payload_bytes)),
     HookConfig(
-        'ask_sectional_thumbnail',
+        'ask_canvas_thumbnail',
         W24AskSectionalThumbnail,
         lambda m: _show_image("Canvas Thumbnail", m.payload_bytes)),
     HookConfig(
