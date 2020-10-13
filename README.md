@@ -1,6 +1,5 @@
 # Werk24 Client
 
-[![pypi](https://img.shields.io/pypi/dm/werk24)](https://pypi.python.org/pypi/werk24)
 [![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
 [![pypi](https://img.shields.io/codecov/c/github/werk24/werk24-python?color=%2334D058)](https://codecov.io/gh/werk24/werk24-python)
 ![Tests | python3.7 | python3.8](https://github.com/werk24/werk24-python/workflows/Tests%20%7C%20python3.7%20%7C%20python3.8/badge.svg)
