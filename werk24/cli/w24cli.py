@@ -63,6 +63,11 @@ def main() -> None:
         help="ask for the Leaders of each variant",  # noqa
         action="store_true")
 
+    parser_techread.add_argument(
+        "--ask-variant-cad",
+        help="ask for the CAD file of each variant",  # noqa
+        action="store_true")
+
     args = parser.parse_args()
     if args.command == "techread":
         asyncio.run(werk24.cli.techread.main(args))

@@ -5,9 +5,10 @@ from typing import List, Optional, Union
 
 from pydantic import UUID4, BaseModel
 
+from .file_format import FileFormatCad, FileFormatImage
 from .gdt import W24GDT
-from .measure import W24Measure
 from .leader import W24Leader
+from .measure import W24Measure
 
 
 class W24AskType(str, Enum):
@@ -15,17 +16,14 @@ class W24AskType(str, Enum):
     API version.
 
     """
-    PAGE_THUMBNAIL = "PAGE_THUMBNAIL"
-    """ Thumbnail of the overall page - rotated and with
-    surrounding white space removed """
-
-    SHEET_THUMBNAIL = "SHEET_THUMBNAIL"
-    """ Thumbnail of the sheet (i.e., the part of the
-    page that is described by the surrounding frame) """
-
     CANVAS_THUMBNAIL = "CANVAS_THUMBNAIL"
     """ Thumbnail of the canvas (i.e., the part of the
     sheet that contains the geometry)
+    """
+
+    PAGE_THUMBNAIL = "PAGE_THUMBNAIL"
+    """ Thumbnail of the overall page - rotated and with
+    surrounding white space removed
     """
 
     SECTIONAL_THUMBNAIL = "SECTIONAL_THUMBNAIL"
@@ -33,9 +31,18 @@ class W24AskType(str, Enum):
     Here the sectional describes both cuts and perspectives
     """
 
-    VARIANT_MEASURES = "VARIANT_MEASURES"
-    """ List of Measures that were found on the Sectionals
-    associated with the variant
+    SHEET_THUMBNAIL = "SHEET_THUMBNAIL"
+    """ Thumbnail of the sheet (i.e., the part of the
+    page that is described by the surrounding frame)
+    """
+
+    TRAIN = "TRAIN"
+    """ Supplying the request for training only without
+    expecting a response.
+    """
+
+    VARIANT_CAD = "VARIANT_CAD"
+    """ Requests the generation of a CAD file
     """
 
     VARIANT_GDTS = "VARIANT_GDTS"
@@ -43,18 +50,18 @@ class W24AskType(str, Enum):
     on the Sectionals associated with the variant
     """
 
+    VARIANT_LEADERS = "VARIANT_LEADERS"
+    """ List of Leaders that were detected on the Sectional
+    """
+
     VARIANT_MATERIAL = "VARIANT_MATERIAL"
     """ Material that was detected on the data fields of the
     drawing or within a variant table
     """
 
-    VARIANT_LEADERS = "VARIANT_LEADERS"
-    """ List of Leaders that were detected on the Sectional
-    """
-
-    TRAIN = "TRAIN"
-    """ Supplying the request for training only without
-    expecting a response.
+    VARIANT_MEASURES = "VARIANT_MEASURES"
+    """ List of Measures that were found on the Sectionals
+    associated with the variant
     """
 
 
@@ -64,17 +71,6 @@ class W24Ask(BaseModel):
     ask_type: W24AskType
 
 
-class W24AskThumbnailFileFormat(str, Enum):
-    """ List of supported File Formats in which
-    the Thumbnail can be supplied.
-
-    NOTE: At this stage, the API only supports JPEG.
-    This prepares the support for additional format
-    (e.g. TIFF)
-    """
-    JPEG = "JPEG"
-
-
 class W24AskThumbnail(W24Ask):
     """ Base model for features that request a thumbnail.
 
@@ -82,7 +78,7 @@ class W24AskThumbnail(W24Ask):
     image. Future releases will allow the defintion of the
     maximal dimensions.
     """
-    file_format: W24AskThumbnailFileFormat = W24AskThumbnailFileFormat.JPEG
+    file_format: FileFormatImage = FileFormatImage.JPEG
 
 
 class W24AskPageThumbnail(W24AskThumbnail):
@@ -159,7 +155,7 @@ class W24AskVariantLeaders(W24Ask):
 
 
 class W24AskVariantLeadersResponse(BaseModel):
-    """ Response object corresponding to hte
+    """ Response object corresponding to the
     W24AskVariantLeaders.
 
     """
@@ -196,23 +192,48 @@ class W24AskVariantGDTs(W24Ask):
 
 
 class W24AskVariantGDTsResponse(BaseModel):
-    """ Response object corresponding ot hte
+    """ Response object corresponding ot the
     W24AskVariantGDTs.
 
     NOTE: Be aware that requesting the measures will
-    yield one responds for each variant and sectional
+    yield one response for each variant and sectional
     """
     variant_id: UUID4
     sectional_id: UUID4
     gdts: List[W24GDT]
 
 
-class W24AskTrain(BaseModel):
+class W24AskTrain(W24Ask):
     """ If you submit this Ask, we will use your request
     to train and improve our models.
     It does not trigger a response
     """
     ask_type = W24AskType.TRAIN
+
+
+class W24AskVariantCAD(W24Ask):
+    """ By sending this ASk, you are requesting
+    an associated CAD model
+    """
+    ask_type = W24AskType.VARIANT_CAD
+
+    output_format: FileFormatCad = FileFormatCad.DXF
+    """ Output format in which to generate
+    the CAD file
+    """
+
+
+class W24AskVariantCADResponse(BaseModel):
+    """ Response object corresponding ot the
+    W24AskVariantCad.
+
+    NOTE: Be aware that requesting the measures will
+    yield one response for each variant
+
+    NOTE: the cad file will be returned as part of
+    the payload_bytes and needs to be accessed directly
+    """
+    variant_id: UUID4
 
 
 W24AskUnion = Union[

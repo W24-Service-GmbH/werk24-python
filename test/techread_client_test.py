@@ -1,13 +1,9 @@
 import os
-from unittest import mock
 
 import aiounittest
 from werk24._version import __version__
-from werk24.exceptions import RequestTooLargeException
-from werk24.models.ask import W24AskPageThumbnail
 from werk24.models.techread import W24TechreadRequest
 from werk24.techread_client import W24TechreadClient
-from werk24.techread_client_https import TechreadClientHttps
 
 
 class TestTechreadClient(aiounittest.AsyncTestCase):
