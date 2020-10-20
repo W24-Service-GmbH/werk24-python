@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 from werk24.exceptions import RequestTooLargeException
 from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
                                W24AskSectionalThumbnail, W24AskSheetThumbnail,
-                               W24AskVariantGDTs, W24AskVariantLeaders,
-                               W24AskVariantMeasures)
+                               W24AskVariantCAD, W24AskVariantGDTs,
+                               W24AskVariantLeaders, W24AskVariantMeasures)
 from werk24.models.techread import (W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
@@ -44,7 +44,7 @@ hook_config = [
         lambda m: _show_image("Sheet Thumbnail", m.payload_bytes)),
     HookConfig(
         'ask_canvas_thumbnail',
-        W24AskSectionalThumbnail,
+        W24AskCanvasThumbnail,
         lambda m: _show_image("Canvas Thumbnail", m.payload_bytes)),
     HookConfig(
         'ask_sectional_thumbnail',
@@ -66,6 +66,10 @@ hook_config = [
         'ask_variant_leaders',
         W24AskVariantLeaders,
         lambda m: print("Ask Variant Leaders\n", m.payload_dict)),
+    HookConfig(
+        'ask_variant_cad',
+        W24AskVariantCAD,
+        lambda m: print("Ask Variant Cad\n", m.payload_dict)),
 ]
 
 
