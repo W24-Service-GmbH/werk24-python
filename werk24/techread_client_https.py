@@ -84,9 +84,10 @@ class TechreadClientHttps:
         self._auth_client = auth_client
 
     async def upload_associated_file(
-            self,
-            presigned_post: W24PresignedPost,
-            content: Optional[bytes]) -> None:
+        self,
+        presigned_post: W24PresignedPost,
+        content: Optional[bytes]
+    ) -> None:
         """ Upload an associated file to the API.
         This can either be a technical drawing or a
         3D model. Potentially we will sometime extend
@@ -129,8 +130,11 @@ class TechreadClientHttps:
 
             ServerException: Raised for all other status codes
                 that are not 2xx
-
         """
+
+        # ignore if payload is empty
+        if content is None:
+            return
 
         # generate the form data by merging the presigned
         # fields with the file
