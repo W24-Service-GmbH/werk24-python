@@ -223,10 +223,10 @@ class W24TechreadClient:
         return self._auth_client.username
 
     async def read_drawing(
-            self,
-            drawing: bytes,
-            asks: List[W24Ask],
-            model: bytes = None
+        self,
+        drawing: bytes,
+        asks: List[W24Ask],
+        model: bytes = None
     ) -> AsyncGenerator:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
@@ -294,10 +294,14 @@ class W24TechreadClient:
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
-            await self._techread_client_https.upload_associated_file(
-                init_response.drawing_presigned_post,
-                drawing)
-            logger.info("Drawing uploaded")
+            await asyncio.gather(
+                self._techread_client_https.upload_associated_file(
+                    init_response.drawing_presigned_post,
+                    drawing),
+                self._techread_client_https.upload_associated_file(
+                    init_response.model_presigned_post,
+                    model)
+            )
 
         # explicitly reraise the exception if the payload is too
         # large
@@ -340,7 +344,7 @@ class W24TechreadClient:
 
     @staticmethod
     def make_from_env(
-            license_path: Optional[str] = ".werk24"
+        license_path: Optional[str] = ".werk24"
     ) -> "W24TechreadClient":
         """ Small helper function that creates a new
         W24TechreadClient from the enviorment info.
@@ -412,9 +416,9 @@ class W24TechreadClient:
         return client
 
     async def read_drawing_with_hooks(
-            self,
-            drawing_bytes: bytes,
-            hooks: List[Hook]
+        self,
+        drawing_bytes: bytes,
+        hooks: List[Hook]
     ) -> None:
         """ Send the drawing to the API (can be PDF or image)
         and register a number of callbacks that are triggered
