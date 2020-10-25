@@ -220,7 +220,10 @@ class W24TechreadClient:
         Returns:
             str: username of the currently registered user
         """
-        return self._auth_client.username
+        try:
+            return self._auth_client.username
+        except ValueError:
+            return None
 
     async def read_drawing(
         self,

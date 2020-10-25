@@ -11,6 +11,18 @@ def get_drawing() -> bytes:
     Returns:
         bytes: Bytes of the Example Drawing
     """
-    path = CWD / "assets" / "technical_drawing.png"
+    path = CWD / "assets" / "test_drawing.png"
+    with open(path, 'rb') as file_handle:
+        return file_handle.read()
+
+
+def get_model() -> bytes:
+    """ Small helper function to return the bytes of
+    an example model that can be used for testing
+
+    Returns:
+        bytes: Bytes of the Example Step File
+    """
+    path = CWD / "assets" / "test_model.stp"
     with open(path, 'rb') as file_handle:
         return file_handle.read()

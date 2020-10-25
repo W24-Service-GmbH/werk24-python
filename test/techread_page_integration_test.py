@@ -17,7 +17,7 @@ DRAWING = get_drawing()
 """ Example Drawing in bytes """
 
 
-class TestTechreadClient(aiounittest.AsyncTestCase):
+class TestPage(aiounittest.AsyncTestCase):
     async def test_read_drawing(self):
         """ Test basic read_drawing functionality
 

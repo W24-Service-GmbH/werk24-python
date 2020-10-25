@@ -70,6 +70,12 @@ class W24Ask(BaseModel):
     """
     ask_type: W24AskType
 
+    is_training: bool = False
+    """ Flag that indicates that your request is a pure
+    training request and that you are not expecting to
+    obtain a response.
+    """
+
 
 class W24AskThumbnail(W24Ask):
     """ Base model for features that request a thumbnail.
