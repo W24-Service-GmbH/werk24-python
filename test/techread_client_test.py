@@ -65,6 +65,6 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
         model = get_model()
 
         client = W24TechreadClient.make_from_env(None)
-        # async with client as session:
-        #     async for _ in session.read_drawing(drawing, asks, model):
-        #         pass
+        async with client as session:
+            async for _ in session.read_drawing(drawing, asks, model):
+                pass
