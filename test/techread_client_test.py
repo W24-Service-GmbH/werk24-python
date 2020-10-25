@@ -1,9 +1,13 @@
 import os
+from typing import List
 
 import aiounittest
 from werk24._version import __version__
+from werk24.models.ask import W24Ask, W24AskVariantCAD
 from werk24.models.techread import W24TechreadRequest
 from werk24.techread_client import W24TechreadClient
+
+from .utils import get_drawing, get_model
 
 
 class TestTechreadClient(aiounittest.AsyncTestCase):
@@ -49,3 +53,18 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
         client = W24TechreadClient.make_from_env(None)
         async with client as session:
             self.assertEqual(type(session.username), str)
+
+    async def test_upload_model(self) -> None:
+        """ Test whether we can upload an associaed model.
+
+        User Story: As API user, want to be able to upload an associated
+        model file, so that I can support Werk24's training effort
+        """
+        asks: List[W24Ask] = [W24AskVariantCAD(is_training=True)]
+        drawing = get_drawing()
+        model = get_model()
+
+        client = W24TechreadClient.make_from_env(None)
+        # async with client as session:
+        #     async for _ in session.read_drawing(drawing, asks, model):
+        #         pass
