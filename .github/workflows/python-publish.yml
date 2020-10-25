@@ -29,3 +29,9 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
+        
+    - name: Update nodejs Client Wrapper
+      uses: benc-uk/workflow-dispatch@v1
+      with:
+        repo: werk24/werk24-nodejs
+        token: ${{ secrets.PERSONAL_TOKEN }}  
