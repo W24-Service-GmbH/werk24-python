@@ -145,15 +145,12 @@ class TechreadClientHttps:
 
         # create a new fresh session that does not
         # carry the authentication token
-        async with aiohttp.ClientSession() as session:
-            response = await session.request(
-                'post',
-                presigned_post.url,
-                data=form)
+        async with aiohttp.ClientSession() as sess:
+            async with await sess.post(presigned_post.url, data=form) as resp:
 
-        # check the status code of the response and
-        # raise the appropriate exception
-        self._raise_for_status(presigned_post.url, response.status)
+                # check the status code of the response and
+                # raise the appropriate exception
+                self._raise_for_status(presigned_post.url, resp.status)
 
     def _make_endpoint_url(
             self,
