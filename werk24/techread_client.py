@@ -297,12 +297,13 @@ class W24TechreadClient:
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
-            await self._techread_client_https.upload_associated_file(
-                init_response.drawing_presigned_post,
-                drawing)
-            await self._techread_client_https.upload_associated_file(
-                init_response.model_presigned_post,
-                model)
+            await asyncio.gather(
+                self._techread_client_https.upload_associated_file(
+                    init_response.drawing_presigned_post,
+                    drawing),
+                self._techread_client_https.upload_associated_file(
+                    init_response.model_presigned_post,
+                    model))
 
         # explicitly reraise the exception if the payload is too
         # large
