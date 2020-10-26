@@ -33,5 +33,6 @@ jobs:
     - name: Update nodejs Client Wrapper
       uses: benc-uk/workflow-dispatch@v1
       with:
+        workflow: Update Client Version
         repo: werk24/werk24-nodejs
-        token: ${{ secrets.PERSONAL_TOKEN }}  
+        token: ${{ secrets.PERSONAL_TOKEN }}
