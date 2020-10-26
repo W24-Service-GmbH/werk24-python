@@ -252,5 +252,6 @@ W24AskUnion = Union[
     W24AskVariantLeaders,
     W24AskVariantMaterial,
     W24AskVariantMeasures,
+    W24AskVariantCAD,
 ]
 """ Union of all W24Asks to ensure proper deserialization """
