@@ -102,7 +102,7 @@ class W24SizeToleranceMaximum(W24SizeTolerance):
         max 15
     """
 
-    toleration_type = W24SizeToleranceType.MINIMUM
+    toleration_type = W24SizeToleranceType.MAXIMUM
 
 
 class W24SizeToleranceApproximation(W24SizeTolerance):
