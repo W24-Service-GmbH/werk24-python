@@ -370,21 +370,22 @@ class W24TechreadClient:
         # First priority: look for the local license path
         if license_path is not None:
             if os.path.exists(license_path):
-                environ_raw = {
+                environs_raw = {
                     k: v
                     for k, v in dotenv.dotenv_values(license_path).items()
                     if v is not None}
             else:
-                environ_raw = {}
+                environs_raw = dict(os.environ)
 
         # Second priority: use the environment variables
         else:
-            environ_raw = dict(os.environ)
+            environs_raw = dict(os.environ)
+
 
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
         try:
-            environs = {cur_key: environ_raw[cur_key]
+            environs = {cur_key: environs_raw[cur_key]
                         for cur_key in ENVIRONS}
 
             # create a reference to the client
