@@ -39,6 +39,7 @@ class W24TechreadMessageSubtypeError(str, Enum):
     """ Message Subtype for the MessageType: ERROR
     """
     INTERNAL = "INTERNAL"
+    UNSUPPORTED_DRAWING_FILE_FORMAT = "UNSUPPORTED_DRAWING_FILE_FORMAT"
 
 
 class W24TechreadMessageSubtypeRejection(str, Enum):

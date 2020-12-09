@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class FileFormatCad(str, Enum):
+class W24FileFormatVariantCAD(str, Enum):
     """ List of the supported CAD file formats
 
     NOTE: at this stage, the API only supports DXF
@@ -11,7 +11,7 @@ class FileFormatCad(str, Enum):
     DXF = "DXF"
 
 
-class FileFormatImage(str, Enum):
+class W24FileFormatThumbnail(str, Enum):
     """ List of supported File Formats in which
     the Thumbnail can be supplied.
 

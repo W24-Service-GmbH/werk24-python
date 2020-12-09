@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 
 from pydantic import UUID4, BaseModel
 
-from .file_format import FileFormatCad, FileFormatImage
+from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
 from .gdt import W24GDT
 from .leader import W24Leader
 from .measure import W24Measure
@@ -84,7 +84,7 @@ class W24AskThumbnail(W24Ask):
     image. Future releases will allow the defintion of the
     maximal dimensions.
     """
-    file_format: FileFormatImage = FileFormatImage.JPEG
+    file_format: W24FileFormatThumbnail = W24FileFormatThumbnail.JPEG
 
 
 class W24AskPageThumbnail(W24AskThumbnail):
@@ -223,7 +223,7 @@ class W24AskVariantCAD(W24Ask):
     """
     ask_type = W24AskType.VARIANT_CAD
 
-    output_format: FileFormatCad = FileFormatCad.DXF
+    output_format: W24FileFormatVariantCAD = W24FileFormatVariantCAD.DXF
     """ Output format in which to generate
     the CAD file
     """

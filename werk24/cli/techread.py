@@ -5,7 +5,7 @@ import io
 import logging
 import sys
 from collections import namedtuple
-from typing import List
+from typing import List, Dict, Any
 
 from dotenv import load_dotenv
 from werk24.exceptions import RequestTooLargeException
@@ -45,33 +45,56 @@ hook_config = [
     HookConfig(
         'ask_canvas_thumbnail',
         W24AskCanvasThumbnail,
-        lambda m: _show_image("Canvas Thumbnail", m.payload_bytes)),
+        lambda m: _show_image(f"Canvas Thumbnail\n{m.payload_dict}")),
     HookConfig(
         'ask_sectional_thumbnail',
         W24AskSectionalThumbnail,
-        lambda m: _show_image("Sectional Thumbnail", m.payload_bytes)),
+        lambda m: _show_image(f"Sectional Thumbnail\n{m.payload_dict}")),
     HookConfig(
         'ask_variant_measures',
         W24AskVariantMeasures,
-        lambda m: print("Ask Variant Measures\n", m.payload_dict)),
+        lambda m: logger.info(f"Ask Variant Measures\n{m.payload_dict}")),
     HookConfig(
         'ask_variant_measures',
         W24AskVariantMeasures,
-        lambda m: print("Ask Variant Measures\n", m.payload_dict)),
+        lambda m: logger.info(f"Ask Variant Measures\n{m.payload_dict}")),
     HookConfig(
         'ask_variant_gdts',
         W24AskVariantGDTs,
-        lambda m: print("Ask Variant GDTs\n", m.payload_dict)),
+        lambda m: logger.info(f"Ask Variant GDTs\n{m.payload_dict}")),
     HookConfig(
         'ask_variant_leaders',
         W24AskVariantLeaders,
-        lambda m: print("Ask Variant Leaders\n", m.payload_dict)),
+        lambda m: logger.info(f"Ask Variant Leaders\n{m.payload_dict}")),
     HookConfig(
         'ask_variant_cad',
         W24AskVariantCAD,
-        lambda m: print("Ask Variant Cad\n", m.payload_dict)),
+        lambda m: _store_variant_cad(m.payload_dict, m.payload_bytes)),
 ]
 
+
+def _store_variant_cad(
+    payload_dict: Dict[str, Any],
+    payload_bytes: bytes
+) -> None:
+    """ Store the CAD file the current directory
+
+    Args:
+        payload_dict (Dict[str, Any]): Payload Dictionary
+        payload_bytes (bytes): CAD that we received as response
+    """
+    logger.info(f"Ask Variant CAD\n{payload_dict}")
+
+    # make the filename 
+    variant_id = payload_dict.get('variant_id')
+    filename = f"./w24_ask_variant_cad_{variant_id}.dxf"
+
+    # and write the content
+    with open(filename, "wb+") as file_handle:
+        file_handle.write(payload_bytes)
+
+    # tell the user 
+    logger.info(f"CAD response stored in {filename}")
 
 def _get_drawing(
         file_path: str
