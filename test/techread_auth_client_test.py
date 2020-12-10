@@ -18,18 +18,6 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
     """ Test case for the basic Techread functionality
     """
 
-    def test_license_path_invalid(self):
-        """ Test Invalid License Path
-
-        User Story: As API user, I want to obtain an exception
-            if the path that I provided to the license file is
-            invalid, so that I can detect problems before they
-            go into production.
-        """
-        self.assertRaises(
-            LicenseError,
-            W24TechreadClient.make_from_env,
-            license_path="invalid_path")
 
     async def test_license_invalid(self):
         """ Test Invalid License File

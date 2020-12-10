@@ -4,6 +4,7 @@ import argparse
 import asyncio
 from dotenv import load_dotenv
 import werk24.cli.techread
+import werk24.cli.auth
 
 load_dotenv(".werk24")
 
@@ -68,9 +69,22 @@ def main() -> None:
         help="ask for the CAD file of each variant",  # noqa
         action="store_true")
 
+    parser_auth = subparsers.add_parser(
+        "auth",
+        help="Interact with the authentication service")
+
+    parser_auth.add_argument(
+        '--ask-jwt-token',
+        help="Obtain a valid JWT token",
+        action="store_true")
+
     args = parser.parse_args()
     if args.command == "techread":
         asyncio.run(werk24.cli.techread.main(args))
+
+    elif args.command == "auth": 
+        asyncio.run(werk24.cli.auth.main(args))
+
 
 
 if __name__ == "__main__":
