@@ -2,9 +2,12 @@ from unittest import mock
 
 import aioboto3
 import aiounittest
+import boto3
 from botocore.exceptions import ClientError
+from botocore.stub import Stubber
 from werk24._version import __version__
-from werk24.exceptions import LicenseError, UnauthorizedException
+from werk24.auth_client import AuthClient
+from werk24.exceptions import UnauthorizedException
 from werk24.models.techread import W24TechreadRequest
 from werk24.techread_client import W24TechreadClient
 
@@ -69,3 +72,31 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
         """
         request = W24TechreadRequest(asks=[])
         self.assertEqual(__version__, request.client_version)
+
+    async def test_no_access_keu(self) -> None:
+        """ Test wheter not providing a password rawises
+        an exception 
+        """
+        with self.assertRaises(UnauthorizedException):
+            auth_client = AuthClient(
+                "eu-central-1",
+                "some id",
+                "some user pool id",
+                None,
+                "some partner password")
+            await auth_client.login()
+
+
+    async def test_no_password(self) -> None:
+        """ Test wheter not providing a password rawises
+        an exception 
+        """
+        with self.assertRaises(UnauthorizedException):
+            auth_client = AuthClient(
+                "eu-central-1",
+                "some id",
+                "some user pool id",
+                "some partner id",
+                "some partner password")
+            # auth_client.register(None, None)
+            await auth_client.login()
