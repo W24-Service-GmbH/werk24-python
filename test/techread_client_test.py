@@ -80,5 +80,16 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
 
         with self.assertRaises(UnsupportedMediaType):
             async with client as session:
-                async for _ in session.read_drawing("", asks=[]): 
-                    pass    
+                await session.read_drawing("", asks=[]).__anext__()
+
+    async def test_string_as_model_bytes(self) -> None:
+        """ Test whether submitting a string as model_bytes
+        raises the correct exception. 
+        
+        See Github Issue #13
+        """
+        client = W24TechreadClient.make_from_env()
+
+        with self.assertRaises(UnsupportedMediaType):
+            async with client as session:
+                await session.read_drawing(b"", asks=[], model="").__anext__()
