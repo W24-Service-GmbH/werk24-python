@@ -20,8 +20,6 @@ LICENSE_PATH_INVALID_CREDS = CWD / "assets" / "invalid_creds.werk24"
 class TestTechreadClient(aiounittest.AsyncTestCase):
     """ Test case for the basic Techread functionality
     """
-
-
     async def test_license_invalid(self):
         """ Test Invalid License File
 

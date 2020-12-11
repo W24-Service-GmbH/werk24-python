@@ -13,7 +13,7 @@ With the API are able to obtain:
 - Measures incl. tolerances
 - Geometric Dimensioning and Tolerancing Frames
 
-Check our website at [https://www.werk24.io](https://www.werk24.biz).
+Check our website at [https://www.werk24.io](https://www.werk24.io).
 The project is persistently improved. Get in touch with us to obtain your API key.
 
 ## Installation
