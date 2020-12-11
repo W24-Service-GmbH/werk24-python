@@ -380,8 +380,8 @@ class W24TechreadClient:
         """
 
         # Mimick the old default value of .werk24
-        if license_path is None and os.path.exists(".werk24"):
-            license_path = ".werk24"
+        if license_path is None and os.path.exists(".werk24"): 
+            license_path = ".werk24" #pragma: no cover
                 
         # First priority: look for the local license path
         if license_path is not None:
