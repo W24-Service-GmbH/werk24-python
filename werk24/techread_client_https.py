@@ -11,7 +11,7 @@ from pydantic import HttpUrl
 from werk24.exceptions import (BadRequestException, RequestTooLargeException,
                                ResourceNotFoundException, ServerException,
                                UnauthorizedException,
-                               UnsupportedMediaTypeException)
+                               UnsupportedMediaType)
 from werk24.models.techread import W24PresignedPost
 
 from .auth_client import AuthClient
@@ -372,7 +372,7 @@ class TechreadClientHttps:
         # if the status code is 415, you have submitted
         # a file whose media type is not supported by the API
         if status_code == 415:
-            raise UnsupportedMediaTypeException()
+            raise UnsupportedMediaType()
 
         # If the resposne code is anything other
         # than unauthorized or 200 (OK), we trigger
