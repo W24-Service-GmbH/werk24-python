@@ -6,7 +6,7 @@ import hmac
 from botocore.exceptions import ClientError
 from typing import Optional, Tuple
 
-import aioboto3
+import boto3
 from werk24.exceptions import UnauthorizedException
 
 
@@ -71,22 +71,20 @@ class AuthClient:
 
         # make the identity client
         try:
-            identity_client = aioboto3.client(
+            identity_client = boto3.client(
                 'cognito-identity',
                 self._cognito_region)
 
-            # obtain the identity credentials
-            async with identity_client as identity_session:
 
-                # get a new identity id
-                identity_response = await identity_session.get_id(
-                    IdentityPoolId=self._cognito_identity_pool_id)
-                identity_id = identity_response['IdentityId']
+            # get a new identity id
+            identity_response = identity_client.get_id(
+                IdentityPoolId=self._cognito_identity_pool_id)
+            identity_id = identity_response['IdentityId']
 
-                # obtain the associated credentials
-                credentials_response = await identity_session \
-                    .get_credentials_for_identity(IdentityId=identity_id)
-                credentials = credentials_response['Credentials']
+            # obtain the associated credentials
+            credentials_response = identity_client \
+                .get_credentials_for_identity(IdentityId=identity_id)
+            credentials = credentials_response['Credentials']
 
         except KeyError:
             raise UnauthorizedException("Invalid Cognito configuration")
@@ -105,7 +103,7 @@ class AuthClient:
         # that's it
         return access_key, secret_key
 
-    async def _make_cognito_client(self) -> aioboto3.session.Session.client:
+    async def _make_cognito_client(self) -> boto3.session.Session.client:
         """ Make the Cognito Client to communicate with
         AWS Cognito
 
@@ -119,7 +117,7 @@ class AuthClient:
             access_key, secret_key = await self._get_generic_identity()
 
             # with this information, we can now generate the client
-            return aioboto3.client(
+            return boto3.client(
                 "cognito-idp",
                 region_name=self._cognito_region,
                 aws_access_key_id=access_key,
@@ -152,7 +150,7 @@ class AuthClient:
         return base64.b64encode(dig).decode()
 
     async def login(
-            self
+        self
     ) -> None:
         """ Login with AWS Cognito
 
@@ -168,31 +166,30 @@ class AuthClient:
 
         # make the connection to aws
         cognito_client = await self._make_cognito_client()
-        async with cognito_client as cognito_session:
 
-            # make the authentication data
-            auth_data = {
-                'USERNAME': self.username,
-                'PASSWORD': self._password,
-                'SECRET_HASH': self._make_cognito_secret_hash(self.username)}
+        # make the authentication data
+        auth_data = {
+            'USERNAME': self.username,
+            'PASSWORD': self._password,
+            'SECRET_HASH': self._make_cognito_secret_hash(self.username)}
 
-            # get the jwt token from AWS cognito
-            try:
-                resp = await cognito_session.initiate_auth(
-                    AuthFlow='USER_PASSWORD_AUTH',
-                    AuthParameters=auth_data,
-                    ClientId=self._cognito_client_id)
+        # get the jwt token from AWS cognito
+        try:
+            resp = cognito_client.initiate_auth(
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters=auth_data,
+                ClientId=self._cognito_client_id)
 
-            # We will receive an error message directly from AWS Cognito
-            # if anything goes wrong. The error message will be valuable,
-            # as it allows the user to differentiate between disabled
-            # accounts and incorrect credentials
-            except cognito_session.exceptions.NotAuthorizedException:
-                raise UnauthorizedException()
+        # We will receive an error message directly from AWS Cognito
+        # if anything goes wrong. The error message will be valuable,
+        # as it allows the user to differentiate between disabled
+        # accounts and incorrect credentials
+        except cognito_client.exceptions.NotAuthorizedException:
+            raise UnauthorizedException()
 
-            # store the jwt token
-            try:
-                self.token = resp['AuthenticationResult']['IdToken']
-            except KeyError:
-                raise UnauthorizedException(
-                    "Unable to obtain JWT Token from AWS Cognito.")
+        # store the jwt token
+        try:
+            self.token = resp['AuthenticationResult']['IdToken']
+        except KeyError:
+            raise UnauthorizedException(
+                "Unable to obtain JWT Token from AWS Cognito.")
