@@ -5,9 +5,10 @@ import io
 import logging
 import sys
 from collections import namedtuple
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from dotenv import load_dotenv
+from werk24.cli import utils
 from werk24.exceptions import RequestTooLargeException
 from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
                                W24AskSectionalThumbnail, W24AskSheetThumbnail,
@@ -16,7 +17,7 @@ from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
 from werk24.models.techread import (W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
-from werk24.techread_client import Hook, LicenseError, W24TechreadClient
+from werk24.techread_client import Hook
 
 # load the environment variables
 load_dotenv(".werk24")
@@ -161,21 +162,10 @@ async def main(
     # make the hooks from the arguments
     hooks = _make_hooks_from_args(args)
 
-    # make the client. This will automatically
-    # fetch the authentication information
-    # from the environment variables. We will
-    # provide you with separate .env files for
-    # the development and production environments
-    try:
-        client = W24TechreadClient.make_from_env()
-
-    # If a license error occured, let the user know.
-    # NOTE: This will not catch deactivated users.
-    # They will only learn about their status once
-    # they send a request.
-    except LicenseError as exception:
-        print(f"LICENSE ERROR: {exception}")
-        sys.exit()
+    # get the client instance and handle 
+    # potential errors
+    client = utils.make_client()
+    
 
     async with client as session:
 
