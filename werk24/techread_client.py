@@ -30,13 +30,11 @@ from pydantic import BaseModel
 
 from werk24.auth_client import AuthClient
 from werk24.exceptions import (LicenseError, RequestTooLargeException,
-                               ServerException)
+                               ServerException, UnsupportedMediaType)
 from werk24.models.ask import W24Ask
-from werk24.models.techread import (W24TechreadAction,
-                                    W24TechreadInitResponse,
-                                    W24TechreadMessage,
-                                    W24TechreadMessageSubtype,
-                                    W24TechreadMessageType, W24TechreadRequest)
+from werk24.models.techread import (
+    W24TechreadAction, W24TechreadInitResponse, W24TechreadMessage,
+    W24TechreadMessageSubtype, W24TechreadMessageType, W24TechreadRequest)
 from werk24.techread_client_https import TechreadClientHttps
 from werk24.techread_client_wss import TechreadClientWss
 
@@ -259,7 +257,22 @@ class W24TechreadClient:
             DrawingTooLarge -- Exception is raised when the drawing was too
                 large to be processed. At the time of writing. The upload
                 limit lies at 6 MB (including overhead).
+
+            UnsupportedMediaType -- Exception is raised when the drawing or
+                model is submitted in any data type other than bytes. 
         """
+
+        # quickly check whether the input type is bytes. If it is string, 
+        # the presigned-AWS post interestingly returns a 403 error_code
+        # without additional information. We want to inform the caller 
+        # that they submitted the wrong data type.
+        # See Github Issue #13
+        if not isinstance(drawing,bytes): 
+            raise UnsupportedMediaType("Drawing bytes requires 'bytes' type")
+
+        # the same is true for the model bytes
+        if model is not None and not isinstance(model,bytes): 
+            raise UnsupportedMediaType("Model bytes requires 'bytes' type")
 
         # give us some debug information
         logger.info("API method read_drawing() called")

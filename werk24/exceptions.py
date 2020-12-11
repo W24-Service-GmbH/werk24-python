@@ -48,7 +48,7 @@ class ResourceNotFoundException(TechreadException):
     """
 
 
-class UnsupportedMediaTypeException(TechreadException):
+class UnsupportedMediaType(TechreadException):
     """ Raised when the uploaded file has a format
     that is not supported by the api
     """
