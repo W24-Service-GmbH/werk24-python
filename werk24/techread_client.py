@@ -443,10 +443,7 @@ class W24TechreadClient:
         # define a small helper function that finds the frist valid
         # value in the supplied list of possible values
         def pick_environ(var:str, env_key:str, default:str) ->str:
-            try:
-                return var or environs[env_key]
-            except KeyError:
-                return default
+            return var or environs.get(env_key) or default
 
         # then make sure we use the correct prioties
         server_https = pick_environ(server_https,'W24TECHREAD_SERVER_HTTPS',DEFAULT_SERVER_HTTPS)
