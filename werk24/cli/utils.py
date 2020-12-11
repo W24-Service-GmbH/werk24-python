@@ -1,5 +1,5 @@
 import sys
-from werk24.techread_client import Hook, LicenseError, W24TechreadClient
+from werk24.techread_client import LicenseError, W24TechreadClient
 
 def make_client() -> W24TechreadClient:
     """ Make the client. 
