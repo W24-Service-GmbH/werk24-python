@@ -1,6 +1,5 @@
 from unittest import mock
 
-import aioboto3
 import aiounittest
 import boto3
 from botocore.exceptions import ClientError
@@ -45,10 +44,10 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
         client = W24TechreadClient.make_from_env(None)
 
         # mock the boto3 client to raise a ClientError
-        aiboto3_client = aioboto3.client
+        boto3_client = boto3.client
         m = mock.Mock()
         m.side_effect = ClientError({}, {})
-        mock.patch('aioboto3.client', m).start()
+        mock.patch('boto3.client', m).start()
 
         # assert
         with self.assertRaises(UnauthorizedException):
@@ -56,7 +55,7 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
                 pass
 
         # restore
-        aioboto3.client = aiboto3_client
+        boto3.client = boto3_client
 
     async def test_client_version(self) -> None:
         """ Test whether Client sends version

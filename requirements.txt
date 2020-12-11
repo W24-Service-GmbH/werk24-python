@@ -1,5 +1,5 @@
 aiohttp>=3.6.2
-aioboto3>=6.4.1
+boto3>=1.14.44
 pydantic>=1.4
 python-dotenv>=0.10.1
 websockets==8.1
