@@ -53,7 +53,7 @@ setup(
 
     package_data={"werk24": ["assets/*"]},
     install_requires=[
-        "aioboto3 >= 6.4.1",
+        "boto3 >= 1.14.44",
         "pydantic >= 1.4",
         "python-dotenv>=0.10.1",
         "websockets >= 8.1"],
