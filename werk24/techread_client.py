@@ -23,7 +23,7 @@ import asyncio
 import logging
 import os
 from types import TracebackType
-from typing import AsyncGenerator, Callable, List, Optional, Type
+from typing import AsyncGenerator, Callable, List, Optional, Type, Dict
 
 import dotenv
 from pydantic import BaseModel
@@ -57,6 +57,10 @@ ENVIRONS = [
 """ List of the environment variables used by the
 client """
 
+DEFAULT_AUTH_REGION = "eu-central-1"
+DEFAULT_SERVER_HTTPS = "techread.w24.io"
+DEFAULT_SERVER_WSS = "techread-ws.w24.io"
+DEFAULT_VERSION = "v1"
 
 class Hook(BaseModel):
     """ Small Object to keep the callback requests.
@@ -358,8 +362,57 @@ class W24TechreadClient:
             yield message
 
     @staticmethod
+    def _get_license_environs(
+        license_path:Optional[str]
+    ) -> Dict[str,str]:
+        """ Get the environment variables
+        Where we either select the variables from the license
+        files. If that fails we fall back to the true environment
+        variables. 
+        
+        NOTE: We do not want to mix the sources.
+
+        Args:
+            license_path (Optional[str]): Path of the license files
+
+        Returns:
+            Dict[str,str]: Key, Value pairs for the environment variables
+        """
+
+        # Mimick the old default value of .werk24
+        if license_path is None and os.path.exists(".werk24"):
+            license_path = ".werk24"
+                
+        # First priority: look for the local license path
+        if license_path is not None:
+            if os.path.exists(license_path):
+                environs_raw= {
+                    k: v
+                    for k, v in dotenv.dotenv_values(license_path).items()
+                    if v is not None}
+
+            # if the caller defined a license path, but it does not 
+            # exist, raise the exception 
+            else:
+                raise LicenseError("Licence File not found")
+
+        # Second priority: use the environment variables
+        else:
+            environs_raw =  dict(os.environ)
+
+        # filter the environment variables to only include the 
+        # ones that are relevant to us and return
+        return {cur_key: environs_raw[cur_key] for cur_key in ENVIRONS}
+
+
+    @classmethod
     def make_from_env(
-        license_path: Optional[str] = ".werk24"
+        cls,
+        license_path: Optional[str] = None,
+        auth_region: Optional[str] = None,
+        server_https: Optional[str] = None,
+        server_wss: Optional[str] = None,
+        version: Optional[str] = None
     ) -> "W24TechreadClient":
         """ Small helper function that creates a new
         W24TechreadClient from the enviorment info.
@@ -369,6 +422,9 @@ class W24TechreadClient:
                 By default we are looking for a .werk24 file in the current
                 cwd. If argument is set to None, we are not loading any
                 file and relying on the ENVIRONMENT variables only
+
+            auth_region: {Optional[str]} -- AWS Region of the Authentication Service.
+                
 
         Raises:
             FileNotFoundError -- Raised when you pass a path to a license file
@@ -380,38 +436,37 @@ class W24TechreadClient:
             W24TechreadClient -- The techread Client
         """
 
-        # First priority: look for the local license path
-        if license_path is not None:
-            if os.path.exists(license_path):
-                environs_raw = {
-                    k: v
-                    for k, v in dotenv.dotenv_values(license_path).items()
-                    if v is not None}
-            else:
-                environs_raw = dict(os.environ)
+        # get the licence variablles from the environment variables and
+        # the license file.
+        environs = cls._get_license_environs(license_path)
 
-        # Second priority: use the environment variables
-        else:
-            environs_raw = dict(os.environ)
+        # define a small helper function that finds the frist valid
+        # value in the supplied list of possible values
+        def pick_environ(var:str, env_key:str, default:str) ->str:
+            try:
+                return var or environs[env_key]
+            except KeyError:
+                return default
+
+        # then make sure we use the correct prioties
+        server_https = pick_environ(server_https,'W24TECHREAD_SERVER_HTTPS',DEFAULT_SERVER_HTTPS)
+        server_wss = pick_environ(server_wss,'W24TECHREAD_SERVER_WSS',DEFAULT_SERVER_WSS)
+        version = pick_environ(version,'W24TECHREAD_VERSION',DEFAULT_VERSION)
+        auth_region = pick_environ(auth_region,'W24TECHREAD_AUTH_REGION',DEFAULT_AUTH_REGION)
 
 
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
         try:
-            environs = {cur_key: environs_raw[cur_key]
-                        for cur_key in ENVIRONS}
-
+           
             # create a reference to the client
-            client = W24TechreadClient(
-                environs['W24TECHREAD_SERVER_HTTPS'],
-                environs['W24TECHREAD_SERVER_WSS'],
-                environs['W24TECHREAD_VERSION'])
+            client = W24TechreadClient(server_https,server_wss,version)
 
             # register the credentials. This will in effect
             # only set the variabels in the authorizer. It will
             # not trigger a network request
             client.register(
-                environs['W24TECHREAD_AUTH_REGION'],
+                auth_region,
                 environs['W24TECHREAD_AUTH_IDENTITY_POOL_ID'],
                 environs['W24TECHREAD_AUTH_USER_POOL_ID'],
                 environs['W24TECHREAD_AUTH_CLIENT_ID'],
