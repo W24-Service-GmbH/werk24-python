@@ -32,6 +32,17 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
             async with client:
                 pass
 
+    async def test_license_path_invalid(self):
+        """ Test Invalid License Path File
+
+        User Story: As API user, I want to obtain an exception
+            when the path to the license file as invalid, so that
+            I can update it.
+        """
+        with self.assertRaises(LicenseError):
+            client = W24TechreadClient.make_from_env(license_path="/invalid_path")
+
+
     async def test_cognito_error(self):
         """ Test UnauthorizedException if Cognito Identity is unavailable
 
