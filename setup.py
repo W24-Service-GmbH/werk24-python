@@ -29,10 +29,10 @@ setup(
     name=NAME,
     version=_get_version(VERSIONFILE),
     author="W24 Service GmbH",
-    author_email="info@werk24.biz",
+    author_email="info@werk24.io",
     description="Werk24 Client to read PDF- and Image-based "
     "Technical Drawings / Engineering Drawings",
-    url="https://www.werk24.biz",
+    url="https://www.werk24.io",
     entry_points={
         "console_scripts": [
             "w24cli=werk24.cli.w24cli:main",
@@ -63,7 +63,7 @@ setup(
         "Topic :: Scientific/Engineering :: Image Recognition"],
     python_requires='>=3.7.1',
     project_urls={
-        "Documentation": "https://werk24.github.io/docs/"
+        "Documentation": "https://werk24.io/docs/index.html"
     },
     long_description_content_type='text/markdown',
     long_description=_get_description(),
