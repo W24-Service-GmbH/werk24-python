@@ -424,7 +424,16 @@ class W24TechreadClient:
                 file and relying on the ENVIRONMENT variables only
 
             auth_region: {Optional[str]} -- AWS Region of the Authentication Service.
+                Takes priority over environ W24TECHREAD_AUTH_REGION and
+                DEFAULT_AUTH_REGION
+
+            server_https: {Optional[str]} -- HTTPS endpoint of the Werk24 API.
+                Takes priority over environ W24TECHREAD_SERVER_HTTPS and
+                DEFAULT_SEVER_HTTPS
                 
+            version: {Optional[str]} -- Version of the Werk24 API.
+                Takes priority over environ W24TECHREAD_VERSION and
+                DEfAULT_VERSION
 
         Raises:
             FileNotFoundError -- Raised when you pass a path to a license file
@@ -446,10 +455,10 @@ class W24TechreadClient:
             return var or environs.get(env_key) or default
 
         # then make sure we use the correct prioties
+        auth_region = pick_environ(auth_region,'W24TECHREAD_AUTH_REGION',DEFAULT_AUTH_REGION)
         server_https = pick_environ(server_https,'W24TECHREAD_SERVER_HTTPS',DEFAULT_SERVER_HTTPS)
         server_wss = pick_environ(server_wss,'W24TECHREAD_SERVER_WSS',DEFAULT_SERVER_WSS)
         version = pick_environ(version,'W24TECHREAD_VERSION',DEFAULT_VERSION)
-        auth_region = pick_environ(auth_region,'W24TECHREAD_AUTH_REGION',DEFAULT_AUTH_REGION)
 
 
         # get the variables from the environment and ensure that they
