@@ -1,4 +1,4 @@
-name: Tests | python3.7 | python3.8
+name: Tests | cpython 3.7, 3.8, 3.9
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.7, 3.8, 3.9]
       fail-fast: false
 
     steps:

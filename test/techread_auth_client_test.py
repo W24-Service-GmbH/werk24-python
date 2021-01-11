@@ -3,10 +3,9 @@ from unittest import mock
 import aiounittest
 import boto3
 from botocore.exceptions import ClientError
-from botocore.stub import Stubber
 from werk24._version import __version__
 from werk24.auth_client import AuthClient
-from werk24.exceptions import UnauthorizedException
+from werk24.exceptions import LicenseError, UnauthorizedException
 from werk24.models.techread import W24TechreadRequest
 from werk24.techread_client import W24TechreadClient
 
@@ -32,6 +31,17 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
         with self.assertRaises(UnauthorizedException):
             async with client:
                 pass
+
+    async def test_license_path_invalid(self):
+        """ Test Invalid License Path File
+
+        User Story: As API user, I want to obtain an exception
+            when the path to the license file as invalid, so that
+            I can update it.
+        """
+        with self.assertRaises(LicenseError):
+            client = W24TechreadClient.make_from_env(license_path="/invalid_path")
+
 
     async def test_cognito_error(self):
         """ Test UnauthorizedException if Cognito Identity is unavailable
