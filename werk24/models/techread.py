@@ -40,6 +40,7 @@ class W24TechreadMessageSubtypeError(str, Enum):
     """
     INTERNAL = "INTERNAL"
     UNSUPPORTED_DRAWING_FILE_FORMAT = "UNSUPPORTED_DRAWING_FILE_FORMAT"
+    TIMEOUT = "TIMEOUT"
 
 
 class W24TechreadMessageSubtypeRejection(str, Enum):
