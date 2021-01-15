@@ -53,6 +53,7 @@ setup(
 
     package_data={"werk24": ["assets/*"]},
     install_requires=[
+        "aiohttp >= 3.6.2",
         "boto3 >= 1.14.44",
         "pydantic >= 1.4",
         "python-dotenv>=0.10.1",
@@ -67,4 +68,4 @@ setup(
     },
     long_description_content_type='text/markdown',
     long_description=_get_description(),
-) 
+)
