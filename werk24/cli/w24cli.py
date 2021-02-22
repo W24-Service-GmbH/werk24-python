@@ -50,6 +50,11 @@ def main() -> None:
         action="store_true")
 
     parser_techread.add_argument(
+        "--ask-variant-angles",
+        help="ask for the angles of each variant",  # noqa
+        action="store_true")
+
+    parser_techread.add_argument(
         "--ask-variant-measures",
         help="ask for the measures of each variant",  # noqa
         action="store_true")
@@ -82,9 +87,8 @@ def main() -> None:
     if args.command == "techread":
         asyncio.run(werk24.cli.techread.main(args))
 
-    elif args.command == "auth": 
+    elif args.command == "auth":
         asyncio.run(werk24.cli.auth.main(args))
-
 
 
 if __name__ == "__main__":

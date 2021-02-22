@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 
 from pydantic import UUID4, BaseModel
 
+from .angle import W24Angle
 from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
 from .gdt import W24GDT
 from .leader import W24Leader
@@ -39,6 +40,10 @@ class W24AskType(str, Enum):
     TRAIN = "TRAIN"
     """ Supplying the request for training only without
     expecting a response.
+    """
+
+    VARIANT_ANGLES = "VARIANT_ANGLES"
+    """ Requests the all Angles on the variant
     """
 
     VARIANT_CAD = "VARIANT_CAD"
@@ -121,6 +126,21 @@ class W24AskSectionalThumbnail(W24AskThumbnail):
     """
     ask_type = W24AskType.SECTIONAL_THUMBNAIL
 
+
+class W24AskVariantAngles(W24Ask):
+    """ With this Ask you are requesting the list of all
+    measures that were detected on all sectionals of a
+    variant.
+    """
+    ask_type = W24AskType.VARIANT_ANGLES
+
+
+class W24AskVariantAnglesResponse(BaseModel):
+    """ ResponseType associated with teh W24AskVariantAngles.
+    """
+    variant_id: UUID4
+    sectional_id: UUID4
+    angles: List[W24Angle]
 
 class W24AskVariantMeasures(W24Ask):
     """ With this Ask you are requesting the complete
