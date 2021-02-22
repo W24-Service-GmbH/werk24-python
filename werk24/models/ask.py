@@ -261,6 +261,24 @@ class W24AskVariantCADResponse(BaseModel):
     """
     variant_id: UUID4
 
+    num_sectionals: int = 0
+    """ Number of sectionals that were detected on the Variant.
+    This allows you to better classify the type of file you are
+    dealing with.
+
+    NOTE: if you are using this feature, please reach out to use.
+    It might be replaces by a more sophisticated AskVariantPartType
+    """
+
+    num_angles: int = 0
+    """ Number of  angles that were detected on the Variant.
+    This allows you to better classify the type of file you are
+    dealing with.
+
+    NOTE: if you are using this feature, please reach out to use.
+    It might be replaces by a more sophisticated AskVariantPartType
+    """
+
 
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
