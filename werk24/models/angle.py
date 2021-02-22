@@ -47,11 +47,18 @@ class W24AngleSize(BaseModel):
 
 
 class W24AngleLabel(BaseModel):
-    size: float
-    """
+
+    blurb: str
+    """ blurb for human consumpation
     """
 
-    size_tolerance: W24AngleToleration
+    size: W24AngleSize
+    """ Angle Size
+    """
+
+    size_toleration: W24AngleToleration
+    """ Angle Toleration
+    """
 
 
 class W24Angle(BaseModel):
