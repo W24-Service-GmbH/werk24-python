@@ -38,8 +38,8 @@ class W24TechreadMessageType(str, Enum):
 class W24TechreadMessageSubtypeError(str, Enum):
     """ Message Subtype for the MessageType: ERROR
     """
-    INTERNAL = "INTERNAL"
     UNSUPPORTED_DRAWING_FILE_FORMAT = "UNSUPPORTED_DRAWING_FILE_FORMAT"
+    INTERNAL = "INTERNAL"
     TIMEOUT = "TIMEOUT"
 
 
