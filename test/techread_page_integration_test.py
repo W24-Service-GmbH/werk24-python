@@ -16,7 +16,6 @@ LICENSE_PATH_INVALID_CREDS = CWD / "assets" / "invalid_creds.werk24"
 DRAWING = get_drawing()
 """ Example Drawing in bytes """
 
-
 class TestPage(aiounittest.AsyncTestCase):
     async def test_read_drawing(self):
         """ Test basic read_drawing functionality
