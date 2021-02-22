@@ -11,7 +11,7 @@ def get_drawing() -> bytes:
     Returns:
         bytes: Bytes of the Example Drawing
     """
-    path = CWD / "assets" / "test_drawing.png"
+    path = CWD / "assets" / "test_drawing.pdf"
     with open(path, 'rb') as file_handle:
         return file_handle.read()
 
