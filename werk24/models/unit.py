@@ -11,6 +11,7 @@ class W24UnitLength(str, Enum):
     MILLIMETER = "MILLIMETER"
     INCH = "INCH"
 
+
 class W24UnitAngle(str, Enum):
     """ Enum of all the supported angle units
 
