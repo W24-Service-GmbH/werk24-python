@@ -3,7 +3,6 @@
 import argparse
 import io
 import logging
-import sys
 from collections import namedtuple
 from typing import Any, Dict, List
 
@@ -12,8 +11,9 @@ from werk24.cli import utils
 from werk24.exceptions import RequestTooLargeException
 from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
                                W24AskSectionalThumbnail, W24AskSheetThumbnail,
-                               W24AskVariantCAD, W24AskVariantGDTs,
-                               W24AskVariantLeaders, W24AskVariantMeasures)
+                               W24AskVariantAngles, W24AskVariantCAD,
+                               W24AskVariantGDTs, W24AskVariantLeaders,
+                               W24AskVariantMeasures)
 from werk24.models.techread import (W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
@@ -52,13 +52,9 @@ hook_config = [
         W24AskSectionalThumbnail,
         lambda m: _show_image(f"Sectional Thumbnail\n{m.payload_dict}")),
     HookConfig(
-        'ask_variant_measures',
-        W24AskVariantMeasures,
-        lambda m: logger.info(f"Ask Variant Measures\n{m.payload_dict}")),
-    HookConfig(
-        'ask_variant_measures',
-        W24AskVariantMeasures,
-        lambda m: logger.info(f"Ask Variant Measures\n{m.payload_dict}")),
+        'ask_variant_angles',
+        W24AskVariantAngles,
+        lambda m: logger.info(f"Ask Variant Angles\n{m.payload_dict}")),
     HookConfig(
         'ask_variant_gdts',
         W24AskVariantGDTs,
@@ -67,6 +63,10 @@ hook_config = [
         'ask_variant_leaders',
         W24AskVariantLeaders,
         lambda m: logger.info(f"Ask Variant Leaders\n{m.payload_dict}")),
+    HookConfig(
+        'ask_variant_measures',
+        W24AskVariantMeasures,
+        lambda m: logger.info(f"Ask Variant Measures\n{m.payload_dict}")),
     HookConfig(
         'ask_variant_cad',
         W24AskVariantCAD,
@@ -86,7 +86,7 @@ def _store_variant_cad(
     """
     logger.info(f"Ask Variant CAD\n{payload_dict}")
 
-    # make the filename 
+    # make the filename
     variant_id = payload_dict.get('variant_id')
     filename = f"./w24_ask_variant_cad_{variant_id}.dxf"
 
@@ -94,7 +94,7 @@ def _store_variant_cad(
     with open(filename, "wb+") as file_handle:
         file_handle.write(payload_bytes)
 
-    # tell the user 
+    # tell the user
     logger.info(f"CAD response stored in {filename}")
 
 def _get_drawing(
@@ -162,10 +162,10 @@ async def main(
     # make the hooks from the arguments
     hooks = _make_hooks_from_args(args)
 
-    # get the client instance and handle 
+    # get the client instance and handle
     # potential errors
     client = utils.make_client()
-    
+
 
     async with client as session:
 
