@@ -22,8 +22,9 @@ EXAMPLE
 import asyncio
 import logging
 import os
+import uuid
 from types import TracebackType
-from typing import AsyncGenerator, Callable, List, Optional, Type, Dict
+from typing import AsyncIterator, Callable, Dict, List, Optional, Type
 
 import dotenv
 from pydantic import BaseModel
@@ -32,9 +33,13 @@ from werk24.auth_client import AuthClient
 from werk24.exceptions import (LicenseError, RequestTooLargeException,
                                ServerException, UnsupportedMediaType)
 from werk24.models.ask import W24Ask
-from werk24.models.techread import (
-    W24TechreadAction, W24TechreadInitResponse, W24TechreadMessage,
-    W24TechreadMessageSubtype, W24TechreadMessageType, W24TechreadRequest)
+from werk24.models.techread import (W24TechreadAction, W24TechreadException,
+                                    W24TechreadExceptionLevel,
+                                    W24TechreadExceptionType,
+                                    W24TechreadInitResponse,
+                                    W24TechreadMessage,
+                                    W24TechreadMessageSubtype,
+                                    W24TechreadMessageType, W24TechreadRequest)
 from werk24.techread_client_https import TechreadClientHttps
 from werk24.techread_client_wss import TechreadClientWss
 
@@ -56,6 +61,16 @@ ENVIRONS = [
 ]
 """ List of the environment variables used by the
 client """
+
+
+EXCEPTION_MAP = {
+    RequestTooLargeException:
+        W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE
+}
+""" Map to translate the local exceptions to offical
+W24Exceptions. This allows us to mock consistent responses
+even when the files are rejected before they reach the API
+"""
 
 DEFAULT_AUTH_REGION = "eu-central-1"
 DEFAULT_SERVER_HTTPS = "techread.w24.io"
@@ -232,7 +247,7 @@ class W24TechreadClient:
         drawing: bytes,
         asks: List[W24Ask],
         model: bytes = None
-    ) -> AsyncGenerator:
+    ) -> AsyncIterator[W24TechreadMessage]:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
 
@@ -263,19 +278,19 @@ class W24TechreadClient:
                 limit lies at 6 MB (including overhead).
 
             UnsupportedMediaType -- Exception is raised when the drawing or
-                model is submitted in any data type other than bytes. 
+                model is submitted in any data type other than bytes.
         """
 
-        # quickly check whether the input type is bytes. If it is string, 
+        # quickly check whether the input type is bytes. If it is string,
         # the presigned-AWS post interestingly returns a 403 error_code
-        # without additional information. We want to inform the caller 
+        # without additional information. We want to inform the caller
         # that they submitted the wrong data type.
         # See Github Issue #13
-        if not isinstance(drawing,bytes): 
+        if not isinstance(drawing, bytes):
             raise UnsupportedMediaType("Drawing bytes requires 'bytes' type")
 
         # the same is true for the model bytes
-        if model is not None and not isinstance(model,bytes): 
+        if model is not None and not isinstance(model, bytes):
             raise UnsupportedMediaType("Model bytes requires 'bytes' type")
 
         # give us some debug information
@@ -324,8 +339,10 @@ class W24TechreadClient:
 
         # explicitly reraise the exception if the payload is too
         # large
-        except RequestTooLargeException:  # pylint: disable=try-except-raise
-            raise
+        except RequestTooLargeException as exception:
+            async for message in self._trigger_asks_exception(asks, exception):
+                yield message
+            return
 
         # Tell Werk24 that all the files have been uploaded
         # correctly and the reading process can be started.
@@ -362,14 +379,57 @@ class W24TechreadClient:
             yield message
 
     @staticmethod
+    async def _trigger_asks_exception(
+        asks: List[W24Ask],
+        exception: RequestTooLargeException
+    ) -> None:
+        """ Trigger exceptions for all the submitted asks.
+        This helps us to mock consistent exception handling
+        behavior even when the files are rejected before they
+        reach the API.
+
+        Args:
+            asks (List[W24Ask]): List of all submited asks
+            exception (RequestTooLargeException): Exception
+                that shall be pushed
+
+        Yields:
+            W24TechreadMessage: Exception message
+        """
+
+        # get the exception type from the MAP
+        try:
+            exception_type = EXCEPTION_MAP[type(exception)]
+
+        # if we see an exception that we were not supposed
+        # to handle, there must have been a developer passing
+        # a new exception type. Let's tell her by rasing
+        # a runtime error
+        except KeyError:
+            RuntimeError(f"Unknown exception type passed: {type(exception)}")
+
+        # translate the exception into an official exception
+        exception = W24TechreadException(
+            exception_level=W24TechreadExceptionLevel.ERROR,
+            exception_type=exception_type)
+
+        # then yield one message for each of the requested asks
+        for cur_ask in asks:
+            yield W24TechreadMessage(
+                request_id=uuid.uuid4(),
+                message_type=W24TechreadMessageType.ASK,
+                message_subtype=cur_ask.ask_type,
+                exceptions=[exception])
+
+    @ staticmethod
     def _get_license_environs(
-        license_path:Optional[str]
-    ) -> Dict[str,str]:
+        license_path: Optional[str]
+    ) -> Dict[str, str]:
         """ Get the environment variables
         Where we either select the variables from the license
         files. If that fails we fall back to the true environment
-        variables. 
-        
+        variables.
+
         NOTE: We do not want to mix the sources.
 
         Args:
@@ -380,30 +440,29 @@ class W24TechreadClient:
         """
 
         # Mimick the old default value of .werk24
-        if license_path is None and os.path.exists(".werk24"): 
-            license_path = ".werk24" #pragma: no cover
-                
+        if license_path is None and os.path.exists(".werk24"):
+            license_path = ".werk24"  # pragma: no cover
+
         # First priority: look for the local license path
         if license_path is not None:
             if os.path.exists(license_path):
-                environs_raw= {
+                environs_raw = {
                     k: v
                     for k, v in dotenv.dotenv_values(license_path).items()
                     if v is not None}
 
-            # if the caller defined a license path, but it does not 
-            # exist, raise the exception 
+            # if the caller defined a license path, but it does not
+            # exist, raise the exception
             else:
                 raise LicenseError("Licence File not found")
 
         # Second priority: use the environment variables
         else:
-            environs_raw =  dict(os.environ)
+            environs_raw = dict(os.environ)
 
-        # filter the environment variables to only include the 
+        # filter the environment variables to only include the
         # ones that are relevant to us and return
         return {cur_key: environs_raw[cur_key] for cur_key in ENVIRONS}
-
 
     @classmethod
     def make_from_env(
@@ -423,14 +482,15 @@ class W24TechreadClient:
                 cwd. If argument is set to None, we are not loading any
                 file and relying on the ENVIRONMENT variables only
 
-            auth_region: {Optional[str]} -- AWS Region of the Authentication Service.
+            auth_region: {Optional[str]} -- AWS Region of the Authentication
+                Service.
                 Takes priority over environ W24TECHREAD_AUTH_REGION and
                 DEFAULT_AUTH_REGION
 
             server_https: {Optional[str]} -- HTTPS endpoint of the Werk24 API.
                 Takes priority over environ W24TECHREAD_SERVER_HTTPS and
                 DEFAULT_SEVER_HTTPS
-                
+
             version: {Optional[str]} -- Version of the Werk24 API.
                 Takes priority over environ W24TECHREAD_VERSION and
                 DEfAULT_VERSION
@@ -451,22 +511,22 @@ class W24TechreadClient:
 
         # define a small helper function that finds the frist valid
         # value in the supplied list of possible values
-        def pick_environ(var:str, env_key:str, default:str) ->str:
+        def pick_env(var: str, env_key: str, default: str) -> str:
             return var or environs.get(env_key) or default
 
         # then make sure we use the correct prioties
-        auth_region = pick_environ(auth_region,'W24TECHREAD_AUTH_REGION',DEFAULT_AUTH_REGION)
-        server_https = pick_environ(server_https,'W24TECHREAD_SERVER_HTTPS',DEFAULT_SERVER_HTTPS)
-        server_wss = pick_environ(server_wss,'W24TECHREAD_SERVER_WSS',DEFAULT_SERVER_WSS)
-        version = pick_environ(version,'W24TECHREAD_VERSION',DEFAULT_VERSION)
+        auth_region = pick_env(auth_region, 'W24TECHREAD_AUTH_REGION', DEFAULT_AUTH_REGION)
+        server_https = pick_env(server_https, 'W24TECHREAD_SERVER_HTTPS', DEFAULT_SERVER_HTTPS)
+        server_wss = pick_env(server_wss, 'W24TECHREAD_SERVER_WSS', DEFAULT_SERVER_WSS)
+        version = pick_env(version, 'W24TECHREAD_VERSION', DEFAULT_VERSION)
 
 
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
         try:
-           
+
             # create a reference to the client
-            client = W24TechreadClient(server_https,server_wss,version)
+            client = W24TechreadClient(server_https, server_wss, version)
 
             # register the credentials. This will in effect
             # only set the variabels in the authorizer. It will
@@ -526,10 +586,6 @@ class W24TechreadClient:
 
         # explicitly reraise server exceptions
         except ServerException:  # pylint: disable=try-except-raise
-            raise
-
-        # explicitly reraise RequestTooLargeException
-        except RequestTooLargeException:  # pylint: disable=try-except-raise
             raise
 
     async def _call_hooks_for_message(
