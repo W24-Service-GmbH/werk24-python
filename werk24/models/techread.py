@@ -30,13 +30,15 @@ class W24TechreadMessageType(str, Enum):
     a request.
     """
     ASK = "ASK"
-    ERROR = "ERROR"
+    ERROR = "ERROR" # !!! DEPRECATED
     PROGRESS = "PROGRESS"
     REJECTION = "REJECTION"
 
 
 class W24TechreadMessageSubtypeError(str, Enum):
     """ Message Subtype for the MessageType: ERROR
+
+    !!! DEPRECATED
     """
     UNSUPPORTED_DRAWING_FILE_FORMAT = "UNSUPPORTED_DRAWING_FILE_FORMAT"
     INTERNAL = "INTERNAL"
@@ -70,6 +72,72 @@ W24TechreadMessageSubtype = Union[
 """ Shorthand to summorize all the supported
 MessageTypes
 """
+
+
+class W24TechreadErrorType(str, Enum):
+    """ List of all the error types that can possibly
+    be associated to the error type.
+    """
+
+    DRAWING_FILE_FORMAT_UNSUPPORTED = "DRAWING_FILE_FORMAT_UNSUPPORTED"
+    """ The Drawing was submitted in a file format that is not supproted
+    by the API at this stage.
+    """
+
+    DRAWING_FILE_SIZE_TOO_LARGE = "DRAWING_FILE_SIZE_TOO_LARGE"
+    """ The Drawing file size exceeded the limit
+    """
+
+    DRAWING_RESOLUTION_TOO_LOW = "DRAWING_RESOLUTION_TOO_LOW"
+    """ The resolution (dots per inch) was too low to be
+    processed
+    """
+
+    DRAWING_NOISE_TOO_HIGH = "DRAWING_NOISE_TOO_HIGH"
+    """ The amount of noise on the drawing was too hight for us
+    to understand the drawing
+    """
+
+    DRAWING_CONTENT_NOT_UNDERSTOOD = "DRAWING_CONTENT_NOT_UNDERSTOOD"
+    """ The file you submitted as drawing might not actually
+    be a drawing
+    """
+
+    MODEL_FILE_FORMAT_UNSUPPORTED = "MODEL_FILE_FORMAT_UNSUPPORTED"
+    """ The Model was submitted in a file format that is not supported
+    by the API at this stage.
+    """
+
+    MODEL_FILE_SIZE_TOO_LARGE = "MODEL_FILE_SIZE_TOO_LARGE"
+    """ The Model fiel size exceeded the limit
+    """
+
+
+class W24TechreadErrorLevel(str, Enum):
+    """ Severity level for the Error
+
+    NOTE: this is defined for downward-compatability.
+    The only value that is currently used is ERROR
+    """
+
+    ERROR = "ERROR"
+    """ Set then whe processing was stopped
+    """
+
+
+class W24TechreadError(BaseModel):
+    """ Error message that accompanies the W24TechreadMessage
+    if an error occured.
+    """
+
+    error_level: W24TechreadErrorLevel
+    """ Error level indicating the severity of the error
+    """
+
+    error_type: W24TechreadErrorType
+    """ Error Type that allows the API-user to translate
+    the message to a user-info.
+    """
 
 
 class W24TechreadMessage(BaseModel):
@@ -106,6 +174,10 @@ class W24TechreadMessage(BaseModel):
     """ Binary reference of the payload. This will only
     become available after the client has downloaded the
     payload_url.
+    """
+
+    errors: List[W24TechreadError] = []
+    """ List of errors that occured during the processing
     """
 
 
