@@ -74,7 +74,7 @@ MessageTypes
 """
 
 
-class W24TechreadErrorType(str, Enum):
+class W24TechreadExceptionType(str, Enum):
     """ List of all the error types that can possibly
     be associated to the error type.
     """
@@ -113,7 +113,7 @@ class W24TechreadErrorType(str, Enum):
     """
 
 
-class W24TechreadErrorLevel(str, Enum):
+class W24TechreadExceptionLevel(str, Enum):
     """ Severity level for the Error
 
     NOTE: this is defined for downward-compatability.
@@ -125,16 +125,16 @@ class W24TechreadErrorLevel(str, Enum):
     """
 
 
-class W24TechreadError(BaseModel):
+class W24TechreadException(BaseModel):
     """ Error message that accompanies the W24TechreadMessage
     if an error occured.
     """
 
-    error_level: W24TechreadErrorLevel
+    exception_level: W24TechreadExceptionLevel
     """ Error level indicating the severity of the error
     """
 
-    error_type: W24TechreadErrorType
+    exception_type: W24TechreadExceptionType
     """ Error Type that allows the API-user to translate
     the message to a user-info.
     """
@@ -176,7 +176,7 @@ class W24TechreadMessage(BaseModel):
     payload_url.
     """
 
-    errors: List[W24TechreadError] = []
+    exceptions: List[W24TechreadException] = []
     """ List of errors that occured during the processing
     """
 

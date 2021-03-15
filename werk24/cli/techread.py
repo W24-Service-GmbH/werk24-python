@@ -97,6 +97,7 @@ def _store_variant_cad(
     # tell the user
     logger.info(f"CAD response stored in {filename}")
 
+
 def _get_drawing(
         file_path: str
 ) -> bytes:
