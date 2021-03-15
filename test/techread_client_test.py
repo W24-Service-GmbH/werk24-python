@@ -1,12 +1,14 @@
 import os
 from typing import List
+from unittest import mock
 
 import aiounittest
 from werk24._version import __version__
-from werk24.exceptions import UnsupportedMediaType
-from werk24.models.ask import W24Ask, W24AskVariantCAD
-from werk24.models.techread import W24TechreadRequest
+from werk24.exceptions import RequestTooLargeException, UnsupportedMediaType
+from werk24.models.ask import W24Ask, W24AskVariantCAD,W24AskPageThumbnail
+from werk24.models.techread import W24TechreadExceptionType, W24TechreadRequest, W24TechreadMessageType
 from werk24.techread_client import W24TechreadClient
+
 
 from .utils import get_drawing, get_model
 
@@ -71,9 +73,9 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
                 pass
 
     async def test_string_as_drawing_bytes(self) -> None:
-        """ Test whether submitting a string as drawing_bytes 
-        raises the correct exception. 
-        
+        """ Test whether submitting a string as drawing_bytes
+        raises the correct exception.
+
         See Github Issue #13
         """
         client = W24TechreadClient.make_from_env()
@@ -84,8 +86,8 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
 
     async def test_string_as_model_bytes(self) -> None:
         """ Test whether submitting a string as model_bytes
-        raises the correct exception. 
-        
+        raises the correct exception.
+
         See Github Issue #13
         """
         client = W24TechreadClient.make_from_env()
@@ -93,3 +95,39 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
         with self.assertRaises(UnsupportedMediaType):
             async with client as session:
                 await session.read_drawing(b"", asks=[], model="").__anext__()
+
+    async def test_uploading_huge_file(self) -> None:
+        """ Huge file produces DRAWING_FILE_SIZE_TOO_LARGE?
+        """
+
+        client = W24TechreadClient.make_from_env()
+        asks: List[W24Ask] = [W24AskVariantCAD(is_training=True)]
+
+        async with client as session:
+
+            # mock the side effect
+            session._techread_client_https.upload_associated_file \
+                = mock.MagicMock(side_effect=RequestTooLargeException)
+
+            # trigger
+            message = await session.read_drawing(b"", asks=asks).__anext__()
+
+            # assert
+            self.assertEqual(
+                message.exceptions[0].exception_type,
+                W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE)
+
+    async def test_unsupported_file_format(self) -> None:
+        """ Unsupported file format triggers DRAWING_FILE_FORMAT_UNSUPPORTED?
+        """
+
+        client = W24TechreadClient.make_from_env()
+        asks: List[W24Ask] = [W24AskPageThumbnail()]
+
+        async with client as session:
+            async for message in session.read_drawing(b"", asks=asks):
+                if message.message_type==W24TechreadMessageType.ASK:
+
+                    self.assertEqual(
+                        message.exceptions[0].exception_type,
+                        W24TechreadExceptionType.DRAWING_FILE_FORMAT_UNSUPPORTED)
