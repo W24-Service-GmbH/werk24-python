@@ -84,6 +84,7 @@ def _store_variant_cad(
         payload_dict (Dict[str, Any]): Payload Dictionary
         payload_bytes (bytes): CAD that we received as response
     """
+    print(payload_dict)
     logger.info(f"Ask Variant CAD\n{payload_dict}")
 
     # make the filename
