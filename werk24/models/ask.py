@@ -299,6 +299,7 @@ W24AskUnion = Union[
     W24AskPageThumbnail,
     W24AskSectionalThumbnail,
     W24AskSheetThumbnail,
+    W24AskTitleBlock,
     W24AskTrain,
     W24AskVariantGDTs,
     W24AskVariantLeaders,
