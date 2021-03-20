@@ -69,6 +69,11 @@ class W24AskType(str, Enum):
     associated with the variant
     """
 
+    TITLE_BLOCK = "TITLE_BLOCK"
+    """ Ask for all information that is available on the
+    title block
+    """
+
 
 class W24Ask(BaseModel):
     """ Base model from wich all Asks inherit
@@ -207,6 +212,15 @@ class W24AskVariantMaterial(W24Ask):
     can submit it here. This will make the
     reading more stable.
     """
+
+
+class W24AskVariantTitleBlock(W24Ask):
+    """ This ask requests all information that
+    we can obtain from the title block
+
+    Args:
+    """
+    ask_type = W24AskType.TITLE_BLOCK
 
 
 class W24AskVariantGDTs(W24Ask):
