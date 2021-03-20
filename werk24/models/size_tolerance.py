@@ -37,7 +37,7 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
     blurb: str
     """ uninterpreted string representation of the fit size
     """
-    
+
     deviation_lower: float
     """ Lower deviation from the nominal size
     """
