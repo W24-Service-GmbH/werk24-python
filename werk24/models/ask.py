@@ -214,7 +214,7 @@ class W24AskVariantMaterial(W24Ask):
     """
 
 
-class W24AskVariantTitleBlock(W24Ask):
+class W24AskTitleBlock(W24Ask):
     """ This ask requests all information that
     we can obtain from the title block
 
