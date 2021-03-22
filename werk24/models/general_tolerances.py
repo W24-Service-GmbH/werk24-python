@@ -92,5 +92,3 @@ class W24GeneralTolerances(BaseModel):
 
     perpendicularity_class: Optional[W24ToleranceClass]
     """ Perpendicularity toleration class - not defined in DIN7168 """
-
-
