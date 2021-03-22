@@ -13,7 +13,7 @@ class W24TitleBlockLabel(BaseModel):
     """ Blurb for human consumption
     """
 
-    language: W24Language
+    language: Optional[W24Language]
     """ Language in accordance with the ISO/639-2B norm
     """
 
