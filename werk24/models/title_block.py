@@ -1,4 +1,6 @@
-from pydantic import BaseModel, List
+from typing import List, Optional
+
+from pydantic import BaseModel
 
 from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
@@ -53,15 +55,15 @@ class W24TitelBlock(BaseModel):
     Title Block
     """
 
-    designation: W24TitleBlockDesignation
+    designation: Optional[W24TitleBlockDesignation]
     """ Designation of the Sheet on the Title Block
     """
 
-    drawing_id: W24TitelBlockId
+    drawing_id: Optional[W24TitelBlockId]
     """ Main Identification Number of the Drawing
     """
 
-    general_tolerances: W24GeneralTolerances
+    general_tolerances: Optional[W24GeneralTolerances]
     """ General Tolerances quoted on the TitleBlock
     """
 
@@ -70,7 +72,7 @@ class W24TitelBlock(BaseModel):
     detected on the Drawing
     """
 
-    material: W24Material
+    material: Optional[W24Material]
     """ Material which is quoted on the TitleBlock
     """
 
