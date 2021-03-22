@@ -7,7 +7,7 @@ from .language import W24Language
 from .material import W24Material
 
 
-class W24TitleBlockLabel:
+class W24TitleBlockLabel(BaseModel):
 
     blurb: str
     """ Blurb for human consumption
@@ -22,7 +22,7 @@ class W24TitleBlockLabel:
     """
 
 
-class W24TitleBlockId:
+class W24TitleBlockId(BaseModel):
 
     blurb: str
     """ name: value pair for human consumpation
