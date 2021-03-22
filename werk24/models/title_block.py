@@ -22,7 +22,7 @@ class W24TitleBlockLabel:
     """
 
 
-class W24TitelBlockId:
+class W24TitleBlockId:
 
     blurb: str
     """ name: value pair for human consumpation
@@ -59,7 +59,7 @@ class W24TitelBlock(BaseModel):
     """ Designation of the Sheet on the Title Block
     """
 
-    drawing_id: Optional[W24TitelBlockId]
+    drawing_id: Optional[W24TitleBlockId]
     """ Main Identification Number of the Drawing
     """
 
@@ -67,7 +67,7 @@ class W24TitelBlock(BaseModel):
     """ General Tolerances quoted on the TitleBlock
     """
 
-    internal_ids: List[W24TitelBlockId]
+    internal_ids: List[W24TitleBlockId]
     """ List of additional identificatoin numbers
     detected on the Drawing
     """
