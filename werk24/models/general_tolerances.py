@@ -51,7 +51,7 @@ class W24ToleranceClass(BaseModel):
     """ Tolerated property
     """
 
-    table = List[W24ToleranceTableItem]
+    table: List[W24ToleranceTableItem]
     """ Toleranace matching the nomial range
     to the allowable deviations
     """
