@@ -20,7 +20,12 @@ class W24MaterialStandard(str, Enum):
 
     EN10027 = "EN10027"
     """ Material name or material number following
-    the EN 10027-1 and EN 10027-2 norms
+    the EN 10027-1 and EN 10027-2 standard
+    """
+
+    EN10263 = "EN10263"
+    """ Material number following the EN 10264
+    standard
     """
 
     ISO898 = "ISO898"

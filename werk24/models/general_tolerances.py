@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -26,16 +26,17 @@ class W24ToleranceProperty(str, Enum):
     SYMMETRY = "SYMMETRY"
 
 
-class W24ToleranceNominalRange(BaseModel):
-    """ Nominal range
+class W24GeneralTolerancesPrinciple(str, Enum):
+    """ Enum of the supported General Tolerance
+    Principles.
     """
+    INDEPENDENCE = "INDEPENDENCE"
+    ENVELOPE = "ENVELOPE"
+
+
+class W24ToleranceTableItem(BaseModel):
     nominal_min: float
     nominal_max: float
-
-
-class W24ToleranceDeviatons(BaseModel):
-    """ Permissable deviations
-    """
     deviation_min: float
     deviation_max: float
 
@@ -50,71 +51,46 @@ class W24ToleranceClass(BaseModel):
     """ Tolerated property
     """
 
-    table = List[W24ToleranceNominalRange, W24ToleranceDeviatons]
+    table = List[W24ToleranceTableItem]
     """ Toleranace matching the nomial range
     to the allowable deviations
     """
 
 
-class W24ToleranceClassAngular(W24ToleranceClass):
-    """ Tolerance Class for Angles
-    """
-    property = W24ToleranceProperty.ANGULAR
-
-
-class W24ToleranceClassFlatness(W24ToleranceClass):
-    """ Tolerance Class for GD&T Flattness
-    """
-    property = W24ToleranceProperty.FLATNESS
-
-
-class W24ToleranceClassLinear(W24ToleranceClass):
-    """ Tolerance Class for Linear distances
-    """
-    property = W24ToleranceProperty.LINEAR
-
-
-class W24ToleranceClassPerpendicularity(W24ToleranceClass):
-    """ Tolerance Class for GD&T Perpendicularity
-    """
-    property = W24ToleranceProperty.PERPENDICULARITY
-
-
-class W24ToleranceClassRadius(W24ToleranceClass):
-    """ Tolerance Class for Radii
-    """
-    property = W24ToleranceProperty.RADIUS
-
-
-class W24ToleranceClassRunout(W24ToleranceClass):
-    """ Tolerance Class for GD&T Runout
-    """
-    property = W24ToleranceProperty.RUNOUT
-
-
-class W24ToleranceClassStraightness(W24ToleranceClass):
-    """ Tolerance Class for GD&T Straightness
-    """
-    property = W24ToleranceProperty.STRAIGHTNESS
-
-
-class W24ToleranceClassSymmetry(W24ToleranceClass):
-    """ Tolerance Class for GD&T Symmetry
-    """
-    property = W24ToleranceProperty.SYMMETRY
-
-
 class W24GeneralTolerances(BaseModel):
 
     tolerance_standard: W24GeneralTolerancesStandard
+    """ GeneralTolerance Standard that was defined
+    in the Drawing
+    """
 
-    angular_class: W24ToleranceClassAngular
-    flatness_class: W24ToleranceClassFlatness
-    linear_class: W24ToleranceClassLinear
-    perpendicularity_class: W24ToleranceClassPerpendicularity
-    radius_class: W24ToleranceClassRadius
-    runout_class: W24ToleranceClassRunout
-    straightness_class: W24ToleranceClassStraightness
-    symmetry_class: W24ToleranceClassSymmetry
+    principle: W24GeneralTolerancesPrinciple
+    """ Principle that is annotated on the general
+    tolerance by "-E" (or the lack of if)
+    """
+
+    angular_class: Optional[W24ToleranceClass]
+    """ Angular toleration class """
+
+    flatness_class: Optional[W24ToleranceClass]
+    """ Flatness toleration class """
+
+    straightness_class: Optional[W24ToleranceClass]
+    """ Straightness toleration class """
+
+    linear_class: Optional[W24ToleranceClass]
+    """ Linear toleration class """
+
+    radius_class: Optional[W24ToleranceClass]
+    """ Radius andn chamfer toleration class """
+
+    runout_class: Optional[W24ToleranceClass]
+    """ Runout toleration class """
+
+    symmetry_class: Optional[W24ToleranceClass]
+    """ Symmetry toleration class """
+
+    perpendicularity_class: Optional[W24ToleranceClass]
+    """ Perpendicularity toleration class - not defined in DIN7168 """
 
 
