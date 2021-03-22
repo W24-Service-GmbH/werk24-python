@@ -50,7 +50,7 @@ class W24TitleBlockDesignation(BaseModel):
     """
 
 
-class W24TitelBlock(BaseModel):
+class W24TitleBlock(BaseModel):
     """ Information that could be extracted from the
     Title Block
     """
