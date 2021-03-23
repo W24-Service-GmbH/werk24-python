@@ -37,7 +37,7 @@ class W24MaterialStandard(str, Enum):
 
 class W24MaterialReference(BaseModel):
     material_standard: W24MaterialStandard
-    material_names = List[str]
+    material_names: List[str]
 
 
 class W24Material(BaseModel):
