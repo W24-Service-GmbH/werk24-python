@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -34,6 +35,11 @@ class W24MaterialStandard(str, Enum):
     """
 
 
+class W24MaterialReference(BaseModel):
+    material_standard: W24MaterialStandard
+    material_names = List[str]
+
+
 class W24Material(BaseModel):
     """ Parsed Material object
     """
@@ -47,6 +53,8 @@ class W24Material(BaseModel):
     """
 
     material_name: str
-    """ Nam of the material in accordance with the
+    """ Nam eof the material in accordance with the
     material standard
     """
+
+    reference_materials: Optional[W24MaterialReference] = None
