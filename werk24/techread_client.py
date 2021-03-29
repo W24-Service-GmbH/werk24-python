@@ -30,8 +30,9 @@ import dotenv
 from pydantic import BaseModel
 
 from werk24.auth_client import AuthClient
-from werk24.exceptions import (LicenseError, RequestTooLargeException,
-                               ServerException, UnsupportedMediaType)
+from werk24.exceptions import (BadRequestException, LicenseError,
+                               RequestTooLargeException, ServerException,
+                               UnsupportedMediaType)
 from werk24.models.ask import W24Ask
 from werk24.models.techread import (W24TechreadAction, W24TechreadException,
                                     W24TechreadExceptionLevel,
@@ -65,6 +66,8 @@ client """
 
 EXCEPTION_MAP = {
     RequestTooLargeException:
+        W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
+    BadRequestException:
         W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE
 }
 """ Map to translate the local exceptions to offical
@@ -76,6 +79,7 @@ DEFAULT_AUTH_REGION = "eu-central-1"
 DEFAULT_SERVER_HTTPS = "techread.w24.io"
 DEFAULT_SERVER_WSS = "techread-ws.w24.io"
 DEFAULT_VERSION = "v1"
+
 
 class Hook(BaseModel):
     """ Small Object to keep the callback requests.
@@ -143,7 +147,7 @@ class W24TechreadClient:
 
     async def __aenter__(
             self
-    )-> 'W24TechreadClient':
+    ) -> 'W24TechreadClient':
         """ Create the HTTPS and WSS sessions
 
         Raises:
@@ -339,7 +343,7 @@ class W24TechreadClient:
 
         # explicitly reraise the exception if the payload is too
         # large
-        except RequestTooLargeException as exception:
+        except (BadRequestException, RequestTooLargeException) as exception:
             async for message in self._trigger_asks_exception(asks, exception):
                 yield message
             return
@@ -406,7 +410,8 @@ class W24TechreadClient:
         # a new exception type. Let's tell her by rasing
         # a runtime error
         except KeyError:
-            RuntimeError(f"Unknown exception type passed: {type(exception)}")
+            raise RuntimeError(
+                f"Unknown exception type passed: {type(exception)}")
 
         # translate the exception into an official exception
         exception = W24TechreadException(
@@ -515,11 +520,13 @@ class W24TechreadClient:
             return var or environs.get(env_key) or default
 
         # then make sure we use the correct prioties
-        auth_region = pick_env(auth_region, 'W24TECHREAD_AUTH_REGION', DEFAULT_AUTH_REGION)
-        server_https = pick_env(server_https, 'W24TECHREAD_SERVER_HTTPS', DEFAULT_SERVER_HTTPS)
-        server_wss = pick_env(server_wss, 'W24TECHREAD_SERVER_WSS', DEFAULT_SERVER_WSS)
+        auth_region = pick_env(
+            auth_region, 'W24TECHREAD_AUTH_REGION', DEFAULT_AUTH_REGION)
+        server_https = pick_env(
+            server_https, 'W24TECHREAD_SERVER_HTTPS', DEFAULT_SERVER_HTTPS)
+        server_wss = pick_env(
+            server_wss, 'W24TECHREAD_SERVER_WSS', DEFAULT_SERVER_WSS)
         version = pick_env(version, 'W24TECHREAD_VERSION', DEFAULT_VERSION)
-
 
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
