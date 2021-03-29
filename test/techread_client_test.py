@@ -5,7 +5,7 @@ from unittest import mock
 import aiounittest
 from werk24._version import __version__
 from werk24.exceptions import RequestTooLargeException, UnsupportedMediaType
-from werk24.models.ask import W24Ask, W24AskVariantCAD,W24AskPageThumbnail
+from werk24.models.ask import W24Ask, W24AskVariantCAD, W24AskPageThumbnail
 from werk24.models.techread import W24TechreadExceptionType, W24TechreadRequest, W24TechreadMessageType
 from werk24.techread_client import W24TechreadClient
 
@@ -99,23 +99,20 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
     async def test_uploading_huge_file(self) -> None:
         """ Huge file produces DRAWING_FILE_SIZE_TOO_LARGE?
         """
-
         client = W24TechreadClient.make_from_env()
         asks: List[W24Ask] = [W24AskVariantCAD(is_training=True)]
 
+        # create a new file that is larger than the limit of 5 MB
+        file_size = 10*1024*1024 + 10
+        file = b"0"*file_size
+
+        # perform the call
         async with client as session:
-
-            # mock the side effect
-            session._techread_client_https.upload_associated_file \
-                = mock.MagicMock(side_effect=RequestTooLargeException)
-
-            # trigger
-            message = await session.read_drawing(b"", asks=asks).__anext__()
-
-            # assert
-            self.assertEqual(
-                message.exceptions[0].exception_type,
-                W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE)
+            async for msg in session.read_drawing(file, asks=asks):
+                self.assertEqual(
+                    msg.exceptions[0].exception_type,
+                    W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE)
+                return
 
     async def test_unsupported_file_format(self) -> None:
         """ Unsupported file format triggers DRAWING_FILE_FORMAT_UNSUPPORTED?
@@ -126,7 +123,7 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
 
         async with client as session:
             async for message in session.read_drawing(b"", asks=asks):
-                if message.message_type==W24TechreadMessageType.ASK:
+                if message.message_type == W24TechreadMessageType.ASK:
 
                     self.assertEqual(
                         message.exceptions[0].exception_type,
