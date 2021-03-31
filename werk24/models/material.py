@@ -25,7 +25,7 @@ class W24MaterialStandard(str, Enum):
     """
 
     EN10210 = "EN10210"
-    """ Material make following the EN10219 standard
+    """ Material make following the EN10210 standard
     for steel tubes
     """
 
