@@ -24,6 +24,11 @@ class W24MaterialStandard(str, Enum):
     the EN 10027-1 and EN 10027-2 standard
     """
 
+    EN10219 = "EN10219"
+    """ Material make following the EN10219 standard
+    for steel tubes
+    """
+
     EN10263 = "EN10263"
     """ Material number following the EN 10264
     standard
