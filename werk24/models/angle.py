@@ -20,15 +20,16 @@ class W24AngleTolerationType(str, Enum):
 
 class W24AngleToleration(BaseModel, abc.ABC):
     """ Abstract BaseClass to cover all Angle Tolerations
+
+    Attributes:
+        toleration_type: Toleration Type  of the Angle Size
+
+        blurb: String representation for human consummption
     """
 
     toleration_type: W24AngleTolerationType
-    """ Toleration Type  of the Angle Size
-    """
 
     blurb: str
-    """ String representation for human consummption
-    """
 
 
 class W24AngleSize(BaseModel):
