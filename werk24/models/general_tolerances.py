@@ -42,22 +42,29 @@ class W24ToleranceTableItem(BaseModel):
 
 
 class W24ToleranceClass(BaseModel):
+    """ Tolerance Class which matches an individual attribute
+    of the General Tolerances to a tolerance property and
+    tolerance table
 
-    blurb: str
-    """ Tolerance class label for human consumption
+    Attributes:
+        blub: Tolerance class label for human consumption
+
+        property: Property that is being tolerated
+
+        table: Rows of the tolerance table that correspond
+            to the selected tolerance class
     """
+    blurb: str
 
     property: W24ToleranceProperty
-    """ Tolerated property
-    """
 
     table: List[W24ToleranceTableItem]
-    """ Toleranace matching the nomial range
-    to the allowable deviations
-    """
 
 
 class W24GeneralTolerances(BaseModel):
+    """ Object representing the General Tolerances indicated
+    on the Title Block of the Technical Drawing.
+    """
 
     tolerance_standard: W24GeneralTolerancesStandard
     """ GeneralTolerance Standard that was defined
