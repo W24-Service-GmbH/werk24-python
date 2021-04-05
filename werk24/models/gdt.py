@@ -9,8 +9,9 @@ class W24GDTCharacteristic(str, Enum):
     """ Enum of all possible Characteristics
     following ISO 1101.
 
-    NOTE: when the GDT frame only describes the location
-    of a reference datum, the value DATUM_INDICATOR is used
+    !!! note
+        When the GDT frame only describes the location
+        of a reference datum, the value DATUM_INDICATOR is used
     """
     FORM_STRAIGHTNESS = "⏤"
     FORM_FLATNESS = "⏥"
@@ -70,66 +71,67 @@ class W24GDTZoneConstraint(str, Enum):
 class W24GDTDatum(BaseModel):
     """ Preliminary implementation of the GD&T Datum
 
-    NOTE: future implementations might allow fine-grained
-    access to the attributes of complex names:
-    e.g., (A-B-C-D)[CM]
+    Attributes:
+        blurb: Reference name. Typically: A,B,C ...
+            Can also contain more complex names, e.g., (A-B-C-D)[CM]
+
+    !!! note
+        Future implementations might allow fine-grained
+        access to the attributes of complex names:
+        e.g., (A-B-C-D)[CM]
     """
 
     blurb: str
-    """ Reference name. Typically: A,B,C ...
-    Can also contain more complex names, e.g., (A-B-C-D)[CM]
-    """
 
 
 class W24GDTZoneOffset(BaseModel):
-    """ Specified offset indicated
-    by leading UZ...
+    """ Specified offset indicated by leading UZ...
+
+    Attributes:
+        blurb: blurb of the specified offset for human consumption.
+            e.g., UZ+0.15, UZ-0.2, UZ+0.1:0.2
     """
 
     blurb: str
-    """ blurb of the specified offset for human consumption.
-    e.g., UZ+0.15, UZ-0.2, UZ+0.1:0.2
-    """
-
-    # offset_min: float
-    """ signed offset with the smaller absolute value
-    e.g., -0.1
-    """
-
-    # offset_max: float
-    """ signed offset with the larger absolute value
-    e.g., -0.3
-    """
 
 
 class W24GDTZoneValue(BaseModel):
     """ Preliminary defintion of the GDT Zone Value
     Future implementation will give access to the
     width and extend seperately
+
+    Attributes:
+
+        blurb: String representation for human consumption
+            e.g., 0.05/12x10°
+
+        width_min: Minimal width. Also used when no maximal width
+            is defined.
+
+        width_max: Optional maximal width.
+
+        extend_quantity: Optional quantity of the spacing
+
+        extend_shape: Optional shape of the extend
+
+        extend_value: Optional extend value
+
+        extend_angle: Optional angle of the extend
     """
 
     blurb: str
-    """ String representation for human consumption
-    e.g., 0.05/12x10°
-    """
 
     width_min: float
-    """ Minimal width """
 
     width_max: Optional[float]
-    """ Optional maximal width """
 
     extend_quantity: Optional[int]
-    """ Optional quantity of the spacing """
 
     extend_shape: Optional[W24GDTZoneShape]
-    """ Optional shape of the extend """
 
-    extend: Optional[float]
-    """ Optional extend """
+    extend_value: Optional[float]
 
     extend_angle: Optional[float]
-    """ Optional angle of the extend spacing """
 
 
 class W24GDTFilterType(str, Enum):
@@ -142,15 +144,16 @@ class W24GDTFilterType(str, Enum):
 
 class W24GDTFilter(BaseModel, abc.ABC):
     """ Abstract base class to describe feature filters
+
+    Attributes:
+        blurb: String representation of the file for human consumption
+
+        filter_type: Filter Type to facilitate deserialization
     """
 
     blurb: str
-    """ String representation of the file for human consumption
-    """
 
     filter_type: W24GDTFilterType
-    """ Filter Type to facilitate deserialization
-    """
 
 
 # class W24GDTFilterG(W24GDTFilter):
@@ -255,94 +258,97 @@ class W24GDTState(str, Enum):
 class W24GDTFrame(BaseModel):
     """ Representation of the Geometric Dimensioning
     and Toleration frame
+
+    Attributes:
+        gdt_id: Unique id of the GDT
+
+        blurb: String representation of the label for human consumption
+            e.g., [⌖|⌀0.3Ⓜ|A|B|C]
+
+        characteristic: Section for gemetric characteristic e.g.: ⌓
+
+        zone_shape: Tolerance zone shape, e.g, S⌀
+
+        zone_value: GDT value: e.g., 0.03
+            Is optional to supprt Datum Feature Indicators
+
+        zone_combinations: Ordered list of zone combinations, e.g., CZ, SZ
+
+        zone_offset: Optional specified offset, e.g., UZ-0.2
+
+        zone_constraint: Optional zone constraint: e.g., OZ, VA
+
+        feature_filter: Optional feature filter
+
+        feature_associated: Associated toleraced feature
+
+        feature_derived: Derived Feature
+
+        reference_association: Reference element association
+
+        reference_parameter: Reference element parameter
+
+        material_condition: Material condition
+
+        state: FREE or None
+
+        data: Ordered list of data
+
     """
     gdt_id: Optional[UUID4] = None
-    """ Unique id of the GDT
-    """
 
     blurb: str
-    """ String representation of the label for human consumption
-    e.g., [⌖|⌀0.3Ⓜ|A|B|C]
-    """
+
     characteristic: W24GDTCharacteristic
-    """ Section for gemetric characteristic e.g.: ⌓
-    """
 
     zone_shape: Optional[W24GDTZoneShape] = None
-    """ Tolerance zone: shape
-    e.g, S⌀
-    """
 
     zone_value: Optional[W24GDTZoneValue]
-    """ GDT value: e.g., 0.03
-    Need to be optional to supprt Datum Feature Indicators
-    """
 
     zone_combinations: List[W24GDTZoneCombination] = []
-    """ Ordered list of zone combinations, e.g., CZ, SZ
-    """
 
     zone_offset: Optional[W24GDTZoneOffset] = None
-    """ Optional specified offset, e.g., UZ-0.2
-    """
 
     zone_constraint: Optional[W24GDTZoneConstraint] = None
-    """ Optional zone constraint: e.g., OZ, VA
-    """
 
     feature_filter: Optional[W24GDTFilter] = None
-    """ Optional feature filter
-    """
 
     feature_associated: Optional[W24GDTFeatureAssociated] = None
-    """ Associated toleraced feature
-    """
 
     feature_derived: Optional[W24GDTFeatureDerived] = None
-    """ Derived Feature
-    """
 
     reference_association: Optional[W24GDTReferenceAssociation] = None
-    """ Reference element association
-    """
 
     reference_parameter: Optional[W24GDTReferenceParameter] = None
-    """ Reference element parameter
-    """
 
     material_condition: Optional[W24GDTMaterialCondition] = None
-    """ Material condition
-    """
 
     state: Optional[W24GDTState] = None
-    """ State: FREE or None
-    """
 
     data: List[W24GDTDatum] = []
-    """ Ordered list of data
-    """
 
 
 class W24GDT(BaseModel):
     """ Parent object for Geometric Dimensionsing and Toleration
     Frames, attaching them to the physical location on the drawing.
+
+    Attributes:
+        bounding_polygon: Bounding polygon of the GDT annotation as
+            tuple of x, y coordinates in the pixel coordinate system of
+            the sectional.
+            Simple GDTs are represented by a simple rectangle.
+            To support more complex GDTs (e.g., with a Sectional
+            Plane Indicator, we define a polygon).
+            The polygon starts at the top left and is
+            oriented clock-wise.
+
+        frame: Representation of the GDT frame
+
     """
 
     bounding_polygon: List[Tuple[float, float]]
-    """ bounding polygon of the GDT annotation as tuple of x, y
-    coordinates in the pixel coordinate system of the sectional.
-
-    NOTE: simple GDTs are represented by a simple rectangle.
-    To support more complex GDTs (e.g., with a Sectional
-    Plane Indicator, we define a polygon)
-
-    NOTE: the polygon starts at the top left and is
-    oriented clock-wise.
-    """
 
     frame: W24GDTFrame
-    """ Representation of the GDT frame
-    """
 
     # measure_label: Optional[W24MeasureLabel] = None
     """ Optional size dimension, typically annotated
