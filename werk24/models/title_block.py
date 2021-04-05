@@ -9,10 +9,6 @@ from .material import W24Material
 
 class W24TitleBlockLabel(BaseModel):
 
-    blurb: str
-    """ Blurb for human consumption
-    """
-
     language: Optional[W24Language]
     """ Language in accordance with the ISO/639-2B norm
     """
@@ -25,7 +21,7 @@ class W24TitleBlockLabel(BaseModel):
 class W24TitleBlockId(BaseModel):
 
     blurb: str
-    """ name: value pair for human consumpation
+    """ name: value pair for human consumption
     """
 
     names: List[W24TitleBlockLabel]
@@ -67,13 +63,11 @@ class W24TitleBlock(BaseModel):
     """ General Tolerances quoted on the TitleBlock
     """
 
-    internal_ids: List[W24TitleBlockId]
-    """ List of additional identificatoin numbers
+    reference_ids: List[W24TitleBlockId]
+    """ List of additional reference IDs
     detected on the Drawing
     """
 
     material: Optional[W24Material]
     """ Material which is quoted on the TitleBlock
     """
-
-
