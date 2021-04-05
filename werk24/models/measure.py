@@ -12,7 +12,7 @@ from pydantic import BaseModel, UUID4
 
 from .thread import W24Thread
 from .unit import W24UnitLength
-from .size_tolerance import W24SizeTolerance, W24SizeToleranceGeneral
+from .size import W24SizeTolerance, W24SizeToleranceGeneral
 from .chamfer import W24Chamfer
 from .size import W24Size
 
