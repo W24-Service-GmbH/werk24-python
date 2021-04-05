@@ -22,7 +22,8 @@ class W24AngleToleration(BaseModel, abc.ABC):
     """ Abstract BaseClass to cover all Angle Tolerations
 
     Attributes:
-        toleration_type: Toleration Type  of the [W24AngleSize][]
+        toleration_type: Toleration Type  of the
+            [werk24.models.angle.W24AngleSize][]
 
         blurb: String representation for human consummption
     """
