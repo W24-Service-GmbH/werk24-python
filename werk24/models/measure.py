@@ -1,8 +1,5 @@
 
 """ Defintion of all the W24Measure class its support structures
-
-
-Author: Jochen Mattes - Werk24
 """
 from typing import List, Optional, Tuple
 from enum import Enum
