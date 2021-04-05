@@ -195,6 +195,19 @@ class W24TechreadMessage(BaseModel):
 
     exceptions: List[W24TechreadException] = []
 
+    @property
+    def is_successful(self) -> bool:
+        """ Check whether an exception of the ERROR level
+        was returned. Otherwise return True.
+
+        Returns: True if none of the attached exceptions
+            has the Exception Level ERROR. False otherwise.
+        """
+        return not any([
+            e.exception_level == W24TechreadExceptionLevel.ERROR
+            for e in self.exceptions
+        ])
+
 
 class W24TechreadRequest(BaseModel):
     """ Definition of a W24DrawingReadRequest containing
