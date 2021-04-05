@@ -19,6 +19,11 @@ class W24MaterialStandard(str, Enum):
     e.g., steel
     """
 
+    EN573 = "EN573"
+    """ Material name of materail number following
+    the EN573-3 standard for aluminums
+    """
+
     EN10027 = "EN10027"
     """ Material name or material number following
     the EN 10027-1 and EN 10027-2 standard
@@ -40,26 +45,45 @@ class W24MaterialStandard(str, Enum):
     """
 
 
-class W24MaterialReference(BaseModel):
+class W24MaterialEquivalents(BaseModel):
+    """ List of equivalent materials in one of the
+    European standards. Either EN10027-1 for steels
+    or EN573-3 for aluminums.
+
+    Attributes:
+        material_standard: Material standard used for the
+            equivalents.
+        material_codes: List of equivalent material codes
+            in the chosen material_standard
+    """
     material_standard: W24MaterialStandard
-    material_names: List[str]
+
+    material_codes: List[str]
 
 
 class W24Material(BaseModel):
-    """ Parsed Material object
+    """ Parsed Material object that can either be
+    associated to the TitleBlock or derived from
+    all the available information (including the
+    text on the canvas
+
+    Attributes:
+        blurb: Material Name for human consumption
+
+        material_standard: Material Standard indicated
+            on the technical drawing
+
+        material_code: Name of the material in accordance
+            with the material standard
+
+        reference_materials: Optional translation of the
+            Material into a list of equivalent materials
     """
 
     blurb: str
-    """ Material Name for human consumption
-    """
 
     material_standard: W24MaterialStandard
-    """ Material Standard the designer used
-    """
 
-    material_name: str
-    """ Nam eof the material in accordance with the
-    material standard
-    """
+    material_code: str
 
-    reference_materials: Optional[W24MaterialReference] = None
+    material_equivalents: Optional[W24MaterialEquivalents] = None
