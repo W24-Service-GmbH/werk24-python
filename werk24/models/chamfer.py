@@ -1,7 +1,6 @@
-""" Defintion of the W24Chamfer class and its support structures
-
-
-Author: Jochen Mattes - Werk24
+""" A chamfer is a transitional edge between two faces of an object.
+It is attached to the W24MeasureLabel and typically indicates an
+angle of 30 or 45 degrees.
 """
 from pydantic import BaseModel
 
