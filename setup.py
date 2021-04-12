@@ -7,7 +7,7 @@ VERSIONFILE = "werk24/_version.py"
 NAME = "werk24"
 
 
-def _get_version(version_file: str)->str:
+def _get_version(version_file: str) -> str:
     version_pattern = r"^__version__ = ['\"]([^'\"]*)['\"]"
     with open(version_file, "rt") as file_handle:
         match = re.search(version_pattern, file_handle.read(), re.M)
@@ -55,9 +55,11 @@ setup(
     install_requires=[
         "aiohttp >= 3.6.2",
         "boto3 >= 1.14.44",
+        "devtools>=0.6.1",
         "pydantic >= 1.4",
         "python-dotenv>=0.10.1",
-        "websockets >= 8.1"],
+        "websockets >= 8.1"
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
