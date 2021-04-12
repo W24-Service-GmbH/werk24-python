@@ -6,6 +6,7 @@ import logging
 from collections import namedtuple
 from typing import Any, Dict, List
 
+from devtools import debug
 from dotenv import load_dotenv
 from werk24.cli import utils
 from werk24.exceptions import RequestTooLargeException
@@ -32,6 +33,7 @@ logging.basicConfig(
 # get the local logger
 logger = logging.getLogger(__name__)  # pylint:disable = invalid-name
 
+
 # make the configuration of what hooks we want to handle and how
 HookConfig = namedtuple("HookkConfig", "arg ask function")
 hook_config = [
@@ -46,27 +48,27 @@ hook_config = [
     HookConfig(
         'ask_canvas_thumbnail',
         W24AskCanvasThumbnail,
-        lambda m: _show_image(f"Canvas Thumbnail\n{m.payload_dict}")),
+        lambda m: _show_image("Canvas Thumbnail", m.payload_dict)),
     HookConfig(
         'ask_sectional_thumbnail',
         W24AskSectionalThumbnail,
-        lambda m: _show_image(f"Sectional Thumbnail\n{m.payload_dict}")),
+        lambda m: _show_image("Sectional Thumbnail", m.payload_dict)),
     HookConfig(
         'ask_variant_angles',
         W24AskVariantAngles,
-        lambda m: logger.info(f"Ask Variant Angles\n{m.payload_dict}")),
+        lambda m: _print_payload("Ask Variant Angles", m.payload_dict)),
     HookConfig(
         'ask_variant_gdts',
         W24AskVariantGDTs,
-        lambda m: logger.info(f"Ask Variant GDTs\n{m.payload_dict}")),
+        lambda m: _print_payload("Ask Variant GDTs", m.payload_dict)),
     HookConfig(
         'ask_variant_leaders',
         W24AskVariantLeaders,
-        lambda m: logger.info(f"Ask Variant Leaders\n{m.payload_dict}")),
+        lambda m: _print_payload("Ask Variant Leaders", m.payload_dict)),
     HookConfig(
         'ask_variant_measures',
         W24AskVariantMeasures,
-        lambda m: logger.info(f"Ask Variant Measures\n{m.payload_dict}")),
+        lambda m: _print_payload("Ask Variant Measures", m.payload_dict)),
     HookConfig(
         'ask_variant_cad',
         W24AskVariantCAD,
@@ -113,6 +115,21 @@ def _get_drawing(
     # get the content
     with open(file_path, "rb") as filehandle:
         return filehandle.read()
+
+
+def _print_payload(
+    log_text: str,
+    payload_dict: Dict[str, Any]
+) -> None:
+    """ Display the payload dictionary in a format that
+    is easy for humans to read
+
+    Args:
+        log_text (str): Headline info
+        payload_dict (Dict[str, Any]): Payload dictionary
+    """
+    print(log_text)
+    debug(payload_dict)
 
 
 def _show_image(
@@ -166,7 +183,6 @@ async def main(
     # get the client instance and handle
     # potential errors
     client = utils.make_client()
-
 
     async with client as session:
 
