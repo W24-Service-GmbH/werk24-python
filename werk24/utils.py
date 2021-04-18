@@ -32,4 +32,5 @@ def w24_read_sync(
         hooks (List[Hook]): List of Hooks that you want to
             submit.
     """
-    asyncio.run(w24_read_async(document_bytes, hooks))
+    loop = asyncio.get_event_loop()
+    loop.call_soon(w24_read_async(document_bytes, hooks))
