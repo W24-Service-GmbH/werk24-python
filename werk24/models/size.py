@@ -1,4 +1,5 @@
 import abc
+from typing import Dict, Any, Optional
 from enum import Enum
 
 from pydantic import BaseModel
@@ -169,3 +170,40 @@ class W24SizeWidthsAcrossFlats(W24Size):
     size_type = W24SizeType.WIDTHS_ACCROSS_FLATS
 
     width_accross_flats: float
+
+
+def parse_tolerance(
+    raw: Dict[str, Any]
+) -> Optional[W24SizeTolerance]:
+    """ Pydantic does not automatically return the correct
+    W24SizeTolerance object. This function looks at the toleration_type
+    attribute and returns the correct W24SizeTolerance subclass
+
+    Args:
+        size_tolerance_raw (Dict[str, str]): Raw Dictionary of
+            the size tolerance
+
+    Returns:
+        W24SizeTolerance: Correctly deserialized Size Tolerance
+    """
+    # get the class in question
+    type_ = raw.ask_type \
+        if hasattr(raw, 'toleration_type')\
+        else raw.get('toleration_type')
+
+    class_ = {
+        W24SizeToleranceType.APPROXIMATION: W24SizeToleranceApproximation,
+        W24SizeToleranceType.FIT_SIZE_ISO: W24SizeToleranceFitsizeISO,
+        W24SizeToleranceType.GENERAL_TOLERANCES: W24SizeToleranceGeneral,
+        W24SizeToleranceType.OFF_SIZE: W24SizeToleranceOffSize,
+        W24SizeToleranceType.MINIMUM: W24SizeToleranceMinimum,
+        W24SizeToleranceType.MAXIMUM: W24SizeToleranceMaximum,
+
+        W24SizeToleranceType.THEORETICALLY_EXACT:
+        W24SizeToleranceTheoreticallyExact,
+    }.get(type_)
+
+    if type_ is None:
+        return None
+
+    return class_.parse_obj(raw)

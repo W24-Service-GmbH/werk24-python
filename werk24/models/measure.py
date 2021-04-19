@@ -1,17 +1,17 @@
 
 """ Defintion of all the W24Measure class its support structures
 """
-from typing import List, Optional, Tuple
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, UUID4
+from pydantic import UUID4, BaseModel, validator
 
-
+from .chamfer import W24Chamfer
+from .size import (W24Size, W24SizeTolerance, W24SizeToleranceFitsizeISO,
+                   W24SizeToleranceGeneral, W24SizeToleranceType,
+                   parse_tolerance)
 from .thread import W24Thread
 from .unit import W24UnitLength
-from .size import W24SizeTolerance, W24SizeToleranceGeneral
-from .chamfer import W24Chamfer
-from .size import W24Size
 
 
 class W24MeasureWarningType(str, Enum):
@@ -133,6 +133,24 @@ class W24MeasureLabel(BaseModel):
     thread: Optional[W24Thread] = None
 
     chamfer: Optional[W24Chamfer] = None
+
+    @validator('size_tolerance')
+    def asks_validator(  # NOQA
+        cls,
+        raw: List[Dict[str, Any]]
+    ) -> W24SizeTolerance:
+        """ Pydantic does not automatically return the correct
+        W24SizeTolerance object. This function looks at the toleration_type
+        attribute and returns the correct W24SizeTolerance subclass
+
+        Args:
+            size_tolerance_raw (Dict[str, str]): Raw Dictionary of
+                the size tolerance
+
+        Returns:
+            W24SizeTolerance: Correctly deserialized Size Tolerance
+        """
+        return parse_tolerance(raw)
 
 
 class W24Measure(BaseModel):
