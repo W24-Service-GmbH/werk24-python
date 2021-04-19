@@ -134,7 +134,7 @@ class W24MeasureLabel(BaseModel):
 
     chamfer: Optional[W24Chamfer] = None
 
-    @validator('size_tolerance')
+    @validator('size_tolerance', pre=True)
     def asks_validator(  # NOQA
         cls,
         raw: List[Dict[str, Any]]
