@@ -187,7 +187,7 @@ def parse_tolerance(
         W24SizeTolerance: Correctly deserialized Size Tolerance
     """
     # get the class in question
-    type_ = raw.ask_type \
+    type_ = raw.toleration_type \
         if hasattr(raw, 'toleration_type')\
         else raw.get('toleration_type')
 
