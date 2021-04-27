@@ -45,7 +45,7 @@ class W24MaterialStandard(str, Enum):
     """
 
 
-class W24MaterialEquivalents(BaseModel):
+class W24MaterialReference(BaseModel):
     """ List of equivalent materials in one of the
     European standards. Either EN10027-1 for steels
     or EN573-3 for aluminums.
@@ -86,4 +86,4 @@ class W24Material(BaseModel):
 
     material_code: str
 
-    material_equivalents: Optional[W24MaterialEquivalents] = None
+    reference_materials: Optional[W24MaterialReference] = None
