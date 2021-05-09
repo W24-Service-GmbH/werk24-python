@@ -86,4 +86,4 @@ class W24Material(BaseModel):
 
     material_code: str
 
-    reference_materials: Optional[W24MaterialReference] = None
+    reference_material: Optional[W24MaterialReference] = None
