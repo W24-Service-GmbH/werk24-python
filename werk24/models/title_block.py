@@ -13,7 +13,7 @@ class W24TitleBlockCaption(BaseModel):
     Attributes:
         language: Language in accordance with the ISO/639-2B norm
 
-        text: TExt of the identification
+        text: Text of the identification
     """
 
     language: Optional[W24Language]
