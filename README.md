@@ -3,17 +3,34 @@
 [![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
 [![Tests | cpython 3.7, 3.8, 3.9](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
 
-- Understand the content of your PDF- and image-based Technical Drawings with a simple API call.
 
-Werk24 offers an easy to use API to extract information from PDF- and image-based Technical Drawings.
-With the API are able to obtain:
+- Digitize your (scanned) Enginering Drawing or Technical Drawing with a simple API call.
 
-- Thumbnails of the Page / Canvas / Sectionals (Cuts and Perspectives)
-- Measures incl. tolerances
-- Geometric Dimensioning and Tolerancing Frames
+# Features
+When submitting a PDF, PNG, JPEG of a Technical Drawing to Werk24's API, you receive within seconds
+the following features:
+
+- Measures and Tolerances
+- Threads and Chamfers
+- Geometric Dimensioning and Tolerancing frames
+- the Title Block information (Material, Drawing ID, Designation, General Tolerances)
+
+And finally you can obtain a CAD Approximation of the part's Geometry.
+Currently this features is focused on flat parts, such as sheet metal parts, but more is in the pipeline.
 
 Check our website at [https://www.werk24.io](https://www.werk24.io).
-The project is persistently improved. Get in touch with us to obtain your API key.
+
+
+# Applications
+Typical applications of our Technology include
+
+- Instant Pricing on 2D Engineering Drawings
+- Feasibility Checks on incoming RFQs
+- Auto-Fill of Online Configurators
+- Automated Anonymiziation of Technical Drawings
+- Automated Supplier Scouting
+- Automated Registration of incoming RFQs into your ERP system
+- Structured Archiving
 
 ## Installation
 
