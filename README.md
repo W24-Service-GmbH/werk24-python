@@ -27,7 +27,32 @@ the following features:
 And finally you can obtain a CAD Approximation of the part's Geometry.
 Currently this features is focused on flat parts, such as sheet metal parts, but more is in the pipeline.
 
-Check our website at [https://werk24.io](https://werk24.io).
+Check our website at [https://werk24.io/?utm_source=github&utm_medium=feature_link](https://werk24.io).
+
+
+<table style="width:100%">
+<tr>
+<td style="width:50%">
+    <a href="https://werk24.io/?utm_source=github&utm_medium=drawing_input" target="_blank">
+      <img src="https://docs.werk24.io/img/drawing_input.png" alt="Werk24" style="max-height:300px">
+    </a>
+</td>
+<td style="width:50%">
+    <a href="https://werk24.io/?utm_source=github&utm_medium=drawing_output" target="_blank">
+      <img src="https://docs.werk24.io/img/drawing_ouput.png" alt="Werk24" style="max-height:300px">
+    </a>
+</td>
+</tr>
+<tr>
+<td>
+Input
+</td>
+<td>
+Output
+</td>
+</tr>
+</table>
+
 
 
 # Applications
