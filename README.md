@@ -7,7 +7,7 @@
 <p align="center">
   <p align="center">
     <a href="https://werk24.io/?utm_source=github&utm_medium=logo" target="_blank">
-      <img src="https://docs.werk24.io/img/logo_300px.png" alt="Werk24" height="72">
+      <img src="https://docs.werk24.io/img/logo_300px.png" alt="Werk24">
     </a>
   </p>
   <p align="center">
