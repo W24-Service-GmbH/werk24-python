@@ -40,8 +40,8 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
             I can update it.
         """
         with self.assertRaises(LicenseError):
-            client = W24TechreadClient.make_from_env(license_path="/invalid_path")
-
+            client = W24TechreadClient.make_from_env(
+                license_path="/invalid_path")
 
     async def test_cognito_error(self):
         """ Test UnauthorizedException if Cognito Identity is unavailable
@@ -82,7 +82,7 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
 
     async def test_no_access_keu(self) -> None:
         """ Test wheter not providing a password rawises
-        an exception 
+        an exception
         """
         with self.assertRaises(UnauthorizedException):
             auth_client = AuthClient(
@@ -93,10 +93,9 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
                 "some partner password")
             await auth_client.login()
 
-
     async def test_no_password(self) -> None:
         """ Test wheter not providing a password rawises
-        an exception 
+        an exception
         """
         with self.assertRaises(UnauthorizedException):
             auth_client = AuthClient(
