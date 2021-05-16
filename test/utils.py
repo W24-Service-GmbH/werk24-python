@@ -1,3 +1,5 @@
+""" Utilities to simplify the tests
+"""
 import os
 from pathlib import Path
 

@@ -1,12 +1,13 @@
+""" Integration test to verify that we can send AskTitleBlock request
+and receive a response that fits the expected format
+"""
+from werk24.models.ask import W24AskTitleBlock
+from werk24.models.title_block import W24TitleBlock
+from werk24.models.techread import W24AskType
+from werk24.techread_client import W24TechreadClient
 
-from werk24.models.ask import W24AskPageThumbnail, W24AskTitleBlock
-from werk24.models.techread import (W24AskType, W24TechreadMessage,
-                                    W24TechreadMessageSubtypeProgress,
-                                    W24TechreadMessageType)
-from werk24.techread_client import Hook, W24TechreadClient
-
-from .utils import CWD, get_drawing
 from .base import TestBase
+from .utils import get_drawing
 
 DRAWING_BYTES = get_drawing()
 """ Example Drawing in bytes """
@@ -28,22 +29,19 @@ class TestTitleBlock(TestBase):
             request = session.read_drawing(DRAWING_BYTES, asks)
 
             # check whether the first message give us the state information
-            message_first = await request.__anext__()
-            self._assert_message_is_progress_started(message_first)
-            print(message_first)
+            self._assert_message_is_progress_started(
+                await request.__anext__())
 
             # check whether the second message gives us the information
             # about the requested thumbnail
-            message_second = await request.__anext__()
-            print(message_second)
-            self.assertEqual(
-                message_second.message_type,
-                W24TechreadMessageType.ASK)
-            self.assertEqual(
-                message_second.message_subtype,
-                W24AskType.PAGE_THUMBNAIL)
-            self.assertGreater(len(message_second.payload_bytes), 0)
+            response = await request.__anext__()
+            self._assert_message_is_ask_response(
+                response,
+                W24AskType.TITLE_BLOCK)
 
             # check whether we close the iteration correctly
             with self.assertRaises(StopAsyncIteration):
                 await request.__anext__()
+
+            # check whether the payload can be parsed correctly
+            W24TitleBlock.parse_obj(response.payload_dict)
