@@ -1,26 +1,31 @@
-""" Defintion of the W24Chamfer class and its support structures
-
-
-Author: Jochen Mattes - Werk24
-"""
 from pydantic import BaseModel
+
+from .unit import W24UnitAngle
 
 
 class W24Chamfer(BaseModel):
     """ Chamfer in degree.
 
-    NOTE: The chamfers can be tolerated.
-    Future implementations wil take this into account.
+    Attributes:
+        blurb: String representation for human consumption
+
+        angle: Chamfer angle in degrees
+
+        unit: Angle Unit. Currently only degrees are
+            supported.
+
+    !!! note
+        The chamfers can be tolerated.
+        Future implementations will take this into account.
+
+    !!! note
+        If you are dealing with GON, let us know.
+        Happy to do exend the API for the pleasure of
+        dealing with the concept.
     """
 
     blurb: str
-    """ String representation for human consumption
-    """
 
     angle: float
-    """ Chamfer angle in degrees
 
-    NOTE: If you are dealing with GON, let us know.
-    Happy to do exend the API for the pleasure of
-    dealing with the concept.
-    """
+    unit: W24UnitAngle = W24UnitAngle.DEGREE
