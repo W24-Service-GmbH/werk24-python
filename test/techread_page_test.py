@@ -1,13 +1,12 @@
 from unittest import mock
-from uuid import UUID
 
-import aiounittest
 from werk24.models.ask import W24AskPageThumbnail
 from werk24.models.techread import (W24AskType,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
 from werk24.techread_client import Hook, W24TechreadClient
 
+from .base import TestBase
 from .utils import CWD, get_drawing
 
 LICENSE_PATH_INVALID_CREDS = CWD / "assets" / "invalid_creds.werk24"
@@ -16,7 +15,8 @@ LICENSE_PATH_INVALID_CREDS = CWD / "assets" / "invalid_creds.werk24"
 DRAWING = get_drawing()
 """ Example Drawing in bytes """
 
-class TestPage(aiounittest.AsyncTestCase):
+
+class TestPage(TestBase):
     async def test_read_drawing(self):
         """ Test basic read_drawing functionality
 
@@ -31,13 +31,7 @@ class TestPage(aiounittest.AsyncTestCase):
 
             # check whether the first message give us the state information
             message_first = await request.__anext__()
-            self.assertEqual(type(message_first.request_id), UUID)
-            self.assertEqual(
-                message_first.message_type,
-                W24TechreadMessageType.PROGRESS)
-            self.assertEqual(
-                message_first.message_subtype,
-                W24TechreadMessageSubtypeProgress.STARTED)
+            self._assert_message_is_progress_started(message_first)
 
             # check whether the second message gives us the information
             # about the requested thumbnail
