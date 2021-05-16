@@ -32,6 +32,14 @@ Check our website at [https://werk24.io/?utm_source=github&utm_medium=feature_li
 
 <table style="width:100%">
 <tr>
+<td>
+Input
+</td>
+<td>
+Output
+</td>
+</tr>
+<tr>
 <td style="width:50%">
     <a href="https://werk24.io/?utm_source=github&utm_medium=drawing_input" target="_blank">
       <img src="https://docs.werk24.io/img/drawing_input.png" alt="Werk24" style="max-height:200px">
@@ -44,11 +52,8 @@ Check our website at [https://werk24.io/?utm_source=github&utm_medium=feature_li
 </td>
 </tr>
 <tr>
-<td>
-Input
-</td>
-<td>
-Output
+<td colspan="2">
+    <small>Original drawing by T. Hartmann (CC)</small>
 </td>
 </tr>
 </table>
