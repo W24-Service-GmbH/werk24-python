@@ -1,9 +1,4 @@
-
 # Werk24 Client
-[![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
-[![Tests | cpython 3.7, 3.8, 3.9](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
-
-
 <p align="center">
   <p align="center">
     <a href="https://werk24.io/?utm_source=github&utm_medium=logo" target="_blank">
@@ -14,6 +9,11 @@
     Digitize your (scanned) Enginering Drawing or Technical Drawing with a simple API call.
   </p>
 </p>
+
+[![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
+[![Tests | cpython 3.7, 3.8, 3.9](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
+
+
 
 # Features
 When submitting a PDF, PNG, JPEG of a Technical Drawing to Werk24's API, you receive within seconds
