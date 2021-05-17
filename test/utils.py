@@ -5,7 +5,8 @@ from pathlib import Path
 
 import sys
 if sys.version_info < (3, 8, 0):
-    import aiounittest.AsyncTestCase as AsyncTestCase
+    import aiounittest
+    AsyncTestCase = aiounittest.AsyncTestCase
 
 else:
     import unittest
