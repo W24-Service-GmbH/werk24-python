@@ -1,7 +1,7 @@
 import os
+from test.utils import AsyncTestCase
 from typing import List
 
-import aiounittest
 from werk24._version import __version__
 from werk24.exceptions import UnsupportedMediaType
 from werk24.models.ask import W24Ask, W24AskPageThumbnail, W24AskVariantCAD
@@ -12,7 +12,7 @@ from werk24.techread_client import W24TechreadClient
 from .utils import get_drawing, get_model
 
 
-class TestTechreadClient(aiounittest.AsyncTestCase):
+class TestTechreadClient(AsyncTestCase):
     """ Test case for the basic Techread functionality
     """
 

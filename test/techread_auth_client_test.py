@@ -1,6 +1,6 @@
 from unittest import mock
 
-import aiounittest
+from test.utils import AsyncTestCase
 import boto3
 from botocore.exceptions import ClientError
 from werk24._version import __version__
@@ -15,7 +15,7 @@ LICENSE_PATH_INVALID_CREDS = CWD / "assets" / "invalid_creds.werk24"
 """ Path to the license file with invalid credentials """
 
 
-class TestTechreadClient(aiounittest.AsyncTestCase):
+class TestTechreadClient(AsyncTestCase):
     """ Test case for the basic Techread functionality
     """
     async def test_license_invalid(self):
@@ -25,12 +25,10 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
             when the license that I supplied is invalid, so that
             I know that the license expired / was disabled / ...
         """
-        client = W24TechreadClient.make_from_env(
-            license_path=LICENSE_PATH_INVALID_CREDS)
 
         with self.assertRaises(UnauthorizedException):
-            async with client:
-                pass
+            _ = W24TechreadClient.make_from_env(
+                license_path=LICENSE_PATH_INVALID_CREDS)
 
     async def test_license_path_invalid(self):
         """ Test Invalid License Path File
@@ -40,7 +38,7 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
             I can update it.
         """
         with self.assertRaises(LicenseError):
-            client = W24TechreadClient.make_from_env(
+            _ = W24TechreadClient.make_from_env(
                 license_path="/invalid_path")
 
     async def test_cognito_error(self):
@@ -50,8 +48,6 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
             when the Cognito service is down, so that I can
             retry.
         """
-        # start the client
-        client = W24TechreadClient.make_from_env(None)
 
         # mock the boto3 client to raise a ClientError
         boto3_client = boto3.client
@@ -61,8 +57,7 @@ class TestTechreadClient(aiounittest.AsyncTestCase):
 
         # assert
         with self.assertRaises(UnauthorizedException):
-            async with client:
-                pass
+            _ = W24TechreadClient.make_from_env(None)
 
         # restore
         boto3.client = boto3_client
