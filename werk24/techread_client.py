@@ -19,12 +19,13 @@ EXAMPLE
                 callback=lambda msg: print("Received Thumbnail of Page")
         ]))
 """
-import asyncio
 import logging
 import os
 import uuid
+from asyncio import gather, iscoroutinefunction
 from types import TracebackType
-from typing import AsyncIterator, Callable, Dict, List, Optional, Type
+from typing import (AsyncGenerator, AsyncIterator, Callable, Dict, List,
+                    Optional, Type)
 
 import dotenv
 from pydantic import BaseModel
@@ -89,7 +90,6 @@ class Hook(BaseModel):
     If you register an ask, be sure to use a complete W24Ask
     definition; not just the ask type.
     """
-
     message_type: Optional[W24TechreadMessageType]
     message_subtype: Optional[W24TechreadMessageSubtype]
     ask: Optional[W24Ask]
@@ -103,11 +103,12 @@ class W24TechreadClient:
     """
 
     def __init__(
-            self,
-            techread_server_https: str,
-            techread_server_wss: str,
-            techread_version: str,
-            development_key: str = None):
+        self,
+        techread_server_https: str,
+        techread_server_wss: str,
+        techread_version: str,
+        development_key: str = None
+    ):
         """ Initialize a new W24TechreadClient. If you wonder
         about any of the attributes, have a look at the .env
         file that we provided to you. They contain all the
@@ -160,14 +161,6 @@ class W24TechreadClient:
                 active sessions
         """
 
-        # ensure that we have a token
-        try:
-            await self._auth_client.login()  # type: ignore
-        except AttributeError:
-            raise RuntimeError(
-                "No connection to the authentication service was " +
-                "established. Please call register()")
-
         # enter the https session
         await self._techread_client_https.__aenter__()
 
@@ -196,14 +189,14 @@ class W24TechreadClient:
             exc_type, exc_value, traceback)
 
     def register(
-            self,
-            cognito_region: str,
-            cognito_identity_pool_id: str,
-            cognito_user_pool_id: str,
-            cognito_client_id: str,
-            cognito_client_secret: str,
-            username: str,
-            password: str
+        self,
+        cognito_region: str,
+        cognito_identity_pool_id: str,
+        cognito_user_pool_id: str,
+        cognito_client_id: str,
+        cognito_client_secret: str,
+        username: str,
+        password: str
     ) -> None:
         """
         Register with the authentication
@@ -233,6 +226,14 @@ class W24TechreadClient:
         # tell the techread clients about it
         self._techread_client_https.register_auth_client(self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
+
+        # ensure that we have a token
+        try:
+            self._auth_client.login()  # type: ignore
+        except AttributeError:
+            raise RuntimeError(
+                "No connection to the authentication service was " +
+                "established. Please call register()")
 
     @property
     def username(self) -> Optional[str]:
@@ -305,35 +306,14 @@ class W24TechreadClient:
             logger.info("Using development key %s***",
                         self._development_key[:8])
 
-        # make the request object
-        request = W24TechreadRequest(
-            asks=asks,
-            development_key=self._development_key)
-
-        # send the initialization request to the server.
-        # This achieves two things:
-        # 1. The server has a couple of 100ms to
-        #    reserves some resources for you, and
-        # 2. The server will create a new request_id
-        #    that you will need when uploading the
-        #    associated files
-        await self._techread_client_wss.send_command(
-            W24TechreadAction.INITIALIZE.value,
-            request.json())
-
-        # Wait for the response (i.e,. the request id)
-        response = await self._techread_client_wss.recv_message()
-        logger.info("Received request_id %s", response.request_id)
-
-        # interpret the payload
-        init_response = W24TechreadInitResponse.parse_obj(
-            response.payload_dict)
+        # send the initiation command
+        init_response = await self._send_command_init(asks)
 
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
-            await asyncio.gather(
+            await gather(
                 self._techread_client_https.upload_associated_file(
                     init_response.drawing_presigned_post,
                     drawing),
@@ -359,6 +339,52 @@ class W24TechreadClient:
         # find a way of handing over the tcp connection :)
         # PS: The AWS API Gatway for websockets might help you
         # here.
+        async for message in self._send_command_read():
+            yield message
+
+    async def _send_command_init(
+        self,
+        asks: List[W24Ask]
+    ) -> W24TechreadInitResponse:
+        """ Send the initiation command to the backend
+        and return the associated response
+
+        This achieves two things:
+        1. The server has a couple of 100ms to
+           reserves some resources for you, and
+        2. The server will create a new request_id
+           that you will need when uploading the
+           associated files
+
+        Args:
+            asks (List[W24Ask]): List of asks that
+                we are asking for in this request
+        """
+        request = W24TechreadRequest(
+            asks=asks,
+            development_key=self._development_key)
+
+        await self._techread_client_wss.send_command(
+            W24TechreadAction.INITIALIZE.value,
+            request.json())
+
+        response = await self._techread_client_wss.recv_message()
+        logger.info("Received request_id %s", response.request_id)
+        return W24TechreadInitResponse.parse_obj(response.payload_dict)
+
+    async def _send_command_read(
+        self
+    ) -> AsyncGenerator[W24TechreadMessage, None]:
+        """ Send the request request to the backend
+        and yield the resulting messages
+
+        Yields:
+            W24TechreadMessage: Receiving messages
+        """
+        import time
+        start = time.time()
+
+        # submit the request the to the API
         await self._techread_client_wss.send_command(
             W24TechreadAction.READ.value,
             "{}")
@@ -377,6 +403,7 @@ class W24TechreadClient:
             if message.payload_url is not None:
                 message.payload_bytes = await self._techread_client_https \
                     .download_payload(message.payload_url)
+                start = time.time()
 
             # return the message to the caller for immediate
             # consumption
@@ -636,7 +663,7 @@ class W24TechreadClient:
         # if everything went well, we call the trigger with
         # the message as payload. Be sure to call the
         # function asymmetrically if supported
-        if asyncio.iscoroutinefunction(hook_function):
+        if iscoroutinefunction(hook_function):
             await hook_function(message)
         else:
             hook_function(message)
