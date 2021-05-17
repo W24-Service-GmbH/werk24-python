@@ -23,8 +23,6 @@ class TechreadClientHttps:
     to the W24TechreadArchitectureStatus enum
     """
 
-    MAX_REQUEST_PAYLOAD = 6 * 1024 * 1024  # 6MB
-
     def __init__(self, techread_server_https: str, techread_version: str):
         """ Intialize a new session with the https server
 
@@ -63,10 +61,10 @@ class TechreadClientHttps:
         return self
 
     async def __aexit__(
-            self,
-            exc_type: Optional[Type[BaseException]],
-            exc_value: Optional[BaseException],
-            traceback: Optional[TracebackType]
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]
     ) -> None:
 
         """ Close the session
@@ -131,7 +129,6 @@ class TechreadClientHttps:
             ServerException: Raised for all other status codes
                 that are not 2xx
         """
-
         # ignore if payload is empty
         if content is None:
             return
@@ -146,15 +143,15 @@ class TechreadClientHttps:
         # create a new fresh session that does not
         # carry the authentication token
         async with aiohttp.ClientSession() as sess:
-            async with await sess.post(presigned_post.url, data=form) as resp:
+            async with sess.post(presigned_post.url, data=form) as resp:
 
                 # check the status code of the response and
                 # raise the appropriate exception
                 self._raise_for_status(presigned_post.url, resp.status)
 
     def _make_endpoint_url(
-            self,
-            subpath: str
+        self,
+        subpath: str
     ) -> str:
         """ Make the endpoint url of the subpath.
         This will create a fully valid http url

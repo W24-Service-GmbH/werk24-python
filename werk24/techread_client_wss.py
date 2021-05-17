@@ -26,7 +26,7 @@ class TechreadClientWss:
 
     async def __aenter__(
             self
-    )-> 'TechreadClientWss':
+    ) -> 'TechreadClientWss':
         """ Enter the session with the wss server
 
         Raises:
@@ -188,7 +188,7 @@ class TechreadClientWss:
 
         return message
 
-    async def listen(self) -> AsyncGenerator:
+    async def listen(self) -> AsyncGenerator[W24TechreadMessage, None]:
         """ Simple generator that waits for
         messages on the websocket, interprets
         them and yields them

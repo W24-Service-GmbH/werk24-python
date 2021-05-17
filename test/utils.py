@@ -3,6 +3,15 @@
 import os
 from pathlib import Path
 
+import sys
+if sys.version_info < (3, 8, 0):
+    import aiounittest.AsyncTestCase as AsyncTestCase
+
+else:
+    import unittest
+    AsyncTestCase = unittest.IsolatedAsyncioTestCase
+
+
 CWD = Path(os.path.dirname(__file__))
 
 

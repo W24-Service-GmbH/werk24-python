@@ -1,5 +1,6 @@
 """ Module handling the authentication
 """
+import time
 import base64
 import hashlib
 import hmac
@@ -23,12 +24,13 @@ class AuthClient:
     """
 
     def __init__(
-            self,
-            cognito_region: str,
-            cognito_identity_pool_id: str,
-            cognito_user_pool_id: str,
-            cognito_client_id: str,
-            cognito_client_secret: str):
+        self,
+        cognito_region: str,
+        cognito_identity_pool_id: str,
+        cognito_user_pool_id: str,
+        cognito_client_id: str,
+        cognito_client_secret: str
+    ):
 
         # store the settings
         self._cognito_region = cognito_region
@@ -42,7 +44,9 @@ class AuthClient:
         self._password: Optional[str] = None
 
         # make an empty reference ot the jwt_token
-        self.token = None
+        self.token: Optional[str] = None
+        self.expires_at: Optional[float] = None
+        self.refresh_token: Optional[str] = None
 
     def register(self, username: str, password: str) -> None:
         """ Store the username and password locally so
@@ -55,7 +59,7 @@ class AuthClient:
         self.username = username
         self._password = password
 
-    async def _get_generic_identity(self) -> Tuple[str, str]:
+    def _get_generic_identity(self) -> Tuple[str, str]:
         """ The AWS Cognito User Pools can only be accessed with
         credentials (even if they are generic). This function
         calls the AWS Cognito IDENTITY POOL to obtain the generic
@@ -74,7 +78,6 @@ class AuthClient:
             identity_client = boto3.client(
                 'cognito-identity',
                 self._cognito_region)
-
 
             # get a new identity id
             identity_response = identity_client.get_id(
@@ -103,7 +106,7 @@ class AuthClient:
         # that's it
         return access_key, secret_key
 
-    async def _make_cognito_client(self) -> boto3.session.Session.client:
+    def _make_cognito_client(self) -> boto3.session.Session.client:
         """ Make the Cognito Client to communicate with
         AWS Cognito
 
@@ -114,7 +117,7 @@ class AuthClient:
         try:
             # before we can aws cognito USER POOL client, we need
             # to obtain a generic identity from the IDENTIY POOL
-            access_key, secret_key = await self._get_generic_identity()
+            access_key, secret_key = self._get_generic_identity()
 
             # with this information, we can now generate the client
             return boto3.client(
@@ -149,7 +152,7 @@ class AuthClient:
         # turn the secret into a str object
         return base64.b64encode(dig).decode()
 
-    async def login(
+    def login(
         self
     ) -> None:
         """ Login with AWS Cognito
@@ -158,6 +161,30 @@ class AuthClient:
             UnauthorizedException: Raised when the user credentials
                 were not accepted by Cognito
         """
+        if self.token is None or self._token_has_expired():
+            self._login()
+
+    def _token_has_expired(
+        self,
+        slack_minutes: int = 60
+    ) -> bool:
+        """ Check whether the token has already expired
+
+        Returns:
+            bool: True if exptired, False otherwise.
+        """
+        if self.expires_at is None:
+            return True
+
+        return time.time() > self.expires_at - slack_minutes
+
+    def _login(self):
+        """ Preform the login with AWS Cognito
+
+        Raises:
+            UnauthorizedException: Raised when the user is not authorized
+                or something went wrong during the authentication process.
+        """
 
         # there is no point in trying to log in if there is no
         # username or password
@@ -165,13 +192,14 @@ class AuthClient:
             raise UnauthorizedException("No username / password provided")
 
         # make the connection to aws
-        cognito_client = await self._make_cognito_client()
+        cognito_client = self._make_cognito_client()
 
         # make the authentication data
         auth_data = {
             'USERNAME': self.username,
             'PASSWORD': self._password,
-            'SECRET_HASH': self._make_cognito_secret_hash(self.username)}
+            'SECRET_HASH': self._make_cognito_secret_hash(self.username)
+        }
 
         # get the jwt token from AWS cognito
         try:
@@ -189,7 +217,10 @@ class AuthClient:
 
         # store the jwt token
         try:
-            self.token = resp['AuthenticationResult']['IdToken']
+            result = resp['AuthenticationResult']
+            self.token = result['IdToken']
+            self.expires_at = time.time() + int(result['ExpiresIn'])
+            self.refresh_token = result['RefreshToken']
         except KeyError:
             raise UnauthorizedException(
                 "Unable to obtain JWT Token from AWS Cognito.")
