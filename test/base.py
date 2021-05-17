@@ -1,13 +1,12 @@
-from uuid import UUID
-
-import aiounittest
 from werk24.models.techread import (W24AskType, W24TechreadMessage,
                                     W24TechreadMessageSubtype,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
+from uuid import UUID
+from test.utils import AsyncTestCase
 
 
-class TestBase(aiounittest.AsyncTestCase):
+class TestBase(AsyncTestCase):
 
     def _assert_message_is_progress_started(
         self,
