@@ -152,6 +152,9 @@ class W24TitleBlock(BaseModel):
         Returns:
             W24CaptionValuePair: Parse value-caption pair
         """
+        if isinstance(raw, W24CaptionValuePair):
+            return raw
+
         if 'value' in raw.keys():
             raw['values'] = [{
                 'language': None,
