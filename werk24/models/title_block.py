@@ -7,11 +7,11 @@ from .language import W24Language
 from .material import W24Material
 
 
-class W24TitleBlockCaption(BaseModel):
-    """ Per-Language caption that was chosed to represent the caption-value pair.
+class W24TitleBlockItem(BaseModel):
+    """ Per-Language caption or value
 
     Attributes:
-        language: Language in accordance with the ISO/639-2B norm
+        language: Language in accordance with the ISO/639-2B standards
 
         text: Text of the identification
     """
@@ -35,9 +35,9 @@ class W24CaptionValuePair(BaseModel):
     """
     blurb: str
 
-    captions: List[W24TitleBlockCaption]
+    captions: List[W24TitleBlockItem]
 
-    value: str
+    values: List[W24TitleBlockItem]
 
 
 class W24TitleBlock(BaseModel):
