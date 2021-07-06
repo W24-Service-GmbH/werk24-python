@@ -1,17 +1,17 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 
 
-class W24TitleBlockCaption(BaseModel):
-    """ Per-Language caption that was chosed to represent the caption-value pair.
+class W24TitleBlockItem(BaseModel):
+    """ Per-Language caption or value
 
     Attributes:
-        language: Language in accordance with the ISO/639-2B norm
+        language: Language in accordance with the ISO/639-2B standards
 
         text: Text of the identification
     """
@@ -35,9 +35,9 @@ class W24CaptionValuePair(BaseModel):
     """
     blurb: str
 
-    captions: List[W24TitleBlockCaption]
+    captions: List[W24TitleBlockItem]
 
-    value: str
+    values: List[W24TitleBlockItem]
 
 
 class W24TitleBlock(BaseModel):
@@ -67,3 +67,96 @@ class W24TitleBlock(BaseModel):
     general_tolerances: Optional[W24GeneralTolerances]
 
     material: Optional[W24Material]
+
+    @validator('designation', pre=True)
+    def designation_validator(
+        cls,
+        raw: Dict[str, Any]
+    ) -> W24CaptionValuePair:
+        """ Workaround to deal with the transition period
+        while we move from the single-value to the multi-value
+        pairs.
+
+        This code can be removed after we complete the
+        transition.
+
+        Args:
+            raw (Dict[str, Any]): Unparsed value returned
+                from the API
+
+        Returns:
+            W24CaptionValuePair: Parse value-caption pair
+        """
+        return cls._parse_caption_value_pair(raw)
+
+    @validator('drawing_id', pre=True)
+    def drawing_id_validator(
+        cls,
+        raw: Dict[str, Any]
+    ) -> W24CaptionValuePair:
+        """ Workaround to deal with the transition period
+        while we move from the single-value to the multi-value
+        pairs.
+
+        This code can be removed after we complete the
+        transition.
+
+        Args:
+            raw (Dict[str, Any]): Unparsed value returned
+                from the API
+
+        Returns:
+            W24CaptionValuePair: Parse value-caption pair
+        """
+        return cls._parse_caption_value_pair(raw)
+
+    @validator('reference_ids', pre=True)
+    def reference_ids_validator(
+        cls,
+        raw: List[Dict[str, Any]]
+    ) -> List[W24CaptionValuePair]:
+        """ Workaround to deal with the transition period
+        while we move from the single-value to the multi-value
+        pairs.
+
+        This code can be removed after we complete the
+        transition.
+
+        Args:
+            raw (List[Dict[str, Any]]): Unparsed value returned
+                from the API
+
+        Returns:
+            List[W24CaptionValuePair]: Parse value-caption pair
+        """
+        return [
+            cls._parse_caption_value_pair(e)
+            for e in raw
+        ]
+
+    @staticmethod
+    def _parse_caption_value_pair(
+        raw: Dict[str, Any]
+    ) -> W24CaptionValuePair:
+        """ Workaround to deal with the transition period
+        while we move from the single-value to the multi-value
+        pairs.
+
+        This code can be removed after we complete the
+        transition.
+
+        Args:
+            raw (Dict[str, Any]): Unparsed value returned
+                from the API
+
+        Returns:
+            W24CaptionValuePair: Parse value-caption pair
+        """
+        if 'value' in raw.keys():
+            raw['values'] = [{
+                'language': None,
+                'text': raw.get('value')
+            }]
+            del raw['value']
+
+        return W24CaptionValuePair.parse_obj(raw)
