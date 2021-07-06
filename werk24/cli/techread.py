@@ -4,9 +4,8 @@ import argparse
 import io
 import logging
 from collections import namedtuple
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from devtools import debug
 from dotenv import load_dotenv
 from werk24.cli import utils
 from werk24.exceptions import RequestTooLargeException
@@ -15,7 +14,8 @@ from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
                                W24AskVariantAngles, W24AskVariantCAD,
                                W24AskVariantGDTs, W24AskVariantLeaders,
                                W24AskVariantMeasures)
-from werk24.models.techread import (W24TechreadMessageSubtypeError,
+from werk24.models.techread import (W24TechreadException,
+                                    W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
                                     W24TechreadMessageType)
 from werk24.techread_client import Hook
@@ -72,13 +72,17 @@ hook_config = [
     HookConfig(
         'ask_variant_cad',
         W24AskVariantCAD,
-        lambda m: _store_variant_cad(m.payload_dict, m.payload_bytes)),
+        lambda m: _store_variant_cad(
+            m.payload_dict,
+            m.payload_bytes,
+            m.exceptions)),
 ]
 
 
 def _store_variant_cad(
     payload_dict: Dict[str, Any],
-    payload_bytes: bytes
+    payload_bytes: Optional[bytes],
+    exceptions: List[W24TechreadException]
 ) -> None:
     """ Store the CAD file the current directory
 
@@ -88,6 +92,39 @@ def _store_variant_cad(
     """
     logger.info(f"Ask Variant CAD\n{payload_dict}")
 
+    # print potential exceptions
+    if exceptions:
+        _log_exceptions(exceptions)
+
+    # store the payload
+    if payload_bytes is not None:
+        _store_variant_cad_payload(payload_dict, payload_bytes)
+
+
+def _log_exceptions(
+    exceptions: List[W24TechreadException]
+) -> None:
+    """ Log the encountered exceptions as warnings
+
+    Args:
+        exceptions (List[W24TechreadException]): List of
+            encountered exceptions. Can be an empty list.
+    """
+    for cur_exception in exceptions:
+        logger.warn(cur_exception)
+
+
+def _store_variant_cad_payload(
+    payload_dict: Dict[str, Any],
+    payload_bytes: bytes
+) -> None:
+    """ Store the CAD file with the knowledge that
+    the payload exists
+
+    Args:
+        payload_dict (Dict[str, Any]): Payload Dictionary
+        payload_bytes (bytes): CAD response
+    """
     # make the filename
     variant_id = payload_dict.get('variant_id')
     filename = f"./w24_ask_variant_cad_{variant_id}.dxf"
@@ -101,7 +138,7 @@ def _store_variant_cad(
 
 
 def _get_drawing(
-        file_path: str
+    file_path: str
 ) -> bytes:
     """ Get the bytes of the file that shall be
     read.
@@ -129,7 +166,7 @@ def _print_payload(
         payload_dict (Dict[str, Any]): Payload dictionary
     """
     print(log_text)
-    debug(payload_dict)
+    print(payload_dict)
 
 
 def _show_image(
