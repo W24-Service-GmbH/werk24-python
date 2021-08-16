@@ -5,6 +5,7 @@ from typing import Optional, Tuple
 from pydantic import UUID4, BaseModel
 
 from .unit import W24UnitAngle
+from decimal import Decimal
 
 
 class W24AngleTolerationType(str, Enum):
@@ -55,7 +56,7 @@ class W24AngleSize(BaseModel):
 
     blurb: str
 
-    angle: float
+    angle: Decimal
 
     unit: W24UnitAngle = W24UnitAngle.DEGREE
 

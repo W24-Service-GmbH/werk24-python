@@ -1,6 +1,7 @@
 import abc
-from typing import Dict, Any, Optional
+from decimal import Decimal
 from enum import Enum
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -39,11 +40,11 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
     """ uninterpreted string representation of the fit size
     """
 
-    deviation_lower: float
+    deviation_lower: Decimal
     """ Lower deviation from the nominal size
     """
 
-    deviation_upper: float
+    deviation_upper: Decimal
     """ Upper deviation from the nominal size
     """
 
@@ -53,11 +54,11 @@ class W24SizeToleranceOffSize(W24SizeTolerance):
     """
     toleration_type = W24SizeToleranceType.OFF_SIZE
 
-    deviation_lower: float
+    deviation_lower: Decimal
     """ Lower deviation from the nominal size
     """
 
-    deviation_upper: float
+    deviation_upper: Decimal
     """ Upper deviation from the nominal size
     """
 
@@ -145,7 +146,7 @@ class W24Size(BaseModel, abc.ABC):
 
     size_type: W24SizeType
 
-    nominal_size: float
+    nominal_size: Decimal
 
 
 class W24SizeNominal(W24Size):
@@ -169,7 +170,7 @@ class W24SizeWidthsAcrossFlats(W24Size):
     """
     size_type = W24SizeType.WIDTHS_ACCROSS_FLATS
 
-    width_accross_flats: float
+    width_accross_flats: Decimal
 
 
 def parse_tolerance(
