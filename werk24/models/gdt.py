@@ -1,9 +1,11 @@
 import abc
 from decimal import Decimal
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from pydantic import UUID4, BaseModel
+
+from .feature import W24Feature
 
 
 class W24GDTCharacteristic(str, Enum):
@@ -329,25 +331,14 @@ class W24GDTFrame(BaseModel):
     data: List[W24GDTDatum] = []
 
 
-class W24GDT(BaseModel):
+class W24GDT(W24Feature):
     """ Parent object for Geometric Dimensionsing and Toleration
     Frames, attaching them to the physical location on the drawing.
 
     Attributes:
-        bounding_polygon: Bounding polygon of the GDT annotation as
-            tuple of x, y coordinates in the pixel coordinate system of
-            the sectional.
-            Simple GDTs are represented by a simple rectangle.
-            To support more complex GDTs (e.g., with a Sectional
-            Plane Indicator, we define a polygon).
-            The polygon starts at the top left and is
-            oriented clock-wise.
-
         frame: Representation of the GDT frame
 
     """
-
-    bounding_polygon: List[Tuple[float, float]]
 
     frame: W24GDTFrame
 
