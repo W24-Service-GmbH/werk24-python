@@ -1,11 +1,12 @@
 import abc
+from decimal import Decimal
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Optional
 
 from pydantic import UUID4, BaseModel
 
+from .feature import W24Feature
 from .unit import W24UnitAngle
-from decimal import Decimal
 
 
 class W24AngleTolerationType(str, Enum):
@@ -80,7 +81,7 @@ class W24AngleLabel(BaseModel):
     size_toleration: W24AngleToleration
 
 
-class W24Angle(BaseModel):
+class W24Angle(W24Feature):
     """ Tolerated Angle detected on a sectional of the
     Technical Drawing
 
@@ -107,12 +108,6 @@ class W24Angle(BaseModel):
     """
 
     angle_id: Optional[UUID4]
-
-    vertex: Tuple[float, float]
-
-    ray1: Tuple[float, float]
-
-    ray2: Tuple[float, float]
 
     label: W24AngleLabel
 
