@@ -31,8 +31,8 @@ class W24FeaturePosition(BaseModel):
         sectional: Position of the Feature on the Sectional thumbnail
 
     """
-    page: List[W24FeatureCoordinate]
     sheet: List[W24FeatureCoordinate]
+    canvas: List[W24FeatureCoordinate]
     sectional: List[W24FeatureCoordinate]
 
 
