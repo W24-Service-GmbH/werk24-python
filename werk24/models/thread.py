@@ -2,10 +2,12 @@
 
 Author: Jochen Mattes - Werk24
 """
-from enum import Enum
-from pydantic import BaseModel
-from typing import Optional
 import abc
+from decimal import Decimal
+from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel
 
 
 class W24ThreadType(str, Enum):
@@ -67,9 +69,9 @@ class W24ThreadISOMetric(W24Thread):
     """
     thread_type = W24ThreadType.ISO_METRIC
 
-    diameter: float
+    diameter: Decimal
 
-    pitch: Optional[float] = None
+    pitch: Optional[Decimal] = None
 
     handedness: W24ThreadHandedness = W24ThreadHandedness.RIGHT
 
@@ -98,9 +100,9 @@ class W24ThreadUTS(W24Thread):
 
     uts_size: str
 
-    diameter: float
+    diameter: Decimal
 
-    threads_per_inch: float
+    threads_per_inch: Decimal
 
     tolerance_class: str
 
@@ -141,6 +143,6 @@ class W24ThreadWhitworth(W24Thread):
     """
     thread_type = W24ThreadType.WHITWORTH
 
-    whitworth_size: float
+    whitworth_size: Decimal
 
     tolerance_class: Optional[str] = None

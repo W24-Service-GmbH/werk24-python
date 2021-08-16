@@ -106,6 +106,11 @@ class W24TechreadExceptionType(str, Enum):
     be a drawing
     """
 
+    DRAWING_MEASURE_SYSTEM_INCOMPLETE = "DRAWING_MEASURE_SYSTEM_INCOMPLETE"
+    """ The file you submitted contains too few measures to be
+    manufacturable
+    """
+
     MODEL_FILE_FORMAT_UNSUPPORTED = "MODEL_FILE_FORMAT_UNSUPPORTED"
     """ The Model was submitted in a file format that is not supported
     by the API at this stage.
