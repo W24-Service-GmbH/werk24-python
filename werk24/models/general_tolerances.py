@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel
+from decimal import Decimal
 
 
 class W24GeneralTolerancesStandard(str, Enum):
@@ -35,10 +36,10 @@ class W24GeneralTolerancesPrinciple(str, Enum):
 
 
 class W24ToleranceTableItem(BaseModel):
-    nominal_min: float
-    nominal_max: float
-    deviation_min: float
-    deviation_max: float
+    nominal_min: Decimal
+    nominal_max: Decimal
+    deviation_min: Decimal
+    deviation_max: Decimal
 
 
 class W24ToleranceClass(BaseModel):
