@@ -1,3 +1,4 @@
+from .general_tolerances import W24GeneralTolerancesStandard, W24ToleranceClass
 import abc
 from decimal import Decimal
 from enum import Enum
@@ -65,12 +66,40 @@ class W24SizeToleranceOffSize(W24SizeTolerance):
 
 class W24SizeToleranceGeneral(W24SizeTolerance):
     """ General Tolerances
+
+    Attributes:
+        tolerance_type: W24SizeTolernanceType General Tolerances
+            as key to differentiate between the different
+            tolerance typces
+
+        blurb: Blurb of the General Tolerance following the
+            pattern of W24ToleranceOffSize
+
+        standard: GeneralToleranceStandard that is specified in
+            the TitleBlock. If the TitleBlock is not requested
+            of it no GeneralTolerance was found, this is set to
+            None.
+
+        standard_class: GeneraalTolerance Class if known. None
+            otherwise.
+
+        deviation_lower: Lower deviation from the nominal size
+            if the General Tolerance is known. None otherwise.
+
+        deviation_upper: Upper deviation from the norminal size
+            if the General Tolerance is known. None otherwise.
     """
     toleration_type = W24SizeToleranceType.GENERAL_TOLERANCES
 
-    blurb = ""
-    """ Set the blub to '' (default for General Tolerances)
-    """
+    blurb: str = ""
+
+    standard: Optional[W24GeneralTolerancesStandard]
+
+    standard_class: Optional[W24ToleranceClass]
+
+    deviation_lower: Optional[Decimal]
+
+    deviation_upper: Optional[Decimal]
 
 
 class W24SizeToleranceTheoreticallyExact(W24SizeTolerance):
