@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic import BaseModel
 
 from .unit import W24UnitAngle
@@ -26,6 +28,6 @@ class W24Chamfer(BaseModel):
 
     blurb: str
 
-    angle: float
+    angle: Decimal
 
     unit: W24UnitAngle = W24UnitAngle.DEGREE

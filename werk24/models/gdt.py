@@ -1,8 +1,9 @@
 import abc
+from decimal import Decimal
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from pydantic import BaseModel, UUID4
+from pydantic import UUID4, BaseModel
 
 
 class W24GDTCharacteristic(str, Enum):
@@ -121,17 +122,17 @@ class W24GDTZoneValue(BaseModel):
 
     blurb: str
 
-    width_min: float
+    width_min: Decimal
 
-    width_max: Optional[float]
+    width_max: Optional[Decimal]
 
     extend_quantity: Optional[int]
 
     extend_shape: Optional[W24GDTZoneShape]
 
-    extend_value: Optional[float]
+    extend_value: Optional[Decimal]
 
-    extend_angle: Optional[float]
+    extend_angle: Optional[Decimal]
 
 
 class W24GDTFilterType(str, Enum):
