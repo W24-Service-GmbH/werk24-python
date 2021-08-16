@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import UUID4, BaseModel, validator
 
 from .chamfer import W24Chamfer
+from .feature import W24Feature
 from .size import (W24Size, W24SizeTolerance, W24SizeToleranceGeneral,
                    parse_tolerance)
 from .thread import W24Thread
@@ -153,7 +154,7 @@ class W24MeasureLabel(BaseModel):
         return parse_tolerance(raw)
 
 
-class W24Measure(BaseModel):
+class W24Measure(W24Feature):
     """ Measure object anchored on the Sectional
 
     Attributes:
@@ -178,10 +179,7 @@ class W24Measure(BaseModel):
             0.0 to 1.0
 
     """
-
     measure_id: Optional[UUID4] = None
-
-    line: Tuple[Tuple[float, float], Tuple[float, float]]
 
     label: W24MeasureLabel
 
