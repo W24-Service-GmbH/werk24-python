@@ -1,10 +1,11 @@
-from .general_tolerances import W24GeneralTolerancesStandard, W24ToleranceClass
 import abc
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
+
+from .general_tolerances import W24GeneralTolerancesStandard
 
 
 class W24SizeToleranceType(str, Enum):
@@ -95,7 +96,7 @@ class W24SizeToleranceGeneral(W24SizeTolerance):
 
     standard: Optional[W24GeneralTolerancesStandard]
 
-    standard_class: Optional[W24ToleranceClass]
+    standard_class: Optional[str]
 
     deviation_lower: Optional[Decimal]
 
