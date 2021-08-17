@@ -1,3 +1,4 @@
+from typing import Tuple
 import abc
 from decimal import Decimal
 from enum import Enum
@@ -106,6 +107,15 @@ class W24Angle(W24Feature):
             to 1.0 and can be used to accpect the reading
             as-is or queuing it for a manual verification.
     """
+
+    # !!! DEPECATED
+    vertex: Tuple[float, float]
+
+    # !!! DEPECATED
+    ray1: Tuple[float, float]
+
+    # !!! DEPECATED
+    ray2: Tuple[float, float]
 
     angle_id: Optional[UUID4]
 

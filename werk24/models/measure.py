@@ -186,3 +186,6 @@ class W24Measure(W24Feature):
     warnings: List[W24MeasureWarning] = []
 
     confidence: float = 0.0
+
+    # !!! DEPECATED
+    line: Tuple[Tuple[float, float], Tuple[float, float]]
