@@ -72,7 +72,7 @@ class W24TitleBlock(BaseModel):
     def designation_validator(
         cls,
         raw: Dict[str, Any]
-    ) -> W24CaptionValuePair:
+    ) -> Optional[W24CaptionValuePair]:
         """ Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
@@ -93,7 +93,7 @@ class W24TitleBlock(BaseModel):
     def drawing_id_validator(
         cls,
         raw: Dict[str, Any]
-    ) -> W24CaptionValuePair:
+    ) -> Optional[W24CaptionValuePair]:
         """ Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
@@ -129,15 +129,16 @@ class W24TitleBlock(BaseModel):
         Returns:
             List[W24CaptionValuePair]: Parse value-caption pair
         """
-        return [
+        result = [
             cls._parse_caption_value_pair(e)
             for e in raw
         ]
+        return [r for r in result if r is not None]
 
     @staticmethod
     def _parse_caption_value_pair(
-        raw: Dict[str, Any]
-    ) -> W24CaptionValuePair:
+        raw: Optional[Dict[str, Any]]
+    ) -> Optional[W24CaptionValuePair]:
         """ Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
@@ -154,6 +155,9 @@ class W24TitleBlock(BaseModel):
         """
         if isinstance(raw, W24CaptionValuePair):
             return raw
+
+        if raw is None:
+            return None
 
         if 'value' in raw.keys():
             raw['values'] = [{
