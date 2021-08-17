@@ -1,3 +1,4 @@
+from typing import Tuple
 import abc
 from decimal import Decimal
 from enum import Enum
@@ -339,6 +340,8 @@ class W24GDT(W24Feature):
         frame: Representation of the GDT frame
 
     """
+    # !!! DEPRECATED
+    bounding_polygon: List[Tuple[float, float]]
 
     frame: W24GDTFrame
 
