@@ -47,7 +47,7 @@ class W24ToleranceTableItem(BaseModel):
         """ Ensure the proper conversion of the the
         Decimal value
         """
-        return cls._conv_infinity_to_none(raw)
+        return cls._conv_decimal(raw)
 
     @validator('nominal_max', pre=True)
     def nominal_max_validator(  # NOQA
@@ -57,10 +57,10 @@ class W24ToleranceTableItem(BaseModel):
         """ Ensure the proper conversion of the the
         Decimal value
         """
-        return cls._conv_infinity_to_none(raw)
+        return cls._conv_decimal(raw)
 
     @staticmethod
-    def _conv_infinity_to_none(
+    def _conv_decimal(
         raw: Union[str, float, None]
     ) -> Optional[Decimal]:
         """ Handle the decimal converstion
