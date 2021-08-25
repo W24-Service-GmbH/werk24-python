@@ -1,3 +1,5 @@
+from typing import Union
+from pydantic import UUID4, BaseModel, validator
 from enum import Enum
 from typing import List, Optional
 
@@ -36,10 +38,84 @@ class W24GeneralTolerancesPrinciple(str, Enum):
 
 
 class W24ToleranceTableItem(BaseModel):
-    nominal_min: Decimal
-    nominal_max: Decimal
-    deviation_min: Decimal
-    deviation_max: Decimal
+
+    @validator('nominal_min', pre=True)
+    def nominal_min_validator(  # NOQA
+        cls,
+        raw: Union[str, float, None]
+    ) -> Optional[Decimal]:
+        """ Ensure the proper conversion of the the
+        Decimal value
+        """
+        return cls._conv_infinity_to_none(raw)
+
+    @validator('nominal_max', pre=True)
+    def nominal_max_validator(  # NOQA
+        cls,
+        raw: Union[str, float, None]
+    ) -> Optional[Decimal]:
+        """ Ensure the proper conversion of the the
+        Decimal value
+        """
+        return cls._conv_infinity_to_none(raw)
+
+    @staticmethod
+    def _conv_infinity_to_none(
+        raw: Union[str, float, None]
+    ) -> Optional[Decimal]:
+        """ Handle the decimal converstion
+
+        Args:
+            raw (Union[str, float, None]): Raw value
+
+        Raises:
+            ValueError: raised when the data type
+                does not match the understood types
+
+        Returns:
+            Optional[Decimal]: None if the raw value
+                corresponds to -Infinity, +Infinity or
+                NaN. Decimal('0') if Decimal('-0') or
+                the true value
+        """
+
+        # ensure we are working with
+        # the correct type
+        if isinstance(raw, str) or isinstance(raw, float):
+            decimal = Decimal(raw)
+
+        # accept decimal
+        elif isinstance(raw, Decimal):
+            decimal = raw
+
+        # allow None values
+        elif raw is None:
+            return None
+
+        # reject the rest
+        else:
+            data_type = type(raw)
+            raise ValueError(f"Unsupported datatype '{data_type}'")
+
+        # interpret the values
+        # handle the special values
+        if decimal in {
+                Decimal("Infinity"),
+                Decimal("-Inifinity"),
+                Decimal("NaN")}:
+            return None
+
+        # enforce zero to be positive
+        if decimal == Decimal('-0'):
+            return Decimal('0')
+
+        # accept the value
+        return decimal
+
+    nominal_min: Optional[Decimal]
+    nominal_max: Optional[Decimal]
+    deviation_min: Optional[Decimal]
+    deviation_max: Optional[Decimal]
 
 
 class W24ToleranceClass(BaseModel):
