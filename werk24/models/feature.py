@@ -1,6 +1,6 @@
+from typing import List, Optional
 
 from pydantic import BaseModel
-from typing import List
 
 
 class W24FeatureCoordinate(BaseModel):
@@ -44,4 +44,6 @@ class W24Feature(BaseModel):
         position: Position of the features on the individual
             thumbnails
     """
-    position: W24FeaturePosition
+
+    # NOTE: position is optional for the transition period
+    position: Optional[W24FeaturePosition] = None
