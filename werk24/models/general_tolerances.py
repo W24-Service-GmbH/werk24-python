@@ -81,7 +81,9 @@ class W24ToleranceTableItem(BaseModel):
 
         # ensure we are working with
         # the correct type
-        if isinstance(raw, str) or isinstance(raw, float):
+        if isinstance(raw, str) \
+            or isinstance(raw, float)\
+                or isinstance(raw, int):
             decimal = Decimal(raw)
 
         # accept decimal
