@@ -123,7 +123,6 @@ class TestTechreadClient(AsyncTestCase):
         async with client as session:
             async for message in session.read_drawing(b"", asks=asks):
                 if message.message_type == W24TechreadMessageType.ASK:
-
                     self.assertEqual(
                         message.exceptions[0].exception_type,
                         W24TechreadExceptionType.DRAWING_FILE_FORMAT_UNSUPPORTED)
