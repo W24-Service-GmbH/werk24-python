@@ -101,7 +101,7 @@ class W24ToleranceTableItem(BaseModel):
         # handle the special values
         if decimal in {
                 Decimal("Infinity"),
-                Decimal("-Inifinity"),
+                Decimal("-Infinity"),
                 Decimal("NaN")}:
             return None
 
