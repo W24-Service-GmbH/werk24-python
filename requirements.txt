@@ -1,4 +1,4 @@
-aiohttp>=3.7.4.post0,<3.7.0
+aiohttp>=3.7.4.post0,<3.8.0
 boto3>=1.14.44,<1.15.0
 devtools>=0.6.1,<1.0
 pydantic>=1.4,<2.0
