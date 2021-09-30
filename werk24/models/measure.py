@@ -13,7 +13,7 @@ from .size import (W24Size, W24SizeTolerance, W24SizeToleranceGeneral,
                    parse_tolerance)
 from .thread import W24Thread
 from .unit import W24UnitLength
-
+from .test_dimension import W24TestDimension
 
 class W24MeasureWarningType(str, Enum):
     """ List of all warnings that can be associated with
@@ -127,13 +127,15 @@ class W24MeasureLabel(BaseModel):
 
     size: W24Size
 
-    unit: Optional[W24UnitLength] = None
-
     size_tolerance: W24SizeTolerance = W24SizeToleranceGeneral()
+
+    unit: Optional[W24UnitLength] = None
 
     thread: Optional[W24Thread] = None
 
     chamfer: Optional[W24Chamfer] = None
+
+    test_dimension:Optional[W24TestDimension] = None
 
     @validator('size_tolerance', pre=True)
     def asks_validator(  # NOQA
@@ -187,5 +189,3 @@ class W24Measure(W24Feature):
 
     confidence: float = 0.0
 
-    # !!! DEPECATED
-    line: Tuple[Tuple[float, float], Tuple[float, float]]
