@@ -16,6 +16,8 @@ class W24TestDimension(BaseModel):
     to a MeasureLabel or a GDTLabel
 
     Attributes:
+        blurb: Blurb of the complete label for human consumption
+
         criticality: Some measures can be critical to Function,
             others ctirical to price. The TestDimensions sometimes
             highlight this with a shorthand (e.g., CTF)
@@ -27,6 +29,7 @@ class W24TestDimension(BaseModel):
             defined, rate will be Decimal('100'). If not defined, the
             rate will be None.
     """
+    blurb: str
     criticality: Optional[W24TestCriticality] = None
     label: Optional[str] = None
     rate: Optional[Decimal] = None
