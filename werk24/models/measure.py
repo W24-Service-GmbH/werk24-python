@@ -127,9 +127,9 @@ class W24MeasureLabel(BaseModel):
 
     size: W24Size
 
-    unit: Optional[W24UnitLength] = None
-
     size_tolerance: W24SizeTolerance = W24SizeToleranceGeneral()
+
+    unit: Optional[W24UnitLength] = None
 
     thread: Optional[W24Thread] = None
 
@@ -187,5 +187,3 @@ class W24Measure(W24Feature):
 
     confidence: float = 0.0
 
-    # !!! DEPECATED
-    line: Tuple[Tuple[float, float], Tuple[float, float]]
