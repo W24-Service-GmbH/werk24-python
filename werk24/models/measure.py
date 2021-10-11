@@ -189,3 +189,5 @@ class W24Measure(W24Feature):
 
     confidence: float = 0.0
 
+    # !!! DEPECATED
+    line: Tuple[Tuple[float, float], Tuple[float, float]]
