@@ -106,6 +106,10 @@ class W24TechreadExceptionType(str, Enum):
     be a drawing
     """
 
+    DRAWING_PAPER_SIZE_TOO_LARGE = "DRAWING_PAPER_SIZE_TOO_LARGE"
+    """ The paper size is larger that the allowed paper size
+    """
+
     DRAWING_MEASURE_SYSTEM_INCOMPLETE = "DRAWING_MEASURE_SYSTEM_INCOMPLETE"
     """ The file you submitted contains too few measures to be
     manufacturable
@@ -119,6 +123,8 @@ class W24TechreadExceptionType(str, Enum):
     MODEL_FILE_SIZE_TOO_LARGE = "MODEL_FILE_SIZE_TOO_LARGE"
     """ The Model fiel size exceeded the limit
     """
+
+
 
 
 class W24TechreadExceptionLevel(str, Enum):
