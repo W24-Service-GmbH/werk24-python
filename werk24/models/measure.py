@@ -8,12 +8,14 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import UUID4, BaseModel, validator
 
 from .chamfer import W24Chamfer
+from .depth import W24Depth
 from .feature import W24Feature
 from .size import (W24Size, W24SizeTolerance, W24SizeToleranceGeneral,
                    parse_tolerance)
+from .test_dimension import W24TestDimension
 from .thread import W24Thread
 from .unit import W24UnitLength
-from .test_dimension import W24TestDimension
+
 
 class W24MeasureWarningType(str, Enum):
     """ List of all warnings that can be associated with
@@ -97,10 +99,6 @@ class W24MeasureLabel(BaseModel):
             To avoid any loss of precision, we return the size in the unit
             that was indicated on the drawing.
 
-        unit: Length unit of the size. This information is only available
-            when you request the TitleBlock as well; as only the title block
-            will allow us to determine the geographic origin of the drawing.
-
         size_tolerance: Tolerance details. Default: General tolerances.
             By default we are refering to the general tolerances of the drawing.
             When you are also requesting the TitleBlock, we are attaching the
@@ -111,6 +109,10 @@ class W24MeasureLabel(BaseModel):
             i.e, the label is surrounded by a box, like: "[15]", the size_tolerance
             refers to a W24SizeToleranceTheoreticallyExact object (and is NOT None)
 
+        unit: Length unit of the size. This information is only available
+            when you request the TitleBlock as well; as only the title block
+            will allow us to determine the geographic origin of the drawing.
+
         thread: Optional thread details.
             The thread details describe the complete thread description
             and follow the respective standards. In consequence, the thread
@@ -118,6 +120,8 @@ class W24MeasureLabel(BaseModel):
             while the thread diameter of an UTS thread will be in inch.
 
         chamfer: Optional Chamfer
+
+        depth: Depth of the drilling or thread. Uses the same dimensions
 
     """
 
@@ -135,7 +139,9 @@ class W24MeasureLabel(BaseModel):
 
     chamfer: Optional[W24Chamfer] = None
 
-    test_dimension:Optional[W24TestDimension] = None
+    depth: Optional[W24Depth] = None
+
+    test_dimension: Optional[W24TestDimension] = None
 
     @validator('size_tolerance', pre=True)
     def asks_validator(  # NOQA
