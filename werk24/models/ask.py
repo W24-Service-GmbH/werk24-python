@@ -74,6 +74,10 @@ class W24AskType(str, Enum):
     title block
     """
 
+    VARIANT_EXTERNAL_DIMENSION = "VARIANT_EXTERNAL_DIMENSION"
+    """ Ask for the external dimensions
+    """
+
 
 class W24Ask(BaseModel):
     """ Base model from wich all Asks inherit
@@ -410,6 +414,10 @@ class W24AskVariantCADResponse(BaseModel):
     num_angles: int = 0
 
 
+class W24AskVariantExternalDimension(W24Ask):
+    ask_type = W24AskType.VARIANT_EXTERNAL_DIMENSION
+
+
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
     W24AskPageThumbnail,
@@ -417,6 +425,7 @@ W24AskUnion = Union[
     W24AskSheetThumbnail,
     W24AskTitleBlock,
     W24AskTrain,
+    W24AskVariantExternalDimension,
     W24AskVariantGDTs,
     W24AskVariantLeaders,
     W24AskVariantMaterial,
