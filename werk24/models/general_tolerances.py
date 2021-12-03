@@ -145,6 +145,10 @@ class W24GeneralTolerances(BaseModel):
     on the Title Block of the Technical Drawing.
     """
 
+    blurb: str
+    """ Blurb of the general tolerances for human consumption
+    """
+
     tolerance_standard: W24GeneralTolerancesStandard
     """ GeneralTolerance Standard that was defined
     in the Drawing
