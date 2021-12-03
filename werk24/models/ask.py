@@ -153,8 +153,17 @@ class W24AskCanvasThumbnail(W24AskThumbnail):
         We preprocess the canvas so that it is always white-on-black,
         even when the Technical Drawing that you submitted was
         black-on-white.
+
+    Attributes:
+        remove_canvas_text__dangerous (bool): Remove the canvas
+            text from the canvas thumbnail.
+            !!! DANGEROUS: chances are that you are removing
+            !!! important information. Run a risk analysis
+            !!! before using this attribute
     """
     ask_type = W24AskType.CANVAS_THUMBNAIL
+
+    remove_canvas_text__dangerous: bool = False
 
 
 class W24AskSectionalThumbnail(W24AskThumbnail):
