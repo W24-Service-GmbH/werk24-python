@@ -339,9 +339,10 @@ class W24Gui(QMainWindow):
             hooks (List[Hook]): List of all the hooks to
                 call when data becomdes availabel
         """
-    
+
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(self._start_techread_request_async(input_file, hooks))
+        loop.run_until_complete(
+            self._start_techread_request_async(input_file, hooks))
         try:
             loop.close()
         except RunTimeError:
@@ -368,6 +369,9 @@ class W24Gui(QMainWindow):
             # and make the request
             try:
                 drawing_bytes = _get_drawing(input_file)
+                if drawing_bytes is None:
+                    return
+
                 await session.read_drawing_with_hooks(drawing_bytes, hooks)
 
             except FileNotFoundError:
@@ -377,7 +381,6 @@ class W24Gui(QMainWindow):
                 self._warn(
                     "Request was too large to be processed. " +
                     "Please check the documentation for current limits.")
-                
 
         # finaly tell the system that the request is done
         self.signals.completion.emit()
