@@ -82,6 +82,41 @@ DEFAULT_SERVER_WSS = "techread-ws.w24.io"
 DEFAULT_VERSION = "v1"
 
 
+LICENSE_ERROR_TEXT = """
+
+////////////////////////////////////////////////////////////////////////////////
+
+,.'xWWx'.,kWWd'.;0O,..'',,,,:Ox'..',,'',:lOWNo..:0MXd,.'lKWMNOc'.,;;'....';,....
+l..lXK:...cXKc..oNO,..o0KKKKXNx'.'dKKOc...;0No..;OOc..:kNMMXl'.'oOOOO:..;kKd'...
+k,.,kx'...,kx,.;OMO,..:dddxkXWx'.'xXX0c...:0No..,:,.'oXWMMMO,..,lc;kXl.:kKNk'...
+Xc..:;.;l,.::..lNMO,..,ccccoKWx'..,;,'.';l0WNo.......lKMMMMO,....;x0o,:00ONO;...
+Wk'....dKl....,OMMO,.'dNWWWWWWx'.'okl'.,:xNMNo..'ld:..:OWMMO,..'oKXkl;cxxOWKc...
+MKc...;0WO,...lXMMO,..;oooooxKx'.,OMNd'..,dNNo..;0MKl'.,dNMO,..,oxxddc'..;oc..;x
+MWd'..lNMXl..'xWMMO,........;Ox'.,OMMNo...,kNo..:0MMKc..,xWO,................c0W
+
+////////////////////////////////////////////////////////////////////////////////
+
+Thank you for your interest ist Werk24.
+
+_General Information_
+Werk24 is a commercial company focusing on information extraction from
+Technical Documents. The client you are running right now allows you to to
+communicate with our server infrastructure.
+
+_License File_
+We were unable to locate a license file, please schedule a first meeting with
+us to learn about the possibilities of our Technology:
+
+
+        >>> https://werk24.io/schedule-a-call?w24cli_license_error <<<
+
+
+Thank you.
+
+////////////////////////////////////////////////////////////////////////////////
+"""
+
+
 class Hook(BaseModel):
     """ Small Object to keep the callback requests.
     You can either register a callback request to an
@@ -486,7 +521,7 @@ class W24TechreadClient:
             # if the caller defined a license path, but it does not
             # exist, raise the exception
             else:
-                raise LicenseError("Licence File not found")
+                raise LicenseError(LICENSE_ERROR_TEXT)
 
         # Second priority: use the environment variables
         else:
@@ -575,13 +610,8 @@ class W24TechreadClient:
                 environs['W24TECHREAD_AUTH_PASSWORD'])
 
         except KeyError:
-            raise LicenseError(
-                "The License information could neither be "
-                "found in the local environment variables, nor in the "
-                "local '.werk24' file. Please make sure that you are "
-                "calling the client from the directory that contains "
-                "your '.werk24' file and that the license file "
-                "name does not contain a prefix.")
+
+            raise LicenseError(LICENSE_ERROR_TEXT)
 
         # return the client
         return client
