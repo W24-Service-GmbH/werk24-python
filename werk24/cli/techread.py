@@ -139,7 +139,7 @@ def _store_variant_cad_payload(
 
 def _get_drawing(
     file_path: str
-) -> bytes:
+) -> Optional[bytes]:
     """ Get the bytes of the file that shall be
     read.
 
@@ -149,9 +149,12 @@ def _get_drawing(
     Returns:
         bytes: content of the fiel
     """
-    # get the content
-    with open(file_path, "rb") as filehandle:
-        return filehandle.read()
+    try:
+        with open(file_path, "rb") as filehandle:
+            return filehandle.read()
+    except FileNotFoundError:
+        print(f"File {file_path} not found")
+        return None
 
 
 def _print_payload(
@@ -225,6 +228,8 @@ async def main(
 
         # get the drawing
         drawing_bytes = _get_drawing(args.input_file)
+        if drawing_bytes is None:
+            return
 
         # and make the request
         try:
