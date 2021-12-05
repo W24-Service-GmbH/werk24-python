@@ -17,3 +17,22 @@ class W24UnitAngle(str, Enum):
     """
 
     DEGREE = "DEGREE"
+
+
+class W24UnitWeight(str, Enum):
+    """ Enum of all the supported weights
+
+    NOTE: This also includes relative weights
+    such as kilogram per meter
+
+    """
+
+    # Absolute weights
+    GRAM = "GRAM"
+    KILOGRAM = "KILOGRAM"
+    POUND = "POUND"
+    OUNCE = "OUNCE"
+
+    # Weights per distance
+    GRAM_PER_METER = "GRAM_PER_METER"
+    KILOGRAM_PER_METER = "KILOGRAM_PER_METER"

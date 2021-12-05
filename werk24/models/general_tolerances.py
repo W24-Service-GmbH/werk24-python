@@ -1,10 +1,8 @@
-from typing import Union
-from pydantic import UUID4, BaseModel, validator
-from enum import Enum
-from typing import List, Optional
-
-from pydantic import BaseModel
 from decimal import Decimal
+from enum import Enum
+from typing import List, Optional, Union
+
+from pydantic import UUID4, BaseModel, validator
 
 
 class W24GeneralTolerancesStandard(str, Enum):
