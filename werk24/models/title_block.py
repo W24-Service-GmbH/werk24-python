@@ -5,6 +5,7 @@ from pydantic import BaseModel, validator
 from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
+from .weight import W24Weight
 
 
 class W24TitleBlockItem(BaseModel):
@@ -56,6 +57,10 @@ class W24TitleBlock(BaseModel):
 
         material: Material which is quoted on the TitleBlock
 
+        weight: Weight as read from the TitleBlock. NOTE: this is not
+            cross-checked with the material and volume of the part,
+            but provided as it was read on the TitleBlock.
+
     """
 
     designation: Optional[W24CaptionValuePair]
@@ -67,6 +72,8 @@ class W24TitleBlock(BaseModel):
     general_tolerances: Optional[W24GeneralTolerances]
 
     material: Optional[W24Material]
+
+    weight: Optional[W24Weight]
 
     @validator('designation', pre=True)
     def designation_validator(

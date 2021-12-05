@@ -1,13 +1,14 @@
 """ Module handling the authentication
 """
-import time
 import base64
 import hashlib
 import hmac
-from botocore.exceptions import ClientError
+import time
 from typing import Optional, Tuple
 
 import boto3
+from botocore.exceptions import ClientError
+
 from werk24.exceptions import UnauthorizedException
 
 
