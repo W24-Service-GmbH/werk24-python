@@ -1,5 +1,6 @@
 """ Defintion of all W24Ask types that are understood by the Werk24 API.
 """
+from .geometric_shape import W24GeometricShapeCylinder, W24GeometricShapeCuboid
 from enum import Enum
 from typing import List, Optional, Union
 
@@ -74,7 +75,7 @@ class W24AskType(str, Enum):
     title block
     """
 
-    VARIANT_EXTERNAL_DIMENSION = "VARIANT_EXTERNAL_DIMENSION"
+    VARIANT_EXTERNAL_DIMENSIONS = "VARIANT_EXTERNAL_DIMENSIONS"
     """ Ask for the external dimensions
     """
 
@@ -423,8 +424,38 @@ class W24AskVariantCADResponse(BaseModel):
     num_angles: int = 0
 
 
-class W24AskVariantExternalDimension(W24Ask):
-    ask_type = W24AskType.VARIANT_EXTERNAL_DIMENSION
+class W24AskVariantExternalDimensions(W24Ask):
+    """ Ask object to request the external dimensions of each
+    variant on the Document.
+    """
+
+    ask_type = W24AskType.VARIANT_EXTERNAL_DIMENSIONS
+
+
+class W24AskVariantExternalDimensionsResponse(BaseModel):
+    """ Response object corresponding to the W24AskVariantExternalDimensions
+
+    Attributes:
+        variant_id (UUID4): Unique ID of the variant detected on the
+            Technical Drawing. Refer to the documentation on Variants
+            for details.
+
+
+        enclosing_cuboid (W24GeometricShapeCuboid): Cuboid that encloses
+            the complete geometric shape of the part
+
+        enclosing_cylinder (W24GeometricShapeCuboid): Cylinder that encloses
+            the complete geometric shape of the part
+
+        confidence (float): Confidence that the reading is correct.
+
+        !!! the cuboid and cylinder are not necessarily aligned. So might
+        !!! receive different depths of the cuboid and the cylinder.
+    """
+    variant_id: UUID4
+    enclosing_cuboid: Optional[W24GeometricShapeCuboid]
+    enclosing_cylinder: Optional[W24GeometricShapeCylinder]
+    confidence: float
 
 
 W24AskUnion = Union[
@@ -434,7 +465,7 @@ W24AskUnion = Union[
     W24AskSheetThumbnail,
     W24AskTitleBlock,
     W24AskTrain,
-    W24AskVariantExternalDimension,
+    W24AskVariantExternalDimensions,
     W24AskVariantGDTs,
     W24AskVariantLeaders,
     W24AskVariantMaterial,
