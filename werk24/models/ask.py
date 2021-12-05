@@ -453,8 +453,8 @@ class W24AskVariantExternalDimensionsResponse(BaseModel):
         !!! receive different depths of the cuboid and the cylinder.
     """
     variant_id: UUID4
-    enclosing_cuboid: W24GeometricShapeCuboid
-    enclosing_cylinder: W24GeometricShapeCylinder
+    enclosing_cuboid: Optional[W24GeometricShapeCuboid]
+    enclosing_cylinder: Optional[W24GeometricShapeCylinder]
     confidence: float
 
 
