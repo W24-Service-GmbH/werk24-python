@@ -4,7 +4,11 @@ from enum import Enum
 class W24UnitLength(str, Enum):
     """ Enum of the supported length units
     """
+    METER = "METER"
+    DECIMETER = "DECIMETER"
+    CENTIMETER = "CENTIMETER"
     MILLIMETER = "MILLIMETER"
+    FOOT = "FOOT"
     INCH = "INCH"
 
 
@@ -15,7 +19,6 @@ class W24UnitAngle(str, Enum):
     If you come across a drawing that uses GON, let
     us know, we love the concept!
     """
-
     DEGREE = "DEGREE"
 
 
@@ -32,7 +35,3 @@ class W24UnitWeight(str, Enum):
     KILOGRAM = "KILOGRAM"
     POUND = "POUND"
     OUNCE = "OUNCE"
-
-    # Weights per distance
-    GRAM_PER_METER = "GRAM_PER_METER"
-    KILOGRAM_PER_METER = "KILOGRAM_PER_METER"
