@@ -156,15 +156,15 @@ class W24AskCanvasThumbnail(W24AskThumbnail):
         black-on-white.
 
     Attributes:
-        remove_canvas_text__dangerous (bool): Remove the canvas
-            text from the canvas thumbnail.
+        remove_canvas_notes__dangerous (bool): Remove the canvas
+            notes from the canvas thumbnail.
             !!! DANGEROUS: chances are that you are removing
             !!! important information. Run a risk analysis
             !!! before using this attribute
     """
     ask_type = W24AskType.CANVAS_THUMBNAIL
 
-    remove_canvas_text__dangerous: bool = False
+    remove_canvas_notes__dangerous: bool = False
 
 
 class W24AskSectionalThumbnail(W24AskThumbnail):
