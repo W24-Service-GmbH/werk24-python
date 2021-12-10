@@ -9,7 +9,7 @@ from .general_tolerances import W24GeneralTolerancesStandard
 
 
 class W24SizeToleranceType(str, Enum):
-    """ Enum of the supported tolerances
+    """ Enum of the supported tolerations
     """
     APPROXIMATION = "APPROXIMATION"
     FIT_SIZE_ISO = "FIT_SIZE_ISO"

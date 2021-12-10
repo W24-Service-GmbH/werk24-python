@@ -1,5 +1,9 @@
 """ Defintion of all W24Ask types that are understood by the Werk24 API.
 """
+from .measure import W24MeasureLabel
+from .material import W24Material
+from .radius import W24Radius
+from .general_tolerances import W24GeneralTolerances
 from .geometric_shape import W24GeometricShapeCylinder, W24GeometricShapeCuboid
 from enum import Enum
 from typing import List, Optional, Union
@@ -77,6 +81,10 @@ class W24AskType(str, Enum):
 
     VARIANT_EXTERNAL_DIMENSIONS = "VARIANT_EXTERNAL_DIMENSIONS"
     """ Ask for the external dimensions
+    """
+
+    PRODUCT_PMI_EXTRACT = "PRODUCT_PMI_EXTRACT"
+    """ Ask for the PMI Extract Product
     """
 
 
@@ -440,7 +448,6 @@ class W24AskVariantExternalDimensionsResponse(BaseModel):
             Technical Drawing. Refer to the documentation on Variants
             for details.
 
-
         enclosing_cuboid (W24GeometricShapeCuboid): Cuboid that encloses
             the complete geometric shape of the part
 
@@ -458,6 +465,48 @@ class W24AskVariantExternalDimensionsResponse(BaseModel):
     confidence: float
 
 
+class W24AskProductPMIExtract(W24Ask):
+    """ Ask object to request the PMIExtract Product.
+    """
+    ask_type = W24AskType.PRODUCT_PMI_EXTRACT
+
+
+class W24AskProductPMIExtractResponse(BaseModel):
+    """ Response object corresponding to the W24AaskProduct PMIExtract
+
+    Attributes:
+
+        variant_id (UUID4): Unique ID of the variant detected on the
+            Technical Drawing. Refer to the documentation on Variants
+            for details.
+
+        material (Optional[W24Material]): Material that was detected on
+            the technical drawing. If no material was detected,
+            this is set to None.
+
+        general_tolerances (Optional[W24GeneralTolerances]): General tolerances
+            detected on the drawing. This will automatically translate the
+            general tolerances detected on the canvas notes to an ISO-2768
+            class. None if no general tolerances are detected.
+
+        measures (List[W24Measure]): List of the available measures on
+            the drawing. Note: in the PMIExtract, the position will not be
+            returned.
+
+        gdts (List[W24GDT]): List of the detected GD&Ts. Note: in the
+            PMIExtract, the position will not be returned.
+
+        radii (List[Radius]): List of the detected Radii. Note: in the
+            PMIExtract, the position will not be returned.
+    """
+    variant_id: UUID4
+    material: Optional[W24Material]
+    general_tolerances: Optional[W24GeneralTolerances]
+    measures: List[W24Measure]
+    gdts: List[W24GDT]
+    radii: List[W24Radius]
+
+
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
     W24AskPageThumbnail,
@@ -471,5 +520,6 @@ W24AskUnion = Union[
     W24AskVariantMaterial,
     W24AskVariantMeasures,
     W24AskVariantCAD,
+    W24AskProductPMIExtract,
 ]
 """ Union of all W24Asks to ensure proper deserialization """
