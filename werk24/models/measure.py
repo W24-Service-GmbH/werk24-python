@@ -80,7 +80,7 @@ class W24MeasureWarningUnproportional(W24MeasureWarning):
 
 
 class W24MeasureLabel(BaseModel):
-    """ Measure Label associated either to a Measure or a Leader.
+    """ Measure Label
 
     Attributes:
         blurb: String representation of the item for human consumption
@@ -92,8 +92,8 @@ class W24MeasureLabel(BaseModel):
             feature, we will add an attribute to the ASK, which allows you
             to control the behavior.
 
-        size: Size of measure as refered to in the drawing.
-            Sizes are always assocated with units! This becomes important
+        size: Size of measure as referred to in the drawing.
+            Sizes are always associated with units! This becomes important
             to remember when you are dealing with mixed-unit drawings (e.g.,
             an adapter bolt that has an ISO thread and an UTC tapped hole).
             To avoid any loss of precision, we return the size in the unit
@@ -163,7 +163,7 @@ class W24MeasureLabel(BaseModel):
 
 
 class W24Measure(W24Feature):
-    """ Measure object anchored on the Sectional
+    """ Measure object
 
     Attributes:
         measure_id: Unique UUID4 identifier
@@ -194,6 +194,3 @@ class W24Measure(W24Feature):
     warnings: List[W24MeasureWarning] = []
 
     confidence: float = 0.0
-
-    # !!! DEPECATED
-    line: Tuple[Tuple[float, float], Tuple[float, float]]
