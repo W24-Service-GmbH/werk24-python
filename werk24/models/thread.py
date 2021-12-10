@@ -9,6 +9,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from .unit import W24UnitLength
+
 
 class W24ThreadType(str, Enum):
     """ Enum for the individual thread types
@@ -33,7 +35,15 @@ class W24Thread(BaseModel, abc.ABC):
     """ Abstract Base Class for all Threads
 
     Attributes:
+        blurb (str): String representation of humand consumption
+
         diameter (Decimal): Diameter of the thread in the units of the label
+
+        unit (W24UnitLength): Length unit of the diameter. This allows you
+            to differentiate between inch and millimeter (UTS or ISO METRIC).
+
+            NOTE: Whitworth inch are not 2.54mm long! (for historic reasons).
+            Use the whitworth_size if you need to have the whitworth inches.
 
         thread_type (W24Thread): thread type to facilitate deserialization
 
@@ -42,16 +52,13 @@ class W24Thread(BaseModel, abc.ABC):
             in the drawing.
 
     """
+    blurb: str
 
     diameter: Decimal
 
-    thread_type: W24ThreadType
-    """ thread type to facilitate deserialization
-    """
+    unit: W24UnitLength = W24UnitLength.MILLIMETER
 
-    blurb: str
-    """ string representation for human interpretation
-    """
+    thread_type: W24ThreadType
 
     handedness: W24ThreadHandedness = W24ThreadHandedness.RIGHT
 
@@ -96,8 +103,6 @@ class W24ThreadUTS(W24Thread):
             Threads with a diameter >= 0.25 inch are represented as fractions with a tailing '"'
             Examples: #0, 1 3/4"
 
-        diameter: Diameter in inch derived from the unc_size
-
         threads_per_inch: Threads per inch. The float (rather than int) is chosen to support non-convertional
             threads as well.
 
@@ -105,7 +110,6 @@ class W24ThreadUTS(W24Thread):
             * 1A, 2A, 3A for external threads
             * 1B, 2B, 3B for internal threads
     """
-
     uts_size: str
 
     threads_per_inch: Decimal
