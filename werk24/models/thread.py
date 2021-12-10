@@ -21,9 +21,29 @@ class W24ThreadType(str, Enum):
     UTS_SPECIAL = "UTS_SPECIAL"
 
 
+class W24ThreadHandedness(str, Enum):
+    """ Enum describing the direction of the
+    thread
+    """
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
+
+
 class W24Thread(BaseModel, abc.ABC):
     """ Abstract Base Class for all Threads
+
+    Attributes:
+        diameter (Decimal): Diameter of the thread in the units of the label
+
+        thread_type (W24Thread): thread type to facilitate deserialization
+
+        handedness: Left of right-handedness of the thread.
+            This will be RIGHT unless explicitly described as LEFT
+            in the drawing.
+
     """
+
+    diameter: Decimal
 
     thread_type: W24ThreadType
     """ thread type to facilitate deserialization
@@ -33,13 +53,7 @@ class W24Thread(BaseModel, abc.ABC):
     """ string representation for human interpretation
     """
 
-
-class W24ThreadHandedness(str, Enum):
-    """ Enum describing the direction of the
-    thread
-    """
-    LEFT = "LEFT"
-    RIGHT = "RIGHT"
+    handedness: W24ThreadHandedness = W24ThreadHandedness.RIGHT
 
 
 class W24ThreadISOMetric(W24Thread):
@@ -52,8 +66,6 @@ class W24ThreadISOMetric(W24Thread):
     * DIN 158-1 (i.e., cone-shaped threads)
 
     Attributes:
-        diameter: Diameter of the thread in mm. The norms range from 0.1 to 1000mm;
-            however, diameters outside that range are possible (and occur).
 
         pitch: Pitch of the thread in mm. Normed range: 0.25 - 9mm
             The value will only be set if is explicitly
@@ -69,11 +81,7 @@ class W24ThreadISOMetric(W24Thread):
     """
     thread_type = W24ThreadType.ISO_METRIC
 
-    diameter: Decimal
-
     pitch: Optional[Decimal] = None
-
-    handedness: W24ThreadHandedness = W24ThreadHandedness.RIGHT
 
 
 class W24ThreadUTS(W24Thread):
@@ -99,8 +107,6 @@ class W24ThreadUTS(W24Thread):
     """
 
     uts_size: str
-
-    diameter: Decimal
 
     threads_per_inch: Decimal
 
