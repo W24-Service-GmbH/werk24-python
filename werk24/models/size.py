@@ -35,6 +35,39 @@ class W24SizeTolerance(BaseModel, abc.ABC):
     blurb: str
 
 
+class W24ToleranceGrade(BaseModel):
+    """ Tolerance Grade following ISO 286-1
+
+    Attributes:
+        grade (Optional[int]): Tolerance Grade in the range
+            of IT1 to IT18. None if the tolerance is outside the
+            normed region
+
+        size_gt_norm (bool):  True if the nominal size of the
+            measure is greater than the normed region
+            (i.e., larger than 3150 mm)
+
+        tolerance_lt_norm (bool): True if the tolerance width
+            is less than the minimal normed range
+            (e.g.,< 0.8 μm for <3mm sizes)
+
+        tolerance_gt_norm (bool): True if the tolerance width
+            is greater than the maximal normed range
+            (e.g., >1.4m for <3mm sizes)
+
+        NOTE: when tolerances are implausible (e.g., 3+/-6),
+            Werk24 will stip the tolernace completely and
+            return an untolerate measure of nominal size 3.
+    """
+    grade: Optional[float]
+
+    size_gt_norm: bool
+
+    tolerance_lt_norm: bool
+
+    tolernace_gt_norm: bool
+
+
 class W24SizeToleranceFitsizeISO(W24SizeTolerance):
     """ ISO fit size tolerations
 
@@ -47,8 +80,8 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
         deviation_upper (Decimal): Upper deviation from the
             nominal size
 
-        tolerance_grade (int): Tolerance Grade corresponding to
-            ISO 286-1. In German IT-Grad.
+        tolerance_grade (Optional[int]): Tolerance Grade corresponding
+            to ISO 286-1. In German IT-Grad.
     """
     toleration_type = W24SizeToleranceType.FIT_SIZE_ISO
 
@@ -58,7 +91,7 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
 
     deviation_upper: Decimal
 
-    tolerance_grade: int
+    tolerance_grade: W24ToleranceGrade
 
 
 class W24SizeToleranceOffSize(W24SizeTolerance):
@@ -82,7 +115,7 @@ class W24SizeToleranceOffSize(W24SizeTolerance):
 
     deviation_upper: Decimal
 
-    tolerance_grade: int
+    tolerance_grade: W24ToleranceGrade
 
 
 class W24SizeToleranceGeneral(W24SizeTolerance):
@@ -125,7 +158,7 @@ class W24SizeToleranceGeneral(W24SizeTolerance):
 
     deviation_upper: Optional[Decimal]
 
-    tolerance_grade: Optional[int]
+    tolerance_grade: Optional[W24ToleranceGrade]
 
 
 class W24SizeToleranceTheoreticallyExact(W24SizeTolerance):
