@@ -80,6 +80,9 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
         deviation_upper (Decimal): Upper deviation from the
             nominal size
 
+        fundamental_deviation (str): Fundamental deviation of
+            the fit (e.g., 'H' for a 'H7' fit)
+
         tolerance_grade (Optional[int]): Tolerance Grade corresponding
             to ISO 286-1. In German IT-Grad.
     """
@@ -90,6 +93,8 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
     deviation_lower: Decimal
 
     deviation_upper: Decimal
+
+    fundamental_deviation: str
 
     tolerance_grade: W24ToleranceGrade
 
