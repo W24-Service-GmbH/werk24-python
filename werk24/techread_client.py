@@ -25,7 +25,7 @@ import uuid
 from asyncio import gather, iscoroutinefunction
 from types import TracebackType
 from typing import (AsyncGenerator, AsyncIterator, Callable, Dict, List,
-                    Optional, Type)
+                    Optional, Type, Union)
 
 import dotenv
 from pydantic import BaseModel
@@ -71,7 +71,7 @@ EXCEPTION_MAP = {
     BadRequestException:
         W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE
 }
-""" Map to translate the local exceptions to offical
+""" Map to translate the local exceptions to official
 W24Exceptions. This allows us to mock consistent responses
 even when the files are rejected before they reach the API
 """
@@ -177,7 +177,7 @@ class W24TechreadClient:
         self._techread_client_https = TechreadClientHttps(
             techread_server_https, techread_version)
 
-        # Initialize an instance of the WEBSCOKET client
+        # Initialize an instance of the WEBSOCKET client
         self._techread_client_wss = TechreadClientWss(
             techread_server_wss, techread_version)
 
@@ -277,35 +277,40 @@ class W24TechreadClient:
         Returns:
             str: username of the currently registered user
         """
-        try:
-            return self._auth_client.username
-        except ValueError:
+        if self._auth_client is None:
             return None
+
+        return self._auth_client.username
 
     async def read_drawing(
         self,
         drawing: bytes,
         asks: List[W24Ask],
-        model: bytes = None
+        model: bytes = None,
+        max_pages: int = 1
     ) -> AsyncIterator[W24TechreadMessage]:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
 
+
         Arguments:
-            drawing {bytes} -- binary representation of a technical drawing.
+            drawing (bytes): binary representation of a technical drawing.
                 Please refer to the API - documentation to learn which mime
-                types are currently supported
+                types are supported.
 
-        Keyword Arguments:
-            model {bytes} -- binary represetation of the 3d model (typically
+            model (bytes): binary representation of the 3d model (typically
                 step)
-                Please refer to the API - documentation to learn whcih mime
-                types are currently sypported(default: {None})
+                Please refer to the API - documentation to learn which mime
+                types are supported. Defaults to None.
 
-            asks {List[W24Ask]} --
-                List of Asks that are requested from the API. They must derive
-                from the W24Ask object. Refer to the API documentation for
-                a full list of supported W24AskTypes
+            asks (List[W24Ask]): List of Asks that are requested from the API.
+                They must derive from the W24Ask object. Refer to the API
+                documentation for a full list of supported W24AskTypes
+
+            max_pages (int): Maximum number of pages that are being processed
+                of the submitted file. This protects platform users from
+                costly requests caused by a user uploading a single file with
+                many pages.
 
         Yields:
             W24TechreadMessage -- Response object obtained from the API
@@ -342,7 +347,7 @@ class W24TechreadClient:
                         self._development_key[:8])
 
         # send the initiation command
-        init_response = await self._send_command_init(asks)
+        init_response = await self._send_command_init(asks, max_pages)
 
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
@@ -379,7 +384,8 @@ class W24TechreadClient:
 
     async def _send_command_init(
         self,
-        asks: List[W24Ask]
+        asks: List[W24Ask],
+        max_pages: int
     ) -> W24TechreadInitResponse:
         """ Send the initiation command to the backend
         and return the associated response
@@ -394,10 +400,14 @@ class W24TechreadClient:
         Args:
             asks (List[W24Ask]): List of asks that
                 we are asking for in this request
+
+            max_pages (int): Maximum number of pages
+                that shall be read.
         """
         request = W24TechreadRequest(
             asks=asks,
-            development_key=self._development_key)
+            development_key=self._development_key,
+            max_pages=max_pages)
 
         await self._techread_client_wss.send_command(
             W24TechreadAction.INITIALIZE.value,
@@ -416,8 +426,6 @@ class W24TechreadClient:
         Yields:
             W24TechreadMessage: Receiving messages
         """
-        import time
-        start = time.time()
 
         # submit the request the to the API
         await self._techread_client_wss.send_command(
@@ -438,7 +446,6 @@ class W24TechreadClient:
             if message.payload_url is not None:
                 message.payload_bytes = await self._techread_client_https \
                     .download_payload(message.payload_url)
-                start = time.time()
 
             # return the message to the caller for immediate
             # consumption
@@ -447,15 +454,15 @@ class W24TechreadClient:
     @staticmethod
     async def _trigger_asks_exception(
         asks: List[W24Ask],
-        exception: RequestTooLargeException
-    ) -> None:
+        exception_raw: Union[BadRequestException, RequestTooLargeException]
+    ) -> AsyncGenerator[W24TechreadMessage, None]:
         """ Trigger exceptions for all the submitted asks.
         This helps us to mock consistent exception handling
         behavior even when the files are rejected before they
         reach the API.
 
         Args:
-            asks (List[W24Ask]): List of all submited asks
+            asks (List[W24Ask]): List of all submitted asks
             exception (RequestTooLargeException): Exception
                 that shall be pushed
 
@@ -465,7 +472,7 @@ class W24TechreadClient:
 
         # get the exception type from the MAP
         try:
-            exception_type = EXCEPTION_MAP[type(exception)]
+            exception_type = EXCEPTION_MAP[type(exception_raw)]
 
         # if we see an exception that we were not supposed
         # to handle, there must have been a developer passing
@@ -473,7 +480,7 @@ class W24TechreadClient:
         # a runtime error
         except KeyError:
             raise RuntimeError(
-                f"Unknown exception type passed: {type(exception)}")
+                f"Unknown exception type passed: {type(exception_raw)}")
 
         # translate the exception into an official exception
         exception = W24TechreadException(
@@ -541,7 +548,7 @@ class W24TechreadClient:
         version: Optional[str] = None
     ) -> "W24TechreadClient":
         """ Small helper function that creates a new
-        W24TechreadClient from the enviorment info.
+        W24TechreadClient from the environment info.
 
         Arguments:
             license_path:{Optional[str]} -- path to the License file.
@@ -572,23 +579,39 @@ class W24TechreadClient:
             W24TechreadClient -- The techread Client
         """
 
-        # get the licence variablles from the environment variables and
+        # get the license variables from the environment variables and
         # the license file.
         environs = cls._get_license_environs(license_path)
 
-        # define a small helper function that finds the frist valid
+        # define a small helper function that finds the first valid
         # value in the supplied list of possible values
-        def pick_env(var: str, env_key: str, default: str) -> str:
+        def pick_env(
+            var: Optional[str],
+            env_key: str,
+            default: str
+        ) -> str:
             return var or environs.get(env_key) or default
 
-        # then make sure we use the correct prioties
+        # then make sure we use the correct priorities
         auth_region = pick_env(
-            auth_region, 'W24TECHREAD_AUTH_REGION', DEFAULT_AUTH_REGION)
+            auth_region,
+            'W24TECHREAD_AUTH_REGION',
+            DEFAULT_AUTH_REGION)
+
         server_https = pick_env(
-            server_https, 'W24TECHREAD_SERVER_HTTPS', DEFAULT_SERVER_HTTPS)
+            server_https,
+            'W24TECHREAD_SERVER_HTTPS',
+            DEFAULT_SERVER_HTTPS)
+
         server_wss = pick_env(
-            server_wss, 'W24TECHREAD_SERVER_WSS', DEFAULT_SERVER_WSS)
-        version = pick_env(version, 'W24TECHREAD_VERSION', DEFAULT_VERSION)
+            server_wss,
+            'W24TECHREAD_SERVER_WSS',
+            DEFAULT_SERVER_WSS)
+
+        version = pick_env(
+            version,
+            'W24TECHREAD_VERSION',
+            DEFAULT_VERSION)
 
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
@@ -610,7 +633,6 @@ class W24TechreadClient:
                 environs['W24TECHREAD_AUTH_PASSWORD'])
 
         except KeyError:
-
             raise LicenseError(LICENSE_ERROR_TEXT)
 
         # return the client
@@ -639,7 +661,8 @@ class W24TechreadClient:
         asks_list = [
             cur_ask.ask
             for cur_ask in hooks
-            if cur_ask.ask is not None]
+            if cur_ask.ask is not None
+        ]
 
         try:
             # send out the request and make a generator
@@ -657,7 +680,7 @@ class W24TechreadClient:
             message: W24TechreadMessage,
             hooks: List[Hook]
     ) -> None:
-        """ Find the correct hook for the read reseponse and
+        """ Find the correct hook for the read response and
         call the corresponding hook.
 
         Arguments:
@@ -739,7 +762,7 @@ class W24TechreadClient:
             return cur_hook.function
 
         # if we are still here, we have an unknown message type, which
-        # probobly is being caused by an API update. We want to ensure
+        # probably is being caused by an API update. We want to ensure
         # that the user is being informed, but we do not want to break
         # the existing functionality -> warning
         logger.warning(
