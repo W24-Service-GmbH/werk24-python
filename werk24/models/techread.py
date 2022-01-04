@@ -175,6 +175,9 @@ class W24TechreadMessage(BaseModel):
 
         message_subtype: Message SubType (see W24TechreadMessageSubtype)
 
+        page_number: Page number that the response belongs to. Starts at
+            zero.
+
         payload_dict: Payload dictionary containing the response
             as dict. The MessageType/Subtype will tell the
             interpreter how to turn the payload back into
@@ -196,6 +199,8 @@ class W24TechreadMessage(BaseModel):
     message_type: W24TechreadMessageType
 
     message_subtype: W24TechreadMessageSubtype
+
+    page_number: int = 0
 
     payload_dict: Optional[Dict] = None
 
@@ -234,12 +239,16 @@ class W24TechreadRequest(BaseModel):
 
         client_version: Current version of the client. For backward
             compatibility, this defaults to 'legacy'
+
+        max_pages: Maximum number of pages that shall be processed.
     """
     asks: List[W24Ask] = []
 
     development_key: Optional[str] = None
 
     client_version = __version__
+
+    max_pages: int = 1
 
     @validator('asks', pre=True)
     def ask_list_validator(
