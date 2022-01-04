@@ -1,13 +1,14 @@
 """ Defintions of all objects required to communicate with
 the W24 Techread API.
 """
+from typing import Any
 from enum import Enum
 from typing import Dict, List, Optional, Union
 
-from pydantic import UUID4, BaseModel, Field, HttpUrl, Json
+from pydantic import UUID4, BaseModel, Field, HttpUrl, Json, validator
 from werk24._version import __version__
 
-from .ask import W24AskType, W24AskUnion
+from .ask import W24AskType, W24Ask, deserialize_ask
 
 
 class W24TechreadAction(str, Enum):
@@ -125,8 +126,6 @@ class W24TechreadExceptionType(str, Enum):
     """
 
 
-
-
 class W24TechreadExceptionLevel(str, Enum):
     """ Severity level for the Error
 
@@ -233,15 +232,31 @@ class W24TechreadRequest(BaseModel):
             It wil give you access to pre-release versions of our software.
             You will only understand the details if you...
 
-        client_version: Current version of the client. For backward compatibility,
-            this defaults to 'legacy'
+        client_version: Current version of the client. For backward
+            compatibility, this defaults to 'legacy'
     """
-
-    asks: List[W24AskUnion] = []
+    asks: List[W24Ask] = []
 
     development_key: Optional[str] = None
 
     client_version = __version__
+
+    @validator('asks', pre=True)
+    def ask_list_validator(
+        cls,
+        raw: List[Dict[str, Any]]
+    ) -> List[W24Ask]:
+        """ Validator to de-serialize the asks. The de-serialization
+        is based on the ask_type attribute of the object. Pydantic
+        does not support this out-of-the box
+
+        Args:
+            raw (Dict[str, Any]): Raw json of the asks list
+
+        Returns:
+            List[W24AskUnion]: List of deserialized Asks
+        """
+        return [deserialize_ask(a) for a in raw]
 
 
 class W24PresignedPost(BaseModel):

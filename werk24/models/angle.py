@@ -30,7 +30,7 @@ class W24AngleToleration(BaseModel, abc.ABC):
         toleration_type: Toleration Type  of the
             `W24AngleSize`
 
-        blurb: String representation for human consummption
+        blurb: String representation for human consumption
 
     !!! caution
         This model will soon be extended to contain the
@@ -104,17 +104,17 @@ class W24Angle(W24Feature):
 
         confidence: Werk24 calculates an internal confidence
             score for each angle. The score ranges from 0.0
-            to 1.0 and can be used to accpect the reading
+            to 1.0 and can be used to accept the reading
             as-is or queuing it for a manual verification.
     """
 
-    # !!! DEPECATED
+    # !!! DEPRECATED
     vertex: Tuple[float, float]
 
-    # !!! DEPECATED
+    # !!! DEPRECATED
     ray1: Tuple[float, float]
 
-    # !!! DEPECATED
+    # !!! DEPRECATED
     ray2: Tuple[float, float]
 
     angle_id: Optional[UUID4]

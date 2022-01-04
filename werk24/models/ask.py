@@ -1,6 +1,6 @@
 """ Defintion of all W24Ask types that are understood by the Werk24 API.
 """
-from .measure import W24MeasureLabel
+from typing import Dict, Any, Type
 from .material import W24Material
 from .radius import W24Radius
 from .general_tolerances import W24GeneralTolerances
@@ -89,11 +89,11 @@ class W24AskType(str, Enum):
 
 
 class W24Ask(BaseModel):
-    """ Base model from wich all Asks inherit
+    """ Base model from which all Asks inherit
 
     Attributes:
         ask_type: Type of the requested Ask. Used
-            for deserialization.
+            for de-serialization.
 
         is_training: Flag that indicates that your request
             is a pure training request and that you are not
@@ -472,7 +472,7 @@ class W24AskProductPMIExtract(W24Ask):
 
 
 class W24AskProductPMIExtractResponse(BaseModel):
-    """ Response object corresponding to the W24AaskProduct PMIExtract
+    """ Response object corresponding to the W24AskProduct PMIExtract
 
     Attributes:
 
@@ -522,4 +522,62 @@ W24AskUnion = Union[
     W24AskVariantCAD,
     W24AskProductPMIExtract,
 ]
-""" Union of all W24Asks to ensure proper deserialization """
+""" Union of all W24Asks to ensure proper de-serialization """
+
+
+def deserialize_ask(
+    raw: Union[Dict[str, Any], W24Ask],
+) -> W24Ask:
+    """ Deserialize a specific ask in its raw form
+
+    Args:
+        raw (Dict[str, Any]): Raw Ask as it arrives from the
+            json deserializer
+
+    Returns:
+        W24AskUnion: Corresponding ask type
+    """
+    if isinstance(raw, dict):
+        ask_type = _deserialize_ask_type(raw.get('ask_type', ''))
+        return ask_type.parse_obj(raw)
+
+    if isinstance(raw, W24Ask):
+        return raw
+
+    raise ValueError(f"Unsupported value type '{type(raw)}'")
+
+
+def _deserialize_ask_type(
+    ask_type: str
+) -> Type[W24Ask]:
+    """ Get the Ask Class from the ask type
+
+    Args:
+        ask_type (str): Ask type in question
+
+    Raises:
+        ValueError: Raised if ask type is unknown
+
+    Returns:
+        str: Name of the AskObject
+    """
+    class_ = {
+        "CANVAS_THUMBNAIL": W24AskCanvasThumbnail,
+        "PAGE_THUMBNAIL": W24AskPageThumbnail,
+        "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
+        "SHEET_THUMBNAIL": W24AskSheetThumbnail,
+        "TITLE_BLOCK": W24AskTitleBlock,
+        "TRAIN": W24AskTrain,
+        "VARIANT_EXTERNAL_DIMENSIONS": W24AskVariantExternalDimensions,
+        "VARIANT_GDTS": W24AskVariantGDTs,
+        "VARIANT_LEADERS": W24AskVariantLeaders,
+        "VARIANT_MATERIAL": W24AskVariantMaterial,
+        "VARIANT_MEASURES": W24AskVariantMeasures,
+        "VARIANT_CAD": W24AskVariantCAD,
+        "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
+    }.get(ask_type, None)
+
+    if class_ is None:
+        raise ValueError(f"Unknown Ask Type '{ask_type}'")
+
+    return class_
