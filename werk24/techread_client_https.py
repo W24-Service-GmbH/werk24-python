@@ -215,16 +215,6 @@ class TechreadClientHttps:
         Returns:
             bytes -- Payload
         """
-
-        # Parse the payload_url and enure that you are downloading
-        # the data from the server you talked to in the first place.
-        # This works as a defence mechanism against token theft.
-        url_parsed = urlparse(payload_url)
-        if url_parsed.netloc != self._techread_server:
-            raise RuntimeError(
-                "INTRUSION!!! ",
-                f"Payload_url '{payload_url}' not allowed. INVESTIGATE!!!")
-
         # send the get request to the endpoint
         try:
             response = await self._get(payload_url)

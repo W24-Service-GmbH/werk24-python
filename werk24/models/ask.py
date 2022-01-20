@@ -1,20 +1,20 @@
 """ Defintion of all W24Ask types that are understood by the Werk24 API.
 """
-from typing import Dict, Any, Type
-from .material import W24Material
-from .radius import W24Radius
-from .general_tolerances import W24GeneralTolerances
-from .geometric_shape import W24GeometricShapeCylinder, W24GeometricShapeCuboid
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import UUID4, BaseModel
 
 from .angle import W24Angle
 from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
 from .gdt import W24GDT
+from .general_tolerances import W24GeneralTolerances
+from .geometric_shape import W24GeometricShapeCuboid, W24GeometricShapeCylinder
 from .leader import W24Leader
+from .material import W24Material
 from .measure import W24Measure
+from .radius import W24Radius
+from .roughness import W24Roughness
 
 
 class W24AskType(str, Enum):
@@ -71,6 +71,11 @@ class W24AskType(str, Enum):
 
     VARIANT_MEASURES = "VARIANT_MEASURES"
     """ List of Measures that were found on the Sectionals
+    associated with the variant
+    """
+
+    VARIANT_ROUGHNESSES = "VARIANT_ROUGHNESSES"
+    """ List of Roughnesses that were found on the Sectionals
     associated with the variant
     """
 
@@ -215,6 +220,37 @@ class W24AskVariantAnglesResponse(BaseModel):
     variant_id: UUID4
     sectional_id: UUID4
     angles: List[W24Angle]
+
+
+class W24AskVariantRoughnesses(W24Ask):
+    """ With this Ask you are requesting the list of all
+    roughnesses (surface symbols) that were detected for
+    the variant.
+    """
+
+    ask_type = W24AskType.VARIANT_ROUGHNESSES
+
+
+class W24AskVariantRoughnessesResponse(BaseModel):
+    """ Response object corresponding to the
+    W24AskVariantRoughnesses ask.
+
+    Attributes:
+        variant_id: Unique ID of the variant detected on
+            the Technical Drawing. Refer to the documentation
+            on Variants for details.
+
+        sectional_id: Unique ID of the sectional on which the
+            Measure was detected. This allows you to associate
+            the Measure to the SectionalThumbnail (should you
+            have requested it).
+
+        roughnesses: List of Roughnesses that were found for the
+            Variant on the Sectional.
+    """
+    variant_id: UUID4
+    sectional_id: UUID4
+    roughnesses: List[W24Roughness]
 
 
 class W24AskVariantMeasures(W24Ask):
@@ -496,8 +532,12 @@ class W24AskProductPMIExtractResponse(BaseModel):
         gdts (List[W24GDT]): List of the detected GD&Ts. Note: in the
             PMIExtract, the position will not be returned.
 
-        radii (List[Radius]): List of the detected Radii. Note: in the
+        radii (List[W24Radius]): List of the detected Radii. Note: in the
             PMIExtract, the position will not be returned.
+
+        roughnesses (List[W24Roughness]): List of the detected
+            roughnesses. Note: in the PMIExtract, the position will not
+            be returned.
     """
     variant_id: UUID4
     material: Optional[W24Material]
@@ -505,6 +545,7 @@ class W24AskProductPMIExtractResponse(BaseModel):
     measures: List[W24Measure]
     gdts: List[W24GDT]
     radii: List[W24Radius]
+    roughnesses: List[W24Roughness]
 
 
 W24AskUnion = Union[
@@ -515,11 +556,12 @@ W24AskUnion = Union[
     W24AskTitleBlock,
     W24AskTrain,
     W24AskVariantExternalDimensions,
+    W24AskVariantCAD,
     W24AskVariantGDTs,
     W24AskVariantLeaders,
     W24AskVariantMaterial,
     W24AskVariantMeasures,
-    W24AskVariantCAD,
+    W24AskVariantRoughnesses,
     W24AskProductPMIExtract,
 ]
 """ Union of all W24Asks to ensure proper de-serialization """
@@ -573,6 +615,7 @@ def _deserialize_ask_type(
         "VARIANT_LEADERS": W24AskVariantLeaders,
         "VARIANT_MATERIAL": W24AskVariantMaterial,
         "VARIANT_MEASURES": W24AskVariantMeasures,
+        "VARIANT_ROUGHNESS": W24AskVariantRoughnesses,
         "VARIANT_CAD": W24AskVariantCAD,
         "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
     }.get(ask_type, None)
