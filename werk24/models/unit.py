@@ -10,6 +10,7 @@ class W24UnitLength(str, Enum):
     MILLIMETER = "MILLIMETER"
     FOOT = "FOOT"
     INCH = "INCH"
+    MICRO_INCH = "MICRO_INCH"
 
 
 class W24UnitAngle(str, Enum):

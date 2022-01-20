@@ -3,7 +3,7 @@
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from pydantic import UUID4, BaseModel, validator
 
@@ -58,7 +58,7 @@ class W24MeasureWarningUnproportional(W24MeasureWarning):
     the Measure's end-points.
 
     NOTE: Three things can cause this:
-    1. The Measure is truely unpropotional and carries an associated
+    1. The Measure is truly unpropotional and carries an associated
         indicator.
 
     2. The Measure is unporportional, but not indicated as such.
@@ -167,13 +167,6 @@ class W24Measure(W24Feature):
 
     Attributes:
         measure_id: Unique UUID4 identifier
-
-        line: Tuple of the measure's start- and end-coordinates
-            in the Pixel Coordinate system of the sectional.
-            The coordinates are normalized by the width and height of the
-            associated object (e.g., the sectional). If you want to obtain
-            the absolute position in the original image, you need to consider
-            the following offsets: sectional + canvas + sheet.
 
         label: Measure Label
 
