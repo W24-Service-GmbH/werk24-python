@@ -123,35 +123,74 @@ class W24RoughnessCharacteristic(str, Enum):
     KURTOSIS = "ku"
 
 
-class W24RoughnessGradeWarning(str, Enum):
-    """ Warnings associated with the Roughness Grade.
-    """
-
-    SIZE_LARGER_THAN_NORM = "SIZE_LARGER_THAN_NORM"
-    TOLERANCE_WIDTH_SMALLER_THAN_NORM = "TOLERANCE_WIDTH_SMALLER_THAN_NORM"
-    TOLERANCE_WIDTH_LARGER_THAN_NORM = "TOLERANCE_WIDTH_LARGER_THAN_NORM"
-
-
 class W24RoughnessGrade(BaseModel):
     """ ISO Roughness Grade
 
     Attributes:
         blurb: String representation for human consumption
 
-        grade: Roughness Grade in the range N1 to N12.
+        grade: Roughness Grade in the range N01 to N12.
+            Valid values are N01, N0, N1, N2, N3, N4, N5,
+            N6, N7, N8, N9, N10, N11, N12, N13, N14
 
-        warning: The norm is limited to certain Ra/Rz ranges.
-            When the tolerance falls outside that range, we
-            append a warning.
     """
     blurb: str
 
-    grade: int
-
-    warning: Optional[W24RoughnessGradeWarning]
+    grade: str
 
 
-class W24RoughnessParameter(BaseModel):
+class W24RoughnessParameter(str, Enum):
+    """ Roughness Parameter that is specified.
+
+    NOTE: this list is not exhaustive, but
+    covers the most frequently used parameters.
+    """
+
+    # ASME
+    AA = "AA"
+    CLA = "CLA"
+    PVA = "PVA"
+    RMS = "RMS"
+
+    # PROFILE
+    PA = "Pa"
+    PC = "PC"
+    PKU = "Pku"
+    PP = "Pp"
+    PQ = "Pq"
+    PSK = "Psk"
+    PT = "Pt"
+    PV = "Pv"
+    PY = "Py"
+    PZ = "Pz"
+
+    # ROUGHNESS
+    RA_DIN = "Ra(DIN)"
+    RA_ISO = "Ra(ISO)"
+    RC = "Rc"
+    RKU = "Rku"
+    RP = "Rp"
+    RQ = "Rq"
+    RSK = "Rsk"
+    RT = "Rt"
+    RV = "Rv"
+    RY = "Ry"
+    RZ = "Rz"
+
+    # WAVINESS
+    WA = "Wa"
+    WC = "Wc"
+    WKU = "Wku"
+    WP = "Wp"
+    WQ = "Wq"
+    WSK = "Wsk"
+    WT = "Wt"
+    WV = "Wv"
+    WY = "Wy"
+    WZ = "Wz"
+
+
+class W24RoughnessCondition(BaseModel):
     """ Roughness Label
 
     Attributes:
@@ -206,9 +245,7 @@ class W24RoughnessParameter(BaseModel):
 
     main_lambda: Optional[Decimal]
 
-    profile: Optional[W24RoughnessProfile]
-
-    characteristic: Optional[W24RoughnessCharacteristic]
+    parameter: Optional[W24RoughnessParameter]
 
     sampling_length_multiple: Optional[int]
 
@@ -216,7 +253,7 @@ class W24RoughnessParameter(BaseModel):
 
     value_limit: Optional[Decimal]
 
-    roughness_grade: W24RoughnessGrade
+    roughness_grade: Optional[W24RoughnessGrade]
 
 
 class W24ManufacturingMethod(BaseModel):
@@ -252,14 +289,13 @@ class W24RoughnessLabel(BaseModel):
 
     manufacturing_method: Method by which to achieve the roughness
 
-    roughness_parameter_upper: Upper roughness parameter
+    condition_upper: Upper roughness condition
 
-    roughness_parameter_lower: Lower roughness parameter.
-        NOTE: bother the upper and the lower specifications are
-        optional. Only one of them has to be set.
+    condition_lower: Lower roughness condition.
 
-    unit: Unit of the machining_allowance and the parameters
-
+    unit_system: Unit system that is used for the roughness.
+        We are not using the explicit units as the different
+        attributes have different units (e.g, micro and nano meters)
 
     """
     blurb: str
@@ -276,9 +312,9 @@ class W24RoughnessLabel(BaseModel):
 
     manufacturing_method: W24ManufacturingMethod
 
-    roughness_parameter_upper: Optional[W24RoughnessParameter]
+    condition_upper: Optional[W24RoughnessCondition]
 
-    roughness_paramater_lower: Optional[W24RoughnessParameter]
+    condition_lower: Optional[W24RoughnessCondition]
 
     unit_system: W24UnitSystem
 
