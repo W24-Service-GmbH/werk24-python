@@ -159,6 +159,9 @@ class W24RoughnessParameter(str, Enum):
     WY = "Wy"
     WZ = "Wz"
 
+    # N-GRADE
+    N = "N"
+
 
 class W24RoughnessCondition(BaseModel):
     """ Roughness Label
