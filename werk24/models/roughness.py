@@ -93,36 +93,6 @@ class W24RoughnessFilterType(str, Enum):
     TWO_RC = "\"2RC\""
 
 
-class W24RoughnessProfile(str, Enum):
-    """ The measured roughness (R) can be
-    modified by applying high/low-pass filters
-    and obtain the waviness and profile
-    of a surface
-    """
-    ROUGHNESS = "R"
-    WAVINESS = "W"
-    PROFILE = "P"
-
-
-class W24RoughnessCharacteristic(str, Enum):
-    """ The Roughness / Waviness / Profile is
-    a 2 dimensional chart (height over position).
-
-    To obtain a single number, different methods
-    can be applied. The characteristic specifies
-    which one it to be used.
-    """
-    MAXIMUM_MEAN_TO_PEAK = "p"
-    MAXIMUM_MEAN_TO_VALLEY = "v"
-    MAXIMUM_PEAK_TO_VALLEY = "z"
-    MEAN_HEIGHT_OF_PROFILE = "c"
-    DEEPEST_VALLEY_TO_HEIGHEST_PEAK = "t"
-    AVERAGE_ROUGHNESS = "a"
-    ROOM_MEAN_SQUARE = "q"
-    SKEWNESS = "sk"
-    KURTOSIS = "ku"
-
-
 class W24RoughnessGrade(BaseModel):
     """ ISO Roughness Grade
 
