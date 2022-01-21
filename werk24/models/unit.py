@@ -36,3 +36,10 @@ class W24UnitWeight(str, Enum):
     KILOGRAM = "KILOGRAM"
     POUND = "POUND"
     OUNCE = "OUNCE"
+
+
+class W24UnitSystem(str, Enum):
+    """ Unit System that is used for a certain feature
+    """
+    METRIC = "METRIC"
+    IMPERIAL = "IMPERIAL"
