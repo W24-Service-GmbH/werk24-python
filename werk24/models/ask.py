@@ -74,6 +74,11 @@ class W24AskType(str, Enum):
     associated with the variant
     """
 
+    VARIANT_RADII = "VARIANT_RADII"
+    """ List of all Radii that were found on teh Sectionals
+    associated with the variant
+    """
+
     VARIANT_ROUGHNESSES = "VARIANT_ROUGHNESSES"
     """ List of Roughnesses that were found on the Sectionals
     associated with the variant
@@ -251,6 +256,35 @@ class W24AskVariantRoughnessesResponse(BaseModel):
     variant_id: UUID4
     sectional_id: UUID4
     roughnesses: List[W24Roughness]
+
+
+class W24AskVariantRadii(W24Ask):
+    """ With this Ask you are requesting the list of all
+    radii that were detected for the variant.
+    """
+    ask_type = W24AskType.VARIANT_RADII
+
+
+class W24AskVariantRadiiResponse(BaseModel):
+    """ Response object corresponding to the
+    W24AskVariantRadii ask.
+
+    Attributes:
+        variant_id: Unique ID of the variant detected on
+            the Technical Drawing. Refer to the documentation
+            on Variants for details.
+
+        sectional_id: Unique ID of the sectional on which the
+            Measure was detected. This allows you to associate
+            the Measure to the SectionalThumbnail (should you
+            have requested it).
+
+        radiis: List of Radii that were found for the
+            Variant on the Sectional.
+    """
+    variant_id: UUID4
+    sectional_id: UUID4
+    roughnesses: List[W24Radius]
 
 
 class W24AskVariantMeasures(W24Ask):
@@ -561,6 +595,7 @@ W24AskUnion = Union[
     W24AskVariantLeaders,
     W24AskVariantMaterial,
     W24AskVariantMeasures,
+    W24AskVariantRadii,
     W24AskVariantRoughnesses,
     W24AskProductPMIExtract,
 ]
@@ -615,6 +650,7 @@ def _deserialize_ask_type(
         "VARIANT_LEADERS": W24AskVariantLeaders,
         "VARIANT_MATERIAL": W24AskVariantMaterial,
         "VARIANT_MEASURES": W24AskVariantMeasures,
+        "VARAINT_RADII": W24AskVariantRadii,
         "VARIANT_ROUGHNESS": W24AskVariantRoughnesses,
         "VARIANT_CAD": W24AskVariantCAD,
         "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
