@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import UUID4, BaseModel
 
 from .feature import W24Feature
-from .unit import W24UnitLength
+from .unit import W24UnitSystem
 
 
 class W24RoughnessStandard(str, Enum):
@@ -23,11 +23,12 @@ class W24RoughnessStandard(str, Enum):
     NOTE: this list is not exhaustive, many countries have specified
     their own standards over the years. Do not hesitate to reach
     out if you wish us to implement another standard.
+
     """
     ISO_1302_1978 = "ISO 1302:1978"
     ISO_1302_1992 = "ISO 1302:1992"
     ISO_1302_2002 = "ISO 1302:2002"
-    ISO_1302_2021 = "ISO 1302:2021"
+    ISO_21920_1_2021 = "ISO 21920-1:2021"
     ASME_Y14_36M = "ASME Y14.36M"
 
 
@@ -205,9 +206,9 @@ class W24RoughnessParameter(BaseModel):
 
     main_lambda: Optional[Decimal]
 
-    profile: W24RoughnessProfile
+    profile: Optional[W24RoughnessProfile]
 
-    characteristic: W24RoughnessCharacteristic
+    characteristic: Optional[W24RoughnessCharacteristic]
 
     sampling_length_multiple: Optional[int]
 
@@ -279,7 +280,7 @@ class W24RoughnessLabel(BaseModel):
 
     roughness_paramater_lower: Optional[W24RoughnessParameter]
 
-    unit: W24UnitLength
+    unit_system: W24UnitSystem
 
 
 class W24Roughness(W24Feature):
