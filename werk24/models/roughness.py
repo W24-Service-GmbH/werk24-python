@@ -1,3 +1,4 @@
+from typing import List
 from decimal import Decimal
 from enum import Enum
 from typing import Optional
@@ -68,13 +69,14 @@ class W24RoughnessAcceptanceCriterion(str, Enum):
     MEAN = "mean"
 
 
-class W24RoughnessSide(str, Enum):
-    """ Roughnesses can specify both, the
-    upper and the lower limit (i.e., a minimum
-    roughness can be required).
+class W24RoughnessConditionType(str, Enum):
+    """ Roughnesses can specify, the
+    upper limit, the lower limit and the
+    average.
     """
     UPPER = "U"
     LOWER = "L"
+    AVERAGE = "A"
 
 
 class W24RoughnessFilterType(str, Enum):
@@ -210,7 +212,7 @@ class W24RoughnessCondition(BaseModel):
     """
     blurb: str
 
-    side: Optional[W24RoughnessSide]
+    condition_type: Optional[W24RoughnessConditionType]
 
     filter_type: Optional[W24RoughnessFilterType]
 
@@ -224,7 +226,7 @@ class W24RoughnessCondition(BaseModel):
 
     acceptance_criterion: Optional[W24RoughnessAcceptanceCriterion]
 
-    value_limit: Optional[Decimal]
+    value: Optional[Decimal]
 
     roughness_grade: Optional[W24RoughnessGrade]
 
@@ -285,9 +287,7 @@ class W24RoughnessLabel(BaseModel):
 
     manufacturing_method: W24ManufacturingMethod
 
-    condition_upper: Optional[W24RoughnessCondition]
-
-    condition_lower: Optional[W24RoughnessCondition]
+    conditions: List[W24RoughnessCondition]
 
     unit_system: W24UnitSystem
 
