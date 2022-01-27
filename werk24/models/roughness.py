@@ -222,7 +222,7 @@ class W24RoughnessCondition(BaseModel):
 
     parameter: Optional[W24RoughnessParameter]
 
-    sampling_length_multiple: Optional[int]
+    sampling_length_multiple: Optional[float]
 
     acceptance_criterion: Optional[W24RoughnessAcceptanceCriterion]
 
@@ -242,35 +242,52 @@ class W24ManufacturingMethod(BaseModel):
     blurb: str
 
 
+class W24RoughnessWaviness(BaseModel):
+    """ Roughness Waviness as defined in the ASME-Y14-36
+
+    Attributes:
+        waviness_height: Waviness height in inch
+        waviness_width: Waviness width in inch
+    """
+    waviness_height: float
+    waviness_width: float
+
+
 class W24RoughnessLabel(BaseModel):
     """ Roughness Label
 
-    blurb: String for human consumption
+    Attributes:
+        blurb: String for human consumption
 
-    blurb_html: HTML for human consumption. The complex structure of the
-        symbol makes this necessary.
+        blurb_html: HTML for human consumption. The complex structure of the
+            symbol makes this necessary.
 
-    standard : Standard in which the Roughness Symbol is written
-        NOTE: there are multiple standards that are still in use
+        standard : Standard in which the Roughness Symbol is written
+            NOTE: there are multiple standards that are still in use
 
-    machining_allowance: Machining Allowance in millimeter of micro-inch.
-        See the `unit` attribute.
+        machining_allowance: Machining Allowance in millimeter of micro-inch.
+            See the `unit` attribute.
 
-    material_removal_type: The MaterialRemovalType specifies whether material
-        must / must not be removed.
+        material_removal_type: The MaterialRemovalType specifies whether material
+            must / must not be removed.
 
-    direction_of_lay: The lay of the roughness limits the manufacturing
-        process and is sometimes required for the application.
+        applies_all_around: Boolean value that specifies whether the roughness
+            applies to all surfaces around
 
-    manufacturing_method: Method by which to achieve the roughness
+        direction_of_lay: The lay of the roughness limits the manufacturing
+            process and is sometimes required for the application.
 
-    condition_upper: Upper roughness condition
+        manufacturing_method: Method by which to achieve the roughness
 
-    condition_lower: Lower roughness condition.
+        condition_upper: Upper roughness condition
 
-    unit_system: Unit system that is used for the roughness.
-        We are not using the explicit units as the different
-        attributes have different units (e.g, micro and nano meters)
+        condition_lower: Lower roughness condition.
+
+        unit_system: Unit system that is used for the roughness.
+            We are not using the explicit units as the different
+            attributes have different units (e.g, micro and nano meters)
+
+        waviness: Waviness defined in ASME standards
 
     """
     blurb: str
@@ -292,6 +309,8 @@ class W24RoughnessLabel(BaseModel):
     conditions: List[W24RoughnessCondition]
 
     unit_system: W24UnitSystem
+
+    waviness: Optional[W24RoughnessWaviness]
 
 
 class W24Roughness(W24Feature):
