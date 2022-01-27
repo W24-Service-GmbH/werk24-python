@@ -29,7 +29,7 @@ class W24RoughnessStandard(str, Enum):
     ISO_1302_1992 = "ISO 1302:1992"
     ISO_1302_2002 = "ISO 1302:2002"
     ISO_21920_1_2021 = "ISO 21920-1:2021"
-    ASME_Y14_36_1992 = "ASME Y14.36-1992"
+    ASME_Y14_36_1995 = "ASME Y14.36-1995"
 
 
 class W24RoughnessMaterialRemovalType(str, Enum):
