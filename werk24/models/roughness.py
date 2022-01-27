@@ -1,7 +1,6 @@
-from typing import List
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import UUID4, BaseModel
 
@@ -30,7 +29,7 @@ class W24RoughnessStandard(str, Enum):
     ISO_1302_1992 = "ISO 1302:1992"
     ISO_1302_2002 = "ISO 1302:2002"
     ISO_21920_1_2021 = "ISO 21920-1:2021"
-    ASME_Y14_36M = "ASME Y14.36M"
+    ASME_Y14_36_1992 = "ASME Y14.36-1992"
 
 
 class W24RoughnessMaterialRemovalType(str, Enum):
@@ -249,8 +248,8 @@ class W24RoughnessWaviness(BaseModel):
         waviness_height: Waviness height in inch
         waviness_width: Waviness width in inch
     """
-    waviness_height: float
-    waviness_width: float
+    waviness_height: Decimal
+    waviness_width: Decimal
 
 
 class W24RoughnessLabel(BaseModel):
