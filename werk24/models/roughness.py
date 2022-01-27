@@ -283,6 +283,8 @@ class W24RoughnessLabel(BaseModel):
 
     material_removal_type: W24RoughnessMaterialRemovalType
 
+    applies_all_around: bool
+
     direction_of_lay: Optional[W24RoughnessDirectionOfLay]
 
     manufacturing_method: W24ManufacturingMethod
