@@ -181,17 +181,17 @@ class W24RoughnessEvaluationLength(BaseModel):
 
 
     Attributes:
-        sampling_length_type: Sampling length type that is specified
+        evaluation_length_type: Sampling length type that is specified
             by the applicable standard
 
-        length: sampling length in the specified units.
+        length: evaluation length in the specified units.
 
         length_unit: Millimeter for both the ISO and ASME standards
 
         lambda_c_multiple: multiple of the main cutoff lambda_c
 
     """
-    sampling_length_type: W24RoughnessEvaluationLengthType
+    evaluation_length_type: W24RoughnessEvaluationLengthType
 
     length: Decimal
     length_unit: W24UnitLength
@@ -228,8 +228,8 @@ class W24RoughnessCondition(BaseModel):
         characteristic: Method of converting the 2D-measurement into
             a single number
 
-        sampling_length: For sophisticated application, the sample needs
-            to be taken over a longer distances. This is specified the
+        evaluation_length: For sophisticated application, the roughness needs
+            to be evaluated over a longer distances. This is specified the
             either the sampling length in millimeter (ISO 3012:1974,
             ISO 3012:1978, ISO 3012:1992) or as multiple of the main lambda
             (ISO 3012:2002 and ISO 3012:2021).
