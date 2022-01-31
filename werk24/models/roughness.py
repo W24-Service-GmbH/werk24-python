@@ -193,10 +193,10 @@ class W24RoughnessEvaluationLength(BaseModel):
     """
     evaluation_length_type: W24RoughnessEvaluationLengthType
 
-    length: Decimal
-    length_unit: W24UnitLength
+    length: Optional[Decimal]
+    length_unit: Optional[W24UnitLength]
 
-    lambda_c_multiple: Decimal
+    lambda_c_multiple: Optional[Decimal]
 
 
 class W24RoughnessCondition(BaseModel):
