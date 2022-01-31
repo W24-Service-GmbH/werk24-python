@@ -167,12 +167,12 @@ class W24RoughnessParameter(str, Enum):
     N = "N"
 
 
-class W24RoughnessSamplingLengthType(str, Enum):
+class W24RoughnessEvaluationLengthType(str, Enum):
     LENGTH = "LENGTH"
     MAIN_LAMBDA_MULTIPLE = "MAIN_LAMBDA_MULTIPLE"
 
 
-class W24RoughnessSamplingLength(BaseModel):
+class W24RoughnessEvaluationLength(BaseModel):
     """ For sophisticated application, the sample needs
     to be taken over a longer distances. This is specified the
     either the sampling length in millimeter (ISO 3012:1974,
@@ -191,7 +191,7 @@ class W24RoughnessSamplingLength(BaseModel):
         lambda_c_multiple: multiple of the main cutoff lambda_c
 
     """
-    sampling_length_type: W24RoughnessSamplingLengthType
+    sampling_length_type: W24RoughnessEvaluationLengthType
 
     length: Decimal
     length_unit: W24UnitLength
@@ -257,7 +257,7 @@ class W24RoughnessCondition(BaseModel):
 
     parameter: Optional[W24RoughnessParameter]
 
-    sampling_length: Optional[W24RoughnessSamplingLength]
+    evaluation_length: Optional[W24RoughnessEvaluationLength]
 
     acceptance_criterion: Optional[W24RoughnessAcceptanceCriterion]
 
