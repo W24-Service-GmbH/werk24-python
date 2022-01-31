@@ -169,7 +169,7 @@ class W24RoughnessParameter(str, Enum):
 
 class W24RoughnessEvaluationLengthType(str, Enum):
     LENGTH = "LENGTH"
-    MAIN_LAMBDA_MULTIPLE = "MAIN_LAMBDA_MULTIPLE"
+    LAMBDA_C_MULTIPLE = "LAMBDA_C_MULTIPLE"
 
 
 class W24RoughnessEvaluationLength(BaseModel):
