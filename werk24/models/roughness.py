@@ -1,3 +1,4 @@
+from .unit import W24UnitLength
 from decimal import Decimal
 from enum import Enum
 from typing import List, Optional
@@ -166,6 +167,38 @@ class W24RoughnessParameter(str, Enum):
     N = "N"
 
 
+class W24RoughnessSamplingLengthType(str, Enum):
+    LENGTH = "LENGTH"
+    MAIN_LAMBDA_MULTIPLE = "MAIN_LAMBDA_MULTIPLE"
+
+
+class W24RoughnessSamplingLength(BaseModel):
+    """ For sophisticated application, the sample needs
+    to be taken over a longer distances. This is specified the
+    either the sampling length in millimeter (ISO 3012:1974,
+    ISO 3012:1978, ISO 3012:1992) or as multiple of the main lambda
+    (ISO 3012:2002 and ISO 3012:2021).
+
+
+    Attributes:
+        sampling_length_type: Sampling length type that is specified
+            by the applicable standard
+
+        length: sampling length in the specified units.
+
+        length_unit: Millimeter for both the ISO and ASME standards
+
+        lambda_c_multiple: multiple of the main cutoff lambda_c
+
+    """
+    sampling_length_type: W24RoughnessSamplingLengthType
+
+    length: Decimal
+    length_unit: W24UnitLength
+
+    lambda_c_multiple: Decimal
+
+
 class W24RoughnessCondition(BaseModel):
     """ Roughness Label
 
@@ -181,11 +214,11 @@ class W24RoughnessCondition(BaseModel):
             When not specified on the drawing, we set the default
             value according to the applicable standard.
 
-        micro_lambda: Filter bandwidth microroughness cutoff lambda_s.
+        lambda_s: Filter bandwidth microroughness cutoff lambda_s.
             When not specified, we determine the default value based
             on the standard and the value_limit.
 
-        main_lambda: Filter bandwidth main cutoff lambda_c.
+        lambda_c: Filter bandwidth main cutoff lambda_c.
             When not specified, we determine the default value based
             on the standard and the value_limit.
 
@@ -195,10 +228,11 @@ class W24RoughnessCondition(BaseModel):
         characteristic: Method of converting the 2D-measurement into
             a single number
 
-        sampling_length_multiple: For sophisticated applications, the
-            sample needs to be taken over a longer distance. This
-            attribute specifies by how much to increase the length.
-            When not specified, this will be 1.
+        sampling_length: For sophisticated application, the sample needs
+            to be taken over a longer distances. This is specified the
+            either the sampling length in millimeter (ISO 3012:1974,
+            ISO 3012:1978, ISO 3012:1992) or as multiple of the main lambda
+            (ISO 3012:2002 and ISO 3012:2021).
 
         acceptance_criterion: Designers can specify what rule to
             apply when deciding whether a measured tolerance complies
@@ -217,13 +251,13 @@ class W24RoughnessCondition(BaseModel):
 
     filter_type: Optional[W24RoughnessFilterType]
 
-    micro_lambda: Optional[Decimal]
+    lambda_s: Optional[Decimal]
 
-    main_lambda: Optional[Decimal]
+    lambda_c: Optional[Decimal]
 
     parameter: Optional[W24RoughnessParameter]
 
-    sampling_length_multiple: Optional[float]
+    sampling_length: Optional[W24RoughnessSamplingLength]
 
     acceptance_criterion: Optional[W24RoughnessAcceptanceCriterion]
 
