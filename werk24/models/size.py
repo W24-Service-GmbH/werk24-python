@@ -317,7 +317,7 @@ def parse_tolerance(
         W24SizeToleranceTheoreticallyExact,
     }.get(type_)
 
-    if type_ is None:
+    if class_ is None:
         return None
 
     return class_.parse_obj(raw)
