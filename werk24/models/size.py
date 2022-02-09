@@ -309,10 +309,10 @@ def parse_tolerance(
         W24SizeToleranceType.APPROXIMATION: W24SizeToleranceApproximation,
         W24SizeToleranceType.FIT_SIZE_ISO: W24SizeToleranceFitsizeISO,
         W24SizeToleranceType.GENERAL_TOLERANCES: W24SizeToleranceGeneral,
-        W24SizeToleranceType.OFF_SIZE: W24SizeToleranceOffSize,
         W24SizeToleranceType.MINIMUM: W24SizeToleranceMinimum,
         W24SizeToleranceType.MAXIMUM: W24SizeToleranceMaximum,
-
+        W24SizeToleranceType.OFF_SIZE: W24SizeToleranceOffSize,
+        W24SizeToleranceType.REFERENCE: W24SizeToleranceReference,
         W24SizeToleranceType.THEORETICALLY_EXACT:
         W24SizeToleranceTheoreticallyExact,
     }.get(type_)
