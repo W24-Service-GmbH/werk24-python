@@ -641,7 +641,8 @@ class W24TechreadClient:
     async def read_drawing_with_hooks(
         self,
         drawing_bytes: bytes,
-        hooks: List[Hook]
+        hooks: List[Hook],
+        max_pages: int = 1
     ) -> None:
         """ Send the drawing to the API (can be PDF or image)
         and register a number of callbacks that are triggered
@@ -668,7 +669,7 @@ class W24TechreadClient:
             # send out the request and make a generator
             # that triggers when the result of an ask
             # becomes available
-            async for message in self.read_drawing(drawing_bytes, asks_list):
+            async for message in self.read_drawing(drawing_bytes, asks_list, max_pages=max_pages):
                 await self._call_hooks_for_message(message, hooks)
 
         # explicitly reraise server exceptions

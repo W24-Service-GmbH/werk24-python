@@ -18,6 +18,7 @@ class W24SizeToleranceType(str, Enum):
     MAXIMUM = "MAXIUM"
     OFF_SIZE = "OFF_SIZE"
     THEORETICALLY_EXACT = "THEORETICALLY_EXACT"
+    REFERENCE = "REFERENCE"
 
 
 class W24SizeTolerance(BaseModel, abc.ABC):
@@ -48,8 +49,10 @@ class W24ToleranceGrade(BaseModel):
     """ Tolerance Grade following ISO 286-1
 
     Attributes:
-        grade (Optional[int]): Tolerance Grade in the range
-            of IT1 to IT18. None if the tolerance is outside the
+        blurb (Optional[str]): Blurb for human consumption.
+
+        grade (Optional[str]): Tolerance Grade in the range
+            of IT01 to IT18. None if the tolerance is outside the
             normed region
 
         warning (Optional[W24ToleranceGradeWarning]): the norm is
@@ -61,11 +64,13 @@ class W24ToleranceGrade(BaseModel):
             return the closest matching grade.
 
         NOTE: when tolerances are implausible (e.g., 3+/-6),
-            Werk24 will stip the tolernace completely and
-            return an untolerate measure of nominal size 3.
+            Werk24 will strip the tolerance completely and
+            return an untolerated measure of nominal size 3.
 
     """
-    grade: Optional[float]
+    blurb: str
+
+    grade: Optional[str]
 
     warning: Optional[W24ToleranceGradeWarning]
 
@@ -99,6 +104,21 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
     fundamental_deviation: str
 
     tolerance_grade: W24ToleranceGrade
+
+
+class W24SizeToleranceReference(W24SizeTolerance):
+    """ Measures written in brackets are Reference
+    Measures that are not tolerated.
+
+    Attributes:
+        tolerantion_type (W24SizeToleranceType): Reference
+            Tolerance Type
+
+        blurb (str): Text representation for human consumption.
+    """
+    toleration_type = W24SizeToleranceType.REFERENCE
+
+    blurb: str
 
 
 class W24SizeToleranceOffSize(W24SizeTolerance):
@@ -289,15 +309,15 @@ def parse_tolerance(
         W24SizeToleranceType.APPROXIMATION: W24SizeToleranceApproximation,
         W24SizeToleranceType.FIT_SIZE_ISO: W24SizeToleranceFitsizeISO,
         W24SizeToleranceType.GENERAL_TOLERANCES: W24SizeToleranceGeneral,
-        W24SizeToleranceType.OFF_SIZE: W24SizeToleranceOffSize,
         W24SizeToleranceType.MINIMUM: W24SizeToleranceMinimum,
         W24SizeToleranceType.MAXIMUM: W24SizeToleranceMaximum,
-
+        W24SizeToleranceType.OFF_SIZE: W24SizeToleranceOffSize,
+        W24SizeToleranceType.REFERENCE: W24SizeToleranceReference,
         W24SizeToleranceType.THEORETICALLY_EXACT:
         W24SizeToleranceTheoreticallyExact,
     }.get(type_)
 
-    if type_ is None:
+    if class_ is None:
         return None
 
     return class_.parse_obj(raw)

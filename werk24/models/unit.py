@@ -10,6 +10,7 @@ class W24UnitLength(str, Enum):
     MILLIMETER = "MILLIMETER"
     FOOT = "FOOT"
     INCH = "INCH"
+    MICRO_INCH = "MICRO_INCH"
 
 
 class W24UnitAngle(str, Enum):
@@ -35,3 +36,10 @@ class W24UnitWeight(str, Enum):
     KILOGRAM = "KILOGRAM"
     POUND = "POUND"
     OUNCE = "OUNCE"
+
+
+class W24UnitSystem(str, Enum):
+    """ Unit System that is used for a certain feature
+    """
+    METRIC = "METRIC"
+    IMPERIAL = "IMPERIAL"
