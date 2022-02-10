@@ -3,10 +3,11 @@ import sys
 import subprocess
 import unittest
 
+
 class TestCliAuth(unittest.TestCase):
 
     @staticmethod
-    def _call_cli(command:List[str])-> str:
+    def _call_cli(command: List[str]) -> str:
 
         # get the absolute path of the python executable
         # to stay safe
@@ -17,15 +18,14 @@ class TestCliAuth(unittest.TestCase):
         return subprocess.check_output([
             executable,
             "-m", "werk24.cli.w24cli"
-            ] + command
+        ] + command
         ).decode()
-
 
     def test_ask_jwt_token(self):
 
         # call!
-        result = self._call_cli(["auth","--ask-jwt-token"])
-        
+        result = self._call_cli(["auth", "--ask-jwt-token"])
+
         # assume that we receive a very simple response
         parts = result.split(":", 1)
 
@@ -34,4 +34,4 @@ class TestCliAuth(unittest.TestCase):
 
         # assert that the JWT token is 960 bytes long
         # the 1 is added to account for the \n
-        assert len(parts[1]) == 960 +1
+        assert len(parts[1].strip()) > 500
