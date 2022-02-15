@@ -35,7 +35,7 @@ class W24GDTCharacteristic(str, Enum):
 
 
 class W24GDTFeatureAssociated(str, Enum):
-    """ Enum of all associated toleranced features
+    """ Enum of all associated tolerated features
     """
     MINIMAX = "Ⓒ"
     GAUSSIAN = "Ⓖ"
@@ -52,7 +52,7 @@ class W24GDTFeatureDerived(str, Enum):
 
 
 class W24GDTZoneCombination(str, Enum):
-    """ Enum of all tolerance zonce combinations
+    """ Enum of all tolerance zone combinations
     """
     COMBINED = "CZ"
     SEPARATED = "SZ"
@@ -66,7 +66,7 @@ class W24GDTZoneShape(str, Enum):
 
 
 class W24GDTZoneConstraint(str, Enum):
-    """ Enum of the Zone Contraints
+    """ Enum of the Zone Constraints
     """
     UNSPECIFIED_INCLINATION = "OZ"
     UNSPECIFIED_OFFSET = "VA"
@@ -269,12 +269,12 @@ class W24GDTFrame(BaseModel):
         blurb: String representation of the label for human consumption
             e.g., [⌖|⌀0.3Ⓜ|A|B|C]
 
-        characteristic: Section for gemetric characteristic e.g.: ⌓
+        characteristic: Section for geometric characteristic e.g.: ⌓
 
         zone_shape: Tolerance zone shape, e.g, S⌀
 
         zone_value: GDT value: e.g., 0.03
-            Is optional to supprt Datum Feature Indicators
+            Is optional to support Datum Feature Indicators
 
         zone_combinations: Ordered list of zone combinations, e.g., CZ, SZ
 

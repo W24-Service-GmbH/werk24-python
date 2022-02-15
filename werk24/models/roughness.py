@@ -206,7 +206,7 @@ class W24RoughnessCondition(BaseModel):
         blurb: String representation of the Roughness for human
             consumption.
 
-        side: Roughness Side that is specified (upper or lower).
+        condition_type: Roughness Side that is specified (upper or lower).
             We automatically determine this value depending on
             the standard and the position of the parameter
 
@@ -222,7 +222,7 @@ class W24RoughnessCondition(BaseModel):
             When not specified, we determine the default value based
             on the standard and the value_limit.
 
-        profile: Profile to be measured (Profile, Roughness, Waviness)
+        parameter: Parameter to be measured
 
 
         characteristic: Method of converting the 2D-measurement into
@@ -298,7 +298,7 @@ class W24RoughnessLabel(BaseModel):
             symbol makes this necessary.
 
         standard : Standard in which the Roughness Symbol is written
-            NOTE: there are multiple standards that are still in use
+            NOTE: there are multiple standards that are in use
 
         machining_allowance: Machining Allowance in millimeter of micro-inch.
             See the `unit` attribute.
@@ -314,9 +314,7 @@ class W24RoughnessLabel(BaseModel):
 
         manufacturing_method: Method by which to achieve the roughness
 
-        condition_upper: Upper roughness condition
-
-        condition_lower: Lower roughness condition.
+        conditions: Roughness conditions
 
         unit_system: Unit system that is used for the roughness.
             We are not using the explicit units as the different
