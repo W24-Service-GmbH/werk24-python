@@ -650,8 +650,8 @@ def _deserialize_ask_type(
         "VARIANT_LEADERS": W24AskVariantLeaders,
         "VARIANT_MATERIAL": W24AskVariantMaterial,
         "VARIANT_MEASURES": W24AskVariantMeasures,
-        "VARAINT_RADII": W24AskVariantRadii,
-        "VARIANT_ROUGHNESS": W24AskVariantRoughnesses,
+        "VARIANT_RADII": W24AskVariantRadii,
+        "VARIANT_ROUGHNESSES": W24AskVariantRoughnesses,
         "VARIANT_CAD": W24AskVariantCAD,
         "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
     }.get(ask_type, None)
