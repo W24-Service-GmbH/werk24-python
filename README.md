@@ -22,6 +22,8 @@ the following features:
 - Measures and Tolerances
 - Threads and Chamfers
 - Geometric Dimensioning and Tolerancing frames
+- External Dimensions
+- Surface Roughnesses
 - the Title Block information (Material, Drawing ID, Designation, General Tolerances)
 
 And finally you can obtain a CAD Approximation of the part's Geometry.
