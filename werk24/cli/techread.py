@@ -11,9 +11,11 @@ from werk24.cli import utils
 from werk24.exceptions import RequestTooLargeException
 from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
                                W24AskSectionalThumbnail, W24AskSheetThumbnail,
-                               W24AskVariantAngles, W24AskVariantCAD,
-                               W24AskVariantGDTs, W24AskVariantLeaders,
-                               W24AskVariantMeasures)
+                               W24AskTitleBlock, W24AskVariantAngles,
+                               W24AskVariantCAD,
+                               W24AskVariantExternalDimensions,
+                               W24AskVariantGDTs, W24AskVariantMeasures,
+                               W24AskVariantRadii, W24AskVariantRoughnesses)
 from werk24.models.techread import (W24TechreadException,
                                     W24TechreadMessageSubtypeError,
                                     W24TechreadMessageSubtypeProgress,
@@ -35,7 +37,7 @@ logger = logging.getLogger(__name__)  # pylint:disable = invalid-name
 
 
 # make the configuration of what hooks we want to handle and how
-HookConfig = namedtuple("HookkConfig", "arg ask function")
+HookConfig = namedtuple("HookConfig", "arg ask function")
 hook_config = [
     HookConfig(
         'ask_page_thumbnail',
@@ -53,22 +55,30 @@ hook_config = [
         'ask_sectional_thumbnail',
         W24AskSectionalThumbnail,
         lambda m: _show_image("Sectional Thumbnail", m.payload_dict)),
+    # HookConfig(
+    #     'ask_variant_angles',
+    #     W24AskVariantAngles,
+    #     lambda m: _print_payload("Ask Variant Angles", m.payload_dict)),
     HookConfig(
-        'ask_variant_angles',
-        W24AskVariantAngles,
-        lambda m: _print_payload("Ask Variant Angles", m.payload_dict)),
+        'ask_variant_external_dimensions',
+        W24AskVariantExternalDimensions,
+        lambda m: _print_payload("Ask Variant External Dimensions", m.payload_dict)),
     HookConfig(
         'ask_variant_gdts',
         W24AskVariantGDTs,
         lambda m: _print_payload("Ask Variant GDTs", m.payload_dict)),
     HookConfig(
-        'ask_variant_leaders',
-        W24AskVariantLeaders,
-        lambda m: _print_payload("Ask Variant Leaders", m.payload_dict)),
-    HookConfig(
         'ask_variant_measures',
         W24AskVariantMeasures,
         lambda m: _print_payload("Ask Variant Measures", m.payload_dict)),
+    HookConfig(
+        'ask_variant_radii',
+        W24AskVariantRadii,
+        lambda m: _print_payload("Ask Variant Radii", m.payload_dict)),
+    HookConfig(
+        'ask_variant_roughnesses',
+        W24AskVariantRoughnesses,
+        lambda m: _print_payload("Ask Variant Roughnesses", m.payload_dict)),
     HookConfig(
         'ask_variant_cad',
         W24AskVariantCAD,
@@ -76,6 +86,10 @@ hook_config = [
             m.payload_dict,
             m.payload_bytes,
             m.exceptions)),
+    HookConfig(
+        'ask_titleblock',
+        W24AskTitleBlock,
+        lambda m: _print_payload("Ask TitleBlock", m.payload_dict)),
 ]
 
 
