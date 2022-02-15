@@ -35,9 +35,9 @@ class W24Thread(BaseModel, abc.ABC):
     """ Abstract Base Class for all Threads
 
     Attributes:
-        blurb (str): String representation of humand consumption
+        blurb (str): String representation of the thread for human consumption
 
-        diameter (Decimal): Diameter of the thread in the units of the label
+        diameter (Decimal): Diameter of the thread
 
         unit (W24UnitLength): Length unit of the diameter. This allows you
             to differentiate between inch and millimeter (UTS or ISO METRIC).
@@ -80,11 +80,6 @@ class W24ThreadISOMetric(W24Thread):
             in the future and perform an automatic lookup in the
             DIN standards. If this change would affect your
             application, please get in touch with us.
-
-        handedness: Left of right-handedness of the thread.
-            This will be RIGHT unless explicitly described as LEFT
-            in the drawing.
-
     """
     thread_type = W24ThreadType.ISO_METRIC
 
@@ -100,11 +95,12 @@ class W24ThreadUTS(W24Thread):
     Attributes:
         uts_size: UTS size as string representation.
             Threads with a diameter < 0.25 inch are written with a leading '#'.
-            Threads with a diameter >= 0.25 inch are represented as fractions with a tailing '"'
+            Threads with a diameter >= 0.25 inch are represented as fractions
+                with a tailing '"'
             Examples: #0, 1 3/4"
 
-        threads_per_inch: Threads per inch. The float (rather than int) is chosen to support non-convertional
-            threads as well.
+        threads_per_inch: Threads per inch. The Decimal (rather than int)
+            is chosen to support non-conventional threads.
 
         tolerance_class: Tolerance class. Options:
             * 1A, 2A, 3A for external threads
@@ -148,7 +144,7 @@ class W24ThreadWhitworth(W24Thread):
         whitworth_size: Size number (for historic reasons
             not proportional to size)
 
-        tolerance_class: Tolerance field A implemented in the future
+        tolerance_class: Tolerance field
 
     """
     thread_type = W24ThreadType.WHITWORTH
