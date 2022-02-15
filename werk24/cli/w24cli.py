@@ -50,13 +50,13 @@ def main() -> None:
         action="store_true")
 
     parser_techread.add_argument(
-        "--ask-variant-angles",
-        help="ask for the angles of each variant",  # noqa
+        "--ask-variant-cad",
+        help="ask for the CAD file of each variant",  # noqa
         action="store_true")
 
     parser_techread.add_argument(
-        "--ask-variant-measures",
-        help="ask for the measures of each variant",  # noqa
+        "--ask-variant-external-dimensions",
+        help="ask for the External Dimensions of each variant",  # noqa
         action="store_true")
 
     parser_techread.add_argument(
@@ -65,13 +65,23 @@ def main() -> None:
         action="store_true")
 
     parser_techread.add_argument(
-        "--ask-variant-leaders",
-        help="ask for the Leaders of each variant",  # noqa
+        "--ask-variant-measures",
+        help="ask for the measures of each variant",  # noqa
         action="store_true")
 
     parser_techread.add_argument(
-        "--ask-variant-cad",
-        help="ask for the CAD file of each variant",  # noqa
+        "--ask-variant-roughnesses",
+        help="ask for the Surface Roughnesses of each variant",  # noqa
+        action="store_true")
+
+    parser_techread.add_argument(
+        "--ask-variant-radii",
+        help="ask for the Radii of each variant",  # noqa
+        action="store_true")
+
+    parser_techread.add_argument(
+        "--ask-titleblock",
+        help="ask for the Title Block",  # noqa
         action="store_true")
 
     parser_auth = subparsers.add_parser(
