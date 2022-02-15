@@ -124,7 +124,7 @@ class W24ToleranceClass(BaseModel):
     tolerance table
 
     Attributes:
-        blub: Tolerance class label for human consumption
+        blurb: Tolerance class label for human consumption
 
         property: Property that is being tolerated
 
@@ -170,7 +170,7 @@ class W24GeneralTolerances(BaseModel):
     """ Linear toleration class """
 
     radius_class: Optional[W24ToleranceClass]
-    """ Radius andn chamfer toleration class """
+    """ Radius and chamfer toleration class """
 
     runout_class: Optional[W24ToleranceClass]
     """ Runout toleration class """
