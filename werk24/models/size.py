@@ -15,7 +15,7 @@ class W24SizeToleranceType(str, Enum):
     FIT_SIZE_ISO = "FIT_SIZE_ISO"
     GENERAL_TOLERANCES = "GENERAL_TOLERANCES"
     MINIMUM = "MINIMUM"
-    MAXIMUM = "MAXIUM"
+    MAXIMUM = "MAXIMUM"
     OFF_SIZE = "OFF_SIZE"
     THEORETICALLY_EXACT = "THEORETICALLY_EXACT"
     REFERENCE = "REFERENCE"
@@ -149,9 +149,9 @@ class W24SizeToleranceGeneral(W24SizeTolerance):
     """ General Tolerances
 
     Attributes:
-        tolerance_type: W24SizeTolernanceType General Tolerances
+        tolerance_type: W24SizeToleranceType General Tolerances
             as key to differentiate between the different
-            tolerance typces
+            tolerance types
 
         blurb: Blurb of the General Tolerance following the
             pattern of W24ToleranceOffSize
@@ -161,17 +161,17 @@ class W24SizeToleranceGeneral(W24SizeTolerance):
             of it no GeneralTolerance was found, this is set to
             None.
 
-        standard_class: GeneraalTolerance Class if known. None
+        standard_class: GeneralTolerance Class if known. None
             otherwise.
 
         deviation_lower: Lower deviation from the nominal size
             if the General Tolerance is known. None otherwise.
 
-        deviation_upper: Upper deviation from the norminal size
+        deviation_upper: Upper deviation from the nominal size
             if the General Tolerance is known. None otherwise.
 
         tolerance_grade (int): Tolerance Grade corresponding to
-            ISO 286-1. In German IT-Grad.
+            ISO 286-1. (German: IT-Grad).
     """
     toleration_type = W24SizeToleranceType.GENERAL_TOLERANCES
 
@@ -240,7 +240,7 @@ class W24SizeType(str, Enum):
     """
     NOMINAL = "NOMINAL"
     DIAMETER = "DIAMETER"
-    WIDTHS_ACCROSS_FLATS = "WIDTHS_ACCROSS_FLATS"
+    WIDTH_ACROSS_FLATS = "WIDTHS_ACCROSS_FLATS"
 
 
 class W24Size(BaseModel, abc.ABC):
@@ -275,15 +275,15 @@ class W24SizeDiameter(W24Size):
 
 
 class W24SizeWidthsAcrossFlats(W24Size):
-    """ Widths accross flats / Wrench Sizes
+    """ Width across flats / Wrench Sizes
 
     Attributes:
         width_accross_flats: Size accross flats
             aka. wrench size.
     """
-    size_type = W24SizeType.WIDTHS_ACCROSS_FLATS
+    size_type = W24SizeType.WIDTH_ACROSS_FLATS
 
-    width_accross_flats: Decimal
+    width_across_flats: Decimal
 
 
 def parse_tolerance(
