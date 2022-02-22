@@ -20,3 +20,6 @@ class W24Language(str, Enum):
 
     SPA = "SPA"
     """ Spanish """
+
+    UNKNOWN = "__UNK__"
+    """ Unknown """
