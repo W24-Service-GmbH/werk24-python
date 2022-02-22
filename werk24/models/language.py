@@ -12,7 +12,7 @@ class W24Language(str, Enum):
     ENG = "ENG"
     """ English """
 
-    FRE = "FRE"
+    FRA = "FRA"
     """ French """
 
     ITA = "ITA"
