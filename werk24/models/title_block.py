@@ -50,6 +50,10 @@ class W24TitleBlock(BaseModel):
 
         drawing_id: Main Identification Number of the Drawing
 
+        part_ids: List of Part IDs that are located on the drawing.
+            Keep in mind that the drawing might define multiple
+            variants that each specify their own part id
+
         reference_ids: List of additional reference IDs
             detected on the Drawing
 
@@ -66,6 +70,8 @@ class W24TitleBlock(BaseModel):
     designation: Optional[W24CaptionValuePair]
 
     drawing_id: Optional[W24CaptionValuePair]
+
+    part_ids: List[W24CaptionValuePair]
 
     reference_ids: List[W24CaptionValuePair]
 
