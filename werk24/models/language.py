@@ -6,11 +6,20 @@ class W24Language(str, Enum):
     the naming convention of ISO/639-2B
     """
 
-    FRE = "FRE"
-    """ French """
-
-    GER = "GER"
+    DEU = "DEU"
     """ German """
 
     ENG = "ENG"
     """ English """
+
+    FRA = "FRA"
+    """ French """
+
+    ITA = "ITA"
+    """ Italian """
+
+    SPA = "SPA"
+    """ Spanish """
+
+    UNKNOWN = "__UNK__"
+    """ Unknown """
