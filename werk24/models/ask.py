@@ -15,7 +15,7 @@ from .material import W24Material
 from .measure import W24Measure
 from .radius import W24Radius
 from .roughness import W24Roughness
-
+from .revision_table import W24RevisionTable
 
 class W24AskType(str, Enum):
     """ List of all Ask Type supported by the current
@@ -32,6 +32,14 @@ class W24AskType(str, Enum):
     surrounding white space removed
     """
 
+    PRODUCT_PMI_EXTRACT = "PRODUCT_PMI_EXTRACT"
+    """ Ask for the PMI Extract Product
+    """
+
+    REVISION_TABLE = "REVISION_TABLE"
+    """ Ask for the Revision Table
+    """
+
     SECTIONAL_THUMBNAIL = "SECTIONAL_THUMBNAIL"
     """ Thumbnail of a sectional on the canvas.
     Here the sectional describes both cuts and perspectives
@@ -40,6 +48,10 @@ class W24AskType(str, Enum):
     SHEET_THUMBNAIL = "SHEET_THUMBNAIL"
     """ Thumbnail of the sheet (i.e., the part of the
     page that is described by the surrounding frame)
+    """
+    TITLE_BLOCK = "TITLE_BLOCK"
+    """ Ask for all information that is available on the
+    title block
     """
 
     TRAIN = "TRAIN"
@@ -84,17 +96,9 @@ class W24AskType(str, Enum):
     associated with the variant
     """
 
-    TITLE_BLOCK = "TITLE_BLOCK"
-    """ Ask for all information that is available on the
-    title block
-    """
 
     VARIANT_EXTERNAL_DIMENSIONS = "VARIANT_EXTERNAL_DIMENSIONS"
     """ Ask for the external dimensions
-    """
-
-    PRODUCT_PMI_EXTRACT = "PRODUCT_PMI_EXTRACT"
-    """ Ask for the PMI Extract Product
     """
 
 
@@ -225,6 +229,8 @@ class W24AskVariantAnglesResponse(BaseModel):
     variant_id: UUID4
     sectional_id: UUID4
     angles: List[W24Angle]
+
+
 
 
 class W24AskVariantRoughnesses(W24Ask):
@@ -399,6 +405,24 @@ class W24AskTitleBlock(W24Ask):
     """
     ask_type = W24AskType.TITLE_BLOCK
 
+class W24AskRevisionTable(W24Ask):
+    """ With this Ask you are requesting the list of all
+    revision tables in the document
+    """
+    ask_type = W24AskType.REVISION_TABLE
+
+
+class W24AskRevisionTableResponse(BaseModel):
+    """ Response object corresponding toi the
+    W24AskRevisionTable
+
+    Attributes:
+
+        revision_table: RevisionTable object with all
+            the content that was extracted from the
+            drawing
+    """
+    revision_table: W24RevisionTable
 
 class W24AskVariantGDTs(W24Ask):
     """ This Ask requests the list of all
@@ -585,6 +609,8 @@ class W24AskProductPMIExtractResponse(BaseModel):
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
     W24AskPageThumbnail,
+    W24AskProductPMIExtract,
+    W24AskRevisionTable,
     W24AskSectionalThumbnail,
     W24AskSheetThumbnail,
     W24AskTitleBlock,
@@ -597,7 +623,6 @@ W24AskUnion = Union[
     W24AskVariantMeasures,
     W24AskVariantRadii,
     W24AskVariantRoughnesses,
-    W24AskProductPMIExtract,
 ]
 """ Union of all W24Asks to ensure proper de-serialization """
 
@@ -641,6 +666,8 @@ def _deserialize_ask_type(
     class_ = {
         "CANVAS_THUMBNAIL": W24AskCanvasThumbnail,
         "PAGE_THUMBNAIL": W24AskPageThumbnail,
+        "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
+        "REVISION_TABLE": W24AskRevisionTable,
         "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
         "SHEET_THUMBNAIL": W24AskSheetThumbnail,
         "TITLE_BLOCK": W24AskTitleBlock,
@@ -653,7 +680,6 @@ def _deserialize_ask_type(
         "VARIANT_RADII": W24AskVariantRadii,
         "VARIANT_ROUGHNESSES": W24AskVariantRoughnesses,
         "VARIANT_CAD": W24AskVariantCAD,
-        "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
     }.get(ask_type, None)
 
     if class_ is None:
