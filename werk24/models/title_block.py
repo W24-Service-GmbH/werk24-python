@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, validator
@@ -40,7 +41,7 @@ class W24CaptionValuePair(BaseModel):
 
     values: List[W24TitleBlockItem]
 
-from enum import Enum
+
 class W24FileExtensionType(str, Enum):
     """ Enum of the extension types.
     For example, pdf and idw extensions will be mapped to
@@ -117,9 +118,8 @@ class W24TitleBlock(BaseModel):
             cross-checked with the material and volume of the part,
             but provided as it was read on the TitleBlock.
 
-        filenames: List of all the filenames that we were able to extract
-            from the title block. These filenames typically describe
-            a model or drawing.
+        filename_drawing: Filename of the drawing if it is explicitly
+            indicated on the title block
 
     """
 
@@ -137,7 +137,7 @@ class W24TitleBlock(BaseModel):
 
     weight: Optional[W24Weight]
 
-    file_names: List[W24Filename]
+    filename_drawing: Optional[W24Filename] = None
 
     @validator('designation', pre=True)
     def designation_validator(
