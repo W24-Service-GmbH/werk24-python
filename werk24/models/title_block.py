@@ -140,7 +140,6 @@ class W24TitleBlock(BaseModel):
 
     filename_drawing: Optional[W24Filename] = None
 
-    creation_date: Optional[datetime]
 
     @validator('designation', pre=True)
     def designation_validator(

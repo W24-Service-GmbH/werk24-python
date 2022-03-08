@@ -15,7 +15,7 @@ class W24Date(BaseModel):
     """
 
     @validator('date', allow_reuse=True)
-    def date_validator(self, v:date) -> date:
+    def date_validator(cls, v:date) -> date:
         return v.isoformat()
 
     blurb: str
