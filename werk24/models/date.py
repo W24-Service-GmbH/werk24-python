@@ -14,11 +14,9 @@ class W24Date(BaseModel):
             the object is loaded
     """
 
-    @validator('date')
+    @validator('date', allow_reuse=True)
     def date_validator(self, v:date) -> date:
         return v.isoformat()
-
-
 
     blurb: str
 
