@@ -7,7 +7,7 @@ from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 from .weight import W24Weight
-
+from .date import W24Date
 
 class W24TitleBlockItem(BaseModel):
     """ Per-Language caption or value
@@ -21,6 +21,7 @@ class W24TitleBlockItem(BaseModel):
     language: Optional[W24Language]
 
     text: str
+
 
 
 class W24CaptionValuePair(BaseModel):
@@ -138,6 +139,8 @@ class W24TitleBlock(BaseModel):
     weight: Optional[W24Weight]
 
     filename_drawing: Optional[W24Filename] = None
+
+    creation_date: Optional[datetime]
 
     @validator('designation', pre=True)
     def designation_validator(

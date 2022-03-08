@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from .date import W24Date
+
 
 class W24GridSquare(BaseModel):
     """ Grid Square
@@ -46,7 +48,7 @@ class W24RevisionTableRow(BaseModel):
 
     description: str
 
-    revision_date: Optional[date]
+    revision_date: Optional[W24Date]
 
     grid_squares: List[W24GridSquare]
 
