@@ -20,7 +20,7 @@ class TestTechreadClient(AsyncTestCase):
         """ Test whether Client sends version
 
         User Story: As Werk24 API developer I want to
-        know which client versionns are still being used,
+        know which client versions are still being used,
         so that I can decide whether it is safe to deprecate
         an old feature
 
@@ -32,7 +32,7 @@ class TestTechreadClient(AsyncTestCase):
     async def test_client_without_session(self) -> None:
         """ Test whether Client without started session throws RuntimeError
 
-        User Story: As API user I want to obtail a clear error message if
+        User Story: As API user I want to obtain a clear error message if
         I make a request to the client without entering a session, so that
         I can change my code swiftly.
         """
@@ -57,7 +57,7 @@ class TestTechreadClient(AsyncTestCase):
             self.assertEqual(type(session.username), str)
 
     async def test_upload_model(self) -> None:
-        """ Test whether we can upload an associaed model.
+        """ Test whether we can upload an associated model.
 
         User Story: As API user, want to be able to upload an associated
         model file, so that I can support Werk24's training effort
