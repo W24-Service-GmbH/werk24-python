@@ -30,10 +30,10 @@ class W24RevisionTableRow(BaseModel):
             is typicall used to identify the revision on
             each individual sheet (e.g., A, B, C or 01, 02, 03)
 
-        revision_id (Optional[str]): Unique identifier for the
-            revision across multiple documents. This is typically
-            a long number and sometimes identifies a revision process
-            that affect multiple parts.
+        ecn_number (Optional[str]): Identifier of the Engineering
+            Change Note to uniquely identify the change across multiple
+            documents. This is typically a long number and sometimes
+            identifies a revision process that affect multiple parts.
 
         description (str): Description of the change
 
@@ -44,7 +44,7 @@ class W24RevisionTableRow(BaseModel):
     """
     serial: Optional[str]
 
-    revision_id: Optional[str]
+    ecn_number: Optional[str]
 
     description: str
 
