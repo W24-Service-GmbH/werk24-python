@@ -11,6 +11,8 @@ class W24GeneralTolerancesStandard(str, Enum):
     """
     DIN_7168 = "DIN 7168"
     ISO_2768 = "ISO 2768"
+    ISO_4759_1 = "ISO_4759_1"
+    DEFINED_ON_SHEET = "DEFINED_ON_SHEET"
 
 
 class W24ToleranceProperty(str, Enum):
