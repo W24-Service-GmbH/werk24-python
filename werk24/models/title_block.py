@@ -128,7 +128,7 @@ class W24TitleBlock(BaseModel):
 
     drawing_id: Optional[W24CaptionValuePair]
 
-    part_ids: List[W24CaptionValuePair]
+    part_ids: List[W24CaptionValuePair] = []
 
     reference_ids: List[W24CaptionValuePair]
 
