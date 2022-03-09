@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, validator
@@ -6,7 +7,7 @@ from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 from .weight import W24Weight
-
+from .date import W24Date
 
 class W24TitleBlockItem(BaseModel):
     """ Per-Language caption or value
@@ -20,6 +21,7 @@ class W24TitleBlockItem(BaseModel):
     language: Optional[W24Language]
 
     text: str
+
 
 
 class W24CaptionValuePair(BaseModel):
@@ -39,6 +41,58 @@ class W24CaptionValuePair(BaseModel):
     captions: List[W24TitleBlockItem]
 
     values: List[W24TitleBlockItem]
+
+
+class W24FileExtensionType(str, Enum):
+    """ Enum of the extension types.
+    For example, pdf and idw extensions will be mapped to
+    DRAWING, while step and stl extensions will be mapped
+    to MODEL.
+    """
+    DRAWING = "DRAWING"
+    MODEL = "MODEL"
+    UNKNOWN = "UNKNOWN"
+
+class W24FilePathType(str, Enum):
+    """ Enum of the file path types, indicating whether a
+    POSIX (unix) or WINDOWS path is used. When only a filename
+    is indicated, the value will be UNKNOWN
+    """
+    POSIX="POSIX"
+    WINDOWS = "WINDOWS"
+    UNKNOWN = "UNKNOWN"
+
+class W24Filename(BaseModel):
+    """ Object describing all the information that we can
+    deduce from a filename that was found on the TitleBlock
+
+    Attributes:
+        blurb: Filename and Path as it was found on the drawing.
+            Example: /path/to/drawing.pdf
+
+        filename: Filename without the prefix.
+            Example drawing.pdf
+
+        extension: Extension of the filename.
+            Examples: .pdf, .tar.gz
+
+        extension_type: filetype indicated by the extension. PDF, ...
+            extensions are mapped to DRAWING, while STEP, ...
+            extensions are mapped to MODEL
+
+        path_type: WINDOWS or POSIX (unix) path types if we have
+            found an absolute path. UNKNOWN if we only read
+            a filename without prefix.
+    """
+    blurb: str
+
+    filename: str
+
+    extension: str
+
+    extension_type: W24FileExtensionType
+
+    path_type: W24FilePathType
 
 
 class W24TitleBlock(BaseModel):
@@ -65,13 +119,16 @@ class W24TitleBlock(BaseModel):
             cross-checked with the material and volume of the part,
             but provided as it was read on the TitleBlock.
 
+        filename_drawing: Filename of the drawing if it is explicitly
+            indicated on the title block
+
     """
 
     designation: Optional[W24CaptionValuePair]
 
     drawing_id: Optional[W24CaptionValuePair]
 
-    part_ids: List[W24CaptionValuePair]
+    part_ids: List[W24CaptionValuePair] = []
 
     reference_ids: List[W24CaptionValuePair]
 
@@ -80,6 +137,9 @@ class W24TitleBlock(BaseModel):
     material: Optional[W24Material]
 
     weight: Optional[W24Weight]
+
+    filename_drawing: Optional[W24Filename] = None
+
 
     @validator('designation', pre=True)
     def designation_validator(
