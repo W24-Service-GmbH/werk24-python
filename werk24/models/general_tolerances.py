@@ -2,7 +2,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import List, Optional, Union
 
-from pydantic import UUID4, BaseModel, validator
+from pydantic import  BaseModel, validator
 
 
 class W24GeneralTolerancesStandard(str, Enum):
@@ -11,7 +11,7 @@ class W24GeneralTolerancesStandard(str, Enum):
     """
     DIN_7168 = "DIN 7168"
     ISO_2768 = "ISO 2768"
-    ISO_4759_1 = "ISO_4759_1"
+    ISO_4759_1 = "ISO 4759-1"
     DEFINED_ON_SHEET = "DEFINED_ON_SHEET"
 
 
@@ -47,7 +47,7 @@ class W24ToleranceTableItem(BaseModel):
         """ Ensure the proper conversion of the the
         Decimal value
         """
-        return cls._conv_decimal(raw)
+        return cls._convert_decimal(raw)
 
     @validator('nominal_max', pre=True)
     def nominal_max_validator(  # NOQA
@@ -57,10 +57,10 @@ class W24ToleranceTableItem(BaseModel):
         """ Ensure the proper conversion of the the
         Decimal value
         """
-        return cls._conv_decimal(raw)
+        return cls._convert_decimal(raw)
 
     @staticmethod
-    def _conv_decimal(
+    def _convert_decimal(
         raw: Union[str, float, None]
     ) -> Optional[Decimal]:
         """ Handle the decimal converstion
@@ -154,9 +154,13 @@ class W24GeneralTolerances(BaseModel):
     in the Drawing
     """
 
-    principle: W24GeneralTolerancesPrinciple
+    principle: Optional[W24GeneralTolerancesPrinciple]
     """ Principle that is annotated on the general
-    tolerance by "-E" (or the lack of if)
+    tolerance by "-E" (or the lack of if). 
+    
+    NOTE: some general tolerance standards do not define
+    a default principle. If it is not stated explicitly
+    on the drawing, the `principle` value is set to `None`.
     """
 
     angular_class: Optional[W24ToleranceClass]
