@@ -44,6 +44,10 @@ class W24MaterialStandard(str, Enum):
     for metric fasterns.
     """
 
+    DIN17100_1987_12 = "DIN17100:1987-12"
+    """ DIN17100:1987-12
+    """
+
 
 class W24MaterialReference(BaseModel):
     """ List of equivalent materials in one of the
