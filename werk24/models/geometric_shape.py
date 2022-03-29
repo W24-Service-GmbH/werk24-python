@@ -1,10 +1,8 @@
 from decimal import Decimal
-
-from numpy import sort
-from pydantic import BaseModel
-from typing import Tuple
-import math
 from itertools import permutations
+from typing import Tuple
+
+from pydantic import BaseModel
 
 
 class W24GeometricShapeCuboid(BaseModel):
@@ -35,6 +33,28 @@ class W24GeometricShapeCuboid(BaseModel):
         other: 'W24GeometricShapeCuboid',
         allow_width_depth_rotation: bool = True,
     ) -> bool:
+        """ Does this cuboid enclose `other` cuboid?
+
+        Check whether this cuboid encloses the `other` cuboid.
+        The `allow_width_depth_rotation` parameter allows you
+        to specify whether the edges of the two cuboids
+        need to be parallel.
+
+        Args:
+            other (W24GeometricShapeCuboid): Other cuboid
+            allow_width_depth_rotation (bool, optional): Allow
+                to rotate the `other` cuboid around this
+                cuboid's width/depth plane. Especially useful
+                for additive manufacturing applications.
+                Defaults to True.
+
+        Raises:
+            RuntimeError: Raised when receiving a object other
+                than a cuboid
+
+        Returns:
+            bool: True if `self` encloses `other`.
+        """
 
         # ensure that we are actually dealing with a
         # cuboid. NOTE: in the future we might want to
@@ -61,7 +81,7 @@ class W24GeometricShapeCuboid(BaseModel):
     ) -> bool:
         """ Check whether the other cuboid fits into this
         cuboid without rotating the other cuboid on any
-        axis. The `other` cuboid can only be rotated by 
+        axis. The `other` cuboid can only be rotated by
         fully 90 degrees (i.e, we are allowed to swap
         the width and height)
 
@@ -127,3 +147,6 @@ class W24GeometricShapeCylinder(BaseModel):
     """
     diameter: Decimal
     depth: Decimal
+
+
+W24GeometricShapeCuboid.update_forward_refs()
