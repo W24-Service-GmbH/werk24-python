@@ -9,3 +9,7 @@ __pycache__
 werk24.egg-info
 /dist/
 /sandbox/
+.flake8
+.isort.cfg
+.markdownlint.yaml
+.trunk
