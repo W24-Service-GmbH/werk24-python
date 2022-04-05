@@ -10,7 +10,7 @@ class W24MaterialFamily(str, Enum):
     """ Material Family: First level
     Following the material categorization of Michael F. Ashby
     """
-    METAL = "METALS"
+    METAL = "METAL"
     NONMETAL = "NONMETAL"
     HYBRID = "HYBRID"
 
