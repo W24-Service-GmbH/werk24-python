@@ -17,6 +17,7 @@ from .radius import W24Radius
 from .roughness import W24Roughness
 from .revision_table import W24RevisionTable
 
+
 class W24AskType(str, Enum):
     """ List of all Ask Type supported by the current
     API version. This list will grow with future releases.
@@ -95,7 +96,6 @@ class W24AskType(str, Enum):
     """ List of Roughnesses that were found on the Sectionals
     associated with the variant
     """
-
 
     VARIANT_EXTERNAL_DIMENSIONS = "VARIANT_EXTERNAL_DIMENSIONS"
     """ Ask for the external dimensions
@@ -229,8 +229,6 @@ class W24AskVariantAnglesResponse(BaseModel):
     variant_id: UUID4
     sectional_id: UUID4
     angles: List[W24Angle]
-
-
 
 
 class W24AskVariantRoughnesses(W24Ask):
@@ -405,6 +403,7 @@ class W24AskTitleBlock(W24Ask):
     """
     ask_type = W24AskType.TITLE_BLOCK
 
+
 class W24AskRevisionTable(W24Ask):
     """ With this Ask you are requesting the list of all
     revision tables in the document
@@ -423,6 +422,7 @@ class W24AskRevisionTableResponse(BaseModel):
             drawing
     """
     revision_table: W24RevisionTable
+
 
 class W24AskVariantGDTs(W24Ask):
     """ This Ask requests the list of all
