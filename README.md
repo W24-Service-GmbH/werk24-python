@@ -5,9 +5,6 @@
       <img src="https://github.com/W24-Service-GmbH/.github/blob/main/profile/Werk24_banner_GitHub.png?raw=true" alt="Werk24">
     </a>
   </p>
-  <p align="center">
-    Digitize your (scanned) Enginering Drawing or Technical Drawing with a simple API call.
-  </p>
 </p>
 
 [![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
