@@ -45,7 +45,18 @@ class W24Thread(BaseModel, abc.ABC):
             NOTE: Whitworth inch are not 2.54mm long! (for historic reasons).
             Use the whitworth_size if you need to have the whitworth inches.
 
-        thread_type (W24Thread): thread type to facilitate deserialization
+        thread_type: thread type to facilitate deserialization
+
+        pitch: Pitch of the thread in mm. Normed range: 0.25 - 9mm
+            The value will always be set - even if the pitch is give implicitly
+            (e.g. M10c) or when the pitch is given in threads per inch.
+            When the Pitch is ambiguous, this value be the median pitch
+
+        threads_per_inch: Pitch and Threads per inch are interchangable
+            concepts. Depending on your geographic focus, the one or the
+            other concept is more suitable. We convert ISO pitches to
+            UTS threads per inch and vice versa, so that you do not have
+            to handle the conversion.
 
         handedness: Left of right-handedness of the thread.
             This will be RIGHT unless explicitly described as LEFT
@@ -60,8 +71,11 @@ class W24Thread(BaseModel, abc.ABC):
 
     thread_type: W24ThreadType
 
-    handedness: W24ThreadHandedness = W24ThreadHandedness.RIGHT
+    pitch: Decimal
 
+    threads_per_inch: Decimal
+
+    handedness: W24ThreadHandedness = W24ThreadHandedness.RIGHT
 
 class W24ThreadISOMetric(W24Thread):
     """ Metric ISO Thread following ISO 1502
@@ -71,19 +85,8 @@ class W24ThreadISOMetric(W24Thread):
     * DIN 13-1 threads (i.e., diameter 1..68mm)
     * DIN 13-2 to DIN 13-10 threads (i.e., diameter 1..1000mm)
     * DIN 158-1 (i.e., cone-shaped threads)
-
-    Attributes:
-
-        pitch: Pitch of the thread in mm. Normed range: 0.25 - 9mm
-            The value will only be set if is explicitly
-            stated in the drawing. This behaviour might change
-            in the future and perform an automatic lookup in the
-            DIN standards. If this change would affect your
-            application, please get in touch with us.
     """
     thread_type = W24ThreadType.ISO_METRIC
-
-    pitch: Optional[Decimal] = None
 
 
 class W24ThreadUTS(W24Thread):
@@ -107,8 +110,6 @@ class W24ThreadUTS(W24Thread):
             * 1B, 2B, 3B for internal threads
     """
     uts_size: str
-
-    threads_per_inch: Decimal
 
     tolerance_class: str
 
