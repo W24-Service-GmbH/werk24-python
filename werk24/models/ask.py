@@ -1,4 +1,4 @@
-""" Defintion of all W24Ask types that are understood by the Werk24 API.
+""" Definition of all W24Ask types that are understood by the Werk24 API.
 """
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, Union
@@ -16,7 +16,7 @@ from .measure import W24Measure
 from .radius import W24Radius
 from .roughness import W24Roughness
 from .revision_table import W24RevisionTable
-
+from .thread_element import W24ThreadElement
 
 class W24AskType(str, Enum):
     """ List of all Ask Type supported by the current
@@ -69,7 +69,7 @@ class W24AskType(str, Enum):
     """
 
     VARIANT_GDTS = "VARIANT_GDTS"
-    """ List of Geometric Dimensions and Tolerations detected
+    """ List of Geometric Dimensions and Tolerances detected
     on the Sectionals associated with the variant
     """
 
@@ -99,6 +99,14 @@ class W24AskType(str, Enum):
 
     VARIANT_EXTERNAL_DIMENSIONS = "VARIANT_EXTERNAL_DIMENSIONS"
     """ Ask for the external dimensions
+    """
+
+    VARIANT_THREAD_ELEMENTS = "VARIANT_THREAD_ELEMENTS"
+    """ Ask for the thread elements of the variant
+    """
+
+    VARIANT_TOLERANCE_ELEMENTS = "VARIANT_TOLERANCE_ELEMENTS"
+    """Ask for the tolerance elements of the variant
     """
 
 
@@ -288,7 +296,7 @@ class W24AskVariantRadiiResponse(BaseModel):
     """
     variant_id: UUID4
     sectional_id: UUID4
-    roughnesses: List[W24Radius]
+    radii: List[W24Radius]
 
 
 class W24AskVariantMeasures(W24Ask):
@@ -605,6 +613,46 @@ class W24AskProductPMIExtractResponse(BaseModel):
     radii: List[W24Radius]
     roughnesses: List[W24Roughness]
 
+class W24AskVariantThreadElements(W24Ask):
+    """ Ask object to obtain the thread elements
+    """
+    ask_type = W24AskType.VARIANT_THREAD_ELEMENTS
+
+
+
+class W24AskVariantThreadElementsResponse(BaseModel):
+    """ Response object corresponding to the W24AskVariantThreadElements
+
+    Attributes:
+
+        variant_id (UUID4): Unique ID of the variant detected on the
+            Technical Drawing. Refer to the documentation on Variants
+            for details.
+
+    """
+    variant_id: UUID4
+    thread_elements: List[W24ThreadElement]
+
+
+# class W24AskVariantToleranceElements(W24Ask):
+#     """ Ask object to obtain the tolerance elements
+#     """
+#     ask_type = W24AskType.VARIANT_TOLERANCE_ELEMENTS
+
+# class W24AskVariantToleranceElementsResponse(BaseModel):
+#     """ Response object corresponding to the W24AskVariantThreadElements
+
+#     Attributes:
+
+#         variant_id (UUID4): Unique ID of the variant detected on the
+#             Technical Drawing. Refer to the documentation on Variants
+#             for details.
+
+#     """
+#     variant_id: UUID4
+#     thread_elements: List[W24ToleranceElement]
+
+
 
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
@@ -623,6 +671,8 @@ W24AskUnion = Union[
     W24AskVariantMeasures,
     W24AskVariantRadii,
     W24AskVariantRoughnesses,
+    W24AskVariantThreadElements,
+    # W24AskVariantToleranceElements
 ]
 """ Union of all W24Asks to ensure proper de-serialization """
 
@@ -680,6 +730,8 @@ def _deserialize_ask_type(
         "VARIANT_RADII": W24AskVariantRadii,
         "VARIANT_ROUGHNESSES": W24AskVariantRoughnesses,
         "VARIANT_CAD": W24AskVariantCAD,
+        "VARIANT_THREAD_ELEMENTS":W24AskVariantThreadElements,
+        # "VARIANT_TOLERANCE_ELEMENTS":W24AskVariantToleranceElements,
     }.get(ask_type, None)
 
     if class_ is None:

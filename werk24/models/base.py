@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-class W24FeatureCoordinate(BaseModel):
+class W24BaseCoordinate(BaseModel):
     """ Coordinate point
 
     Attributes:
@@ -15,7 +15,7 @@ class W24FeatureCoordinate(BaseModel):
     y: float
 
 
-class W24FeaturePosition(BaseModel):
+class W24BasePosition(BaseModel):
     """ Position of the Feature on the individual thumbnails normalized
     by the width and height of each thumbnail.
 
@@ -31,12 +31,12 @@ class W24FeaturePosition(BaseModel):
         sectional: Position of the Feature on the Sectional thumbnail
 
     """
-    sheet: List[W24FeatureCoordinate]
-    canvas: List[W24FeatureCoordinate]
-    sectional: List[W24FeatureCoordinate]
+    sheet: List[W24BaseCoordinate]
+    canvas: List[W24BaseCoordinate]
+    sectional: List[W24BaseCoordinate]
 
 
-class W24Feature(BaseModel):
+class W24BaseModel(BaseModel):
     """ Base Model for all the features that we might
     extract from the Drawing
 
@@ -46,4 +46,6 @@ class W24Feature(BaseModel):
     """
 
     # NOTE: position is optional for the transition period
-    position: Optional[W24FeaturePosition] = None
+    position: Optional[W24BasePosition] = None
+
+
