@@ -5,9 +5,9 @@ Author: Jochen Mattes - Werk24
 import abc
 from decimal import Decimal
 from enum import Enum
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Type
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from werk24.models.base import W24BaseModel
 
@@ -301,13 +301,14 @@ class W24ThreadFeature(W24BaseModel):
         NOTE: Future implementations might also consider the inclination
         in two angles relative to the front view.
     """
+
     gender: Optional[W24Gender]
 
     length: Optional[Decimal]
 
     threads: List[W24Thread]
 
-    @validator('threads', pre=True)
+    @validator('threads', pre=True, allow_reuse=True)
     def ask_list_validator(
         cls,
         raw: List[Dict[str, Any]]
