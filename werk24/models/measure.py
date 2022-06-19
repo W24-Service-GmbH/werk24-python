@@ -9,7 +9,7 @@ from pydantic import UUID4, BaseModel, validator
 
 from .chamfer import W24Chamfer
 from .depth import W24Depth
-from .feature import W24Feature
+from .base import W24BaseModel
 from .size import (W24Size, W24SizeTolerance, W24SizeToleranceGeneral,
                    parse_tolerance)
 from .test_dimension import W24TestDimension
@@ -162,7 +162,7 @@ class W24MeasureLabel(BaseModel):
         return parse_tolerance(raw)
 
 
-class W24Measure(W24Feature):
+class W24Measure(W24BaseModel):
     """ Measure object
 
     Attributes:

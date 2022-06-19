@@ -30,7 +30,6 @@ class W24SizeTolerance(BaseModel, abc.ABC):
         toleration_type (W24SizeToleranceType):  Toleration Type for
             deserialization
     """
-
     toleration_type: W24SizeToleranceType
 
     blurb: str
@@ -105,6 +104,15 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
 
     tolerance_grade: W24ToleranceGrade
 
+    @property
+    def deviation_width(self) -> Decimal:
+        """ Deviation Width
+
+        Returns:
+            Decimal: Deviation width
+        """
+        return self.deviation_upper-self.deviation_lower
+
 
 class W24SizeToleranceReference(W24SizeTolerance):
     """ Measures written in brackets are Reference
@@ -118,11 +126,9 @@ class W24SizeToleranceReference(W24SizeTolerance):
     """
     toleration_type = W24SizeToleranceType.REFERENCE
 
-    blurb: str
-
 
 class W24SizeToleranceOffSize(W24SizeTolerance):
-    """ Off-size based tolerations
+    """ Off-size based tolerances
 
     Attributes:
         blurb (str): Text representation for human consumption.
@@ -240,7 +246,7 @@ class W24SizeType(str, Enum):
     """
     NOMINAL = "NOMINAL"
     DIAMETER = "DIAMETER"
-    WIDTH_ACROSS_FLATS = "WIDTHS_ACCROSS_FLATS"
+    WIDTH_ACROSS_FLATS = "WIDTHS_ACROSS_FLATS"
 
 
 class W24Size(BaseModel, abc.ABC):
@@ -278,7 +284,7 @@ class W24SizeWidthsAcrossFlats(W24Size):
     """ Width across flats / Wrench Sizes
 
     Attributes:
-        width_accross_flats: Size accross flats
+        width_across_flats: Size across flats
             aka. wrench size.
     """
     size_type = W24SizeType.WIDTH_ACROSS_FLATS
