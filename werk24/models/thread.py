@@ -134,19 +134,6 @@ class W24ThreadISOMetricThreadEngagementClass(str, Enum):
     NORMAL = "NORMAL"
     LONG = "LONG"
 
-class W24ThreadISOMetricThreadEngagement(BaseModel):
-    """ Thread Engagement Class
-
-    NOTE: future implementations might contain information
-    about the minimal/maximal corresponding engagement
-    lengths.
-
-    Attributes:
-         engagement_class (W24ThreadISOMetricThreadEngagementClass):
-            Engagement class specified on the Label
-
-    """
-    engagement_class:W24ThreadISOMetricThreadEngagementClass
 
 class W24ThreadISOMetric(W24Thread):
     """ Metric ISO Thread following ISO 1502
@@ -179,9 +166,6 @@ class W24ThreadISOMetric(W24Thread):
         outer_pitch_diameter_tolerance (str): Corresponding
             tolerance class for the pitch diameter of the outer thread.
 
-        thread_engagement (W24ThreadISOMetricThreadEngagement):
-            Group of Length of Thread Engagement
-
     """
     thread_type = W24ThreadType.ISO_METRIC
 
@@ -190,7 +174,6 @@ class W24ThreadISOMetric(W24Thread):
     external_major_diameter_tolerance: Optional[W24SizeTolerance]
     external_pitch_diameter_tolerance: Optional[W24SizeTolerance]
 
-    thread_engagement: W24ThreadISOMetricThreadEngagement
 
 
 
