@@ -631,6 +631,7 @@ class W24AskVariantThreadElementsResponse(BaseModel):
 
     """
     variant_id: UUID4
+    sectional_id: UUID4
     thread_elements: List[W24ThreadElement]
 
 
