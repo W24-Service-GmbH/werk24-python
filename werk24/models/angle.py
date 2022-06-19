@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import UUID4, BaseModel
 
-from .base import W24BaseModel
+from .feature import W24FeatureModel
 from .unit import W24UnitAngle
 
 
@@ -82,7 +82,7 @@ class W24AngleLabel(BaseModel):
     size_toleration: W24AngleToleration
 
 
-class W24Angle(W24BaseModel):
+class W24Angle(W24FeatureModel):
     """ Tolerated Angle detected on a sectional of the
     Technical Drawing
 
