@@ -127,6 +127,7 @@ class W24Thread(BaseModel, abc.ABC):
     length: Optional[Decimal]
 
 
+
 class W24ThreadISOMetricThreadEngagementClass(str, Enum):
     """Thread Engagement in accordance with ISO 965-1:1998
     """
@@ -169,12 +170,10 @@ class W24ThreadISOMetric(W24Thread):
     """
     thread_type = W24ThreadType.ISO_METRIC
 
-    internal_major_diameter_tolerance: Optional[W24SizeTolerance]
-    internal_pitch_diameter_tolerance: Optional[W24SizeTolerance]
-    external_major_diameter_tolerance: Optional[W24SizeTolerance]
-    external_pitch_diameter_tolerance: Optional[W24SizeTolerance]
-
-
+    female_major_diameter_tolerance: Optional[W24SizeTolerance]
+    female_pitch_diameter_tolerance: Optional[W24SizeTolerance]
+    male_major_diameter_tolerance: Optional[W24SizeTolerance]
+    male_pitch_diameter_tolerance: Optional[W24SizeTolerance]
 
 
 class W24ThreadUTS(W24Thread):

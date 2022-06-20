@@ -11,7 +11,7 @@ from werk24.cli import utils
 from werk24.exceptions import RequestTooLargeException
 from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
                                W24AskSectionalThumbnail, W24AskSheetThumbnail,
-                               W24AskTitleBlock, W24AskVariantAngles,
+                               W24AskTitleBlock, W24AskVariantThreadElements,
                                W24AskVariantCAD,
                                W24AskVariantExternalDimensions,
                                W24AskVariantGDTs, W24AskVariantMeasures,
@@ -89,7 +89,13 @@ hook_config = [
     HookConfig(
         'ask_titleblock',
         W24AskTitleBlock,
-        lambda m: _print_payload("Ask TitleBlock", m.payload_dict)),
+        lambda m: _print_payload("Ask TitleBlock", m.payload_dict)
+    ),
+    HookConfig(
+        'ask_variant_thread_elements',
+        W24AskVariantThreadElements,
+        lambda m: _print_payload("Ask Variant Thread Elements", m.payload_dict)
+    ),
 ]
 
 
@@ -268,7 +274,7 @@ def _make_hooks_from_args(
         function=lambda msg:
         logger.error("Internal Error %s", msg.payload_dict))
 
-    # add a gneral hook to deal with PROGRESS messages
+    # add a general hook to deal with PROGRESS messages
     hook_progress_started = Hook(
         message_type=W24TechreadMessageType.PROGRESS,
         message_subtype=W24TechreadMessageSubtypeProgress.STARTED,
@@ -279,9 +285,10 @@ def _make_hooks_from_args(
     hooks = [
         Hook(ask=c.ask(), function=c.function)
         for c in hook_config
-        if getattr(args, c.arg)] + \
-        [
+        if getattr(args, c.arg)
+    ] + [
         hook_error_internal,
-        hook_progress_started]
+        hook_progress_started
+    ]
 
     return hooks
