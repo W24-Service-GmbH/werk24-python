@@ -45,8 +45,8 @@ class TestPage(TestBase):
             self.assertGreater(len(message_second.payload_bytes), 0)
 
             # check whether we close the iteration correctly
-            with self.assertRaises(StopAsyncIteration):
-                await request.__anext__()
+            completed = await request.__anext__()
+            self.assertEqual(completed.message_subtype, W24TechreadMessageSubtypeProgress.COMPLETED)
 
     async def test_read_drawing_with_hooks(self):
         """ Test basic read drawing with hooks functionality
