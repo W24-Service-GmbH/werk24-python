@@ -80,6 +80,11 @@ def main() -> None:
         action="store_true")
 
     parser_techread.add_argument(
+        "--ask-variant-thread-elements",
+        help="ask for the Thread Elements",  # noqa
+        action="store_true")
+
+    parser_techread.add_argument(
         "--ask-titleblock",
         help="ask for the Title Block",  # noqa
         action="store_true")

@@ -3,7 +3,7 @@ and receive a response that fits the expected format
 """
 from werk24.models.ask import W24AskTitleBlock
 from werk24.models.title_block import W24TitleBlock
-from werk24.models.techread import W24AskType
+from werk24.models.techread import W24AskType, W24TechreadMessageSubtypeProgress
 from werk24.techread_client import W24TechreadClient
 
 from .base import TestBase
@@ -40,8 +40,8 @@ class TestTitleBlock(TestBase):
                 W24AskType.TITLE_BLOCK)
 
             # check whether we close the iteration correctly
-            with self.assertRaises(StopAsyncIteration):
-                await request.__anext__()
+            completed = await request.__anext__()
+            self.assertEqual(completed.message_subtype, W24TechreadMessageSubtypeProgress.COMPLETED)
 
             # check whether the payload can be parsed correctly
             W24TitleBlock.parse_obj(response.payload_dict)

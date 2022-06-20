@@ -36,7 +36,7 @@ class W24FeaturePosition(BaseModel):
     sectional: List[W24FeatureCoordinate]
 
 
-class W24Feature(BaseModel):
+class W24FeatureModel(BaseModel):
     """ Base Model for all the features that we might
     extract from the Drawing
 
@@ -47,3 +47,5 @@ class W24Feature(BaseModel):
 
     # NOTE: position is optional for the transition period
     position: Optional[W24FeaturePosition] = None
+
+

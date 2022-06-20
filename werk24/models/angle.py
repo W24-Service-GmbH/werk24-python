@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import UUID4, BaseModel
 
-from .feature import W24Feature
+from .feature import W24FeatureModel
 from .unit import W24UnitAngle
 
 
@@ -24,7 +24,7 @@ class W24AngleTolerationType(str, Enum):
 
 
 class W24AngleToleration(BaseModel, abc.ABC):
-    """ Base Class that describes Angle Tolerations
+    """ Base Class that describes Angle Tolerances
 
     Attributes:
         toleration_type: Toleration Type  of the
@@ -48,7 +48,7 @@ class W24AngleSize(BaseModel):
     """ Size of an Angle including its toleration
 
     Attributes:
-        blurb: Blurb for human consumpation
+        blurb: Blurb for human consumption
 
         angle: Nominal angle size in [units]
 
@@ -82,7 +82,7 @@ class W24AngleLabel(BaseModel):
     size_toleration: W24AngleToleration
 
 
-class W24Angle(W24Feature):
+class W24Angle(W24FeatureModel):
     """ Tolerated Angle detected on a sectional of the
     Technical Drawing
 
