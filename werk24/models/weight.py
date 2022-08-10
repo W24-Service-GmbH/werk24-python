@@ -1,9 +1,10 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from .feature import W24FeatureModel
 from .unit import W24UnitWeight, W24UnitLength
 
 
-class W24Weight(BaseModel):
+class W24Weight(W24FeatureModel):
     """ Weight of a Part - for example as indicated
     on the Title Block.
 

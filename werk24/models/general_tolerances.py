@@ -1,9 +1,9 @@
 from decimal import Decimal
 from enum import Enum
 from typing import List, Optional, Union
-
 from pydantic import  BaseModel, validator
 
+from .feature import W24FeatureModel
 
 class W24GeneralTolerancesStandard(str, Enum):
     """ Enum of all supported
@@ -140,7 +140,7 @@ class W24ToleranceClass(BaseModel):
     table: List[W24ToleranceTableItem]
 
 
-class W24GeneralTolerances(BaseModel):
+class W24GeneralTolerances(W24FeatureModel):
     """ Object representing the General Tolerances indicated
     on the Title Block of the Technical Drawing.
     """
@@ -156,8 +156,8 @@ class W24GeneralTolerances(BaseModel):
 
     principle: Optional[W24GeneralTolerancesPrinciple]
     """ Principle that is annotated on the general
-    tolerance by "-E" (or the lack of if). 
-    
+    tolerance by "-E" (or the lack of if).
+
     NOTE: some general tolerance standards do not define
     a default principle. If it is not stated explicitly
     on the drawing, the `principle` value is set to `None`.
