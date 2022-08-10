@@ -7,9 +7,9 @@ from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 from .weight import W24Weight
-from .date import W24Date
+from .feature import W24FeatureModel
 
-class W24TitleBlockItem(BaseModel):
+class W24TitleBlockItem(W24FeatureModel):
     """ Per-Language caption or value
 
     Attributes:
@@ -62,7 +62,7 @@ class W24FilePathType(str, Enum):
     WINDOWS = "WINDOWS"
     UNKNOWN = "UNKNOWN"
 
-class W24Filename(BaseModel):
+class W24Filename(W24FeatureModel):
     """ Object describing all the information that we can
     deduce from a filename that was found on the TitleBlock
 

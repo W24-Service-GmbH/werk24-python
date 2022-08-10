@@ -5,6 +5,8 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
+from .feature import W24FeatureModel
+
 
 class W24MaterialFamily(str, Enum):
     """ Material Family: First level
@@ -256,7 +258,7 @@ class W24MaterialReference(BaseModel):
     material_codes: List[str]
 
 
-class W24Material(BaseModel):
+class W24Material(W24FeatureModel):
     """ Parsed Material object that can either be
     associated to the TitleBlock or derived from
     all the available information (including the
