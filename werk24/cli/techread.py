@@ -70,7 +70,7 @@ hook_config = [
     HookConfig(
         'ask_sectional_thumbnail',
         W24AskSectionalThumbnail,
-        lambda m: _show_image("Sectional Thumbnail", m.payload_dict)),
+        lambda m: _show_image("Sectional Thumbnail", m.payload_bytes)),
     # HookConfig(
     #     'ask_variant_angles',
     #     W24AskVariantAngles,
