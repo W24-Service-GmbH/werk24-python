@@ -2,24 +2,36 @@
 """
 import argparse
 import io
+import json
 import logging
 from collections import namedtuple
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
+
 from werk24.cli import utils
 from werk24.exceptions import RequestTooLargeException
-from werk24.models.ask import (W24AskCanvasThumbnail, W24AskPageThumbnail,
-                               W24AskSectionalThumbnail, W24AskSheetThumbnail,
-                               W24AskTitleBlock, W24AskVariantThreadElements,
-                               W24AskVariantCAD,
-                               W24AskVariantExternalDimensions,
-                               W24AskVariantGDTs, W24AskVariantMeasures,
-                               W24AskVariantRadii, W24AskVariantRoughnesses)
-from werk24.models.techread import (W24TechreadException,
-                                    W24TechreadMessageSubtypeError,
-                                    W24TechreadMessageSubtypeProgress,
-                                    W24TechreadMessageType)
+from werk24.models.ask import (
+    W24AskCanvasThumbnail,
+    W24AskPageThumbnail,
+    W24AskSectionalThumbnail,
+    W24AskSheetAnonymization,
+    W24AskSheetThumbnail,
+    W24AskTitleBlock,
+    W24AskVariantCAD,
+    W24AskVariantExternalDimensions,
+    W24AskVariantGDTs,
+    W24AskVariantMeasures,
+    W24AskVariantRadii,
+    W24AskVariantRoughnesses,
+    W24AskVariantThreadElements,
+)
+from werk24.models.techread import (
+    W24TechreadException,
+    W24TechreadMessageSubtypeError,
+    W24TechreadMessageSubtypeProgress,
+    W24TechreadMessageType,
+)
 from werk24.techread_client import Hook
 
 # load the environment variables
@@ -48,13 +60,18 @@ hook_config = [
         W24AskSheetThumbnail,
         lambda m: _show_image("Sheet Thumbnail", m.payload_bytes)),
     HookConfig(
+        'ask_sheet_anonymization',
+        W24AskSheetAnonymization,
+        lambda m: _show_image("Sheet Anonymization", m.payload_bytes)
+        ),
+    HookConfig(
         'ask_canvas_thumbnail',
         W24AskCanvasThumbnail,
         lambda m: _show_image("Canvas Thumbnail", m.payload_dict)),
     HookConfig(
         'ask_sectional_thumbnail',
         W24AskSectionalThumbnail,
-        lambda m: _show_image("Sectional Thumbnail", m.payload_dict)),
+        lambda m: _show_image("Sectional Thumbnail", m.payload_bytes)),
     # HookConfig(
     #     'ask_variant_angles',
     #     W24AskVariantAngles,
@@ -62,7 +79,7 @@ hook_config = [
     HookConfig(
         'ask_variant_external_dimensions',
         W24AskVariantExternalDimensions,
-        lambda m: _print_payload("Ask Variant External Dimensions", m.payload_dict)),
+        lambda m: _print_payload("Ask Variant Ext. Dimensions", m.payload_dict)),
     HookConfig(
         'ask_variant_gdts',
         W24AskVariantGDTs,
@@ -189,7 +206,8 @@ def _print_payload(
         payload_dict (Dict[str, Any]): Payload dictionary
     """
     print(log_text)
-    print(payload_dict)
+    payload_json  =json.dumps(payload_dict, ident=4)
+    print(payload_json)
 
 
 def _show_image(
@@ -198,7 +216,7 @@ def _show_image(
 ) -> None:
     """ Display a debug image. The function relies on
     the PIL functionality of Image.show(). The
-    actual behaviour will thus be diffent accross platforms
+    actual behavior will thus be different across platforms
 
     Args:
         log_text (str): Log Text that we want to write back
@@ -223,7 +241,13 @@ def _show_image(
 
     # and show the image
     image = Image.open(io.BytesIO(image_bytes))
-    image.show(title=log_text)
+    try:
+        image.show(title=log_text)
+    except BaseException:
+        logger.warning(
+            "Image cannot be displayed. "
+            "Please check your local security settings.")
+        return
 
 
 async def main(
