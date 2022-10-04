@@ -62,7 +62,8 @@ hook_config = [
     HookConfig(
         'ask_sheet_anonymization',
         W24AskSheetAnonymization,
-        lambda m: _show_image("Sheet Anonymization", m.payload_bytes)),
+        lambda m: _show_image("Sheet Anonymization", m.payload_bytes)
+        ),
     HookConfig(
         'ask_canvas_thumbnail',
         W24AskCanvasThumbnail,
