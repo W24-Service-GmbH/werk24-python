@@ -692,6 +692,7 @@ W24AskUnion = Union[
     W24AskProductPMIExtract,
     W24AskRevisionTable,
     W24AskSectionalThumbnail,
+    W24AskSheetAnonymization,
     W24AskSheetThumbnail,
     W24AskTitleBlock,
     W24AskTrain,
