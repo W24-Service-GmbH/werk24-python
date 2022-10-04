@@ -50,6 +50,12 @@ class W24AskType(str, Enum):
     """ Thumbnail of the sheet (i.e., the part of the
     page that is described by the surrounding frame)
     """
+
+    SHEET_ANONYMIZATION = "SHEET_ANONYMIZATION"
+    """ Thumbnail of the sheet with all references to
+    the original author removed.
+    """
+
     TITLE_BLOCK = "TITLE_BLOCK"
     """ Ask for all information that is available on the
     title block
@@ -174,6 +180,31 @@ class W24AskSheetThumbnail(W24AskThumbnail):
         black-on-white.
     """
     ask_type = W24AskType.SHEET_THUMBNAIL
+
+class W24AskSheetAnonymization(W24AskThumbnail):
+    """ Requests an ANONYMIZED thumbnail of each sheet on each page
+    in the document. The sheet will only contain the pixels within
+    the main frame that surrounds the canvas and header fields.
+
+    !!! note
+        We preprocess the sheet so that it is always white-on-black,
+        even when the Technical Drawing that you submitted was
+        black-on-white.
+
+    Attributes:
+        replacement_logo (bytes): SVG version of the logo that
+            shall be used to replace the logo on the drawing.
+
+        identification_snippets (List[str]): List of string values
+            that might identify the authoring company. The software
+            will actively look for such text segments in the data
+            and replace them with white pixels.
+    """
+    ask_type = W24AskType.SHEET_ANONYMIZATION
+
+    replacement_logo: Optional[bytes]= None
+
+    identification_snippets: List[str] = []
 
 
 class W24AskCanvasThumbnail(W24AskThumbnail):
@@ -661,6 +692,7 @@ W24AskUnion = Union[
     W24AskProductPMIExtract,
     W24AskRevisionTable,
     W24AskSectionalThumbnail,
+    W24AskSheetAnonymization,
     W24AskSheetThumbnail,
     W24AskTitleBlock,
     W24AskTrain,
@@ -720,6 +752,7 @@ def _deserialize_ask_type(
         "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
         "REVISION_TABLE": W24AskRevisionTable,
         "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
+        "SHEET_ANONYMIZATION": W24AskSheetAnonymization,
         "SHEET_THUMBNAIL": W24AskSheetThumbnail,
         "TITLE_BLOCK": W24AskTitleBlock,
         "TRAIN": W24AskTrain,
