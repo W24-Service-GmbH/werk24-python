@@ -751,6 +751,7 @@ def _deserialize_ask_type(
         "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
         "REVISION_TABLE": W24AskRevisionTable,
         "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
+        "SHEET_ANONYMIZATION": W24AskSheetAnonymization,
         "SHEET_THUMBNAIL": W24AskSheetThumbnail,
         "TITLE_BLOCK": W24AskTitleBlock,
         "TRAIN": W24AskTrain,
