@@ -1,7 +1,15 @@
 from decimal import Decimal
+from enum import Enum
+from typing import Optional
+
 from pydantic import BaseModel
 
 
+class W24DepthThroughType(str, Enum):
+    """Through Type specified on ASME drawings.
+    """
+    THRU = "THRU"
+    THRU_ALL = "THRU_ALL"
 class W24Depth(BaseModel):
     """ Depth object that describes the details of the
     depth of a drilling or thread
@@ -15,3 +23,5 @@ class W24Depth(BaseModel):
     blurb: str
 
     depth: Decimal
+
+    through_type: Optional[W24DepthThroughType] = None
