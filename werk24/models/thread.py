@@ -127,7 +127,6 @@ class W24Thread(BaseModel, abc.ABC):
     length: Optional[Decimal]
 
 
-
 class W24ThreadISOMetricThreadEngagementClass(str, Enum):
     """Thread Engagement in accordance with ISO 965-1:1998
     """
