@@ -53,12 +53,12 @@ setup(
 
     package_data={"werk24": ["assets/*"]},
     install_requires=[
-        "aiohttp >= 3.6.2",
-        "boto3 >= 1.14.44",
-        "devtools>=0.6.1",
+        "aiohttp >= 3.8.3",
+        "boto3 >= 1.24.89",
+        "devtools>=0.9.0",
         "pydantic >= 1.4",
         "python-dotenv>=0.10.1",
-        "websockets >= 8.1"
+        "websockets >= 10.3"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
