@@ -13,3 +13,5 @@ werk24.egg-info
 .isort.cfg
 .markdownlint.yaml
 .trunk
+.coverage
+coverage.xml

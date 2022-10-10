@@ -1,8 +1,9 @@
+from test.utils import AsyncTestCase
 from unittest import mock
 
-from test.utils import AsyncTestCase
 import boto3
 from botocore.exceptions import ClientError
+
 from werk24._version import __version__
 from werk24.auth_client import AuthClient
 from werk24.exceptions import LicenseError, UnauthorizedException
