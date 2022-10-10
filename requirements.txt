@@ -1,6 +1,4 @@
-# The websockets limitation needs to registered at the very beginning.
-websockets>=9.1,<10.0
-
+websockets>=10.1
 aiohttp>=3.7.4.post0,<3.9.0
 boto3>=1.14.44
 devtools>=0.6.1,<1.0
