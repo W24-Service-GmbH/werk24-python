@@ -536,7 +536,10 @@ class W24TechreadClient:
 
         # filter the environment variables to only include the
         # ones that are relevant to us and return
-        return {cur_key: environs_raw[cur_key] for cur_key in ENVIRONS}
+        try:
+            return {cur_key: environs_raw[cur_key] for cur_key in ENVIRONS}
+        except KeyError:
+            raise LicenseError(LICENSE_ERROR_TEXT)
 
     @classmethod
     def make_from_env(
