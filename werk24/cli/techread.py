@@ -205,6 +205,7 @@ def _print_payload(
         log_text (str): Headline info
         payload_dict (Dict[str, Any]): Payload dictionary
     """
+    print(log_text)
     payload_json = json.dumps(payload_dict, indent=4)
     print(payload_json)
 
