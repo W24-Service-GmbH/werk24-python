@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, Union
 
-from pydantic import UUID4, BaseModel
+from pydantic import UUID4, BaseModel, HttpUrl
 
 from .angle import W24Angle
 from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
@@ -14,9 +14,10 @@ from .leader import W24Leader
 from .material import W24Material
 from .measure import W24Measure
 from .radius import W24Radius
-from .roughness import W24Roughness
 from .revision_table import W24RevisionTable
+from .roughness import W24Roughness
 from .thread_element import W24ThreadElement
+
 
 class W24AskType(str, Enum):
     """ List of all Ask Type supported by the current
@@ -181,6 +182,7 @@ class W24AskSheetThumbnail(W24AskThumbnail):
     """
     ask_type = W24AskType.SHEET_THUMBNAIL
 
+
 class W24AskSheetAnonymization(W24AskThumbnail):
     """ Requests an ANONYMIZED thumbnail of each sheet on each page
     in the document. The sheet will only contain the pixels within
@@ -202,7 +204,7 @@ class W24AskSheetAnonymization(W24AskThumbnail):
     """
     ask_type = W24AskType.SHEET_ANONYMIZATION
 
-    replacement_logo: Optional[bytes]= None
+    replacement_logo_url: Optional[HttpUrl] = None
 
     identification_snippets: List[str] = []
 
@@ -644,11 +646,11 @@ class W24AskProductPMIExtractResponse(BaseModel):
     radii: List[W24Radius]
     roughnesses: List[W24Roughness]
 
+
 class W24AskVariantThreadElements(W24Ask):
     """ Ask object to obtain the thread elements
     """
     ask_type = W24AskType.VARIANT_THREAD_ELEMENTS
-
 
 
 class W24AskVariantThreadElementsResponse(BaseModel):
@@ -683,7 +685,6 @@ class W24AskVariantThreadElementsResponse(BaseModel):
 #     """
 #     variant_id: UUID4
 #     thread_elements: List[W24ToleranceElement]
-
 
 
 W24AskUnion = Union[
@@ -764,7 +765,7 @@ def _deserialize_ask_type(
         "VARIANT_RADII": W24AskVariantRadii,
         "VARIANT_ROUGHNESSES": W24AskVariantRoughnesses,
         "VARIANT_CAD": W24AskVariantCAD,
-        "VARIANT_THREAD_ELEMENTS":W24AskVariantThreadElements,
+        "VARIANT_THREAD_ELEMENTS": W24AskVariantThreadElements,
         # "VARIANT_TOLERANCE_ELEMENTS":W24AskVariantToleranceElements,
     }.get(ask_type, None)
 
