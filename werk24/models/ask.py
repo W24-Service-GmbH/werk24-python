@@ -116,6 +116,11 @@ class W24AskType(str, Enum):
     """Ask for the tolerance elements of the variant
     """
 
+    PART_FAMILY = "PART_FAMILY"
+    """Ask that triggers a post processor corresponding to the
+    part family
+    """
+
 
 class W24Ask(BaseModel):
     """ Base model from which all Asks inherit
@@ -207,6 +212,31 @@ class W24AskSheetAnonymization(W24AskThumbnail):
     replacement_logo_url: Optional[HttpUrl] = None
 
     identification_snippets: List[str] = []
+
+
+class W24AskPartFamily(W24Ask):
+    """Triggers a post-processor that turns the raw data into a
+    dictionary of attributes characteristic for the part family.
+
+    E.g. a Screw could have the following attributes:
+    * Drive Type
+    * Head diameter
+    * Head length
+    * Thread
+    * Thread length
+
+    The definition of a part family can be done in a Part Family
+    Template and is implemented by Werk24 on the backend - where
+    it has access to more granular data.
+
+    Attributes:
+        part_family_id (UUID4): Unique part family identifier
+            that we will provide to you after the part family
+            post processor is implemented.
+    """
+    ask_type = W24AskType.PART_FAMILY
+
+    part_family_id: UUID4
 
 
 class W24AskCanvasThumbnail(W24AskThumbnail):
@@ -324,7 +354,7 @@ class W24AskVariantRadiiResponse(BaseModel):
             the Measure to the SectionalThumbnail (should you
             have requested it).
 
-        radiis: List of Radii that were found for the
+        radii: List of Radii that were found for the
             Variant on the Sectional.
     """
     variant_id: UUID4
@@ -467,7 +497,7 @@ class W24AskRevisionTableResponse(BaseModel):
 
 class W24AskVariantGDTs(W24Ask):
     """ This Ask requests the list of all
-    Geometric Dimensions and Tolerations
+    Geometric Dimensions and Tolerances
     that were detected for the Variant.
     """
     ask_type = W24AskType.VARIANT_GDTS
@@ -500,7 +530,7 @@ class W24AskTrain(W24Ask):
     to train and improve our models. It does not trigger a response.
 
     !!! danger
-        This is deprected. Please use the attribute is_training=True
+        This is deprecated. Please use the attribute is_training=True
         instead.
     """
     ask_type = W24AskType.TRAIN
@@ -555,7 +585,7 @@ class W24AskVariantCADResponse(BaseModel):
 
 
     !!! danger
-        The attributes num_sectionals and num_angles will be deprected
+        The attributes num_sectionals and num_angles will be deprecated
         soon in favor of a part classifier. Please reach out to us
         before using these two attributes.
 
@@ -690,6 +720,7 @@ class W24AskVariantThreadElementsResponse(BaseModel):
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
     W24AskPageThumbnail,
+    W24AskPartFamily,
     W24AskProductPMIExtract,
     W24AskRevisionTable,
     W24AskSectionalThumbnail,
@@ -750,6 +781,7 @@ def _deserialize_ask_type(
     class_ = {
         "CANVAS_THUMBNAIL": W24AskCanvasThumbnail,
         "PAGE_THUMBNAIL": W24AskPageThumbnail,
+        "PART_FAMILY": W24AskPartFamily,
         "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
         "REVISION_TABLE": W24AskRevisionTable,
         "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
