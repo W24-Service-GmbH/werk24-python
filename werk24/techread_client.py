@@ -241,7 +241,7 @@ class W24TechreadClient:
             cognito_region {str} -- Physical region
             cognito_identity_pool_id {str} -- identity pool of W24
             cognito_client_id {str} -- the client id of your application
-            cognito_client_secret {str} -- the client secrect of your
+            cognito_client_secret {str} -- the client secret of your
                 application
             username {str} -- the username with which you want to register
             password {str} -- the password with which you want to register
@@ -377,7 +377,7 @@ class W24TechreadClient:
         # stateless-system that separates the initialization
         # from the upload and read stages, you'll need to
         # find a way of handing over the tcp connection :)
-        # PS: The AWS API Gatway for websockets might help you
+        # PS: The AWS API Gateway for websockets might help you
         # here.
         async for message in self._send_command_read():
             yield message
@@ -688,7 +688,7 @@ class W24TechreadClient:
         call the corresponding hook.
 
         Arguments:
-            message {W24TechreadMessage} -- Messsage returned from the
+            message {W24TechreadMessage} -- Message returned from the
                 read_drawing method
 
             hooks {List[Hook]} -- List of hooks from which we need to
@@ -734,7 +734,7 @@ class W24TechreadClient:
         type.
 
         Arguments:
-            message {W24TechreadMessage} -- Messsage returned from the
+            message {W24TechreadMessage} -- Message returned from the
                 read_drawing method
 
             hooks {List[Hook]} -- List of hooks from which we need to
