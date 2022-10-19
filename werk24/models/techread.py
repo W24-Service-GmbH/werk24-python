@@ -1,14 +1,14 @@
 """ Defintions of all objects required to communicate with
 the W24 Techread API.
 """
-from typing import Any
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import UUID4, BaseModel, Field, HttpUrl, Json, validator
+
 from werk24._version import __version__
 
-from .ask import W24AskType, W24Ask, deserialize_ask
+from .ask import W24Ask, W24AskType, deserialize_ask
 
 
 class W24TechreadAction(str, Enum):
@@ -241,6 +241,8 @@ class W24TechreadRequest(BaseModel):
             compatibility, this defaults to 'legacy'
 
         max_pages: Maximum number of pages that shall be processed.
+
+        drawing_filename (Optional[str]): Optional filename
     """
     asks: List[W24Ask] = []
 
@@ -249,6 +251,8 @@ class W24TechreadRequest(BaseModel):
     client_version = __version__
 
     max_pages: int = 1
+
+    drawing_filename: Optional[str] = None
 
     @validator('asks', pre=True)
     def ask_list_validator(
