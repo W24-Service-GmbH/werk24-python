@@ -24,30 +24,45 @@ import os
 import uuid
 from asyncio import gather, iscoroutinefunction
 from types import TracebackType
-from typing import (AsyncGenerator, AsyncIterator, Callable, Dict, List,
-                    Optional, Type, Union)
+from typing import (
+    AsyncGenerator,
+    AsyncIterator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 import dotenv
 from pydantic import BaseModel
 
 from werk24.auth_client import AuthClient
-from werk24.exceptions import (BadRequestException, LicenseError,
-                               RequestTooLargeException, ServerException,
-                               UnsupportedMediaType)
+from werk24.exceptions import (
+    BadRequestException,
+    LicenseError,
+    RequestTooLargeException,
+    ServerException,
+    UnsupportedMediaType,
+)
 from werk24.models.ask import W24Ask
-from werk24.models.techread import (W24TechreadAction, W24TechreadException,
-                                    W24TechreadExceptionLevel,
-                                    W24TechreadExceptionType,
-                                    W24TechreadInitResponse,
-                                    W24TechreadMessage,
-                                    W24TechreadMessageSubtype,
-                                    W24TechreadMessageType, W24TechreadRequest)
+from werk24.models.techread import (
+    W24TechreadAction,
+    W24TechreadException,
+    W24TechreadExceptionLevel,
+    W24TechreadExceptionType,
+    W24TechreadInitResponse,
+    W24TechreadMessage,
+    W24TechreadMessageSubtype,
+    W24TechreadMessageType,
+    W24TechreadRequest,
+)
 from werk24.techread_client_https import TechreadClientHttps
 from werk24.techread_client_wss import TechreadClientWss
 
 # make the logger
-logger = logging.getLogger(  # pylint: disable=invalid-name
-    'w24_techread_client')
+logger = logging.getLogger('w24_techread_client')
 
 ENVIRONS = [
     "W24TECHREAD_SERVER_HTTPS",
@@ -265,14 +280,14 @@ class W24TechreadClient:
         # ensure that we have a token
         try:
             self._auth_client.login()  # type: ignore
-        except AttributeError:
+        except AttributeError as exc:
             raise RuntimeError(
                 "No connection to the authentication service was " +
-                "established. Please call register()")
+                "established. Please call register()") from exc
 
     @property
     def username(self) -> Optional[str]:
-        """ Make the username accessable to the CLI and GUI
+        """ Make the username accessible to the CLI and GUI
 
         Returns:
             str: username of the currently registered user
@@ -287,7 +302,8 @@ class W24TechreadClient:
         drawing: bytes,
         asks: List[W24Ask],
         model: bytes = None,
-        max_pages: int = 1
+        max_pages: int = 1,
+        drawing_filename: Optional[str] = None,
     ) -> AsyncIterator[W24TechreadMessage]:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
@@ -311,6 +327,12 @@ class W24TechreadClient:
                 of the submitted file. This protects platform users from
                 costly requests caused by a user uploading a single file with
                 many pages.
+
+            drawing_filename (str|None): Optional information about the
+                filename of the drawing. Frequently this contains information
+                about the drawing id and you can make that information available
+                to us through this parameter. If you don't know the filename,
+                don't worry, it will still work.
 
         Yields:
             W24TechreadMessage -- Response object obtained from the API
@@ -347,7 +369,7 @@ class W24TechreadClient:
                         self._development_key[:8])
 
         # send the initiation command
-        init_response = await self._send_command_init(asks, max_pages)
+        init_response = await self._send_command_init(asks, max_pages, drawing_filename)
 
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
@@ -385,7 +407,8 @@ class W24TechreadClient:
     async def _send_command_init(
         self,
         asks: List[W24Ask],
-        max_pages: int
+        max_pages: int,
+        drawing_filename: Optional[str]
     ) -> W24TechreadInitResponse:
         """ Send the initiation command to the backend
         and return the associated response
@@ -403,11 +426,15 @@ class W24TechreadClient:
 
             max_pages (int): Maximum number of pages
                 that shall be read.
+
+            drawing_filename (Optional[str]): Optional
+                filename of the drawing.
         """
         request = W24TechreadRequest(
             asks=asks,
             development_key=self._development_key,
-            max_pages=max_pages)
+            max_pages=max_pages,
+            drawing_filename=drawing_filename)
 
         await self._techread_client_wss.send_command(
             W24TechreadAction.INITIALIZE.value,
@@ -645,7 +672,8 @@ class W24TechreadClient:
         self,
         drawing_bytes: bytes,
         hooks: List[Hook],
-        max_pages: int = 1
+        max_pages: int = 1,
+        drawing_filename: Optional[str] = None
     ) -> None:
         """ Send the drawing to the API (can be PDF or image)
         and register a number of callbacks that are triggered
@@ -672,7 +700,12 @@ class W24TechreadClient:
             # send out the request and make a generator
             # that triggers when the result of an ask
             # becomes available
-            async for message in self.read_drawing(drawing_bytes, asks_list, max_pages=max_pages):
+            async for message in self.read_drawing(
+                    drawing_bytes,
+                    asks_list,
+                    max_pages=max_pages,
+                    drawing_filename=drawing_filename):
+
                 await self._call_hooks_for_message(message, hooks)
 
         # explicitly reraise server exceptions

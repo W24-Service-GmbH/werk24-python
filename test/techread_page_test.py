@@ -27,7 +27,8 @@ class TestPage(TestBase):
 
         client = W24TechreadClient.make_from_env(None)
         async with client as session:
-            request = session.read_drawing(DRAWING, [W24AskPageThumbnail()])
+            request = session.read_drawing(
+                 DRAWING, [W24AskPageThumbnail()])
 
             # check whether the first message give us the state information
             message_first = await request.__anext__()
@@ -46,7 +47,8 @@ class TestPage(TestBase):
 
             # check whether we close the iteration correctly
             completed = await request.__anext__()
-            self.assertEqual(completed.message_subtype, W24TechreadMessageSubtypeProgress.COMPLETED)
+            self.assertEqual(completed.message_subtype,
+                             W24TechreadMessageSubtypeProgress.COMPLETED)
 
     async def test_read_drawing_with_hooks(self):
         """ Test basic read drawing with hooks functionality
