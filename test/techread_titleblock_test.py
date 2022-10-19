@@ -26,7 +26,7 @@ class TestTitleBlock(TestBase):
 
         client = W24TechreadClient.make_from_env(None)
         async with client as session:
-            request = session.read_drawing(DRAWING_BYTES, asks)
+            request = session.read_drawing( DRAWING_BYTES, asks)
 
             # check whether the first message give us the state information
             self._assert_message_is_progress_started(
@@ -41,7 +41,8 @@ class TestTitleBlock(TestBase):
 
             # check whether we close the iteration correctly
             completed = await request.__anext__()
-            self.assertEqual(completed.message_subtype, W24TechreadMessageSubtypeProgress.COMPLETED)
+            self.assertEqual(completed.message_subtype,
+                             W24TechreadMessageSubtypeProgress.COMPLETED)
 
             # check whether the payload can be parsed correctly
             W24TitleBlock.parse_obj(response.payload_dict)

@@ -1,5 +1,6 @@
 """ Definition of all W24Ask types that are understood by the Werk24 API.
 """
+from werk24.models.part_family import W24PartFamilyCharacterization
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -34,6 +35,10 @@ class W24AskType(str, Enum):
     surrounding white space removed
     """
 
+    PART_FAMILY_CHARACTERIZATION = "PART_FAMILY_CHARACTERIZATION"
+    """Ask that triggers a post processor corresponding to the
+    part family
+    """
     PRODUCT_PMI_EXTRACT = "PRODUCT_PMI_EXTRACT"
     """ Ask for the PMI Extract Product
     """
@@ -114,11 +119,6 @@ class W24AskType(str, Enum):
 
     VARIANT_TOLERANCE_ELEMENTS = "VARIANT_TOLERANCE_ELEMENTS"
     """Ask for the tolerance elements of the variant
-    """
-
-    PART_FAMILY = "PART_FAMILY"
-    """Ask that triggers a post processor corresponding to the
-    part family
     """
 
 
@@ -214,7 +214,7 @@ class W24AskSheetAnonymization(W24AskThumbnail):
     identification_snippets: List[str] = []
 
 
-class W24AskPartFamily(W24Ask):
+class W24AskPartFamilyCharacterization(W24Ask):
     """Triggers a post-processor that turns the raw data into a
     dictionary of attributes characteristic for the part family.
 
@@ -234,9 +234,22 @@ class W24AskPartFamily(W24Ask):
             that we will provide to you after the part family
             post processor is implemented.
     """
-    ask_type = W24AskType.PART_FAMILY
+    ask_type = W24AskType.PART_FAMILY_CHARACTERIZATION
 
     part_family_id: UUID4
+
+
+class W24AskPartFamilyCharacterizationResponse(BaseModel):
+    """Response object corresponding to a PartFamilyCharacterization request.
+
+
+    Attributes:
+        page_id (UUID4): Id of the page that specified the part_family
+        sheet_id (UUID4):
+    """
+    page_id: UUID4
+    sheet_id: UUID4
+    part_family_characterizations: List[W24PartFamilyCharacterization]
 
 
 class W24AskCanvasThumbnail(W24AskThumbnail):
@@ -720,7 +733,7 @@ class W24AskVariantThreadElementsResponse(BaseModel):
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
     W24AskPageThumbnail,
-    W24AskPartFamily,
+    W24AskPartFamilyCharacterization,
     W24AskProductPMIExtract,
     W24AskRevisionTable,
     W24AskSectionalThumbnail,
@@ -781,7 +794,7 @@ def _deserialize_ask_type(
     class_ = {
         "CANVAS_THUMBNAIL": W24AskCanvasThumbnail,
         "PAGE_THUMBNAIL": W24AskPageThumbnail,
-        "PART_FAMILY": W24AskPartFamily,
+        "PART_FAMILY_CHARACTERIZATION": W24AskPartFamilyCharacterization,
         "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
         "REVISION_TABLE": W24AskRevisionTable,
         "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
