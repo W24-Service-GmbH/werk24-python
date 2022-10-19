@@ -7,7 +7,7 @@ from typing import Any, Dict
 from pydantic import UUID4, BaseModel
 
 
-class W24PartFamilyInstance(BaseModel):
+class W24PartFamilyCharacterization(BaseModel):
     """Instance of a part family described by the File.
 
     Part families can be defined by the Werk24 partner.
