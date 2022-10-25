@@ -10,6 +10,7 @@ load_dotenv(".werk24")
 
 
 def main() -> None:
+
     parser = argparse.ArgumentParser(prog="w24cli")
     subparsers = parser.add_subparsers(
         dest="command",
@@ -23,6 +24,13 @@ def main() -> None:
     parser_techread.add_argument(
         "input_file",
         help="path to the file that is to be analyzed")
+
+    parser_techread.add_argument(
+        "--sub-account",
+        help="Sub-Account that the request should be attributed to.",
+        action="store",
+        dest='sub_account',
+        default=None)
 
     parser_techread.add_argument(
         "--ask-techread-started",

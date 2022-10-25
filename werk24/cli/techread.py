@@ -8,6 +8,7 @@ from collections import namedtuple
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
+from pydantic import UUID4, ValidationError
 
 from werk24.cli import utils
 from werk24.exceptions import RequestTooLargeException
@@ -63,7 +64,7 @@ hook_config = [
         'ask_sheet_anonymization',
         W24AskSheetAnonymization,
         lambda m: _show_image("Sheet Anonymization", m.payload_bytes)
-        ),
+    ),
     HookConfig(
         'ask_canvas_thumbnail',
         W24AskCanvasThumbnail,
@@ -261,6 +262,18 @@ async def main(
         argparse
     """
 
+    # interpret the sub-account as UUID4 and stop if that
+    # does not conform to the correct pattern.
+    try:
+        if args.sub_account is not None:
+            sub_account = UUID4(args.sub_account)
+        else:
+            sub_account = None
+
+    except ValueError:
+        logger.error("Sub-Account ID does not conform to UUID4-pattern")
+        return
+
     # make the hooks from the arguments
     hooks = _make_hooks_from_args(args)
 
@@ -279,7 +292,8 @@ async def main(
         try:
             await session.read_drawing_with_hooks(
                 drawing_bytes,
-                hooks)
+                hooks,
+                sub_account=sub_account)
 
         except RequestTooLargeException:
             message = "Request was too large to be processed. " \
