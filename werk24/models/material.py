@@ -233,7 +233,7 @@ class W24MaterialStandard(str, Enum):
 
     # JIS
     JIS_G3505 = "JIS G3505"
-    JIS_G3507 = "JIS_G3507"
+    JIS_G3507 = "JIS G3507"
 
     # SAE
     SAE_J403 = "SAE J403"
