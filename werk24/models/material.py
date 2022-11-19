@@ -210,6 +210,8 @@ class W24MaterialStandard(str, Enum):
     COMPANY_STANDARD = "COMPANY STANDARD"
 
     # ASTM
+    ASTM_A193 = "ASTM A193"
+    ASTM_A307 = "ASTM A307"
     ASTM_A1008 = "ASTM A1008"
     ASTM_F568M = "ASTM F568M"
 
@@ -237,6 +239,7 @@ class W24MaterialStandard(str, Enum):
 
     # SAE
     SAE_J403 = "SAE J403"
+    SAE_J429 = "SAE J429"
     SAE_J1086 = "SAE J1086"
     SAE_HS1086 = "SAE HS-1086"
 
