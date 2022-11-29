@@ -106,6 +106,7 @@ class W24MaterialCategory3(str, Enum):
 
 
 class W24MaterialCategory4(str, Enum):
+    ...
 
 
 class W24MaterialFamily(str, Enum):
