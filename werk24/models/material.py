@@ -337,6 +337,16 @@ class W24MaterialStandard(str, Enum):
     for metric fasterns.
     """
 
+    ISO1043 = "ISO1043"
+    """ Material number following the EN 1043
+    standard
+    """
+
+    ISO1874 = "ISO1874"
+    """ Material number following the EN 1874-1
+    standard
+    """
+
     DIN17100_1987_12 = "DIN17100:1987-12"
     """ DIN17100:1987-12
     """
