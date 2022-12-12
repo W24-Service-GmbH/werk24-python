@@ -1,10 +1,12 @@
-""" Definition of all W24Ask types that are understood by the Werk24 API.
+"""Definition of all W24Ask types that are understood by the Werk24 API.
 """
-from werk24.models.part_family import W24PartFamilyCharacterization
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import UUID4, BaseModel, HttpUrl
+
+from werk24.models.note import W24Note
+from werk24.models.part_family import W24PartFamilyCharacterization
 
 from .angle import W24Angle
 from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
@@ -21,17 +23,22 @@ from .thread_element import W24ThreadElement
 
 
 class W24AskType(str, Enum):
-    """ List of all Ask Type supported by the current
+    """List of all Ask Type supported by the current
     API version. This list will grow with future releases.
 
     """
+
     CANVAS_THUMBNAIL = "CANVAS_THUMBNAIL"
-    """ Thumbnail of the canvas (i.e., the part of the
+    """Thumbnail of the canvas (i.e., the part of the
     sheet that contains the geometry)
     """
 
+    NOTES = "NOTES"
+    """Notes of the Sectional and the Canvas
+    """
+
     PAGE_THUMBNAIL = "PAGE_THUMBNAIL"
-    """ Thumbnail of the overall page - rotated and with
+    """Thumbnail of the overall page - rotated and with
     surrounding white space removed
     """
 
@@ -40,81 +47,81 @@ class W24AskType(str, Enum):
     part family
     """
     PRODUCT_PMI_EXTRACT = "PRODUCT_PMI_EXTRACT"
-    """ Ask for the PMI Extract Product
+    """Ask for the PMI Extract Product
     """
 
     REVISION_TABLE = "REVISION_TABLE"
-    """ Ask for the Revision Table
+    """Ask for the Revision Table
     """
 
     SECTIONAL_THUMBNAIL = "SECTIONAL_THUMBNAIL"
-    """ Thumbnail of a sectional on the canvas.
+    """Thumbnail of a sectional on the canvas.
     Here the sectional describes both cuts and perspectives
     """
 
     SHEET_THUMBNAIL = "SHEET_THUMBNAIL"
-    """ Thumbnail of the sheet (i.e., the part of the
+    """Thumbnail of the sheet (i.e., the part of the
     page that is described by the surrounding frame)
     """
 
     SHEET_ANONYMIZATION = "SHEET_ANONYMIZATION"
-    """ Thumbnail of the sheet with all references to
+    """Thumbnail of the sheet with all references to
     the original author removed.
     """
 
     TITLE_BLOCK = "TITLE_BLOCK"
-    """ Ask for all information that is available on the
+    """Ask for all information that is available on the
     title block
     """
 
     TRAIN = "TRAIN"
-    """ Supplying the request for training only without
+    """Supplying the request for training only without
     expecting a response.
     """
 
     VARIANT_ANGLES = "VARIANT_ANGLES"
-    """ Requests the all Angles on the variant
+    """Requests the all Angles on the variant
     """
 
     VARIANT_CAD = "VARIANT_CAD"
-    """ Requests the generation of a CAD file
+    """Requests the generation of a CAD file
     """
 
     VARIANT_GDTS = "VARIANT_GDTS"
-    """ List of Geometric Dimensions and Tolerances detected
+    """List of Geometric Dimensions and Tolerances detected
     on the Sectionals associated with the variant
     """
 
     VARIANT_LEADERS = "VARIANT_LEADERS"
-    """ List of Leaders that were detected on the Sectional
+    """List of Leaders that were detected on the Sectional
     """
 
     VARIANT_MATERIAL = "VARIANT_MATERIAL"
-    """ Material that was detected on the data fields of the
+    """Material that was detected on the data fields of the
     drawing or within a variant table
     """
 
     VARIANT_MEASURES = "VARIANT_MEASURES"
-    """ List of Measures that were found on the Sectionals
+    """List of Measures that were found on the Sectionals
     associated with the variant
     """
 
     VARIANT_RADII = "VARIANT_RADII"
-    """ List of all Radii that were found on teh Sectionals
+    """List of all Radii that were found on teh Sectionals
     associated with the variant
     """
 
     VARIANT_ROUGHNESSES = "VARIANT_ROUGHNESSES"
-    """ List of Roughnesses that were found on the Sectionals
+    """List of Roughnesses that were found on the Sectionals
     associated with the variant
     """
 
     VARIANT_EXTERNAL_DIMENSIONS = "VARIANT_EXTERNAL_DIMENSIONS"
-    """ Ask for the external dimensions
+    """Ask for the external dimensions
     """
 
     VARIANT_THREAD_ELEMENTS = "VARIANT_THREAD_ELEMENTS"
-    """ Ask for the thread elements of the variant
+    """Ask for the thread elements of the variant
     """
 
     VARIANT_TOLERANCE_ELEMENTS = "VARIANT_TOLERANCE_ELEMENTS"
@@ -123,7 +130,7 @@ class W24AskType(str, Enum):
 
 
 class W24Ask(BaseModel):
-    """ Base model from which all Asks inherit
+    """Base model from which all Asks inherit
 
     Attributes:
         ask_type: Type of the requested Ask. Used
@@ -148,7 +155,7 @@ class W24Ask(BaseModel):
 
 
 class W24AskThumbnail(W24Ask):
-    """ Base model for features that request a thumbnail.
+    """Base model for features that request a thumbnail.
 
     Attributes:
         file_format: File format in which you wish to obtain
@@ -164,7 +171,7 @@ class W24AskThumbnail(W24Ask):
 
 
 class W24AskPageThumbnail(W24AskThumbnail):
-    """ Requests a thumbnail for each page in the document;
+    """Requests a thumbnail for each page in the document;
     rotated, and with the surrounding white-space removed.
 
     !!! note
@@ -176,7 +183,7 @@ class W24AskPageThumbnail(W24AskThumbnail):
 
 
 class W24AskSheetThumbnail(W24AskThumbnail):
-    """ Requests a thumbnail of each sheet on each page in
+    """Requests a thumbnail of each sheet on each page in
     the document. The sheet will only contain the pixels within
     the main frame that surrounds the canvas and header fields.
 
@@ -189,7 +196,7 @@ class W24AskSheetThumbnail(W24AskThumbnail):
 
 
 class W24AskSheetAnonymization(W24AskThumbnail):
-    """ Requests an ANONYMIZED thumbnail of each sheet on each page
+    """Requests an ANONYMIZED thumbnail of each sheet on each page
     in the document. The sheet will only contain the pixels within
     the main frame that surrounds the canvas and header fields.
 
@@ -253,7 +260,7 @@ class W24AskPartFamilyCharacterizationResponse(BaseModel):
 
 
 class W24AskCanvasThumbnail(W24AskThumbnail):
-    """ Requests a thumbnail of each canvas in each sheet.
+    """Requests a thumbnail of each canvas in each sheet.
     The canvas describes the "drawing area" of the sheet.
 
     !!! note
@@ -274,7 +281,7 @@ class W24AskCanvasThumbnail(W24AskThumbnail):
 
 
 class W24AskSectionalThumbnail(W24AskThumbnail):
-    """ The W24AskPlaneThumbnail requests a thumbnail
+    """The W24AskPlaneThumbnail requests a thumbnail
     of each sectional on each sheet in the document.
 
     !!! note
@@ -286,7 +293,7 @@ class W24AskSectionalThumbnail(W24AskThumbnail):
 
 
 class W24AskVariantAngles(W24Ask):
-    """ With this Ask you are requesting the list of all
+    """With this Ask you are requesting the list of all
     measures that were detected on all sectionals of a
     variant.
     """
@@ -294,7 +301,7 @@ class W24AskVariantAngles(W24Ask):
 
 
 class W24AskVariantAnglesResponse(BaseModel):
-    """ ResponseType associated with the
+    """ResponseType associated with the
     W24AskVariantAngles.
 
     Attributes:
@@ -316,7 +323,7 @@ class W24AskVariantAnglesResponse(BaseModel):
 
 
 class W24AskVariantRoughnesses(W24Ask):
-    """ With this Ask you are requesting the list of all
+    """With this Ask you are requesting the list of all
     roughnesses (surface symbols) that were detected for
     the variant.
     """
@@ -325,7 +332,7 @@ class W24AskVariantRoughnesses(W24Ask):
 
 
 class W24AskVariantRoughnessesResponse(BaseModel):
-    """ Response object corresponding to the
+    """Response object corresponding to the
     W24AskVariantRoughnesses ask.
 
     Attributes:
@@ -347,14 +354,14 @@ class W24AskVariantRoughnessesResponse(BaseModel):
 
 
 class W24AskVariantRadii(W24Ask):
-    """ With this Ask you are requesting the list of all
+    """With this Ask you are requesting the list of all
     radii that were detected for the variant.
     """
     ask_type = W24AskType.VARIANT_RADII
 
 
 class W24AskVariantRadiiResponse(BaseModel):
-    """ Response object corresponding to the
+    """Response object corresponding to the
     W24AskVariantRadii ask.
 
     Attributes:
@@ -376,7 +383,7 @@ class W24AskVariantRadiiResponse(BaseModel):
 
 
 class W24AskVariantMeasures(W24Ask):
-    """ With this Ask you are requesting the complete
+    """With this Ask you are requesting the complete
     list of all measures that were detected for the
     variant.
 
@@ -395,7 +402,7 @@ class W24AskVariantMeasures(W24Ask):
 
 
 class W24AskVariantMeasuresResponse(BaseModel):
-    """ Response object corresponding to the
+    """Response object corresponding to the
     W24AskVariantMeasures ask.
 
     Attributes:
@@ -421,7 +428,7 @@ class W24AskVariantMeasuresResponse(BaseModel):
 
 
 class W24AskVariantLeaders(W24Ask):
-    """ With this Ask you are requesting the complete
+    """With this Ask you are requesting the complete
     list of all leaders that were detected on the
     variant
 
@@ -435,7 +442,7 @@ class W24AskVariantLeaders(W24Ask):
 
 
 class W24AskVariantLeadersResponse(BaseModel):
-    """ Response object corresponding to the
+    """Response object corresponding to the
     W24AskVariantLeaders.
 
 
@@ -458,7 +465,7 @@ class W24AskVariantLeadersResponse(BaseModel):
 
 
 class W24AskVariantMaterial(W24Ask):
-    """ This ask requests the material of the individual variant.
+    """This ask requests the material of the individual variant.
     It will now only consider the material that is listed on the
     TitleBlock, but also consider material information that is
     found as text on the Canvas.
@@ -482,21 +489,21 @@ class W24AskVariantMaterial(W24Ask):
 
 
 class W24AskTitleBlock(W24Ask):
-    """ This ask requests all information that
+    """This ask requests all information that
     we can obtain from the title block
     """
     ask_type = W24AskType.TITLE_BLOCK
 
 
 class W24AskRevisionTable(W24Ask):
-    """ With this Ask you are requesting the list of all
+    """With this Ask you are requesting the list of all
     revision tables in the document
     """
     ask_type = W24AskType.REVISION_TABLE
 
 
 class W24AskRevisionTableResponse(BaseModel):
-    """ Response object corresponding toi the
+    """Response object corresponding toi the
     W24AskRevisionTable
 
     Attributes:
@@ -509,7 +516,7 @@ class W24AskRevisionTableResponse(BaseModel):
 
 
 class W24AskVariantGDTs(W24Ask):
-    """ This Ask requests the list of all
+    """This Ask requests the list of all
     Geometric Dimensions and Tolerances
     that were detected for the Variant.
     """
@@ -517,7 +524,7 @@ class W24AskVariantGDTs(W24Ask):
 
 
 class W24AskVariantGDTsResponse(BaseModel):
-    """ Response object corresponding to the
+    """Response object corresponding to the
     W24AskVariantGDTs.
 
     Attributes:
@@ -539,7 +546,7 @@ class W24AskVariantGDTsResponse(BaseModel):
 
 
 class W24AskTrain(W24Ask):
-    """ If you submit this Ask, we will use your request
+    """If you submit this Ask, we will use your request
     to train and improve our models. It does not trigger a response.
 
     !!! danger
@@ -550,7 +557,7 @@ class W24AskTrain(W24Ask):
 
 
 class W24AskVariantCAD(W24Ask):
-    """ By sending this Ask, you are requesting
+    """By sending this Ask, you are requesting
     an associated CAD model
 
     Attributes:
@@ -568,7 +575,7 @@ class W24AskVariantCAD(W24Ask):
 
 
 class W24AskVariantCADResponse(BaseModel):
-    """ Response object corresponding to the W24AskVariantCad.
+    """Response object corresponding to the W24AskVariantCad.
 
     Attributes:
         variant_id: Unique ID of the variant detected on
@@ -611,7 +618,7 @@ class W24AskVariantCADResponse(BaseModel):
 
 
 class W24AskVariantExternalDimensions(W24Ask):
-    """ Ask object to request the external dimensions of each
+    """Ask object to request the external dimensions of each
     variant on the Document.
     """
 
@@ -619,7 +626,7 @@ class W24AskVariantExternalDimensions(W24Ask):
 
 
 class W24AskVariantExternalDimensionsResponse(BaseModel):
-    """ Response object corresponding to the W24AskVariantExternalDimensions
+    """Response object corresponding to the W24AskVariantExternalDimensions
 
     Attributes:
         variant_id (UUID4): Unique ID of the variant detected on the
@@ -644,13 +651,13 @@ class W24AskVariantExternalDimensionsResponse(BaseModel):
 
 
 class W24AskProductPMIExtract(W24Ask):
-    """ Ask object to request the PMIExtract Product.
+    """Ask object to request the PMIExtract Product.
     """
     ask_type = W24AskType.PRODUCT_PMI_EXTRACT
 
 
 class W24AskProductPMIExtractResponse(BaseModel):
-    """ Response object corresponding to the W24AskProduct PMIExtract
+    """Response object corresponding to the W24AskProduct PMIExtract
 
     Attributes:
 
@@ -691,13 +698,13 @@ class W24AskProductPMIExtractResponse(BaseModel):
 
 
 class W24AskVariantThreadElements(W24Ask):
-    """ Ask object to obtain the thread elements
+    """Ask object to obtain the thread elements
     """
     ask_type = W24AskType.VARIANT_THREAD_ELEMENTS
 
 
 class W24AskVariantThreadElementsResponse(BaseModel):
-    """ Response object corresponding to the W24AskVariantThreadElements
+    """Response object corresponding to the W24AskVariantThreadElements
 
     Attributes:
 
@@ -711,13 +718,29 @@ class W24AskVariantThreadElementsResponse(BaseModel):
     thread_elements: List[W24ThreadElement]
 
 
+class W24AskNotes(W24Ask):
+    """Ask all the notes on the Canvas and the sectionals
+    """
+    ask_type = W24AskType.NOTES
+
+
+class W24AskNotesResponse(BaseModel):
+    """Response to the W24AskNotes
+
+    Attributes:
+        notes(List[W24Ask]): List of the notes that were
+            identified.
+    """
+    notes: List[W24Note]
+
+
 # class W24AskVariantToleranceElements(W24Ask):
-#     """ Ask object to obtain the tolerance elements
+#     """Ask object to obtain the tolerance elements
 #     """
 #     ask_type = W24AskType.VARIANT_TOLERANCE_ELEMENTS
 
 # class W24AskVariantToleranceElementsResponse(BaseModel):
-#     """ Response object corresponding to the W24AskVariantThreadElements
+#     """Response object corresponding to the W24AskVariantThreadElements
 
 #     Attributes:
 
@@ -729,9 +752,9 @@ class W24AskVariantThreadElementsResponse(BaseModel):
 #     variant_id: UUID4
 #     thread_elements: List[W24ToleranceElement]
 
-
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
+    W24AskNotes,
     W24AskPageThumbnail,
     W24AskPartFamilyCharacterization,
     W24AskProductPMIExtract,
@@ -752,13 +775,13 @@ W24AskUnion = Union[
     W24AskVariantThreadElements,
     # W24AskVariantToleranceElements
 ]
-""" Union of all W24Asks to ensure proper de-serialization """
+"""Union of all W24Asks to ensure proper de-serialization """
 
 
 def deserialize_ask(
     raw: Union[Dict[str, Any], W24Ask],
 ) -> W24Ask:
-    """ Deserialize a specific ask in its raw form
+    """Deserialize a specific ask in its raw form
 
     Args:
         raw (Dict[str, Any]): Raw Ask as it arrives from the
@@ -780,7 +803,7 @@ def deserialize_ask(
 def _deserialize_ask_type(
     ask_type: str
 ) -> Type[W24Ask]:
-    """ Get the Ask Class from the ask type
+    """Get the Ask Class from the ask type
 
     Args:
         ask_type (str): Ask type in question
@@ -793,6 +816,7 @@ def _deserialize_ask_type(
     """
     class_ = {
         "CANVAS_THUMBNAIL": W24AskCanvasThumbnail,
+        "NOTES": W24AskNotes,
         "PAGE_THUMBNAIL": W24AskPageThumbnail,
         "PART_FAMILY_CHARACTERIZATION": W24AskPartFamilyCharacterization,
         "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
