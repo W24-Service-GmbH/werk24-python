@@ -1,5 +1,6 @@
 """Definition of all W24Ask types that are understood by the Werk24 API.
 """
+from typing import Tuple
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -213,12 +214,31 @@ class W24AskSheetAnonymization(W24AskThumbnail):
             that might identify the authoring company. The software
             will actively look for such text segments in the data
             and replace them with white pixels.
+
+        redact_employee_names (bool): Redact the employee names
+            when they are indicated by a caption such as
+            "Drawn by"
+
+        redact_cage_code (bool): Redact the CAGE Code (
+            Commercial and Government Entity Code) typically
+            used for US-government suppliers
+
+        fill_color (Tuple[int,int,int]): Color that shall be used
+            to fill the pixels that are to be redacted. Currently
+            only grayscale is supported.
+
     """
     ask_type = W24AskType.SHEET_ANONYMIZATION
 
     replacement_logo_url: Optional[HttpUrl] = None
 
     identification_snippets: List[str] = []
+
+    redact_employee_names: bool = False
+
+    redact_cage_code: bool = False
+
+    fill_color: Tuple[int, int, int] = (255, 255, 255)
 
 
 class W24AskPartFamilyCharacterization(W24Ask):
