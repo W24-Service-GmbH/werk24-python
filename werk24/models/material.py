@@ -276,7 +276,7 @@ class W24MaterialCategory3(str, Enum):
     VINYL_ESTER_RESIN = "VINYL_ESTER_RESIN"
 
 
-class W24MaterialCategory3(str, Enum):
+class W24MaterialCategory4(str, Enum):
 
     # METAL / IRON / CAST_IRON
     GRAY_CAST_IRON = "GRAY_CAST_IRON"
