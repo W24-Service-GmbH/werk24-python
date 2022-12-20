@@ -501,6 +501,13 @@ W24MaterialGroup = Union[
     W24MaterialGroupMetalNonferrousLightMetal,
 ]
 
+W24MaterialCAtegory = Union[
+    W24MaterialCategory1,
+    W24MaterialCategory2,
+    W24MaterialCategory3,
+    W24MaterialCategory4
+]
+
 
 class W24MaterialStandard(str, Enum):
     """ Enum all the supported
