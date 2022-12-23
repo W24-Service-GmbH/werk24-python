@@ -304,7 +304,7 @@ class W24MaterialStandard(str, Enum):
     """ Enum all the supported
     Material Standards
     """
-    
+
     # ---- OLD WAY ----
 
     # BLURB
@@ -314,7 +314,7 @@ class W24MaterialStandard(str, Enum):
     DIN17100_1987_12 = "DIN17100:1987-12"
     """ DIN17100:1987-12
     """
-    
+
     # ---- NEW WAY ----
     COMPANY_STANDARD = "COMPANY STANDARD"
 
@@ -331,6 +331,7 @@ class W24MaterialStandard(str, Enum):
 
     # EN
     EN573 = "EN573"
+    EN1412 = "EN1412"
     EN10027 = "EN10027"
     EN10083 = "EN10083"
     EN10132 = "EN10132"
@@ -352,7 +353,6 @@ class W24MaterialStandard(str, Enum):
     SAE_J429 = "SAEJ429"
     SAE_J1086 = "SAEJ1086"
     SAE_HS1086 = "SAEHS1086"
-
 
 
 class W24MaterialReference(BaseModel):
