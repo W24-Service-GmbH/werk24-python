@@ -1,416 +1,604 @@
 """ Material Models
 """
 from enum import Enum
-from typing import List, Optional, Union
-
-from pydantic import BaseModel
-
-from .feature import W24FeatureModel
+from typing import Tuple
+from werk24.models.feature import W24FeatureModel
 
 
 class W24MaterialCategory1(str, Enum):
-    BIOLOGICAL = "BIOLOGICAL"
+    FERROUS_ALLOY = "FERROUS_ALLOY"
+    NONFERROUS_ALLOY = "NONFERROUS_ALLOY"
+    POLYMER = "POLYMER"
     CERAMIC = "CERAMIC"
     COMPOSITE = "COMPOSITE"
-    GLASS = "GLASS"
-    METAL = "METAL"
-    POLYMER = "POLYMER"
+    FOAM = "FOAM"
 
 
 class W24MaterialCategory2(str, Enum):
-    # BIOLOGICAL
-    WOOD = "WOOD"
 
-    # CERAMIC
-    CARBON = "CARBON"
-    ENGINEERING_CERAMIC = "ENGINEERING_CERAMIC"
-    NATURAL_CERAMIC = "NATURAL_CERAMIC"
+    NOT_SPECIFIED = "NOT_SPECIFIED"
 
-    # COMPOSITE
-    CERAMIC_MATRIX_COMPOSITE = "CERAMIC_MATRIX_COMPOSITE"
-    METAL_MATRIX_COMPOSITE = "METAL_MATRIX_COMPOSITE"
-    POLYMER_MATRIX_COMPOSITE = "POLYMER_MATRIX_COMPOSITE"
+    # FERROUS ALLOYS
+    STRUCTURAL_OR_CONSTRUCTIONAL_STEEL = "STRUCTURAL_OR_CONSTRUCTIONAL_STEEL"
+    MAGNETIC_OR_ELECTRICAL_MATERIAL = "MAGNETIC_OR_ELECTRICAL_MATERIAL"
+    STAINLESS_STEEL = "STAINLESS_STEEL"
+    TOOL_STEEL = "TOOL_STEEL"
+    CAST_STEEL = "CAST_STEEL"
+    CAST_IRON = "CAST_IRON"
+    FERROALLOY = "FERROALLOY"
+    SINTERED_POWDEDERD_METAL = "SINTERED_POWDEDERD_METAL"
+    WELDING_FILLER_MATERIAL = "WELDING_FILLER_MATERIAL"
 
-    # GLASS
-    GLASS_CERAMIC = "GLASS_CERAMIC"
-    LEAD_GLASS = "LEAD_GLASS"
-    SILICATE_GLASS = "SILICATE_GLASS"
-
-    # METAL
+    # NONFERROUS ALLOY
     ALUMINUM = "ALUMINUM"
+    ANTIMONY = "ANTIMONY"
     BERYLLIUM = "BERYLLIUM"
+    BISMUTH = "BISMUTH"
     CADMIUM = "CADMIUM"
     CHROMIUM = "CHROMIUM"
-    CLAD = "CLAD"
     COBALT = "COBALT"
     COPPER = "COPPER"
-    HAFNIUM = "HAFNIUM"
-    IRON = "IRON"
+    GALLIUM = "GALLIUM"
     LEAD = "LEAD"
-    LITHIUM = "LITHIUM"
     MAGNESIUM = "MAGNESIUM"
     MANGANESE = "MANGANESE"
+    MERCURY = "MERCURY"
     MOLYBDENUM = "MOLYBDENUM"
-    NEODYMIUM = "NEODYMIUM"
     NICKEL = "NICKEL"
     NIOBIUM = "NIOBIUM"
-    NOBLE_METAL = "NOBLE_METAL"
-    RHENIUM = "RHENIUM"
-    SAMARIUM = "SAMARIUM"
-    STEEL = "STEEL"
-    TANTALUM = "TANTALUM"
+    PLATINUM = "PLATINUM"
+    # PRECIOUS METALS
+    # RARE EARTHS
+    REAR_EARTHS = "REAR_EARTHS"
+
+    # REACTIVE AND REFRACTORY METALS
+    SELENIUM = "SELENIUM"
+    SILICON = "SILICON"
+    THALLIUM = "THALLIUM"
     TIN = "TIN"
-    TITANIUM = "TITAIUM"
+    TITANIUM = "TITANIUM"
     TUNGSTEN = "TUNGSTEN"
     VANADIUM = "VANADIUM"
-    ZIRCONIUM = "ZIRCONIUM"
     ZINC = "ZINC"
+    ZIRCONIUM = "ZIRCONIUM"
 
     # POLYMER
-    ELASTOMER = "ELASTOMER"
-    THERMOPLASTIC = "THERMOPLASTIC"
-    THERMOSETTING = "THERMOSETTING"
+    THERMOPLAST = "THERMOPLAST"
+    THERMOSET = "THERMOSET"
+    THERMOPLASTIC_ELASTOMER = "THERMOPLASTIC_ELASTOMER"
+    THERMOSET_ELASTOMER = "THERMOSET_ELASTOMER"
+
+    # CERAMIC
+    REFRACTORY = "REFRACTORY"
+    TECHNICAL_CERAMIC = "TECHNICAL_CERAMIC"
+
+    # COMPOSITE
+    MATRIX = "MATRIX"
+    REINFORCEMENT = "REINFORCEMENT"
+
+    # FOAM
+    POLYMER_FOAM = "POLYMER_FOAM"
+    CERAMIC_FOAM = "CERAMIC_FOAM"
 
 
 class W24MaterialCategory3(str, Enum):
 
-    # METAL / STEEL
-    ALLOY_STEEL = "ALLOY_STEEL"
-    CARBON_STEEL = "CARBON_STEEL"
-    LOW_ALLOY_STEEL = "LOW_ALLOY_STEEL"
-    MARAGING_STEEL = "MARAGING_STEEL"
-    STAINLESS_STEEL = "STAINLESS_STEEL"
-    TOOL_AND_MACHINING_STEEL = "TOOL_AND_MACHINING_STEEL"
+    NOT_SPECIFIED = "NOT_SPECIFIED"
 
-    # POLYMER / ELASTOMER
-    BUTADIENE_RUBBER = "BUTADIENE_RUBBER"
-    CHLOROPRENE_RUBBER = "CHLOROPRENE_RUBBER"
-    ELASTOMETRIC_ALLOY = "ELASTOMETRIC_ALLOY"
-    ETHYLENE_PROPYLENE_DIENE_RUBBER = "ETHYLENE_PROPYLENE_DIENE_RUBBER"
-    ETHYLENE_PROPYLENE_RUBBER = "ETHYLENE_PROPYLENE_RUBBER"
-    FLUOROSILICICONE_RUBBER = "FLUOROSILICONE_RUBBER"
-    NATURAL_RUBBER = "NATURAL_RUBBER"
-    NITRILE_RUBBER = "NITRILE_RUBBER"
-    SYTRENE_BUTADIENE_RUBBER = "SYTRENE_BUTADIENE_RUBBER"
-    SYTRENE_BUTADIENE_STYRENE = "STYRENE_BUTADIENE_STYRENE"
-    THERMOPLASTIC_COPOLYESTER = "THERMOPLASTIC_COPOLYESTER"
-    THERMOPLASTIC_POLYAMIDE = "THERMOPLASTIC_POLYAMIDE"
-    THERMOPLASTIC_POLYESTER_ELASTOMER = "THERMOPLASTIC_POLYESTER_ELASTOMER"
-    THERMOPLASTIC_POLYOLEFIN = "THERMOPLASTIC_POLYOLEFIN"
-    THERMOPLASTIC_POLYURETHANE = "THERMOPLASTIC_POLYURETHANE"
-    THERMOPLASTIC_STYRENIC_VLOCK_COPOLYMER = "THERMOPLASTIC_STYRENIC_VLOCK_COPOLYMER"
+    MAGNETIC_MATERIAL = "MAGNETIC_MATERIAL"
 
-    # POLYMER / THERMOPLASTIC
+    # COBALT
+    COBALT_ALLOY = "COBALT_ALLOY"
 
-    # POLYMER  / THERMOSETTING
+    # NICKEL
+    NICKEL_ALLOY = "NICKEL_ALLOY"
+
+    # PLATINUM
+    PLATINUM_ALLOY = "PLATINUM_ALLOY"
+
+    # POLYMER / THERMOPLAST
+    BIOPOLYMER = "BIOPOLYMER"
+    BLEND_POLYMER = "BLEND_POLYMER"
+    COPOLYMER = "COPOLYMER"
+    FLUORPOLYMER = "FLUORPOLYMER"
+    POLYACYLIC = "POLYACYLIC"
+    POLYAMIDE = "POLYAMIDE"
+    POLYESTER = "POLYESTER"
+    POLYETHER = "POLYETHER"
+    POLYIMIDE = "POLYIMIDE"
+    POLYKETON = "POLYKETON"
+    POLYOLEFIN = "POLYOLEFIN"
+    POLYSTYRENE = "POLYSTYRENE"
+    POLYSUFLIDE = "POLYSUFLIDE"
+    POLYSULFONE = "POLYSULFONE"
+    VINYL_POLYMER = "VINYL_POLYMER"
+
+    # POLYMER / THERMOSET
+    ACRYLIC = "ACRYLIC"
+    AMINO_RESIN = "AMINO_RESIN"
+    EPOXY_RESIN = "EPOXY_RESIN"
+    PHENOLIC_RESIN = "PHENOLIC_RESIN"
+    # POLYAMIDE= "# POLYAMIDE"
+    # POYLYESTER= "# POYLYESTER"
+    URETHANE = "URETHANE"
+
+    # POLYMER / THERMOPLASTIC ELASTOMER
+    THERMOPLASTIC_ELASTOMER_URETHAN = "THERMOPLASTIC_ELASTOMER_URETHAN"
+    THERMOPLASTIC_ELASTOMER_COPOLYESTER = "THERMOPLASTIC_ELASTOMER_COPOLYESTER"
+    THERMOPLASTIC_ELASTOMER_OLEFINIC = "THERMOPLASTIC_ELASTOMER_OLEFINIC"
+    THERMOPLASTIC_ELASTOMER_POLYAMID = "THERMOPLASTIC_ELASTOMER_POLYAMID"
+    THERMOPLASTIC_ELASTOMER_STYRENIC = "THERMOPLASTIC_ELASTOMER_STYRENIC"
+    THERMOPLASTIC_ELASTOMER_POLYAMIDE = "THERMOPLASTIC_ELASTOMER_POLYAMIDE"
+    THERMOPLASTIC_ELASTOMER = "THERMOPLASTIC_ELASTOMER"
+    THERMOPLASTIC_ELASTOMER_DYNAMICALLY_VULCANIZED = "THERMOPLASTIC_ELASTOMER_DYNAMICALLY_VULCANIZED"
+
+    # POLYMER / THERMOSET ELASTOMER
+    M_GROUP_RUBBER = "M_GROUP_RUBBER"
+    Q_GROUP_RUBBER = "Q_GROUP_RUBBER"
+    R_GROUP_RUBBER = "R_GROUP_RUBBER"
+    U_GROUP_RUBBER = "U_GROUP_RUBBER"
+
+    # REINFORCEMENT
+    FIBER_REINFORCEMENT = "FIBER_REINFORCEMENT"
+    STRUCTURAL_COMPOSITE = "STRUCTURAL_COMPOSITE"
+
+    # FOAM / POLYMER_FOAM
+    POLYPHENYLENE_OR_POLYSTYRENE = "POLYPHENYLENE_OR_POLYSTYRENE"
+    POLYPHENYLENE_OR_POLYSTYRENE_HIPS = "POLYPHENYLENE_OR_POLYSTYRENE_HIPS"
+    POLYCARBONATE = "POLYCARBONATE"
 
 
 class W24MaterialCategory4(str, Enum):
-    ...
 
+    NOT_SPECIFIED = "NOT_SPECIFIED"
 
-class W24MaterialFamily(str, Enum):
-    """ Material Family: First level
-    Following the material categorization of Michael F. Ashby
-    """
-    CERAMIC = "CERAMIC"
-    COMPOSITE = "COMPOSITE"
-    GLASS = "GLASS"
-    METAL = "METAL"
-    POLYMER = "POLYMER"
+    CARBON_FIBER_COMPOSITE = "CARBON_FIBER_COMPOSITE"
+    GLASS_FIBER_COMPOSITE = "GLASS_FIBER_COMPOSITE"
 
-
-class W24MaterialClassMetal(str, Enum):
-    """ Material Class: Second level for Metals
-    """
-    FERROUS = "FERROUS"
-    NONFERROUS = "NONFERROUS"
-
-
-class W24MaterialClassNonmetal(str, Enum):
-    """ Material Class: Second level for Nonmetals
-    """
-    NATURAL = "NATURAL"
-    ARTIFICIAL = "ARTIFICIAL"
-
-
-class W24MaterialClassHybrid(str, Enum):
-    """ Material Class: Second level for Hybrids
-    """
-    COMPOSITE = "COMPOSITE"
-    CELLULAR = "CELLULAR"
-
-
-class W24MaterialTypeMetalFerrous(str, Enum):
-    """ Material Type: Third level for Metals/Ferrous
-    """
-    STEEL = "STEEL"
-    CAST_IRON = "CAST_IRON"
-
-
-class W24MaterialTypeMetalNonferrous(str, Enum):
-    """ Material Type: Third level for Metals/Nonferrous
-    """
-    HEAVY_METAL = "HEAVY_METAL"
-    LIGHT_METAL = "LIGHT_METAL"
-
-
-class W24MaterialGroupMetalFerrousSteel(str, Enum):
-    """ Material Group: Fourth level for Metals/Ferrous/Steel
-    """
-    STRUCTURAL_STEEL = "STRUCTURAL_STEEL"
-    STAINLESS_STEEL = "STAINLESS_STEEL"
-    TOOL_STEEL = "TOOL_STEEL"
-
-
-class W24MaterialGroupMetalFerrousCastIron(str, Enum):
-    """ Material Group: Fourth level for Metals/Ferrous/CastIron
-    """
-    CAST_IRON = "CAST_IRON"
-    GRAY_IRON = "GRAY_IRON"
-    STEEL_CASTING = "STEEL_CASTING"
-
-
-class W24MaterialGroupMetalNonferrousHeavyMetal(str, Enum):
-    """ Material Group: Fourth level for Metals/Nonferrous/HeavyMetal
-    """
-    ANTIMONY = "ANTIMONY"
-    CERIUM = "CERIUM"
-    DYSPROSIUM = "DYSPROSIUM"
-    ERBIUM = "ERBIUM"
-    EUROPIUM = "EUROPIUM"
-    GADOLINIUM = "GADOLINIUM"
-    GALLIUM = "GALLIUM"
-    GERMANIUM = "GERMANIUM"
-    HOLMIUM = "HOLMIUM"
-    INDIUM = "INDIUM"
-    LANTHANUM = "LANTHANUM"
-    LUTETIUM = "LUTETIUM"
-    NEODYMIUM = "NEODYMIUM"
-    NIOBIUM = "NIOBIUM"
-    PRASEODYMIUM = "PRASEODYMIUM"
-    SAMARIUM = "SAMARIUM"
-    TANTALUM = "TANTALUM"
-    TERBIUM = "TERBIUM"
-    THULIUM = "THULIUM"
-    TUNGSTEN = "TUNGSTEN"
-    URANIUM = "URANIUM "
-    YTTERBIUM = "YTTERBIUM"
-    IRIDIUM = "IRIDIUM"
-    OSMIUM = "OSMIUM"
-    PALLADIUM = "PALLADIUM"
-    PLATINUM = "PLATINUM"
-    RHODIUM = "RHODIUM"
-    RUTHENIUM = "RUTHENIUM"
-    GOLD = "GOLD"
-    SILVER = "SILVER"
-    CHROMIUM = "CHROMIUM"
-    COBALT = "COBALT"
-    COPPER = "COPPER"
-    LEAD = "LEAD"
-    MOLYBDENUM = "MOLYBDENUM"
-    NICKEL = "NICKEL"
-    TIN = "TIN"
-    ZINC = "ZINC"
-    ARSENIC = "ARSENIC"
-    BISMUTH = "BISMUTH"
-    CADMIUM = "CADMIUM"
-    HAFNIUM = "HAFNIUM"
-    MANGANESE = "MANGANESE"
-    MERCURY = "MERCURY"
-    PROTACTINIUM = "PROTACTINIUM"
-    RHENIUM = "RHENIUM"
-    SELENIUM = "SELENIUM"
-    TELLURIUM = "TELLURIUM"
-    THALLIUM = "THALLIUM"
-    THORIUM = "THORIUM"
-    VANADIUM = "VANADIUM"
-    ZIRCONIUM = "ZIRCONIUM"
-    ACTINIUM = "ACTINIUM"
-    AMERICIUM = "AMERICIUM"
-    BERKELIUM = "BERKELIUM"
-    CALIFORNIUM = "CALIFORNIUM"
-    CURIUM = "CURIUM"
-    DUBNIUM = "DUBNIUM"
-    EINSTEINIUM = "EINSTEINIUM"
-    FERMIUM = "FERMIUM"
-    MENDELEVIUM = "MENDELEVIUM"
-    NEPTUNIUM = "NEPTUNIUM"
-    PLUTONIUM = "PLUTONIUM"
-    POLONIUM = "POLONIUM"
-    PROMETHIUM = "PROMETHIUM"
-    RADIUM = "RADIUM"
-    TECHNETIUM = "TECHNETIUM"
-    ASTATINE = "ASTATINE"
-    BOHRIUM = "BOHRIUM"
-    COPERNICIUM = "COPERNICIUM"
-    DARMSTADTIUM = "DARMSTADTIUM"
-    FLEROVIUM = "FLEROVIUM"
-    HASSIUM = "HASSIUM"
-    LAWRENCIUM = "LAWRENCIUM"
-    LIVERMORIUM = "LIVERMORIUM"
-    MEITNERIUM = "MEITNERIUM"
-    MOSCOVIUM = "MOSCOVIUM"
-    NIHONIUM = "NIHONIUM"
-    NOBELIUM = "NOBELIUM"
-    ROENTGENIUM = "ROENTGENIUM"
-    RUTHERFORDIUM = "RUTHERFORDIUM"
-    SEABORGIUM = "SEABORGIUM"
-    TENNESSINE = "TENNESSINE"
-
-
-class W24MaterialGroupMetalNonferrousLightMetal(str, Enum):
-    """ Material Group: Fourth level for Metals/Nonferrous/LightMetal
-    """
-    LITHIUM = "LITHIUM"
-    BERYLLIUM = "BERYLLIUM"
-    BORON = "BORON"
-    SODIUM = "SODIUM"
-    MAGNESIUM = "MAGNESIUM"
-    ALUMINUM = "ALUMINUM"
-    SILICON = "SILICON"
-    POTASSIUM = "POTASSIUM"
-    CALCIUM = "CALCIUM"
-    SCANDIUM = "SCANDIUM"
-    TITANIUM = "TITANIUM"
-    RUBIDIUM = "RUBIDIUM"
-    STRONTIUM = "STRONTIUM"
-    YTTRIUM = "YTTRIUM"
-    CAESIUM = "CAESIUM"
-    BARIUM = "BARIUM"
-    FRANCIUM = "FRANCIUM"
-
-
-W24MaterialClass = Union[
-    W24MaterialClassMetal,
-    W24MaterialClassNonmetal,
-    W24MaterialClassHybrid
-]
-
-W24MaterialType = Union[
-    W24MaterialTypeMetalFerrous,
-    W24MaterialTypeMetalNonferrous
-]
-
-W24MaterialGroup = Union[
-    W24MaterialGroupMetalFerrousSteel,
-    W24MaterialGroupMetalFerrousCastIron,
-    W24MaterialGroupMetalNonferrousHeavyMetal,
-    W24MaterialGroupMetalNonferrousLightMetal,
-]
-
-
-class W24MaterialStandard(str, Enum):
-    """ Enum all the supported
-    Material Standards
-    """
-
-    # ---- OLD WAY ----
-
-    # BLURB
-    AUSTENITIC = "AUSTENITIC"
-    BLOB = "BLOB"
-
-    DIN17100_1987_12 = "DIN17100:1987-12"
-    """ DIN17100:1987-12
-    """
-
-    # ---- NEW WAY ----
-    COMPANY_STANDARD = "COMPANY STANDARD"
-
-    # ASTM
-    ASTM_A193 = "ASTMA193"
-    ASTM_A307 = "ASTMA307"
-    ASTM_A1008 = "ASTMA1008"
-    ASTM_F568M = "ASTMF568M"
-
-    # DIN
-    DIN1652 = "DIN1652"
-    DIN17100 = "DIN17100"
-    DIN17204 = "DIN17204"
-
-    # EN
-    EN573 = "EN573"
-    EN1412 = "EN1412"
-    EN10027 = "EN10027"
-    EN10083 = "EN10083"
-    EN10132 = "EN10132"
-    EN10210 = "EN10210"
-    EN10219 = "EN10219"
-    EN10263 = "EN10263"
-
-    # ISO
-    ISO898 = "ISO898"
-    ISO1043 = "ISO1043"
-    ISO1874 = "ISO1874"
-
-    # JIS
-    JIS_G3505 = "JISG3505"
-    JIS_G3507 = "JISG3507"
-
-    # SAE
-    SAE_J403 = "SAEJ403"
-    SAE_J429 = "SAEJ429"
-    SAE_J1086 = "SAEJ1086"
-    SAE_HS1086 = "SAEHS1086"
-
-
-class W24MaterialReference(BaseModel):
-    """ List of equivalent materials in one of the
-    European standards. Either EN10027-1 for steels
-    or EN573-3 for aluminums.
-
-    Attributes:
-        material_standard: Material standard used for the
-            equivalents.
-        material_codes: List of equivalent material codes
-            in the chosen material_standard
-    """
-    material_standard: W24MaterialStandard
-
-    material_codes: List[str]
+    ABS = "ABS"
+    ABS_PLUS_PA = "ABS_PLUS_PA"
+    ABS_PLUS_PA6 = "ABS_PLUS_PA6"
+    ABS_PLUS_PA66 = "ABS_PLUS_PA66"
+    ABS_PLUS_PBT = "ABS_PLUS_PBT"
+    ABS_PLUS_PC = "ABS_PLUS_PC"
+    ABS_PLUS_PET = "ABS_PLUS_PET"
+    ABS_PLUS_PMMA = "ABS_PLUS_PMMA"
+    ABS_PLUS_PVC = "ABS_PLUS_PVC"
+    ABS_PLUS_PVC_C = "ABS_PLUS_PVC_C"
+    ABS_PLUS_SAN = "ABS_PLUS_SAN"
+    ABS_PLUS_TPE = "ABS_PLUS_TPE"
+    ABS_PLUS_TPES = "ABS_PLUS_TPES"
+    ABS_PLUS_TPU = "ABS_PLUS_TPU"
+    ABS_PC = "ABS_PC"
+    ABS_PP = "ABS_PP"
+    ACM = "ACM"
+    ACPES = "ACPES"
+    ACSM = "ACSM"
+    AEM = "AEM"
+    AES = "AES"
+    AES_PLUS_PC = "AES_PLUS_PC"
+    ASA = "ASA"
+    ASA_PLUS_ABS = "ASA_PLUS_ABS"
+    ASA_PLUS_AES = "ASA_PLUS_AES"
+    ASA_PLUS_MSAN = "ASA_PLUS_MSAN"
+    ASA_PLUS_PA = "ASA_PLUS_PA"
+    ASA_PLUS_PC = "ASA_PLUS_PC"
+    ASA_PLUS_PMMA = "ASA_PLUS_PMMA"
+    ASA_PLUS_SAN = "ASA_PLUS_SAN"
+    ASA_PLUS_TPE = "ASA_PLUS_TPE"
+    ASA_PC = "ASA_PC"
+    AU = "AU"
+    BIIR = "BIIR"
+    BMI = "BMI"
+    BR = "BR"
+    BVOH = "BVOH"
+    CA = "CA"
+    CAB = "CAB"
+    CAP = "CAP"
+    CE = "CE"
+    CIIR = "CIIR"
+    CM = "CM"
+    COC = "COC"
+    CP = "CP"
+    CPE = "CPE"
+    CPT = "CPT"
+    CR = "CR"
+    CR_NBR = "CR_NBR"
+    CR_SBR = "CR_SBR"
+    CSM = "CSM"
+    EA = "EA"
+    EAA = "EAA"
+    EBA = "EBA"
+    EBACO = "EBACO"
+    EC = "EC"
+    ECO = "ECO"
+    ECTFE = "ECTFE"
+    EEA = "EEA"
+    EFEP = "EFEP"
+    EMAA = "EMAA"
+    EMAAA = "EMAAA"
+    ENBAGMA = "ENBAGMA"
+    EP = "EP"
+    EPDM = "EPDM"
+    EPDM_SBR = "EPDM_SBR"
+    EPM = "EPM"
+    EPM_EPDM = "EPM_EPDM"
+    EPM_SBR_IIR = "EPM_SBR_IIR"
+    EPT = "EPT"
+    ETFE = "ETFE"
+    ETP_UNSPECIFIED = "ETP_UNSPECIFIED"
+    EU = "EU"
+    EVA = "EVA"
+    EVACO = "EVACO"
+    EVOH = "EVOH"
+    E_P = "E_P"
+    FEP = "FEP"
+    FFKM = "FFKM"
+    FKM = "FKM"
+    FMQ = "FMQ"
+    FVMQ = "FVMQ"
+    HDPE = "HDPE"
+    HIPP = "HIPP"
+    HIPS = "HIPS"
+    HNBR = "HNBR"
+    IIR = "IIR"
+    IONOMER_RESIN = "IONOMER_RESIN"
+    IR = "IR"
+    IR_BR = "IR_BR"
+    LCP = "LCP"
+    LCP_PLUS_PPS = "LCP_PLUS_PPS"
+    LDPE = "LDPE"
+    LDPE_EVA = "LDPE_EVA"
+    LDPE_LLDPE = "LDPE_LLDPE"
+    LLDPE = "LLDPE"
+    LMDPE = "LMDPE"
+    MA = "MA"
+    MABS = "MABS"
+    MBS = "MBS"
+    MDPE = "MDPE"
+    MF = "MF"
+    MFA = "MFA"
+    MP = "MP"
+    MPR = "MPR"
+    NBR = "NBR"
+    NBR_PVC = "NBR_PVC"
+    NBR_SBR = "NBR_SBR"
+    NR = "NR"
+    NR_SBR_IIR_EPM_OR_BR = "NR_SBR_IIR_EPM_OR_BR"
+    PA = "PA"
+    PA1010 = "PA1010"
+    PA1010_PLUS_Z = "PA1010_PLUS_Z"
+    PA1012 = "PA1012"
+    PA10T_X = "PA10T_X"
+    PA11 = "PA11"
+    PA12 = "PA12"
+    PA12_MACMI = "PA12_MACMI"
+    PA12_MACMI_PLUS_PA12 = "PA12_MACMI_PLUS_PA12"
+    PA410 = "PA410"
+    PA46 = "PA46"
+    PA46_PLUS_PA6 = "PA46_PLUS_PA6"
+    PA4T = "PA4T"
+    PA510 = "PA510"
+    PA6 = "PA6"
+    PA610 = "PA610"
+    PA610_PLUS_Z = "PA610_PLUS_Z"
+    PA612 = "PA612"
+    PA66 = "PA66"
+    PA66_6 = "PA66_6"
+    PA66_610 = "PA66_610"
+    PA66_6I_X = "PA66_6I_X"
+    PA66_PLUS_PA610 = "PA66_PLUS_PA610"
+    PA66_PLUS_PA612 = "PA66_PLUS_PA612"
+    PA66_PLUS_PA6I = "PA66_PLUS_PA6I"
+    PA66_PLUS_PA6I_6T = "PA66_PLUS_PA6I_6T"
+    PA66_PLUS_PA6I_X = "PA66_PLUS_PA6I_X"
+    PA66_PLUS_PE = "PA66_PLUS_PE"
+    PA66_PLUS_PP = "PA66_PLUS_PP"
+    PA66_PLUS_PPA = "PA66_PLUS_PPA"
+    PA69 = "PA69"
+    PA6I = "PA6I"
+    PA6I_6T = "PA6I_6T"
+    PA6T = "PA6T"
+    PA6T_66 = "PA6T_66"
+    PA6T_66_PLUS_Z = "PA6T_66_PLUS_Z"
+    PA6T_6I = "PA6T_6I"
+    PA6T_6I_66 = "PA6T_6I_66"
+    PA6T_MPMDT = "PA6T_MPMDT"
+    PA6T_XT = "PA6T_XT"
+    PA6T_XT_PLUS_PA6T_66 = "PA6T_XT_PLUS_PA6T_66"
+    PA6_12 = "PA6_12"
+    PA6_3T = "PA6_3T"
+    PA6_66_12 = "PA6_66_12"
+    PA6_66_136 = "PA6_66_136"
+    PA6_66_610 = "PA6_66_610"
+    PA6_69 = "PA6_69"
+    PA6_6I = "PA6_6I"
+    PA6_6T = "PA6_6T"
+    PA6_PLUS_ASA = "PA6_PLUS_ASA"
+    PA6_PLUS_PA12 = "PA6_PLUS_PA12"
+    PA6_PLUS_PA12_X = "PA6_PLUS_PA12_X"
+    PA6_PLUS_PA66 = "PA6_PLUS_PA66"
+    PA6_PLUS_PA66_6 = "PA6_PLUS_PA66_6"
+    PA6_PLUS_PE = "PA6_PLUS_PE"
+    PA6_PLUS_PP = "PA6_PLUS_PP"
+    PA6_PLUS_Z = "PA6_PLUS_Z"
+    PA6_IPDI = "PA6_IPDI"
+    PA6_PA12 = "PA6_PA12"
+    PA6_XX = "PA6_XX"
+    PA9T = "PA9T"
+    PAEK = "PAEK"
+    PAI = "PAI"
+    PAMXD6_PA66 = "PAMXD6_PA66"
+    PAO = "PAO"
+    PAR = "PAR"
+    PARA = "PARA"
+    PA_12_MACMI = "PA_12_MACMI"
+    PA_6I_X = "PA_6I_X"
+    PA_6_PLUS_PA_6I_6T = "PA_6_PLUS_PA_6I_6T"
+    PA_PLUS_HDPE = "PA_PLUS_HDPE"
+    PA_PLUS_PA66_6 = "PA_PLUS_PA66_6"
+    PA_PLUS_PE = "PA_PLUS_PE"
+    PA_PLUS_PP = "PA_PLUS_PP"
+    PA_PLUS_PPA = "PA_PLUS_PPA"
+    PA_PLUS_SPS = "PA_PLUS_SPS"
+    PA_PLUS_TPE = "PA_PLUS_TPE"
+    PA_PLUS_Z = "PA_PLUS_Z"
+    PA_MACM10_1010 = "PA_MACM10_1010"
+    PA_MACM12 = "PA_MACM12"
+    PA_MACM12_PLUS_PA_12 = "PA_MACM12_PLUS_PA_12"
+    PA_MACM12_PLUS_Z = "PA_MACM12_PLUS_Z"
+    PA_MXD6 = "PA_MXD6"
+    PA_MXD6_MXDI = "PA_MXD6_MXDI"
+    PA_PACM_12 = "PA_PACM_12"
+    PA_SPECIAL = "PA_SPECIAL"
+    PA_TPE = "PA_TPE"
+    PB = "PB"
+    PBAT = "PBAT"
+    PBAT_PLUS_PLA = "PBAT_PLUS_PLA"
+    PBI = "PBI"
+    PBS = "PBS"
+    PBT = "PBT"
+    PBT_PLUS_ASA = "PBT_PLUS_ASA"
+    PBT_PLUS_PE = "PBT_PLUS_PE"
+    PBT_PLUS_PET = "PBT_PLUS_PET"
+    PBT_PLUS_PETG = "PBT_PLUS_PETG"
+    PBT_PLUS_PET_PLUS_ASA = "PBT_PLUS_PET_PLUS_ASA"
+    PBT_PLUS_PPE = "PBT_PLUS_PPE"
+    PBT_PLUS_PS = "PBT_PLUS_PS"
+    PBT_PLUS_SAN = "PBT_PLUS_SAN"
+    PBT_ASA = "PBT_ASA"
+    PBT_PC = "PBT_PC"
+    PC = "PC"
+    PCL = "PCL"
+    PCT = "PCT"
+    PCTA = "PCTA"
+    PCTFE = "PCTFE"
+    PCTG = "PCTG"
+    PCTG_PLUS_PC = "PCTG_PLUS_PC"
+    PCU = "PCU"
+    PC_PLUS_HIPS = "PC_PLUS_HIPS"
+    PC_PLUS_MBS = "PC_PLUS_MBS"
+    PC_PLUS_PBT = "PC_PLUS_PBT"
+    PC_PLUS_PCT = "PC_PLUS_PCT"
+    PC_PLUS_PET = "PC_PLUS_PET"
+    PC_PLUS_PET_PLUS_PBT = "PC_PLUS_PET_PLUS_PBT"
+    PC_PLUS_PLA = "PC_PLUS_PLA"
+    PC_PLUS_PMMA = "PC_PLUS_PMMA"
+    PC_PLUS_PPC = "PC_PLUS_PPC"
+    PC_PLUS_PS = "PC_PLUS_PS"
+    PC_PLUS_PTFE = "PC_PLUS_PTFE"
+    PC_PLUS_SAN = "PC_PLUS_SAN"
+    PC_PLUS_TPES = "PC_PLUS_TPES"
+    PC_PLUS_TPU = "PC_PLUS_TPU"
+    PC_PET = "PC_PET"
+    PC_PPC = "PC_PPC"
+    PDAIP = "PDAIP"
+    PDAP = "PDAP"
+    PDMS = "PDMS"
+    PE = "PE"
+    PEBA = "PEBA"
+    PEEK = "PEEK"
+    PEI = "PEI"
+    PEI_PLUS_PCE = "PEI_PLUS_PCE"
+    PEK = "PEK"
+    PEKEKK = "PEKEKK"
+    PEKK = "PEKK"
+    PEN = "PEN"
+    PESU = "PESU"
+    PET = "PET"
+    PETG = "PETG"
+    PET_PLUS_PA6 = "PET_PLUS_PA6"
+    PET_PLUS_PA66 = "PET_PLUS_PA66"
+    PET_G = "PET_G"
+    PEX_B = "PEX_B"
+    PE_PLUS_HIPS = "PE_PLUS_HIPS"
+    PE_HMW = "PE_HMW"
+    PE_HMWHD = "PE_HMWHD"
+    PE_UHMW = "PE_UHMW"
+    PF = "PF"
+    PFA = "PFA"
+    PFSA_PTFE = "PFSA_PTFE"
+    PGA = "PGA"
+    PHA = "PHA"
+    PHB = "PHB"
+    PHBV = "PHBV"
+    PI = "PI"
+    PIB = "PIB"
+    PK = "PK"
+    PLA = "PLA"
+    PLA_PLUS_ABS = "PLA_PLUS_ABS"
+    PLA_PLUS_HDPE = "PLA_PLUS_HDPE"
+    PLA_PLUS_PHB = "PLA_PLUS_PHB"
+    PLA_PLUS_PMMA = "PLA_PLUS_PMMA"
+    PLA_PCL = "PLA_PCL"
+    PLA_PEG = "PLA_PEG"
+    PLA_PHA = "PLA_PHA"
+    PLGA = "PLGA"
+    PMMA = "PMMA"
+    PMMI = "PMMI"
+    PMP = "PMP"
+    PMS = "PMS"
+    POM = "POM"
+    POM_PLUS_MBS = "POM_PLUS_MBS"
+    POM_PLUS_PE = "POM_PLUS_PE"
+    POM_PLUS_PTFE = "POM_PLUS_PTFE"
+    POM_PLUS_PUR = "POM_PLUS_PUR"
+    POM_PLUS_Z = "POM_PLUS_Z"
+    PP = "PP"
+    PPA = "PPA"
+    PPC = "PPC"
+    PPE = "PPE"
+    PPE_PLUS_HIPS = "PPE_PLUS_HIPS"
+    PPE_PLUS_PA = "PPE_PLUS_PA"
+    PPE_PLUS_PA6 = "PPE_PLUS_PA6"
+    PPE_PLUS_PA66 = "PPE_PLUS_PA66"
+    PPE_PLUS_PP = "PPE_PLUS_PP"
+    PPE_PLUS_PS = "PPE_PLUS_PS"
+    PPE_PLUS_PS_PLUS_PA = "PPE_PLUS_PS_PLUS_PA"
+    PPE_PLUS_TPE = "PPE_PLUS_TPE"
+    PPE_PLUS_TPS_SEBS = "PPE_PLUS_TPS_SEBS"
+    PPE_PLUS_TPS_SEBS_PLUS_Z = "PPE_PLUS_TPS_SEBS_PLUS_Z"
+    PPE_PLUS_Z = "PPE_PLUS_Z"
+    PPOX = "PPOX"
+    PPS = "PPS"
+    PPSU = "PPSU"
+    PPSU_PLUS_PSU = "PPSU_PLUS_PSU"
+    PPS_PLUS_PA = "PPS_PLUS_PA"
+    PPS_PLUS_PPE = "PPS_PLUS_PPE"
+    PPS_PLUS_PTFE = "PPS_PLUS_PTFE"
+    PP_PLUS_EPDM = "PP_PLUS_EPDM"
+    PP_PLUS_EPR = "PP_PLUS_EPR"
+    PP_PLUS_EVA = "PP_PLUS_EVA"
+    PP_PLUS_PE = "PP_PLUS_PE"
+    PP_PLUS_PPE_PLUS_PS = "PP_PLUS_PPE_PLUS_PS"
+    PP_PLUS_Z = "PP_PLUS_Z"
+    PP_PE = "PP_PE"
+    PS = "PS"
+    PSU = "PSU"
+    PSU_PLUS_ABS = "PSU_PLUS_ABS"
+    PSU_PLUS_PC = "PSU_PLUS_PC"
+    PS_PLUS_PE = "PS_PLUS_PE"
+    PS_PLUS_PMMA = "PS_PLUS_PMMA"
+    PS_PLUS_SPS = "PS_PLUS_SPS"
+    PS_PLUS_Z = "PS_PLUS_Z"
+    PS_I = "PS_I"
+    PTFE = "PTFE"
+    PTT = "PTT"
+    PUMA = "PUMA"
+    PUR = "PUR"
+    PVAL = "PVAL"
+    PVB = "PVB"
+    PVC = "PVC"
+    PVCA = "PVCA"
+    PVC_PLUS_NBR = "PVC_PLUS_NBR"
+    PVC_PLUS_PMMA = "PVC_PLUS_PMMA"
+    PVC_PLUS_PUR = "PVC_PLUS_PUR"
+    PVC_C = "PVC_C"
+    PVC_C_PLUS_PVC = "PVC_C_PLUS_PVC"
+    PVC_U = "PVC_U"
+    PVDC = "PVDC"
+    PVDF = "PVDF"
+    PVMQ = "PVMQ"
+    PVP = "PVP"
+    RET = "RET"
+    RPS = "RPS"
+    SAN = "SAN"
+    SB = "SB"
+    SBR = "SBR"
+    SBR_ACM = "SBR_ACM"
+    SBR_BR = "SBR_BR"
+    SBR_IR = "SBR_IR"
+    SBR_NR = "SBR_NR"
+    SI = "SI"
+    SIX_PP = "SIX_PP"
+    SMA = "SMA"
+    SMA_PLUS_HIPS = "SMA_PLUS_HIPS"
+    SMI = "SMI"
+    SMMA = "SMMA"
+    SPS = "SPS"
+    SPU = "SPU"
+    SRP = "SRP"
+    TPA = "TPA"
+    TPC = "TPC"
+    TPC_EE = "TPC_EE"
+    TPC_EE_PLUS_PBT = "TPC_EE_PLUS_PBT"
+    TPC_ES = "TPC_ES"
+    TPC_ET = "TPC_ET"
+    TPC_ET_PLUS_EMA = "TPC_ET_PLUS_EMA"
+    TPC_ET_PLUS_PBT = "TPC_ET_PLUS_PBT"
+    TPE = "TPE"
+    TPES = "TPES"
+    TPO = "TPO"
+    TPO_EB = "TPO_EB"
+    TPO_EO = "TPO_EO"
+    TPO_EPDM_PLUS_PP_ = "TPO_EPDM_PLUS_PP_"
+    TPS = "TPS"
+    TPS_SBS = "TPS_SBS"
+    TPS_SEBS = "TPS_SEBS"
+    TPS_SIS = "TPS_SIS"
+    TPU = "TPU"
+    TPU_ALES = "TPU_ALES"
+    TPU_ALET = "TPU_ALET"
+    TPU_PLUS_TPS_PLUS_TPA = "TPU_PLUS_TPS_PLUS_TPA"
+    TPU_ARES = "TPU_ARES"
+    TPU_ARET = "TPU_ARET"
+    TPU_ES = "TPU_ES"
+    TPU_ET = "TPU_ET"
+    TPV = "TPV"
+    TPV_EPDM = "TPV_EPDM"
+    TPV_EPDM_PLUS_PP_ = "TPV_EPDM_PLUS_PP_"
+    TPV_IIR_HIIR = "TPV_IIR_HIIR"
+    TPV_NBR = "TPV_NBR"
+    TPZ = "TPZ"
+    TPZ_NBR_PLUS_PVC_ = "TPZ_NBR_PLUS_PVC_"
+    TSPCU = "TSPCU"
+    TSPU = "TSPU"
+    UF = "UF"
+    UP = "UP"
+    VDF_CTFE = "VDF_CTFE"
+    VDF_HFP = "VDF_HFP"
+    VE = "VE"
+    VINYL_CHLORIDE_BLEND = "VINYL_CHLORIDE_BLEND"
+    VLDPE = "VLDPE"
+    VMQ = "VMQ"
+    VMQ_PVMQ = "VMQ_PVMQ"
+    XLPE = "XLPE"
+    XLPO = "XLPO"
+    XNBR = "XNBR"
+    XNBR_PVC = "XNBR_PVC"
 
 
 class W24Material(W24FeatureModel):
-    """ Parsed Material object that can either be
+    """W24 Object for Materials.
+
+    Parsed Material object that can either be
     associated to the TitleBlock or derived from
     all the available information (including the
-    text on the canvas
+    text on the canvas.
 
     Attributes:
-        blurb: Material Name for human consumption
-
-        material_family: Material Family (Metal, Nonmetal, Hybrid)
-            following the classification system of Michael Ashby.
-            Values are only set to the level on which they are defined.
-            For example, the material blob "Steel" will translate to
-            METAL/FERROUS/STEEL/None
-
-        material_class: Second level material classification
-
-        material_type: Third level material classification
-
-        material_group: Fourth level material classification
+        blurb: Material Name for human consumption.
 
         material_standard: Material Standard indicated
-            on the technical drawing
+            on the technical drawing. This used to be
+            an enum - but we now have over 100 supported
+            material standards and the number is increasing
+            weekly. So a string seems to be more appropriate.
 
         material_code: Name of the material in accordance
-            with the material standard
+            with the material standard. An alternative name
+            would be material_designation.
 
-        reference_materials: Optional translation of the
-            Material into a list of equivalent materials
+        material_category: Categorization of the material
+            following W24MaterialCategoryX Tree.
+
     """
-
     blurb: str
-
-    material_family: Optional[W24MaterialFamily] = None
-    material_class: Optional[W24MaterialClass] = None
-    material_type: Optional[W24MaterialType] = None
-    material_group: Optional[W24MaterialGroup] = None
-
-    material_standard: W24MaterialStandard
-
+    material_standard: str
     material_code: str
-
-    reference_material: Optional[W24MaterialReference] = None
+    material_category: Tuple[
+        W24MaterialCategory1 | None,
+        W24MaterialCategory2 | None,
+        W24MaterialCategory3 | None,
+        W24MaterialCategory4 | None,
+    ]
