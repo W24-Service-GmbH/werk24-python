@@ -1,7 +1,7 @@
 """ Material Models
 """
 from enum import Enum
-from typing import Tuple
+from typing import Tuple, Optional
 from werk24.models.feature import W24FeatureModel
 
 
@@ -597,8 +597,8 @@ class W24Material(W24FeatureModel):
     material_standard: str
     material_code: str
     material_category: Tuple[
-        W24MaterialCategory1 | None,
-        W24MaterialCategory2 | None,
-        W24MaterialCategory3 | None,
-        W24MaterialCategory4 | None,
+        Optional[W24MaterialCategory1],
+        Optional[W24MaterialCategory2],
+        Optional[W24MaterialCategory3],
+        Optional[W24MaterialCategory4],
     ]
