@@ -175,7 +175,6 @@ class W24MaterialCategory3(str, Enum):
     PA11 = "PA11"
     PA12 = "PA12"
     PA12_MACMI = "PA12_MACMI"
-    PA12_MACMI = "PA12_MACMI"
     PA12_MACMI_PLUS_PA12 = "PA12_MACMI_PLUS_PA12"
     PA410 = "PA410"
     PA46 = "PA46"
