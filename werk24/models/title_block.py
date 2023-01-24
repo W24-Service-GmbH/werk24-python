@@ -3,11 +3,14 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, validator
 
+from werk24.models.color import W24Color
+
+from .feature import W24FeatureModel
 from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 from .weight import W24Weight
-from .feature import W24FeatureModel
+
 
 class W24TitleBlockItem(W24FeatureModel):
     """ Per-Language caption or value
@@ -21,7 +24,6 @@ class W24TitleBlockItem(W24FeatureModel):
     language: Optional[W24Language]
 
     text: str
-
 
 
 class W24CaptionValuePair(BaseModel):
@@ -53,14 +55,16 @@ class W24FileExtensionType(str, Enum):
     MODEL = "MODEL"
     UNKNOWN = "UNKNOWN"
 
+
 class W24FilePathType(str, Enum):
     """ Enum of the file path types, indicating whether a
     POSIX (unix) or WINDOWS path is used. When only a filename
     is indicated, the value will be UNKNOWN
     """
-    POSIX="POSIX"
+    POSIX = "POSIX"
     WINDOWS = "WINDOWS"
     UNKNOWN = "UNKNOWN"
+
 
 class W24Filename(W24FeatureModel):
     """ Object describing all the information that we can
@@ -96,8 +100,7 @@ class W24Filename(W24FeatureModel):
 
 
 class W24TitleBlock(BaseModel):
-    """ Information that could be extracted from the
-    Title Block
+    """ Information that could be extracted from the Title Block.
 
     Attributes:
         designation: Designation of the Sheet on the Title Block
@@ -122,6 +125,8 @@ class W24TitleBlock(BaseModel):
         filename_drawing: Filename of the drawing if it is explicitly
             indicated on the title block
 
+        colors: List of colors detected on the TitleBlock or in the
+            canvas notes.
     """
 
     designation: Optional[W24CaptionValuePair]
@@ -140,6 +145,7 @@ class W24TitleBlock(BaseModel):
 
     filename_drawing: Optional[W24Filename] = None
 
+    colors: List[W24Color] = []
 
     @validator('designation', pre=True)
     def designation_validator(
