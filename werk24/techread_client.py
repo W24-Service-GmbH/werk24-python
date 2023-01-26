@@ -36,7 +36,7 @@ from typing import (
 )
 
 import dotenv
-from pydantic import BaseModel
+from pydantic import UUID4, BaseModel
 
 from werk24.auth_client import AuthClient
 from werk24.exceptions import (
@@ -49,6 +49,7 @@ from werk24.exceptions import (
 from werk24.models.ask import W24Ask
 from werk24.models.techread import (
     W24TechreadAction,
+    W24TechreadBaseResponse,
     W24TechreadException,
     W24TechreadExceptionLevel,
     W24TechreadExceptionType,
@@ -304,7 +305,8 @@ class W24TechreadClient:
         model: bytes = None,
         max_pages: int = 1,
         drawing_filename: Optional[str] = None,
-    ) -> AsyncIterator[W24TechreadMessage]:
+        sub_account: Optional[UUID4] = None
+    ) -> AsyncIterator[W24TechreadBaseResponse]:
         """ Send a Technical Drawing to the W24 API to have it automatically
         interpreted and read. The API will return
 
@@ -330,9 +332,14 @@ class W24TechreadClient:
 
             drawing_filename (str|None): Optional information about the
                 filename of the drawing. Frequently this contains information
-                about the drawing id and you can make that information available
-                to us through this parameter. If you don't know the filename,
-                don't worry, it will still work.
+                about the drawing id and you can make that information
+                available to us through this parameter. If you don't know the
+                filename, don't worry, it will still work.
+
+            sub_account (UUID4|None): Optional specification of the sub-account
+                that the request should be attributed to. Sub-accounts allow
+                you to manage several customers at the same time and receiving
+                separate positions on the monthly invoice.
 
         Yields:
             W24TechreadMessage -- Response object obtained from the API
@@ -369,7 +376,16 @@ class W24TechreadClient:
                         self._development_key[:8])
 
         # send the initiation command
-        init_response = await self._send_command_init(asks, max_pages, drawing_filename)
+        init_response = await self._send_command_init(
+            asks,
+            max_pages,
+            drawing_filename,
+            sub_account)
+
+        # stop if the response is unsuccessful.
+        if not init_response.is_successful:
+            yield init_response
+            return
 
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
@@ -408,7 +424,8 @@ class W24TechreadClient:
         self,
         asks: List[W24Ask],
         max_pages: int,
-        drawing_filename: Optional[str]
+        drawing_filename: Optional[str],
+        sub_account: Optional[UUID4]
     ) -> W24TechreadInitResponse:
         """ Send the initiation command to the backend
         and return the associated response
@@ -434,7 +451,8 @@ class W24TechreadClient:
             asks=asks,
             development_key=self._development_key,
             max_pages=max_pages,
-            drawing_filename=drawing_filename)
+            drawing_filename=drawing_filename,
+            sub_account=sub_account)
 
         await self._techread_client_wss.send_command(
             W24TechreadAction.INITIALIZE.value,
@@ -673,7 +691,8 @@ class W24TechreadClient:
         drawing_bytes: bytes,
         hooks: List[Hook],
         max_pages: int = 1,
-        drawing_filename: Optional[str] = None
+        drawing_filename: Optional[str] = None,
+        sub_account: Optional[UUID4] = None
     ) -> None:
         """ Send the drawing to the API (can be PDF or image)
         and register a number of callbacks that are triggered
@@ -704,7 +723,8 @@ class W24TechreadClient:
                     drawing_bytes,
                     asks_list,
                     max_pages=max_pages,
-                    drawing_filename=drawing_filename):
+                    drawing_filename=drawing_filename,
+                    sub_account=sub_account):
 
                 await self._call_hooks_for_message(message, hooks)
 

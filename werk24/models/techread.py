@@ -125,12 +125,22 @@ class W24TechreadExceptionType(str, Enum):
     """ The Model fiel size exceeded the limit
     """
 
+    SUB_ACCOUNT_ACCESS_DENIED = "SUB_ACCOUNT_ACCESS_DENIED"
+    """Raised when the sub_account does not belong to the
+    main account.
+    """
+
+    SUB_ACCOUNT_NO_BALANCE = "SUB_ACCOUNT_NO_BALANCE"
+    """Raised when the sub account is pre-paid and the budget
+    is exhausted.
+    """
+
 
 class W24TechreadExceptionLevel(str, Enum):
     """ Severity level for the Error
 
     !!! note
-        This is defined for future-compatability.
+        This is defined for future-compatibility.
         The only value that is currently used is ERROR.
         The INFO level will follow shortly.
     """
@@ -163,7 +173,32 @@ class W24TechreadException(BaseModel):
     exception_type: W24TechreadExceptionType
 
 
-class W24TechreadMessage(BaseModel):
+class W24TechreadBaseResponse(BaseModel):
+    """BaseFormat for messages returned by the server.
+
+    Attributes:
+        exceptions (List[W24TechreadException]): List of exceptions
+            that occured during the processing.
+
+    """
+    exceptions: List[W24TechreadException] = []
+
+    @property
+    def is_successful(self) -> bool:
+        """Check whether an exception of the ERROR level was returned.
+
+        Otherwise return True.
+
+        Returns: True if none of the attached exceptions
+            has the Exception Level ERROR. False otherwise.
+        """
+        return not any(
+            e.exception_level == W24TechreadExceptionLevel.ERROR
+            for e in self.exceptions
+        )
+
+
+class W24TechreadMessage(W24TechreadBaseResponse):
     """ Message format for messages that are sent
     from the server to the client.
 
@@ -191,7 +226,6 @@ class W24TechreadMessage(BaseModel):
             become available after the client has downloaded the
             payload_url.
 
-        exceptions: List of exceptions that occured during the processing
 
     """
     request_id: UUID4
@@ -207,21 +241,6 @@ class W24TechreadMessage(BaseModel):
     payload_url: Optional[HttpUrl] = None
 
     payload_bytes: Optional[bytes] = None
-
-    exceptions: List[W24TechreadException] = []
-
-    @property
-    def is_successful(self) -> bool:
-        """ Check whether an exception of the ERROR level
-        was returned. Otherwise return True.
-
-        Returns: True if none of the attached exceptions
-            has the Exception Level ERROR. False otherwise.
-        """
-        return not any([
-            e.exception_level == W24TechreadExceptionLevel.ERROR
-            for e in self.exceptions
-        ])
 
 
 class W24TechreadRequest(BaseModel):
@@ -243,6 +262,10 @@ class W24TechreadRequest(BaseModel):
         max_pages: Maximum number of pages that shall be processed.
 
         drawing_filename (Optional[str]): Optional filename
+
+        sub_account (Optional[UUID4]): Sub-account that this request should
+            be attributed to. Sub-accounts allow you to keep the requests
+            of multiple of your customers separate.
     """
     asks: List[W24Ask] = []
 
@@ -253,6 +276,8 @@ class W24TechreadRequest(BaseModel):
     max_pages: int = 1
 
     drawing_filename: Optional[str] = None
+
+    sub_account: Optional[UUID4] = None
 
     @validator('asks', pre=True)
     def ask_list_validator(
@@ -287,13 +312,16 @@ class W24PresignedPost(BaseModel):
     fields_: Dict[str, str] = Field(alias='fields', default={})
 
 
-class W24TechreadInitResponse(BaseModel):
+class W24TechreadInitResponse(W24TechreadBaseResponse):
     """ API response to the Initialize request
 
     Attributes:
         drawing_presigned_post: Presigned Post for uploading the drawing
 
         model_presigned_post: Presigned Post for uploading the model
+
+        exceptions (List[W24TechreadException]): List of exceptions that
+            occured
 
     """
 
