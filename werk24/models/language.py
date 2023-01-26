@@ -9,6 +9,9 @@ class W24Language(str, Enum):
     DEU = "DEU"
     """ German """
 
+    DUT = "DUT"
+    """ Dutch """
+
     ENG = "ENG"
     """ English """
 
