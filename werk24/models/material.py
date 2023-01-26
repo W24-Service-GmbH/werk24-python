@@ -11,6 +11,7 @@ class W24MaterialCategory1(str, Enum):
     POLYMER = "POLYMER"
     CERAMIC = "CERAMIC"
     COMPOSITE = "COMPOSITE"
+    ORGANIC = "ORGANIC"
 
 
 class W24MaterialCategory2(str, Enum):
@@ -66,6 +67,9 @@ class W24MaterialCategory2(str, Enum):
     # COMPOSITE
     MATRIX = "MATRIX"
     REINFORCEMENT = "REINFORCEMENT"
+
+    # ORGANIC
+    WOOD = "WOOD"
 
 
 class W24MaterialCategory3(str, Enum):
