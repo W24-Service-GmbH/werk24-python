@@ -100,7 +100,7 @@ class W24MeasureLabel(BaseModel):
             that was indicated on the drawing.
 
         size_tolerance: Tolerance details. Default: General tolerances.
-            By default we are refering to the general tolerances of the drawing.
+            By default we are referring to the general tolerances of the drawing.
             When you are also requesting the TitleBlock, we are attaching the
             applicable General Tolerances (assuming they were understood)
             to the measure. This will consider the nominal size of the
