@@ -68,7 +68,7 @@ hook_config = [
     HookConfig(
         'ask_canvas_thumbnail',
         W24AskCanvasThumbnail,
-        lambda m: _show_image("Canvas Thumbnail", m.payload_dict)),
+        lambda m: _show_image("Canvas Thumbnail", m.payload_bytes)),
     HookConfig(
         'ask_sectional_thumbnail',
         W24AskSectionalThumbnail,
