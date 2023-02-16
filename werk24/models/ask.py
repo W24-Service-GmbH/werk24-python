@@ -134,6 +134,7 @@ class W24Ask(BaseModel):
     """Base model from which all Asks inherit
 
     Attributes:
+
         ask_type: Type of the requested Ask. Used
             for de-serialization.
 
@@ -159,6 +160,7 @@ class W24AskThumbnail(W24Ask):
     """Base model for features that request a thumbnail.
 
     Attributes:
+
         file_format: File format in which you wish to obtain
             the result. Currently only JPEG is supported.
 
@@ -207,6 +209,7 @@ class W24AskSheetAnonymization(W24AskThumbnail):
         black-on-white.
 
     Attributes:
+
         replacement_logo (bytes): SVG version of the logo that
             shall be used to replace the logo on the drawing.
 
@@ -257,6 +260,7 @@ class W24AskPartFamilyCharacterization(W24Ask):
     it has access to more granular data.
 
     Attributes:
+
         part_family_id (UUID4): Unique part family identifier
             that we will provide to you after the part family
             post processor is implemented.
@@ -271,8 +275,10 @@ class W24AskPartFamilyCharacterizationResponse(BaseModel):
 
 
     Attributes:
+
         page_id (UUID4): Id of the page that specified the part_family
-        sheet_id (UUID4):
+
+        sheet_id (UUID4):Id of the sheet
     """
     page_id: UUID4
     sheet_id: UUID4
@@ -289,8 +295,10 @@ class W24AskCanvasThumbnail(W24AskThumbnail):
         black-on-white.
 
     Attributes:
+
         remove_canvas_notes__dangerous (bool): Remove the canvas
             notes from the canvas thumbnail.
+
             !!! DANGEROUS: chances are that you are removing
             !!! important information. Run a risk analysis
             !!! before using this attribute
@@ -325,6 +333,7 @@ class W24AskVariantAnglesResponse(BaseModel):
     W24AskVariantAngles.
 
     Attributes:
+
         variant_id: Unique ID of the variant detected on
             the Technical Drawing. Refer to the documentation
             on Variants for details.
@@ -356,6 +365,7 @@ class W24AskVariantRoughnessesResponse(BaseModel):
     W24AskVariantRoughnesses ask.
 
     Attributes:
+
         variant_id: Unique ID of the variant detected on
             the Technical Drawing. Refer to the documentation
             on Variants for details.
@@ -385,6 +395,7 @@ class W24AskVariantRadiiResponse(BaseModel):
     W24AskVariantRadii ask.
 
     Attributes:
+
         variant_id: Unique ID of the variant detected on
             the Technical Drawing. Refer to the documentation
             on Variants for details.
@@ -408,6 +419,7 @@ class W24AskVariantMeasures(W24Ask):
     variant.
 
     Attributes:
+
         confidence_min: Werk24 calculates internal
             confidence scores for each measure. Depending
             on your use-case you might want to consider or
@@ -426,6 +438,7 @@ class W24AskVariantMeasuresResponse(BaseModel):
     W24AskVariantMeasures ask.
 
     Attributes:
+
         variant_id: Unique ID of the variant detected on
             the Technical Drawing. Refer to the documentation
             on Variants for details.
@@ -467,6 +480,7 @@ class W24AskVariantLeadersResponse(BaseModel):
 
 
     Attributes:
+
         variant_id: Unique ID of the variant detected on
             the Technical Drawing. Refer to the documentation
             on Variants for details.
@@ -491,6 +505,7 @@ class W24AskVariantMaterial(W24Ask):
     found as text on the Canvas.
 
     Attributes:
+
         material_hint: If already know the material that "should"
             be indicated on the drawing, you are welcome to submit
             it here as hint. This will allow us to improve the
@@ -548,6 +563,7 @@ class W24AskVariantGDTsResponse(BaseModel):
     W24AskVariantGDTs.
 
     Attributes:
+
         variant_id: Unique ID of the variant detected on
             the Technical Drawing. Refer to the documentation
             on Variants for details.
@@ -581,6 +597,7 @@ class W24AskVariantCAD(W24Ask):
     an associated CAD model
 
     Attributes:
+
         output_format: Output format in which to generate
             the CAD file.
 
@@ -598,6 +615,7 @@ class W24AskVariantCADResponse(BaseModel):
     """Response object corresponding to the W24AskVariantCad.
 
     Attributes:
+
         variant_id: Unique ID of the variant detected on
             the Technical Drawing. Refer to the documentation
             on Variants for details.
@@ -649,6 +667,7 @@ class W24AskVariantExternalDimensionsResponse(BaseModel):
     """Response object corresponding to the W24AskVariantExternalDimensions
 
     Attributes:
+
         variant_id (UUID4): Unique ID of the variant detected on the
             Technical Drawing. Refer to the documentation on Variants
             for details.
@@ -748,6 +767,7 @@ class W24AskNotesResponse(BaseModel):
     """Response to the W24AskNotes
 
     Attributes:
+
         notes(List[W24Ask]): List of the notes that were
             identified.
     """
@@ -826,12 +846,15 @@ def _deserialize_ask_type(
     """Get the Ask Class from the ask type
 
     Args:
+
         ask_type (str): Ask type in question
 
     Raises:
+
         ValueError: Raised if ask type is unknown
 
     Returns:
+
         str: Name of the AskObject
     """
     class_ = {
