@@ -9,27 +9,11 @@ from typing_extensions import Annotated
 from .general_tolerances import W24GeneralTolerancesStandard
 
 
-class W24SizeToleranceType(str, Enum):
-    """ Enum of the supported tolerances
-    """
-    APPROXIMATION = "APPROXIMATION"
-    FIT_SIZE_ISO = "FIT_SIZE_ISO"
-    GENERAL_TOLERANCES = "GENERAL_TOLERANCES"
-    MINIMUM = "MINIMUM"
-    MAXIMUM = "MAXIMUM"
-    OFF_SIZE = "OFF_SIZE"
-    THEORETICALLY_EXACT = "THEORETICALLY_EXACT"
-    REFERENCE = "REFERENCE"
-
-
 class W24SizeToleranceParent(BaseModel, abc.ABC):
     """Abstract Base Class to cover the Tolerances.
 
     Attributes:
         blurb (str): String representation for human consumption
-
-        toleration_type (W24SizeToleranceType):  Toleration Type for
-            deserialization
     """
     blurb: str
 
@@ -222,7 +206,7 @@ class W24SizeToleranceApproximation(W24SizeToleranceParent):
         ~ 15
         ca. 14
     """
-    toleration_type = "APPROXIMATION"
+    toleration_type: Literal["APPROXIMATION"] = "APPROXIMATION"
 
 
 W24Tolerance = Annotated[

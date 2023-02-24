@@ -3,15 +3,14 @@
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from pydantic import UUID4, BaseModel, validator
+from pydantic import UUID4, BaseModel
 
 from .chamfer import W24Chamfer
 from .depth import W24Depth
 from .feature import W24FeatureModel
-from .size import (W24Size, W24SizeToleranceParent, W24SizeToleranceGeneral,
-                   parse_tolerance)
+from .size import W24Size, W24SizeToleranceGeneral, W24SizeToleranceParent
 from .test_dimension import W24TestDimension
 from .thread import W24Thread
 from .unit import W24UnitLength
