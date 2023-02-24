@@ -209,7 +209,7 @@ class W24SizeToleranceApproximation(W24SizeToleranceParent):
     toleration_type: Literal["APPROXIMATION"] = "APPROXIMATION"
 
 
-W24Tolerance = Annotated[
+W24SizeTolerance = Annotated[
     Union[
         W24SizeToleranceFitsizeISO,
         W24SizeToleranceOffSize,
