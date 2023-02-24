@@ -1,15 +1,16 @@
 import abc
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Literal, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 from .general_tolerances import W24GeneralTolerancesStandard
 
 
 class W24SizeToleranceType(str, Enum):
-    """ Enum of the supported tolerations
+    """ Enum of the supported tolerances
     """
     APPROXIMATION = "APPROXIMATION"
     FIT_SIZE_ISO = "FIT_SIZE_ISO"
@@ -21,8 +22,8 @@ class W24SizeToleranceType(str, Enum):
     REFERENCE = "REFERENCE"
 
 
-class W24SizeTolerance(BaseModel, abc.ABC):
-    """ Abstract Base Class to cover the Tolerations
+class W24SizeToleranceParent(BaseModel, abc.ABC):
+    """Abstract Base Class to cover the Tolerances.
 
     Attributes:
         blurb (str): String representation for human consumption
@@ -30,15 +31,12 @@ class W24SizeTolerance(BaseModel, abc.ABC):
         toleration_type (W24SizeToleranceType):  Toleration Type for
             deserialization
     """
-    toleration_type: W24SizeToleranceType
-
     blurb: str
 
 
 class W24ToleranceGradeWarning(str, Enum):
     """ Warnings associated with the Tolerance Grade.
     """
-
     SIZE_LARGER_THAN_NORM = "SIZE_LARGER_THAN_NORM"
     TOLERANCE_WIDTH_SMALLER_THAN_NORM = "TOLERANCE_WIDTH_SMALLER_THAN_NORM"
     TOLERANCE_WIDTH_LARGER_THAN_NORM = "TOLERANCE_WIDTH_LARGER_THAN_NORM"
@@ -74,8 +72,8 @@ class W24ToleranceGrade(BaseModel):
     warning: Optional[W24ToleranceGradeWarning]
 
 
-class W24SizeToleranceFitsizeISO(W24SizeTolerance):
-    """ ISO fit size tolerations
+class W24SizeToleranceFitsizeISO(W24SizeToleranceParent):
+    """ISO fit size tolerances.
 
     Attributes:
         blurb (str): Text representation for human consumption.
@@ -92,16 +90,11 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
         tolerance_grade (Optional[int]): Tolerance Grade corresponding
             to ISO 286-1. In German IT-Grad.
     """
-    toleration_type = W24SizeToleranceType.FIT_SIZE_ISO
-
+    toleration_type: Literal["FIT_SIZE_ISO"] = "FIT_SIZE_ISO"
     blurb: str
-
     deviation_lower: Decimal
-
     deviation_upper: Decimal
-
     fundamental_deviation: str
-
     tolerance_grade: W24ToleranceGrade
 
     @property
@@ -114,7 +107,7 @@ class W24SizeToleranceFitsizeISO(W24SizeTolerance):
         return self.deviation_upper-self.deviation_lower
 
 
-class W24SizeToleranceReference(W24SizeTolerance):
+class W24SizeToleranceReference(W24SizeToleranceParent):
     """ Measures written in brackets are Reference
     Measures that are not tolerated.
 
@@ -124,10 +117,10 @@ class W24SizeToleranceReference(W24SizeTolerance):
 
         blurb (str): Text representation for human consumption.
     """
-    toleration_type = W24SizeToleranceType.REFERENCE
+    toleration_type: Literal["REFERENCE"] = "REFERENCE"
 
 
-class W24SizeToleranceOffSize(W24SizeTolerance):
+class W24SizeToleranceOffSize(W24SizeToleranceParent):
     """ Off-size based tolerances
 
     Attributes:
@@ -142,16 +135,13 @@ class W24SizeToleranceOffSize(W24SizeTolerance):
         tolerance_grade (int): Tolerance Grade corresponding to
             ISO 286-1. In German IT-Grad.
     """
-    toleration_type = W24SizeToleranceType.OFF_SIZE
-
+    toleration_type: Literal["OFF_SIZE"] = "OFF_SIZE"
     deviation_lower: Decimal
-
     deviation_upper: Decimal
-
     tolerance_grade: W24ToleranceGrade
 
 
-class W24SizeToleranceGeneral(W24SizeTolerance):
+class W24SizeToleranceGeneral(W24SizeToleranceParent):
     """ General Tolerances
 
     Attributes:
@@ -179,22 +169,16 @@ class W24SizeToleranceGeneral(W24SizeTolerance):
         tolerance_grade (int): Tolerance Grade corresponding to
             ISO 286-1. (German: IT-Grad).
     """
-    toleration_type = W24SizeToleranceType.GENERAL_TOLERANCES
-
+    toleration_type: Literal["GENERAL_TOLERANCES"] = "GENERAL_TOLERANCES"
     blurb: str = ""
-
     standard: Optional[W24GeneralTolerancesStandard]
-
     standard_class: Optional[str]
-
     deviation_lower: Optional[Decimal]
-
     deviation_upper: Optional[Decimal]
-
     tolerance_grade: Optional[W24ToleranceGrade]
 
 
-class W24SizeToleranceTheoreticallyExact(W24SizeTolerance):
+class W24SizeToleranceTheoreticallyExact(W24SizeToleranceParent):
     """ Theoretically Exact Measures after ISO 5458
     must not be tolerated. They are indicated by a small
     rectangular frame.
@@ -213,32 +197,47 @@ class W24SizeToleranceTheoreticallyExact(W24SizeTolerance):
             +------------+
         In these situations the toleration takes priority.
     """
-    toleration_type = W24SizeToleranceType.THEORETICALLY_EXACT
+    toleration_type: Literal["THEORETICALLY_EXACT"] = "THEORETICALLY_EXACT"
 
 
-class W24SizeToleranceMinimum(W24SizeTolerance):
+class W24SizeToleranceMinimum(W24SizeToleranceParent):
     """ Minimum Size of a measure
     Example:
         min. 15
     """
-    toleration_type = W24SizeToleranceType.MINIMUM
+    toleration_type: Literal["MINIMUM"] = "MINIMUM"
 
 
-class W24SizeToleranceMaximum(W24SizeTolerance):
+class W24SizeToleranceMaximum(W24SizeToleranceParent):
     """ Maximum Size of a measure
     Example:
         max 15
     """
-    toleration_type = W24SizeToleranceType.MAXIMUM
+    toleration_type: Literal["MAXIMUM"] = "MAXIMUM"
 
 
-class W24SizeToleranceApproximation(W24SizeTolerance):
+class W24SizeToleranceApproximation(W24SizeToleranceParent):
     """ Approximation of a measure
     Example:
         ~ 15
         ca. 14
     """
-    toleration_type = W24SizeToleranceType.APPROXIMATION
+    toleration_type = "APPROXIMATION"
+
+
+W24Tolerance = Annotated[
+    Union[
+        W24SizeToleranceFitsizeISO,
+        W24SizeToleranceOffSize,
+        W24SizeToleranceReference,
+        W24SizeToleranceGeneral,
+        W24SizeToleranceTheoreticallyExact,
+        W24SizeToleranceMinimum,
+        W24SizeToleranceMaximum,
+        W24SizeToleranceApproximation
+    ],
+    Field(discriminator='toleration_type')
+]
 
 
 class W24SizeType(str, Enum):
@@ -290,40 +289,3 @@ class W24SizeWidthsAcrossFlats(W24Size):
     size_type = W24SizeType.WIDTH_ACROSS_FLATS
 
     width_across_flats: Decimal
-
-
-def parse_tolerance(
-    raw: Dict[str, Any]
-) -> Optional[W24SizeTolerance]:
-    """ Pydantic does not automatically return the correct
-    W24SizeTolerance object. This function looks at the toleration_type
-    attribute and returns the correct W24SizeTolerance subclass
-
-    Args:
-        size_tolerance_raw (Dict[str, str]): Raw Dictionary of
-            the size tolerance
-
-    Returns:
-        W24SizeTolerance: Correctly deserialized Size Tolerance
-    """
-    # get the class in question
-    type_ = raw.toleration_type \
-        if hasattr(raw, 'toleration_type')\
-        else raw.get('toleration_type')
-
-    class_ = {
-        W24SizeToleranceType.APPROXIMATION: W24SizeToleranceApproximation,
-        W24SizeToleranceType.FIT_SIZE_ISO: W24SizeToleranceFitsizeISO,
-        W24SizeToleranceType.GENERAL_TOLERANCES: W24SizeToleranceGeneral,
-        W24SizeToleranceType.MINIMUM: W24SizeToleranceMinimum,
-        W24SizeToleranceType.MAXIMUM: W24SizeToleranceMaximum,
-        W24SizeToleranceType.OFF_SIZE: W24SizeToleranceOffSize,
-        W24SizeToleranceType.REFERENCE: W24SizeToleranceReference,
-        W24SizeToleranceType.THEORETICALLY_EXACT:
-        W24SizeToleranceTheoreticallyExact,
-    }.get(type_)
-
-    if class_ is None:
-        return None
-
-    return class_.parse_obj(raw)

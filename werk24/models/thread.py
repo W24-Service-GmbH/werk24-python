@@ -12,8 +12,9 @@ from pydantic import BaseModel, validator
 from werk24.models.feature import W24FeatureModel
 
 from .unit import W24UnitLength
-from .size import W24SizeTolerance
+from .size import W24SizeToleranceParent
 from .gender import W24Gender
+
 
 class W24ThreadType(str, Enum):
     """ Enum for the individual thread types
@@ -46,6 +47,7 @@ class W24ThreadHandedness(str, Enum):
     """
     LEFT = "LEFT"
     RIGHT = "RIGHT"
+
 
 class W24ThreadMultiStart(BaseModel):
     """ Multi-Start Thread Information
@@ -169,10 +171,10 @@ class W24ThreadISOMetric(W24Thread):
     """
     thread_type = W24ThreadType.ISO_METRIC
 
-    female_major_diameter_tolerance: Optional[W24SizeTolerance]
-    female_pitch_diameter_tolerance: Optional[W24SizeTolerance]
-    male_major_diameter_tolerance: Optional[W24SizeTolerance]
-    male_pitch_diameter_tolerance: Optional[W24SizeTolerance]
+    female_major_diameter_tolerance: Optional[W24SizeToleranceParent]
+    female_pitch_diameter_tolerance: Optional[W24SizeToleranceParent]
+    male_major_diameter_tolerance: Optional[W24SizeToleranceParent]
+    male_pitch_diameter_tolerance: Optional[W24SizeToleranceParent]
 
 
 class W24ThreadUTS(W24Thread):

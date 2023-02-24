@@ -10,7 +10,7 @@ from pydantic import UUID4, BaseModel, validator
 from .chamfer import W24Chamfer
 from .depth import W24Depth
 from .feature import W24FeatureModel
-from .size import (W24Size, W24SizeTolerance, W24SizeToleranceGeneral,
+from .size import (W24Size, W24SizeToleranceParent, W24SizeToleranceGeneral,
                    parse_tolerance)
 from .test_dimension import W24TestDimension
 from .thread import W24Thread
@@ -131,7 +131,7 @@ class W24MeasureLabel(BaseModel):
 
     size: W24Size
 
-    size_tolerance: W24SizeTolerance = W24SizeToleranceGeneral()
+    size_tolerance: W24SizeToleranceParent = W24SizeToleranceGeneral()
 
     unit: Optional[W24UnitLength] = None
 
@@ -142,24 +142,6 @@ class W24MeasureLabel(BaseModel):
     depth: Optional[W24Depth] = None
 
     test_dimension: Optional[W24TestDimension] = None
-
-    @validator('size_tolerance', pre=True)
-    def asks_validator(  # NOQA
-        cls,
-        raw: Dict[str, Any]
-    ) -> Optional[W24SizeTolerance]:
-        """ Pydantic does not automatically return the correct
-        W24SizeTolerance object. This function looks at the toleration_type
-        attribute and returns the correct W24SizeTolerance subclass
-
-        Args:
-            size_tolerance_raw (Dict[str, str]): Raw Dictionary of
-                the size tolerance
-
-        Returns:
-            W24SizeTolerance: Correctly deserialized Size Tolerance
-        """
-        return parse_tolerance(raw)
 
 
 class W24Measure(W24FeatureModel):

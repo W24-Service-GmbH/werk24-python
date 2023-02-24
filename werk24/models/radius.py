@@ -7,7 +7,7 @@ from typing import Optional
 from pydantic import UUID4, BaseModel
 
 from .feature import W24FeatureModel
-from .size import W24Size, W24SizeTolerance, W24SizeToleranceGeneral
+from .size import W24Size, W24SizeToleranceParent, W24SizeToleranceGeneral
 from .unit import W24UnitLength
 
 
@@ -37,7 +37,7 @@ class W24RadiusLabel(BaseModel):
 
     size: W24Size
 
-    size_tolerance: W24SizeTolerance = W24SizeToleranceGeneral()
+    size_tolerance: W24SizeToleranceParent = W24SizeToleranceGeneral()
 
     unit: Optional[W24UnitLength] = None
 

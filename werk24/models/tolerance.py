@@ -3,7 +3,8 @@ from typing import Optional
 
 from .feature import W24FeatureModel
 from .gender import W24Gender
-from .size import W24SizeTolerance
+from .size import W24SizeToleranceParent
+
 
 class W24ToleranceFeature(W24FeatureModel):
     """Characterization of a Tolerance Feature.
@@ -22,4 +23,4 @@ class W24ToleranceFeature(W24FeatureModel):
 
     length: Optional[Decimal]
 
-    tolerance: W24SizeTolerance
+    tolerance: W24SizeToleranceParent
