@@ -129,6 +129,10 @@ class W24AskType(str, Enum):
     """Ask for the tolerance elements of the variant
     """
 
+    INTERNAL_SCREENING = "INTERNAL_SCREENING"
+    """Ask for internal screening - not available through public API
+    """
+
 
 class W24Ask(BaseModel):
     """Base model from which all Asks inherit
@@ -754,6 +758,14 @@ class W24AskNotesResponse(BaseModel):
     notes: List[W24Note]
 
 
+class W24AskInternalScreening(W24Ask):
+    """Internal Ask to trigger the file screening.
+
+    NOTE: not available on the public API.
+    """
+    ask_type = W24AskType.INTERNAL_SCREENING
+
+
 # class W24AskVariantToleranceElements(W24Ask):
 #     """Ask object to obtain the tolerance elements
 #     """
@@ -836,6 +848,7 @@ def _deserialize_ask_type(
     """
     class_ = {
         "CANVAS_THUMBNAIL": W24AskCanvasThumbnail,
+        "INTERNAL_SCREENING": W24AskInternalScreening,
         "NOTES": W24AskNotes,
         "PAGE_THUMBNAIL": W24AskPageThumbnail,
         "PART_FAMILY_CHARACTERIZATION": W24AskPartFamilyCharacterization,
