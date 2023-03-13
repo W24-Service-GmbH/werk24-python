@@ -18,33 +18,38 @@ from .unit import W24UnitLength
 
 
 class W24MeasureWarningType(str, Enum):
-    """ List of all warnings that can be associated with
+    """ 
+    List of all warnings that can be associated with
     the returned measures.
     """
 
     UNCONVENTIONAL_TOLERANCE_ORDER = "UNCONVENTIONAL_TOLERANCE_ORDER"
-    """ The UNCONVENTIONAL_TOLERANCE_ORDER warning is raised
+    """ 
+    The UNCONVENTIONAL_TOLERANCE_ORDER warning is raised
     when the first-mentioned tolerance is lower than the second-mentioned.
 
     EXAMPLE: 3 -0.1/+0.1 (rather than 3 +0.1/-0.1)
     """
 
     UNPROPORTIONAL = "UNPROPORTIONAL"
-    """ The UNPROPORTIONAL warnings is set when the size indicated
+    """ 
+    The UNPROPORTIONAL warnings is set when the size indicated
     on the MeasureLabel is unproportional to the distance between
     the Measure's end-points.
     """
 
 
 class W24MeasureWarning(BaseModel):
-    """ Warnings are issued when something about the label
+    """ 
+    Warnings are issued when something about the label
     or measure is not conforming with convention
     """
     warning_type: W24MeasureWarningType
 
 
 class W24MeasureWarningUnconvetionalToleranceOrder(W24MeasureWarning):
-    """ The UNCONVENTIONAL_TOLERANCE_ORDER warning is raised
+    """ 
+    The UNCONVENTIONAL_TOLERANCE_ORDER warning is raised
     when the first-mentioned tolerance is lower than the second-mentioned.
 
     EXAMPLE: 3 -0.1/+0.1 (rather than 3 +0.1/-0.1)
@@ -53,11 +58,13 @@ class W24MeasureWarningUnconvetionalToleranceOrder(W24MeasureWarning):
 
 
 class W24MeasureWarningUnproportional(W24MeasureWarning):
-    """ The UNPROPORTIONAL warnings is set when the size indicated
+    """ 
+    The UNPROPORTIONAL warnings is set when the size indicated
     on the MeasureLabel is unproportional to the distance between
     the Measure's end-points.
 
-    NOTE: Three things can cause this:
+    !!! note Three things can cause this:
+
     1. The Measure is truly unpropotional and carries an associated
         indicator.
 
@@ -83,6 +90,7 @@ class W24MeasureLabel(BaseModel):
     """ Measure Label
 
     Attributes:
+
         blurb: String representation of the item for human consumption
 
         quantity: Quantity for spacings, e.g., (2x). Currently only the
@@ -153,6 +161,7 @@ class W24MeasureLabel(BaseModel):
         attribute and returns the correct W24SizeTolerance subclass
 
         Args:
+
             size_tolerance_raw (Dict[str, str]): Raw Dictionary of
                 the size tolerance
 
@@ -166,6 +175,7 @@ class W24Measure(W24FeatureModel):
     """ Measure object
 
     Attributes:
+
         measure_id: Unique UUID4 identifier
 
         label: Measure Label
