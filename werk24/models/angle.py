@@ -27,6 +27,7 @@ class W24AngleToleration(BaseModel, abc.ABC):
     """ Base Class that describes Angle Tolerances
 
     Attributes:
+
         toleration_type: Toleration Type  of the
             `W24AngleSize`
 
@@ -48,6 +49,7 @@ class W24AngleSize(BaseModel):
     """ Size of an Angle including its toleration
 
     Attributes:
+
         blurb: Blurb for human consumption
 
         angle: Nominal angle size in [units]
@@ -68,6 +70,7 @@ class W24AngleLabel(BaseModel):
     on the Technical Drawing
 
     Attributes:
+
         blurb: Blurb for human consumption
 
         size: Nominal angle size
@@ -87,6 +90,7 @@ class W24Angle(W24FeatureModel):
     Technical Drawing
 
     Attributes:
+
         angle_id: Unique identifier of the Angle. This
             allows the reference of the angle from another
             object (e.g., a leader)

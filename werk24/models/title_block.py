@@ -16,6 +16,7 @@ class W24TitleBlockItem(W24FeatureModel):
     """ Per-Language caption or value
 
     Attributes:
+
         language: Language in accordance with the ISO/639-2B standards
 
         text: Text of the identification
@@ -30,6 +31,7 @@ class W24CaptionValuePair(BaseModel):
     """ Caption-Value pair for that were found on the Title Block.
 
     Attributes:
+
         blurb: Caption-Value pair for human consumption
 
         captions: List of captions in different languages.
@@ -46,7 +48,9 @@ class W24CaptionValuePair(BaseModel):
 
 
 class W24FileExtensionType(str, Enum):
-    """ Enum of the extension types.
+    """ 
+    Enum of the extension types.
+
     For example, pdf and idw extensions will be mapped to
     DRAWING, while step and stl extensions will be mapped
     to MODEL.
@@ -57,7 +61,8 @@ class W24FileExtensionType(str, Enum):
 
 
 class W24FilePathType(str, Enum):
-    """ Enum of the file path types, indicating whether a
+    """ 
+    Enum of the file path types, indicating whether a
     POSIX (unix) or WINDOWS path is used. When only a filename
     is indicated, the value will be UNKNOWN
     """
@@ -67,10 +72,12 @@ class W24FilePathType(str, Enum):
 
 
 class W24Filename(W24FeatureModel):
-    """ Object describing all the information that we can
+    """ 
+    Object describing all the information that we can
     deduce from a filename that was found on the TitleBlock
 
     Attributes:
+
         blurb: Filename and Path as it was found on the drawing.
             Example: /path/to/drawing.pdf
 
@@ -100,9 +107,11 @@ class W24Filename(W24FeatureModel):
 
 
 class W24TitleBlock(BaseModel):
-    """ Information that could be extracted from the Title Block.
+    """ 
+    Information that could be extracted from the Title Block.
 
     Attributes:
+
         designation: Designation of the Sheet on the Title Block
 
         drawing_id: Main Identification Number of the Drawing
@@ -152,7 +161,8 @@ class W24TitleBlock(BaseModel):
         cls,
         raw: Dict[str, Any]
     ) -> Optional[W24CaptionValuePair]:
-        """ Workaround to deal with the transition period
+        """ 
+        Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
 
@@ -160,10 +170,12 @@ class W24TitleBlock(BaseModel):
         transition.
 
         Args:
+
             raw (Dict[str, Any]): Unparsed value returned
                 from the API
 
         Returns:
+
             W24CaptionValuePair: Parse value-caption pair
         """
         return cls._parse_caption_value_pair(raw)
@@ -173,7 +185,8 @@ class W24TitleBlock(BaseModel):
         cls,
         raw: Dict[str, Any]
     ) -> Optional[W24CaptionValuePair]:
-        """ Workaround to deal with the transition period
+        """ 
+        Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
 
@@ -181,10 +194,12 @@ class W24TitleBlock(BaseModel):
         transition.
 
         Args:
+
             raw (Dict[str, Any]): Unparsed value returned
                 from the API
 
         Returns:
+
             W24CaptionValuePair: Parse value-caption pair
         """
         return cls._parse_caption_value_pair(raw)
@@ -194,7 +209,8 @@ class W24TitleBlock(BaseModel):
         cls,
         raw: List[Dict[str, Any]]
     ) -> List[W24CaptionValuePair]:
-        """ Workaround to deal with the transition period
+        """ 
+        Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
 
@@ -202,10 +218,12 @@ class W24TitleBlock(BaseModel):
         transition.
 
         Args:
+
             raw (List[Dict[str, Any]]): Unparsed value returned
                 from the API
 
         Returns:
+
             List[W24CaptionValuePair]: Parse value-caption pair
         """
         result = [
@@ -218,7 +236,8 @@ class W24TitleBlock(BaseModel):
     def _parse_caption_value_pair(
         raw: Optional[Dict[str, Any]]
     ) -> Optional[W24CaptionValuePair]:
-        """ Workaround to deal with the transition period
+        """ 
+        Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
 
@@ -226,10 +245,12 @@ class W24TitleBlock(BaseModel):
         transition.
 
         Args:
+
             raw (Dict[str, Any]): Unparsed value returned
                 from the API
 
         Returns:
+
             W24CaptionValuePair: Parse value-caption pair
         """
         if isinstance(raw, W24CaptionValuePair):
