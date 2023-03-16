@@ -825,6 +825,7 @@ W24AskUnion = Union[
     W24AskVariantRadii,
     W24AskVariantRoughnesses,
     W24AskVariantThreadElements,
+    W24AskInternalScreening,
     # W24AskVariantToleranceElements
 ]
 """Union of all W24Asks to ensure proper de-serialization """
