@@ -5,7 +5,7 @@ from werk24.models.property.base import W24Property
 from werk24.models.value import W24PhysicalQuantityRange
 
 
-class PropertySurfaceArea(W24Property):
+class W24PropertySurfaceArea(W24Property):
     """Surface Area
 
     Attributes:
