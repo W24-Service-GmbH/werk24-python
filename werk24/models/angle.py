@@ -6,12 +6,12 @@ from typing import Optional
 
 from pydantic import UUID4, BaseModel
 
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
 from .unit import W24UnitAngle
 
 
-class W24AngleTolerationType(str, Enum):
-    """ Enum listing all supported AngleToleration Type
+class W24AngleToleranceType(str, Enum):
+    """ Enum listing all supported AngleTolerance Type
 
     !!! note
         Currently we are only supporting the General
@@ -23,30 +23,28 @@ class W24AngleTolerationType(str, Enum):
     GENERAL_TOLERANCES = "GENERAL_TOLERANCES"
 
 
-class W24AngleToleration(BaseModel, abc.ABC):
+class W24AngleTolerance(BaseModel, abc.ABC):
     """ Base Class that describes Angle Tolerances
 
     Attributes:
 
-        toleration_type: Toleration Type  of the
+        tolerance_type: Tolerance Type of the
             `W24AngleSize`
 
         blurb: String representation for human consumption
 
     !!! caution
         This model will soon be extended to contain the
-        toleration information derived from the TitleBlock.
+        tolerance information derived from the TitleBlock.
         Be aware that you will need to request the TitleBlock
         to obtain this information.
     """
-
-    toleration_type: W24AngleTolerationType
-
     blurb: str
+    tolerance_type: W24AngleToleranceType
 
 
 class W24AngleSize(BaseModel):
-    """ Size of an Angle including its toleration
+    """ Size of an Angle including its tolerance
 
     Attributes:
 
@@ -57,11 +55,8 @@ class W24AngleSize(BaseModel):
         unit: Angle Unit. Currently only degrees are
             supported.
     """
-
     blurb: str
-
     angle: Decimal
-
     unit: W24UnitAngle = W24UnitAngle.DEGREE
 
 
@@ -72,20 +67,15 @@ class W24AngleLabel(BaseModel):
     Attributes:
 
         blurb: Blurb for human consumption
-
-        size: Nominal angle size
-
-        size_toleration: Tolerated deviations
+        angle: Nominal angle size
+        angle_tolerance: Tolerated deviations
     """
-
     blurb: str
-
-    size: W24AngleSize
-
-    size_toleration: W24AngleToleration
+    angle: W24AngleSize
+    angle_tolerance: W24AngleTolerance
 
 
-class W24Angle(W24FeatureModel):
+class W24Angle(W24BaseFeatureModel):
     """ Tolerated Angle detected on a sectional of the
     Technical Drawing
 

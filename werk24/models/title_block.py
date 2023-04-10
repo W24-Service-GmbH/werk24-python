@@ -5,14 +5,14 @@ from pydantic import BaseModel, validator
 
 from werk24.models.color import W24Color
 
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
 from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 from .weight import W24Weight
 
 
-class W24TitleBlockItem(W24FeatureModel):
+class W24TitleBlockItem(W24BaseFeatureModel):
     """ Per-Language caption or value
 
     Attributes:
@@ -48,7 +48,7 @@ class W24CaptionValuePair(BaseModel):
 
 
 class W24FileExtensionType(str, Enum):
-    """ 
+    """
     Enum of the extension types.
 
     For example, pdf and idw extensions will be mapped to
@@ -61,7 +61,7 @@ class W24FileExtensionType(str, Enum):
 
 
 class W24FilePathType(str, Enum):
-    """ 
+    """
     Enum of the file path types, indicating whether a
     POSIX (unix) or WINDOWS path is used. When only a filename
     is indicated, the value will be UNKNOWN
@@ -71,8 +71,8 @@ class W24FilePathType(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
-class W24Filename(W24FeatureModel):
-    """ 
+class W24Filename(W24BaseFeatureModel):
+    """
     Object describing all the information that we can
     deduce from a filename that was found on the TitleBlock
 
@@ -107,7 +107,7 @@ class W24Filename(W24FeatureModel):
 
 
 class W24TitleBlock(BaseModel):
-    """ 
+    """
     Information that could be extracted from the Title Block.
 
     Attributes:
@@ -161,7 +161,7 @@ class W24TitleBlock(BaseModel):
         cls,
         raw: Dict[str, Any]
     ) -> Optional[W24CaptionValuePair]:
-        """ 
+        """
         Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
@@ -185,7 +185,7 @@ class W24TitleBlock(BaseModel):
         cls,
         raw: Dict[str, Any]
     ) -> Optional[W24CaptionValuePair]:
-        """ 
+        """
         Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
@@ -209,7 +209,7 @@ class W24TitleBlock(BaseModel):
         cls,
         raw: List[Dict[str, Any]]
     ) -> List[W24CaptionValuePair]:
-        """ 
+        """
         Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.
@@ -236,7 +236,7 @@ class W24TitleBlock(BaseModel):
     def _parse_caption_value_pair(
         raw: Optional[Dict[str, Any]]
     ) -> Optional[W24CaptionValuePair]:
-        """ 
+        """
         Workaround to deal with the transition period
         while we move from the single-value to the multi-value
         pairs.

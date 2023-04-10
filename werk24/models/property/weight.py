@@ -1,0 +1,18 @@
+from typing import Literal
+
+from werk24.models.physical_quantity import W24PhysicalQuantityRange
+from werk24.models.property.base import W24Property
+
+
+class W24PropertyWeight(W24Property):
+    """Weight of the Part.
+
+    NOTE: this might in the future be extended by another
+    attribute that indicates whether the weight was measured
+    or calculated.
+
+    Attributes:
+        value: weight in the units indicated on the drawing.
+    """
+    type: Literal["WEIGHT"] = "WEIGHT"
+    weight: W24PhysicalQuantityRange

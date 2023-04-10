@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import UUID4, BaseModel
 
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
 from .size import W24Size, W24SizeTolerance, W24SizeToleranceGeneral
 from .unit import W24UnitLength
 
@@ -42,7 +42,7 @@ class W24RadiusLabel(BaseModel):
     unit: Optional[W24UnitLength] = None
 
 
-class W24Radius(W24FeatureModel):
+class W24Radius(W24BaseFeatureModel):
     """ Radius Feature
 
     Attributes:

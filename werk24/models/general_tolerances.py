@@ -1,9 +1,10 @@
 from decimal import Decimal
 from enum import Enum
 from typing import List, Optional, Union
-from pydantic import  BaseModel, validator
+from pydantic import BaseModel, validator
 
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
+
 
 class W24GeneralTolerancesStandard(str, Enum):
     """ Enum of all supported
@@ -140,7 +141,7 @@ class W24ToleranceClass(BaseModel):
     table: List[W24ToleranceTableItem]
 
 
-class W24GeneralTolerances(W24FeatureModel):
+class W24GeneralTolerances(W24BaseFeatureModel):
     """ Object representing the General Tolerances indicated
     on the Title Block of the Technical Drawing.
     """

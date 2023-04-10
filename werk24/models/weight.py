@@ -1,10 +1,10 @@
 from typing import Optional
 
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
 from .unit import W24UnitWeight, W24UnitLength
 
 
-class W24Weight(W24FeatureModel):
+class W24Weight(W24BaseFeatureModel):
     """ Weight of a Part - for example as indicated
     on the Title Block.
 

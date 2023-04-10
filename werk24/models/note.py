@@ -4,7 +4,7 @@ Author: Jochen Mattes
 """
 from enum import Enum
 
-from werk24.models.feature import W24FeatureModel
+from werk24.models.base_feature import W24BaseFeatureModel
 
 
 class W24NoteType(str, Enum):
@@ -29,7 +29,7 @@ class W24NoteType(str, Enum):
     SECTIONAL_CALLOUT = "SECTIONAL_CALLOUT"
 
 
-class W24Note(W24FeatureModel):
+class W24Note(W24BaseFeatureModel):
     """Notes object for Sectional and Canvas Notes.
 
     Attributes:
