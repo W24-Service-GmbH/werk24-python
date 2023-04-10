@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from pydantic import UUID4, BaseModel
 
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
 
 
 class W24GDTCharacteristic(str, Enum):
@@ -332,7 +332,7 @@ class W24GDTFrame(BaseModel):
     data: List[W24GDTDatum] = []
 
 
-class W24GDT(W24FeatureModel):
+class W24GDT(W24BaseFeatureModel):
     """ Parent object for Geometric Dimensionsing and Toleration
     Frames, attaching them to the physical location on the drawing.
 

@@ -9,11 +9,12 @@ from typing import List, Dict, Any, Optional, Type
 
 from pydantic import BaseModel, validator
 
-from werk24.models.feature import W24FeatureModel
+from werk24.models.base_feature import W24BaseFeatureModel
 
 from .unit import W24UnitLength
 from .size import W24SizeTolerance
 from .gender import W24Gender
+
 
 class W24ThreadType(str, Enum):
     """ Enum for the individual thread types
@@ -46,6 +47,7 @@ class W24ThreadHandedness(str, Enum):
     """
     LEFT = "LEFT"
     RIGHT = "RIGHT"
+
 
 class W24ThreadMultiStart(BaseModel):
     """ Multi-Start Thread Information
@@ -256,7 +258,7 @@ class W24ThreadWhitworth(W24Thread):
     tolerance_class: Optional[str] = None
 
 
-class W24ThreadFeature(W24FeatureModel):
+class W24ThreadFeature(W24BaseFeatureModel):
     """Characterization of a Thread Feature
 
     Attributes:

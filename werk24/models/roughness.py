@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from pydantic import UUID4, BaseModel
 
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
 from .unit import W24UnitSystem
 
 
@@ -346,7 +346,7 @@ class W24RoughnessLabel(BaseModel):
     waviness: Optional[W24RoughnessWaviness]
 
 
-class W24Roughness(W24FeatureModel):
+class W24Roughness(W24BaseFeatureModel):
     """ Roughness object
 
     Attributes:

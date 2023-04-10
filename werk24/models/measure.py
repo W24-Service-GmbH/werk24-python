@@ -9,7 +9,7 @@ from pydantic import UUID4, BaseModel, validator
 
 from .chamfer import W24Chamfer
 from .depth import W24Depth
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
 from .size import (W24Size, W24SizeTolerance, W24SizeToleranceGeneral,
                    parse_tolerance)
 from .test_dimension import W24TestDimension
@@ -18,13 +18,13 @@ from .unit import W24UnitLength
 
 
 class W24MeasureWarningType(str, Enum):
-    """ 
+    """
     List of all warnings that can be associated with
     the returned measures.
     """
 
     UNCONVENTIONAL_TOLERANCE_ORDER = "UNCONVENTIONAL_TOLERANCE_ORDER"
-    """ 
+    """
     The UNCONVENTIONAL_TOLERANCE_ORDER warning is raised
     when the first-mentioned tolerance is lower than the second-mentioned.
 
@@ -32,7 +32,7 @@ class W24MeasureWarningType(str, Enum):
     """
 
     UNPROPORTIONAL = "UNPROPORTIONAL"
-    """ 
+    """
     The UNPROPORTIONAL warnings is set when the size indicated
     on the MeasureLabel is unproportional to the distance between
     the Measure's end-points.
@@ -40,7 +40,7 @@ class W24MeasureWarningType(str, Enum):
 
 
 class W24MeasureWarning(BaseModel):
-    """ 
+    """
     Warnings are issued when something about the label
     or measure is not conforming with convention
     """
@@ -48,7 +48,7 @@ class W24MeasureWarning(BaseModel):
 
 
 class W24MeasureWarningUnconvetionalToleranceOrder(W24MeasureWarning):
-    """ 
+    """
     The UNCONVENTIONAL_TOLERANCE_ORDER warning is raised
     when the first-mentioned tolerance is lower than the second-mentioned.
 
@@ -58,7 +58,7 @@ class W24MeasureWarningUnconvetionalToleranceOrder(W24MeasureWarning):
 
 
 class W24MeasureWarningUnproportional(W24MeasureWarning):
-    """ 
+    """
     The UNPROPORTIONAL warnings is set when the size indicated
     on the MeasureLabel is unproportional to the distance between
     the Measure's end-points.
@@ -171,7 +171,7 @@ class W24MeasureLabel(BaseModel):
         return parse_tolerance(raw)
 
 
-class W24Measure(W24FeatureModel):
+class W24Measure(W24BaseFeatureModel):
     """ Measure object
 
     Attributes:

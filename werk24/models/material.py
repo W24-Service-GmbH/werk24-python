@@ -2,7 +2,7 @@
 """
 from enum import Enum
 from typing import Tuple, Optional, Any
-from werk24.models.feature import W24FeatureModel
+from werk24.models.base_feature import W24BaseFeatureModel
 
 
 class W24MaterialCategory1(str, Enum):
@@ -494,7 +494,7 @@ class W24MaterialCategory3(str, Enum):
     POLYCARBONATE = "POLYCARBONATE"
 
 
-class W24Material(W24FeatureModel):
+class W24Material(W24BaseFeatureModel):
     """W24 Object for Materials.
 
     Parsed Material object that can either be

@@ -1,11 +1,12 @@
 from decimal import Decimal
 from typing import Optional
 
-from .feature import W24FeatureModel
+from .base_feature import W24BaseFeatureModel
 from .gender import W24Gender
 from .size import W24SizeTolerance
 
-class W24ToleranceFeature(W24FeatureModel):
+
+class W24ToleranceFeature(W24BaseFeatureModel):
     """Characterization of a Tolerance Feature.
 
     Attributes:
