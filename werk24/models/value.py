@@ -4,7 +4,7 @@ from typing import Optional
 from pint import Quantity, UnitRegistry
 from pydantic import BaseModel
 
-from werk24.models.size import W24SizeTolerance
+from werk24.models.tolerance import W24Tolerance
 
 ureg = UnitRegistry()
 
@@ -26,10 +26,10 @@ class W24PhysicalQuantity(BaseModel):
 
     blurb: str
     value: Quantity
-    tolerance: Optional[W24SizeTolerance] = None
+    tolerance: Optional[W24Tolerance] = None
 
 
 class W24Value(BaseModel):
     blurb: str
     value: Decimal
-    tolerance: Optional[W24SizeTolerance] = None
+    tolerance: Optional[W24Tolerance] = None

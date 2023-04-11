@@ -1,46 +1,13 @@
-from typing import Tuple
 import abc
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
+from typing import Optional, Tuple
 
 from pydantic import UUID4, BaseModel
 
 from .base_feature import W24BaseFeatureModel
 from .unit import W24UnitAngle
-
-
-class W24AngleToleranceType(str, Enum):
-    """ Enum listing all supported AngleTolerance Type
-
-    !!! note
-        Currently we are only supporting the General
-        Tolerances indicated on the drawing's Title Block.
-        If you need access to more types, e.g.,
-        MINIMUM, MAXIMUM, OFF_SIZE, APPROXIMATION, please
-        reach out to us.
-    """
-    GENERAL_TOLERANCES = "GENERAL_TOLERANCES"
-
-
-class W24AngleTolerance(BaseModel, abc.ABC):
-    """ Base Class that describes Angle Tolerances
-
-    Attributes:
-
-        tolerance_type: Tolerance Type of the
-            `W24AngleSize`
-
-        blurb: String representation for human consumption
-
-    !!! caution
-        This model will soon be extended to contain the
-        tolerance information derived from the TitleBlock.
-        Be aware that you will need to request the TitleBlock
-        to obtain this information.
-    """
-    blurb: str
-    tolerance_type: W24AngleToleranceType
+from .tolerance import W24Tolerance
 
 
 class W24AngleSize(BaseModel):
@@ -72,7 +39,7 @@ class W24AngleLabel(BaseModel):
     """
     blurb: str
     angle: W24AngleSize
-    angle_tolerance: W24AngleTolerance
+    angle_tolerance: W24Tolerance
 
 
 class W24Angle(W24BaseFeatureModel):

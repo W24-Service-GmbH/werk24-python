@@ -1,8 +1,7 @@
-from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 from werk24.models.property.base import W24Property
-from werk24.models.value import W24PhysicalQuantityRange
+from werk24.models.value import W24PhysicalQuantity
 
 
 class W24PropertySurfaceArea(W24Property):
@@ -15,4 +14,4 @@ class W24PropertySurfaceArea(W24Property):
             that people specify allowed ranges.
     """
     type: Literal["SURFACE_AREA"] = "SURFACE_AREA"
-    surface_area: W24PhysicalQuantityRange
+    surface_area: W24PhysicalQuantity
