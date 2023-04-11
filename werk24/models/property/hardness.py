@@ -25,7 +25,7 @@ class W24PropertyHardnessRockwellScale(str, Enum):
 
 class W24PropertyHardnessRockwell(W24Property):
     type: Literal["HARDNESS_ROCKWELL"] = "HARDNESS_ROCKWELL"
-    hardness_number_range: W24ValueRange
+    hardness_number: W24Value
     hardness_scale: W24PropertyHardnessRockwellScale
     """
     Quote from EN ISO 6508-1:2006 page 9:
@@ -56,7 +56,7 @@ class W24PropertyHardnessRockwellScale(str, Enum):
 
 class W24PropertyHardnessRockwell(W24Property):
     type: Literal["HARDNESS_ROCKWELL"] = "HARDNESS_ROCKWELL"
-    hardness_number_range: W24Value
+    hardness_number: W24Value
     hardness_scale: W24PropertyHardnessRockwellScale
     """
     Quote from EN ISO 6508-1:2006 page 9:

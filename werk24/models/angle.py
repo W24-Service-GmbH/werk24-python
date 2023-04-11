@@ -1,13 +1,11 @@
-import abc
 from decimal import Decimal
-from enum import Enum
 from typing import Optional, Tuple
 
 from pydantic import UUID4, BaseModel
 
 from .base_feature import W24BaseFeatureModel
-from .unit import W24UnitAngle
 from .tolerance import W24Tolerance
+from .unit import W24UnitAngle
 
 
 class W24AngleSize(BaseModel):
