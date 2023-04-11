@@ -10,4 +10,4 @@ class W24FeatureChamfer(W24Feature):
     size: W24Size
     size_tolerance: W24Tolerance
     angle: W24AngleLabel
-    angle_tolerance: W4Tolerance
+    angle_tolerance: W24Tolerance
