@@ -194,7 +194,7 @@ class W24ToleranceMinimum(W24Tolerance):
     toleration_type: Literal["MINIMUM"] = "MINIMUM"
 
 
-class W24SizeToleranceMaximum(W24Tolerance):
+class W24ToleranceMaximum(W24Tolerance):
     """ Maximum Size of a measure
     Example:
         max 15
@@ -202,7 +202,7 @@ class W24SizeToleranceMaximum(W24Tolerance):
     toleration_type: Literal["MAXIMUM"] = "MAXIMUM"
 
 
-class W24SizeToleranceApproximation(W24Tolerance):
+class W24ToleranceApproximation(W24Tolerance):
     """ Approximation of a measure
     Example:
         ~ 15
