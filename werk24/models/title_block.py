@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, validator
 
-from werk24.models.color import W24Color
+from werk24.models.property.color import W24PropertyColor
 
 from .base_feature import W24BaseFeatureModel
 from .general_tolerances import W24GeneralTolerances
@@ -154,7 +154,7 @@ class W24TitleBlock(BaseModel):
 
     filename_drawing: Optional[W24Filename] = None
 
-    colors: List[W24Color] = []
+    colors: List[W24PropertyColor] = []
 
     @validator('designation', pre=True)
     def designation_validator(
