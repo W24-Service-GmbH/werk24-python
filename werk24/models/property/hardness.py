@@ -124,8 +124,8 @@ class W24PropertyHardnessLeeb(W24Property):
 class W24PropertyHardnessVickers(W24Property):
     type: Literal["HARDNESS_VICKERS"] = "HARDNESS_VICKERS"
     hardness_number: W24Value
-    load: Optional[W24Value]
-    loading_time: Optional[W24Value]
+    load: Optional[W24PhysicalQuantity]
+    loading_time: Optional[W24PhysicalQuantity]
 
 
 class W24PropertyHardnessBrinell(W24Property):
