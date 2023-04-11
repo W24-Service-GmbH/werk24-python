@@ -9,27 +9,6 @@ from werk24.models.standard import W24Standard
 
 from .base_feature import W24BaseFeatureModel
 from .gender import W24Gender
-from .size import W24SizeTolerance
-
-
-class W24ToleranceFeature(W24BaseFeatureModel):
-    """Characterization of a Tolerance Feature.
-
-    Attributes:
-        gender: Gender (male or female) of the tolerance feature.
-            This is determined by checking whether the tolerance feature is
-            located on the outer contour of the part or inside the part.
-            When the outer contour is unavailable (e.g., in detail drawings),
-            the gender is set to None.
-
-        length: Length of the slug corresponding to the tolerance feature.
-
-    """
-    gender: Optional[W24Gender]
-
-    length: Optional[Decimal]
-
-    tolerance: W24SizeTolerance
 
 
 class W24Tolerance(BaseModel, abc.ABC):
@@ -177,6 +156,7 @@ class W24ToleranceGeneral(W24Tolerance):
             ISO 286-1. (German: IT-Grad).
     """
     toleration_type: Literal["GENERAL_TOLERANCES"] = "GENERAL_TOLERANCES"
+    blurb: str = ""
     standard: Optional[W24Standard]
     standard_class: Optional[str]
     deviation_lower: Optional[Decimal]
@@ -214,7 +194,7 @@ class W24ToleranceMinimum(W24Tolerance):
     toleration_type: Literal["MINIMUM"] = "MINIMUM"
 
 
-class W24SizeToleranceMaximum(W24SizeTolerance):
+class W24SizeToleranceMaximum(W24Tolerance):
     """ Maximum Size of a measure
     Example:
         max 15
@@ -222,10 +202,30 @@ class W24SizeToleranceMaximum(W24SizeTolerance):
     toleration_type: Literal["MAXIMUM"] = "MAXIMUM"
 
 
-class W24SizeToleranceApproximation(W24SizeTolerance):
+class W24SizeToleranceApproximation(W24Tolerance):
     """ Approximation of a measure
     Example:
         ~ 15
         ca. 14
     """
     toleration_type: Literal["APPROXIMATION"] = "APPROXIMATION"
+
+
+class W24ToleranceFeature(W24BaseFeatureModel):
+    """Characterization of a Tolerance Feature.
+
+    Attributes:
+        gender: Gender (male or female) of the tolerance feature.
+            This is determined by checking whether the tolerance feature is
+            located on the outer contour of the part or inside the part.
+            When the outer contour is unavailable (e.g., in detail drawings),
+            the gender is set to None.
+
+        length: Length of the slug corresponding to the tolerance feature.
+
+    """
+    gender: Optional[W24Gender]
+
+    length: Optional[Decimal]
+
+    tolerance: W24Tolerance
