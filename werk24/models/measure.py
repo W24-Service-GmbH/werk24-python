@@ -10,10 +10,11 @@ from pydantic import UUID4, BaseModel
 from .chamfer import W24Chamfer
 from .depth import W24Depth
 from .base_feature import W24BaseFeatureModel
-from .size import (W24Size, W24SizeTolerance, W24SizeToleranceGeneral)
+from .size import W24Size
 from .test_dimension import W24TestDimension
 from .thread import W24Thread
 from .unit import W24UnitLength
+from .tolerance import W24Tolerance, W24ToleranceGeneral
 
 
 class W24MeasureWarningType(str, Enum):
@@ -114,7 +115,7 @@ class W24MeasureLabel(BaseModel):
             measure.
             If the W24MeasureLabel describes a "Theoretically Exact Measure",
             i.e, the label is surrounded by a box, like: "[15]", the size_tolerance
-            refers to a W24SizeToleranceTheoreticallyExact object (and is NOT None)
+            refers to a W24ToleranceTheoreticallyExact object (and is NOT None)
 
         unit: Length unit of the size. This information is only available
             when you request the TitleBlock as well; as only the title block
@@ -138,7 +139,7 @@ class W24MeasureLabel(BaseModel):
 
     size: W24Size
 
-    size_tolerance: W24SizeTolerance = W24SizeToleranceGeneral()
+    size_tolerance: W24Tolerance = W24ToleranceGeneral()
 
     unit: Optional[W24UnitLength] = None
 
