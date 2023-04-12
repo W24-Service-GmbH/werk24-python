@@ -10,13 +10,8 @@ class W24PropertyCorrosionResistance(W24Property):
 
 class W24PropertyCorrosionResistanceBlurb(W24PropertyCorrosionResistance):
     """Corrosion Resistance indicated as text.
-
-    Attributes:
-        blurb (str): Text sequence that lead us to conclude a
-            corrosion resistance was specified.
     """
     property_subtype: Literal["BLURB"] = "BLURB"
-    blurb: str
 
 
 class W24PropertyCorrosionResistanceIso9227(W24PropertyCorrosionResistance):
