@@ -14,5 +14,6 @@ class W24PropertyWeight(W24Property):
     Attributes:
         value: weight in the units indicated on the drawing.
     """
-    type: Literal["WEIGHT"] = "WEIGHT"
+    property_type: Literal["WEIGHT"] = "WEIGHT"
+    property_subtype: Literal["WEIGHT"] = "WEIGHT"
     weight: W24PhysicalQuantity

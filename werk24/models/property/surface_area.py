@@ -13,5 +13,6 @@ class W24PropertySurfaceArea(W24Property):
             this to be a range - it is possible, that
             that people specify allowed ranges.
     """
-    type: Literal["SURFACE_AREA"] = "SURFACE_AREA"
+    property_type: Literal["SURFACE_AREA"] = "SURFACE_AREA"
+    property_subtype: Literal["SURFACE_AREA"] = "SURFACE_AREA"
     surface_area: W24PhysicalQuantity
