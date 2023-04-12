@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 
 from pydantic import BaseModel
 
@@ -19,4 +19,6 @@ class W24Feature(BaseModel):
             the standard that defines the feature.
     """
     blurb: str
+    feature_type: Any
+    feature_subtype: Any
     standard: Optional[W24Standard] = None
