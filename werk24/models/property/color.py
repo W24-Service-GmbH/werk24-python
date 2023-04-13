@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Literal
 
 from werk24.models.property.base import W24Property
