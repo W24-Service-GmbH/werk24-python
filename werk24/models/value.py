@@ -1,8 +1,8 @@
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Union
 
 from pint import Quantity, UnitRegistry
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from werk24.models.tolerance import W24Tolerance
 
@@ -23,6 +23,30 @@ class W24PhysicalQuantity(BaseModel):
     """
     class Config:
         arbitrary_types_allowed = True
+
+        json_encoders = {
+            # NOTE: specify a custom validator to make
+            # sure that the serialization is done correctly.
+            # See validator for details.
+            Quantity: lambda v: str(v)
+        }
+
+    @validator('value', pre=True)
+    def value_validation(cls, value: Union[str, Quantity]) -> Quantity:
+        """Perform the de-serialization of the value.
+
+        Follow the recommendations of pint for (de-)
+        serialization. See https://pint.readthedocs.io/en/0.10.1/serialization.html
+
+        Args:
+            value (Union[str, Quantity]): Raw value
+
+        Returns:
+            Quantity: Deserialized version of the quantity.
+        """
+        if isinstance(value, str):
+            return ureg(value)
+        return value
 
     blurb: str
     value: Quantity
