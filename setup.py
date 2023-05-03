@@ -58,7 +58,8 @@ setup(
         "devtools >=0.9.0",
         "pydantic >= 1.4",
         "python-dotenv>=0.10.1",
-        "websockets >= 10.3"
+        "websockets >= 10.3",
+        "pint >= 0.21"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

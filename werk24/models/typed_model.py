@@ -28,7 +28,6 @@ print(MetaData.parse_obj(obj))
 
 """
 from typing import Dict, Tuple
-
 from pydantic import BaseModel
 
 
