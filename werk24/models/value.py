@@ -21,6 +21,8 @@ class W24PhysicalQuantity(BaseModel):
             format of pint.
         tolerance (Optional[W24Tolerance]): Tolerance
     """
+    class Config:
+        arbitrary_types_allowed = True
 
     @validator('value', pre=True)
     def value_validation(cls, value: Union[str, Quantity]) -> Quantity:
