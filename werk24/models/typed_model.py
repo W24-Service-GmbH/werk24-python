@@ -28,7 +28,9 @@ print(MetaData.parse_obj(obj))
 
 """
 from typing import Dict, Tuple
+
 from pydantic import BaseModel
+from pint import Quantity
 
 
 class W24TypedModel(BaseModel):
@@ -41,6 +43,21 @@ class W24TypedModel(BaseModel):
         model that shall be called.
     """
     _subtypes_: Dict[Tuple[str, ...], BaseModel] = {}
+
+    class Config:
+        arbitrary_types_allowed = True
+
+        """Have the custom encoders here.
+        This is not the nicest solution, but more
+        a workaround until Pydantic 2.0 is ready.
+        See: https://github.com/pydantic/pydantic/issues/2277
+        """
+        json_encoders = {
+            # NOTE: specify a custom validator to make
+            # sure that the serialization is done correctly.
+            # See validator for details.
+            Quantity: lambda v: str(v)
+        }
 
     def __init_subclass__(cls):
         """Called when a subclass is specified.
