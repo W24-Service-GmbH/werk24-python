@@ -50,11 +50,29 @@ class W24TypedModel(BaseModel):
         """
         # get the key from the default values.
         key_ = tuple(
-            cls.__fields__[disc].default
-            for disc in cls.Config.discriminators
-        )
+            [cls._first_child()] + [
+                cls.__fields__[disc].default
+                for disc in cls.Config.discriminators
+            ])
+
+        # ignore if any of the key values is None.
+        # This happens for classes that are not
+        # meant to be initiated
+        if any(k is None for k in key_):
+            return
 
         cls._subtypes_[key_] = cls
+
+    @classmethod
+    def _first_child(cls):
+        parent = cls
+        for _ in range(100):
+            child = parent
+            parent = parent.__bases__[0]
+            if parent.__name__ == "W24TypedModel":
+                return child
+
+        raise RecursionError()
 
     @classmethod
     def _convert_to_real_type_(cls, data):
@@ -62,9 +80,10 @@ class W24TypedModel(BaseModel):
         """
         # get the key from the data.
         key_ = tuple(
-            data.get(disc)
-            for disc in cls.Config.discriminators
-        )
+            [cls] + [
+                data.get(disc)
+                for disc in cls.Config.discriminators
+            ])
 
         # check whether the subtype actually exists.
         # Be careful with updates here.
