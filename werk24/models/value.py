@@ -21,15 +21,6 @@ class W24PhysicalQuantity(BaseModel):
             format of pint.
         tolerance (Optional[W24Tolerance]): Tolerance
     """
-    class Config:
-        arbitrary_types_allowed = True
-
-        json_encoders = {
-            # NOTE: specify a custom validator to make
-            # sure that the serialization is done correctly.
-            # See validator for details.
-            Quantity: lambda v: str(v)
-        }
 
     @validator('value', pre=True)
     def value_validation(cls, value: Union[str, Quantity]) -> Quantity:
@@ -44,9 +35,9 @@ class W24PhysicalQuantity(BaseModel):
         Returns:
             Quantity: Deserialized version of the quantity.
         """
-        if isinstance(value, str):
-            return ureg(value)
-        return value
+        if isinstance(value, Quantity):
+            return value
+        return ureg(value)
 
     blurb: str
     value: Quantity
