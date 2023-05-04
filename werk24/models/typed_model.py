@@ -71,12 +71,6 @@ class W24TypedModel(BaseModel):
                 for disc in cls.Config.discriminators
             ])
 
-        # ignore if any of the key values is None.
-        # This happens for classes that are not
-        # meant to be initiated
-        if any(k is None for k in key_):
-            return
-
         cls._subtypes_[key_] = cls
 
     @classmethod
