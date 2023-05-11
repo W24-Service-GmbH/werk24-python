@@ -3,6 +3,7 @@ from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel
+from werk24.models.unit import W24UnitLength
 
 
 class W24SizeType(str, Enum):
@@ -37,11 +38,15 @@ class W24Size(BaseModel, abc.ABC):
         The unit is attached to the parent
         object, which also defines the toleration.
 
-    shape: The shape of the size.
+    unit: Unit of the measure if known. This
+        should typically be inch or millimeter.
+        In some cases it might be possible that
+        the units are unknown.
     """
     blurb: str
     size_type: W24SizeType
     nominal_size: Decimal
+    unit: W24UnitLength | None = None
 
 
 class W24SizeNominal(W24Size):
