@@ -32,10 +32,12 @@ class W24AngleLabel(BaseModel):
     Attributes:
 
         blurb: Blurb for human consumption
+        quantity: Number of annotated angles
         angle: Nominal angle size
         angle_tolerance: Tolerated deviations
     """
     blurb: str
+    quantity: int
     angle: W24AngleSize
     angle_tolerance: W24Tolerance
 
