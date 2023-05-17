@@ -145,6 +145,22 @@ class W24GDTFilterType(str, Enum):
     Filters remaining: RG, S, OH, SW, AB, CW
     """
     GAUSSIAN = "G"
+    SPLINE = "S"
+    SPLINE_WAVELET = "SW"
+    COMPLEX_WAVELET = "CW"
+    ROBUST_GAUSSIAN = "RG"
+    ROBUST_SPLINE = "RS"
+    OPENING_BALL = "OB"
+    OPENING_HORIZONTAL_SEGMENT = "OH"
+    OPENING_DISC = "OC"
+    CLOSING_BALL = "CB"
+    CLOSING_HORIZONTAL_SEGMENT = "CH"
+    CLOSING_DISC = "CD"
+    ALTERNATING_BALL = "AB"
+    ALTERNATING_HORIZONTAL_SEGMENT = "AH"
+    ALTERNATING_DISC = "AD"
+    FOURIER = "F"
+    HULL = "H"
 
 
 class W24GDTFilter(BaseModel, abc.ABC):
