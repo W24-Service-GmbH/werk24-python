@@ -70,6 +70,7 @@ class W24GDTZoneConstraint(str, Enum):
     """
     UNSPECIFIED_INCLINATION = "OZ"
     UNSPECIFIED_OFFSET = "VA"
+    ORIENTATION_ONLY = "><"
 
 
 class W24GDTDatum(BaseModel):
