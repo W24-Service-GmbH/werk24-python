@@ -1,5 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel
+from typing import Optional
 
 from werk24.models.fraction import W24Fraction
 
@@ -25,4 +26,4 @@ class W24View(BaseModel):
     """
     view_type: W24ViewType
     blurb: str
-    scale: W24Fraction
+    scale: Optional[W24Fraction]
