@@ -21,9 +21,11 @@ class W24View(BaseModel):
     ----------
     view_type (W24ViewType): The view type, an enumeration member.
     blurb (str): The blurb of the view, a string.
+    name (str): Name of the view
     scale (W24Fraction): The scale of the view, a fraction represented
         by the W24Fraction model.
     """
     view_type: W24ViewType
     blurb: str
+    name: str
     scale: Optional[W24Fraction]
