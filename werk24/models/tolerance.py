@@ -30,7 +30,6 @@ class W24Tolerance(W24TypedModel):
 class W24ToleranceGradeWarning(str, Enum):
     """ Warnings associated with the Tolerance Grade.
     """
-
     SIZE_LARGER_THAN_NORM = "SIZE_LARGER_THAN_NORM"
     TOLERANCE_WIDTH_SMALLER_THAN_NORM = "TOLERANCE_WIDTH_SMALLER_THAN_NORM"
     TOLERANCE_WIDTH_LARGER_THAN_NORM = "TOLERANCE_WIDTH_LARGER_THAN_NORM"
