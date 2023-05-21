@@ -14,7 +14,6 @@ class W24GeneralTolerancesStandard(str, Enum):
     ISO_2768 = "ISO 2768"
     ISO_4759_1 = "ISO 4759-1"
     DEFINED_ON_SHEET = "DEFINED_ON_SHEET"
-    BRITISH_CONVENTION
 
 
 class W24ToleranceProperty(str, Enum):
