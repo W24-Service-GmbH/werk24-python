@@ -1,17 +1,17 @@
-import abc
 from decimal import Decimal
 from enum import Enum
-from typing import Literal, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
 from werk24.models.standard import W24Standard
+from werk24.models.typed_model import W24TypedModel
 
 from .base_feature import W24BaseFeatureModel
 from .gender import W24Gender
 
 
-class W24Tolerance(BaseModel, abc.ABC):
+class W24Tolerance(W24TypedModel):
     """ Abstract Base Class to cover the Tolerances.
 
     Attributes:
@@ -20,7 +20,11 @@ class W24Tolerance(BaseModel, abc.ABC):
         toleration_type (W24SizeToleranceType):  Toleration Type for
             deserialization
     """
+    class Config:
+        discriminators = ('toleration_type',)
+
     blurb: str
+    toleration_type: str
 
 
 class W24ToleranceGradeWarning(str, Enum):
@@ -80,7 +84,7 @@ class W24ToleranceFitsizeISO(W24Tolerance):
         tolerance_grade (Optional[int]): Tolerance Grade corresponding
             to ISO 286-1. In German IT-Grad.
     """
-    toleration_type: Literal["FIT_SIZE_ISO"] = "FIT_SIZE_ISO"
+    toleration_type: str = "FIT_SIZE_ISO"
 
     deviation_lower: Decimal
 
@@ -103,7 +107,7 @@ class W24ToleranceFitsizeISO(W24Tolerance):
 class W24ToleranceReference(W24Tolerance):
     """Measures written in brackets are Reference.
     """
-    toleration_type: Literal["REFERENCE"] = "REFERENCE"
+    toleration_type: str = "REFERENCE"
 
 
 class W24ToleranceOffSize(W24Tolerance):
@@ -121,7 +125,7 @@ class W24ToleranceOffSize(W24Tolerance):
         tolerance_grade (int): Tolerance Grade corresponding to
             ISO 286-1. In German IT-Grad.
     """
-    toleration_type: Literal["OFF_SIZE"] = "OFF_SIZE"
+    toleration_type: str = "OFF_SIZE"
     deviation_lower: Decimal
     deviation_upper: Decimal
     tolerance_grade: W24ToleranceGrade
@@ -155,7 +159,7 @@ class W24ToleranceGeneral(W24Tolerance):
         tolerance_grade (int): Tolerance Grade corresponding to
             ISO 286-1. (German: IT-Grad).
     """
-    toleration_type: Literal["GENERAL_TOLERANCES"] = "GENERAL_TOLERANCES"
+    toleration_type: str = "GENERAL_TOLERANCES"
     blurb: str = ""
     standard: Optional[W24Standard]
     standard_class: Optional[str]
@@ -183,7 +187,7 @@ class W24ToleranceTheoreticallyExact(W24Tolerance):
             +------------+
         In these situations the toleration takes priority.
     """
-    toleration_type: Literal["THEORETICALLY_EXACT"] = "THEORETICALLY_EXACT"
+    toleration_type: str = "THEORETICALLY_EXACT"
 
 
 class W24ToleranceMinimum(W24Tolerance):
@@ -191,7 +195,7 @@ class W24ToleranceMinimum(W24Tolerance):
     Example:
         min. 15
     """
-    toleration_type: Literal["MINIMUM"] = "MINIMUM"
+    toleration_type: str = "MINIMUM"
 
 
 class W24ToleranceMaximum(W24Tolerance):
@@ -199,7 +203,7 @@ class W24ToleranceMaximum(W24Tolerance):
     Example:
         max 15
     """
-    toleration_type: Literal["MAXIMUM"] = "MAXIMUM"
+    toleration_type: str = "MAXIMUM"
 
 
 class W24ToleranceApproximation(W24Tolerance):
@@ -208,7 +212,7 @@ class W24ToleranceApproximation(W24Tolerance):
         ~ 15
         ca. 14
     """
-    toleration_type: Literal["APPROXIMATION"] = "APPROXIMATION"
+    toleration_type: str = "APPROXIMATION"
 
 
 class W24ToleranceFeature(W24BaseFeatureModel):
