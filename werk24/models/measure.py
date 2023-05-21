@@ -15,6 +15,7 @@ from .test_dimension import W24TestDimension
 from .thread import W24Thread
 from .unit import W24UnitLength
 from .tolerance import W24Tolerance, W24ToleranceGeneral
+from pydantic import validator
 
 
 class W24MeasureWarningType(str, Enum):
@@ -132,6 +133,10 @@ class W24MeasureLabel(BaseModel):
         depth: Depth of the drilling or thread. Uses the same dimensions
 
     """
+
+    @validator('size_tolerance', pre=True)
+    def deserialize_size_tolerance(cls, v):
+        return W24Tolerance.parse_obj(v)
 
     blurb: str
 
