@@ -1,8 +1,8 @@
 """Definition of all W24Ask types that are understood by the Werk24 API.
 """
-from typing import Tuple
+from werk24.models.process import W24Process
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from pydantic import UUID4, BaseModel, HttpUrl
 
@@ -127,6 +127,10 @@ class W24AskType(str, Enum):
 
     VARIANT_TOLERANCE_ELEMENTS = "VARIANT_TOLERANCE_ELEMENTS"
     """Ask for the tolerance elements of the variant
+    """
+
+    VARIANT_PROCESSES = "VARIANT_PROCESSES"
+    """Ask for the Processes associated with the variant.
     """
 
     INTERNAL_SCREENING = "INTERNAL_SCREENING"
@@ -786,6 +790,21 @@ class W24AskInternalScreening(W24Ask):
     ask_type = W24AskType.INTERNAL_SCREENING
 
 
+class W24AskVariantProcesses(W24Ask):
+    """Ask to receive the processes associated with the Variant.
+    """
+    ask_type = W24AskType.VARIANT_PROCESSES
+
+
+class W24AskVariantProcessesResponse(W24Ask):
+    """Response Model for the processes.
+
+    Attributes:
+        processes (List[W24Process]): List of all the
+            processes that were identified on the drawing.
+    """
+    processes: List[W24Process]
+
 # class W24AskVariantToleranceElements(W24Ask):
 #     """Ask object to obtain the tolerance elements
 #     """
@@ -803,6 +822,7 @@ class W24AskInternalScreening(W24Ask):
 #     """
 #     variant_id: UUID4
 #     thread_elements: List[W24ToleranceElement]
+
 
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
