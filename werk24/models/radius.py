@@ -4,12 +4,12 @@
 
 from typing import Optional
 
-from pydantic import UUID4, BaseModel
+from pydantic import UUID4, BaseModel, validator
 
 from .base_feature import W24BaseFeatureModel
 from .size import W24Size
-from .unit import W24UnitLength
 from .tolerance import W24Tolerance, W24ToleranceGeneral
+from .unit import W24UnitLength
 
 
 class W24RadiusLabel(BaseModel):
@@ -31,6 +31,10 @@ class W24RadiusLabel(BaseModel):
             will be be millimeter (METRIC) or inch (IMPERIAL) and be consistent
             for the complete drawing. Exceptions are very rare, but exist.
     """
+
+    @validator('size_tolerance', pre=True)
+    def deserialize_size_tolerance(cls, v):
+        return W24Tolerance.parse_obj(v)
 
     blurb: str
 

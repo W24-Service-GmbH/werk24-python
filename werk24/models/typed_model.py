@@ -34,7 +34,8 @@ from pint import Quantity
 
 
 class W24TypedModel(BaseModel):
-    """Parent to any type-based sub-model.
+    """
+    Parent to any type-based sub-model.
 
     Attributes:
     ----------
@@ -42,6 +43,7 @@ class W24TypedModel(BaseModel):
         that associates the discriminators to a specific
         model that shall be called.
     """
+
     _subtypes_: Dict[Tuple[str, ...], BaseModel] = {}
 
     class Config:
@@ -99,7 +101,7 @@ class W24TypedModel(BaseModel):
         # Be careful with updates here.
         sub = cls._subtypes_.get(key_)
         if sub is None:
-            raise TypeError(f"Unsupport sub-type: {key_}")
+            raise TypeError(f"Unsupported sub-type: {key_}")
 
         # parse the object using the subclass
         return sub(**data)
