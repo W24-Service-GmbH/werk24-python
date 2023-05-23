@@ -56,7 +56,7 @@ setup(
         "aiohttp >= 3.8.3",
         "boto3 >= 1.14.44",
         "devtools >=0.9.0",
-        "pydantic>=1.4,<1.10.7",
+        "pydantic>=1.4,<=1.10.6",
         "python-dotenv>=0.10.1",
         "websockets >= 10.3",
         "pint >= 0.21"
