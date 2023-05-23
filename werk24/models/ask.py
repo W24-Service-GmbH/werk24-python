@@ -796,7 +796,7 @@ class W24AskVariantProcesses(W24Ask):
     ask_type = W24AskType.VARIANT_PROCESSES
 
 
-class W24AskVariantProcessesResponse(W24Ask):
+class W24AskVariantProcessesResponse(BaseModel):
     """Response Model for the processes.
 
     Attributes:
