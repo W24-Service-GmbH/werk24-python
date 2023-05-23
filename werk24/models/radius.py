@@ -34,6 +34,8 @@ class W24RadiusLabel(BaseModel):
 
     @validator('size_tolerance', pre=True)
     def deserialize_size_tolerance(cls, v):
+        if isinstance(v, W24Tolerance):
+            return v
         return W24Tolerance.parse_obj(v)
 
     blurb: str
