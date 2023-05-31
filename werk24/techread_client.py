@@ -92,7 +92,6 @@ even when the files are rejected before they reach the API
 
 DEFAULT_AUTH_REGION = "eu-central-1"
 DEFAULT_SERVER_WSS = "ws-api.w24.co"
-DEFAULT_VERSION = "v2"
 
 
 LICENSE_ERROR_TEXT = """
@@ -586,7 +585,7 @@ class W24TechreadClient:
         auth_region: Optional[str] = None,
         server_https: Optional[str] = None,
         server_wss: Optional[str] = None,
-        version: Optional[str] = None
+        version: str = "v2"
     ) -> "W24TechreadClient":
         """ Small helper function that creates a new
         W24TechreadClient from the environment info.
@@ -643,11 +642,6 @@ class W24TechreadClient:
             server_wss,
             'W24TECHREAD_SERVER_WSS_V2',
             DEFAULT_SERVER_WSS)
-
-        version = pick_env(
-            version,
-            'W24TECHREAD_VERSION',
-            DEFAULT_VERSION)
 
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
