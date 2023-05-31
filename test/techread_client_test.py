@@ -38,7 +38,6 @@ class TestTechreadClient(AsyncTestCase):
         """
         environs = os.environ
         client = W24TechreadClient(
-            environs['W24TECHREAD_SERVER_HTTPS'],
             environs['W24TECHREAD_SERVER_WSS'],
             environs['W24TECHREAD_VERSION'])
 
