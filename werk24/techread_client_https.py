@@ -1,17 +1,19 @@
 """ HTTPS-part of the Werk24 client
 """
-import base64
 from types import TracebackType
 from typing import Optional, Type
-from urllib.parse import urlparse
 
 import aiohttp
 from pydantic import HttpUrl
 
-from werk24.exceptions import (BadRequestException, RequestTooLargeException,
-                               ResourceNotFoundException, ServerException,
-                               UnauthorizedException,
-                               UnsupportedMediaType)
+from werk24.exceptions import (
+    BadRequestException,
+    RequestTooLargeException,
+    ResourceNotFoundException,
+    ServerException,
+    UnauthorizedException,
+    UnsupportedMediaType,
+)
 from werk24.models.techread import W24PresignedPost
 
 from .auth_client import AuthClient
@@ -23,14 +25,14 @@ class TechreadClientHttps:
     to the W24TechreadArchitectureStatus enum
     """
 
-    def __init__(self, techread_server_https: str, techread_version: str):
-        """ Intialize a new session with the https server
+    def __init__(self, techread_version: str):
+        """
+        Initialize a new session with the https server.
 
         Arguments:
             techread_server_https {str} -- Domain of the Techread https server
             techread_version {str} -- Techread Version
         """
-        self._techread_server = techread_server_https
         self._techread_version = techread_version
         self._techread_session_https: Optional[aiohttp.ClientSession] = None
         self._auth_client: Optional[AuthClient] = None
@@ -49,15 +51,7 @@ class TechreadClientHttps:
             TechreadClientHttps -- TechreadClientHttps version with active
                 session
         """
-
-        # make sure that we have an AuthClient
-        if self._auth_client is None:
-            raise RuntimeError(
-                "You need to call register_auth_client() before you can start"
-                + " the session")
-
-        headers = {"Authorization": f"Bearer {self._auth_client.token}"}
-        self._techread_session_https = aiohttp.ClientSession(headers=headers)
+        self._techread_session_https = aiohttp.ClientSession()
         return self
 
     async def __aexit__(
@@ -144,31 +138,9 @@ class TechreadClientHttps:
         # carry the authentication token
         async with aiohttp.ClientSession() as sess:
             async with sess.post(presigned_post.url, data=form) as resp:
-
                 # check the status code of the response and
                 # raise the appropriate exception
                 self._raise_for_status(presigned_post.url, resp.status)
-
-    def _make_endpoint_url(
-        self,
-        subpath: str
-    ) -> str:
-        """ Make the endpoint url of the subpath.
-        This will create a fully valid http url
-        that can be used in the post and get requests
-
-        Arguments:
-            subpath {str} -- Path of the endpoint on
-                the TechreadAPI
-
-        Returns:
-            str -- Fully qualified url including
-                the server name and api version
-        """
-        return "https://{}/{}/{}".format(
-            self._techread_server,
-            self._techread_version,
-            subpath)
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
         """ Return the payload from the server
@@ -227,7 +199,7 @@ class TechreadClientHttps:
             raise
 
         # otherwise return the response text
-        return base64.b64decode(await response.text())
+        return await response.content.read()
 
     async def _get(
             self,
