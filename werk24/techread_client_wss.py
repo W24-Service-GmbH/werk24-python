@@ -52,9 +52,7 @@ class TechreadClientWss:
         headers = [("Authorization", f"Bearer {self._auth_client.token}")]
 
         # now make the session
-        self._techread_session_wss = await websockets.connect(
-            endpoint,
-            extra_headers=headers)
+        self._techread_session_wss = await websockets.connect(endpoint, extra_headers=headers)
 
         # return ourselfves
         return self
@@ -145,7 +143,7 @@ class TechreadClientWss:
     @staticmethod
     async def _process_message(message_raw: str) -> W24TechreadMessage:
         """ Interpret the raw websocket message and
-        turn it inot a W24TechreadMessage
+        turn it into a W24TechreadMessage
 
         Arguments:
             message_raw {str} -- Raw message
@@ -153,7 +151,7 @@ class TechreadClientWss:
         Raises:
             UnauthorizedException: Exception is raised
                 when you requested an action that you
-                have no priviledges for (or that does
+                have no privileges for (or that does
                 not exist)
 
             ServerException: Exception is raised when
@@ -162,12 +160,11 @@ class TechreadClientWss:
         Returns:
             W24TeachreadMessage -- interpreted message
         """
-
         # interpret and return
         try:
             message = W24TechreadMessage.parse_raw(message_raw)
 
-        # if that failes, we are probably receiving a
+        # if that fails, we are probably receiving a
         # message from the gateway directly
         except ValidationError:
 

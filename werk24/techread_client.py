@@ -66,8 +66,6 @@ from werk24.techread_client_wss import TechreadClientWss
 logger = logging.getLogger('w24_techread_client')
 
 ENVIRONS = [
-    "W24TECHREAD_SERVER_HTTPS",
-    "W24TECHREAD_SERVER_WSS",
     "W24TECHREAD_VERSION",
     "W24TECHREAD_AUTH_CLIENT_ID",
     "W24TECHREAD_AUTH_CLIENT_SECRET",
@@ -93,9 +91,8 @@ even when the files are rejected before they reach the API
 """
 
 DEFAULT_AUTH_REGION = "eu-central-1"
-DEFAULT_SERVER_HTTPS = "techread.w24.io"
-DEFAULT_SERVER_WSS = "techread-ws.w24.io"
-DEFAULT_VERSION = "v1"
+DEFAULT_SERVER_WSS = "ws-api.w24.co"
+DEFAULT_VERSION = "v2"
 
 
 LICENSE_ERROR_TEXT = """
@@ -155,7 +152,6 @@ class W24TechreadClient:
 
     def __init__(
         self,
-        techread_server_https: str,
         techread_server_wss: str,
         techread_version: str,
         development_key: str = None
@@ -166,8 +162,6 @@ class W24TechreadClient:
         information that you will need.
 
         Arguments:
-            techread_server_https {str} -- domain name that
-                is being used by the https client
 
             techread_server_wss {str} -- domain name that
                 is being used by the websocket client
@@ -190,8 +184,7 @@ class W24TechreadClient:
         self._auth_client: Optional[AuthClient] = None
 
         # Initialize an instance of the HTTPS client
-        self._techread_client_https = TechreadClientHttps(
-            techread_server_https, techread_version)
+        self._techread_client_https = TechreadClientHttps(techread_version)
 
         # Initialize an instance of the WEBSOCKET client
         self._techread_client_wss = TechreadClientWss(
@@ -646,14 +639,9 @@ class W24TechreadClient:
             'W24TECHREAD_AUTH_REGION',
             DEFAULT_AUTH_REGION)
 
-        server_https = pick_env(
-            server_https,
-            'W24TECHREAD_SERVER_HTTPS',
-            DEFAULT_SERVER_HTTPS)
-
         server_wss = pick_env(
             server_wss,
-            'W24TECHREAD_SERVER_WSS',
+            'W24TECHREAD_SERVER_WSS_V2',
             DEFAULT_SERVER_WSS)
 
         version = pick_env(
@@ -666,7 +654,7 @@ class W24TechreadClient:
         try:
 
             # create a reference to the client
-            client = W24TechreadClient(server_https, server_wss, version)
+            client = W24TechreadClient(server_wss, version)
 
             # register the credentials. This will in effect
             # only set the variabels in the authorizer. It will
