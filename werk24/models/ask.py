@@ -913,6 +913,7 @@ def _deserialize_ask_type(
         "VARIANT_CAD": W24AskVariantCAD,
         "VARIANT_THREAD_ELEMENTS": W24AskVariantThreadElements,
         # "VARIANT_TOLERANCE_ELEMENTS":W24AskVariantToleranceElements,
+        "VARIANT_PROCESSES": W24AskVariantProcesses,
     }.get(ask_type, None)
 
     if class_ is None:
