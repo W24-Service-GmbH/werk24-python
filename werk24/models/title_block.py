@@ -127,6 +127,13 @@ class W24TitleBlock(BaseModel):
 
         material: Material which is quoted on the TitleBlock
 
+        material_number: Optional Material Number. The material number
+            if often present on corporate drawings and typically
+            corresponds to a unique material number in the customer's
+            material master data. The material number is thus specific
+            to the company that maintains the master data and obtaining
+            the material specification requires access to that database.
+
         weight: Weight as read from the TitleBlock. NOTE: this is not
             cross-checked with the material and volume of the part,
             but provided as it was read on the TitleBlock.
@@ -149,6 +156,7 @@ class W24TitleBlock(BaseModel):
     general_tolerances: Optional[W24GeneralTolerances]
 
     material: Optional[W24Material]
+    material_number: Optional[W24CaptionValuePair] = None
 
     weight: Optional[W24Weight]
 
