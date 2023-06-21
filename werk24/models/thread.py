@@ -181,7 +181,8 @@ class W24ThreadISOMetric(W24Thread):
 class W24ThreadSM(W24Thread):
 
     """ Sewing Machine Threads (SM)
-        SM thread is used in sewing machine. Thorlab apply on optical thread. 
+        SM thread is used in sewing machine, 
+        recently it is also being used in Optical Industry. 
 
     Attributes:
         sm_size: Only few sizes are available (05,1,1.5,2,3)
