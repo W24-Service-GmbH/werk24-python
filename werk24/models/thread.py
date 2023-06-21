@@ -27,6 +27,7 @@ class W24ThreadType(str, Enum):
     ISO_METRIC = "ISO_METRIC"
     WHITWORTH = "WHITWORTH"
     UTS = "UTS"
+    SM = "SM"
 
     # !!! DEPRECATED
     UTS_COARSE = "UTS_COARSE"
@@ -177,6 +178,23 @@ class W24ThreadISOMetric(W24Thread):
     male_pitch_diameter_tolerance: Optional[W24Tolerance]
 
 
+class W24ThreadSM(W24Thread):
+
+    """ Sewing Machine Threads (SM)
+        SM thread is used in sewing machine. Thorlab apply on optical thread. 
+
+    Attributes:
+        sm_size: Only few sizes are available (05,1,1.5,2,3)
+            Examples: SM05, SM1, etc
+
+        threads_per_inch: Threads per inch is fixed to 40.
+
+    """
+    thread_type = W24ThreadType.SM
+
+    sm_size: Decimal
+
+
 class W24ThreadUTS(W24Thread):
 
     """ Unified Thread Standard (UTS) base class for
@@ -325,6 +343,7 @@ def _deserialize_thread_type(
     """
     class_ = {
         "ISO_METRIC": W24ThreadISOMetric,
+        "SM": W24ThreadSM,
         "WHITWORTH": W24ThreadWhitworth,
         "UTS": W24ThreadUTS,
     }.get(thread_type, None)
