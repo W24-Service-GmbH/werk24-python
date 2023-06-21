@@ -3,8 +3,7 @@ from decimal import Decimal
 from typing import Optional, List, Dict, Any, Union, Type
 
 from .gender import W24Gender
-from .thread import W24Thread, W24ThreadISOMetric, W24ThreadUTS, W24ThreadWhitworth
-
+from .thread import W24Thread, W24ThreadISOMetric, W24ThreadSM, W24ThreadUTS, W24ThreadWhitworth
 
 
 def deserialize_thread(
@@ -28,6 +27,7 @@ def deserialize_thread(
 
     raise ValueError(f"Unsupported value type '{type(raw)}'")
 
+
 def _deserialize_thread_type(
     ask_type: str
 ) -> Type[W24Thread]:
@@ -44,6 +44,7 @@ def _deserialize_thread_type(
     """
     class_ = {
         "ISO_METRIC": W24ThreadISOMetric,
+        "SM": W24ThreadSM,
         "WHITWORTH": W24ThreadWhitworth,
         "UTS": W24ThreadUTS,
     }.get(ask_type, None)
