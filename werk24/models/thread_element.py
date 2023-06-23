@@ -3,7 +3,15 @@ from decimal import Decimal
 from typing import Optional, List, Dict, Any, Union, Type
 
 from .gender import W24Gender
-from .thread import W24Thread, W24ThreadISOMetric, W24ThreadSM, W24ThreadUTS, W24ThreadWhitworth
+from .thread import (
+    W24Thread,
+    W24ThreadISOMetric,
+    W24ThreadSM,
+    W24ThreadUTS,
+    W24ThreadWhitworth,
+    W24ThreadACME,
+    W24ThreadNPT
+)
 
 
 def deserialize_thread(
@@ -43,7 +51,9 @@ def _deserialize_thread_type(
         str: Name of the AskObject
     """
     class_ = {
+        "ACME": W24ThreadACME,
         "ISO_METRIC": W24ThreadISOMetric,
+        "NPT": W24ThreadNPT,
         "SM": W24ThreadSM,
         "WHITWORTH": W24ThreadWhitworth,
         "UTS": W24ThreadUTS,
