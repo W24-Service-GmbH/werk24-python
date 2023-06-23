@@ -28,6 +28,8 @@ class W24ThreadType(str, Enum):
     WHITWORTH = "WHITWORTH"
     UTS = "UTS"
     SM = "SM"
+    NPT = "NPT"
+    ACME = "ACME"
 
     # !!! DEPRECATED
     UTS_COARSE = "UTS_COARSE"
@@ -228,6 +230,55 @@ class W24ThreadUTS(W24Thread):
     tolerance_class: str
 
 
+class W24ThreadACME(W24Thread):
+
+    """ American Corps of Mechanical Engineering (ACME)  defines
+    * ACME - American Corps of Mechanical Engineering Thread
+    * STUB ACME - STUB American Corps of Mechanical Engineering Thread
+
+    Attributes:
+        acme_size: ACME size as string representation.
+            Threads diameter in inch are represented as decimal or fractions
+                with a tailing '"'
+            Examples: 2", 1 3/4"
+
+        acme_series (str): ACME series following ASME B1.8-1977.
+            Valid values include ACME, STUB ACME
+
+        threads_per_inch: Threads per inch. can be Decimal / Fraction.
+
+    """
+    thread_type = W24ThreadType.ACME
+
+    acme_size: str
+    acme_series: str
+
+
+class W24ThreadNPT(W24Thread):
+
+    """ American National Standard Pipe Thread standards, 
+        often called National Pipe Thread (NPT) standards.  
+    * NPT - National pipe taper
+    * NPS - National pipe straight
+
+    Attributes:
+        npt_size: NPT size as string representation.
+            Threads diameter in inch are represented as decimal or fractions
+                with a tailing '"'
+            Examples: 2", 1 3/4"
+
+        npt_series (str): NPT series following ANSI B 1.20.1.
+            Valid values include NPT, NPTF, NPSC, NPSF, NPSL, NPSM
+
+        threads_per_inch: Threads per inch. can be Decimal / Fraction.
+
+    """
+    thread_type = W24ThreadType.NPT
+
+    npt_size: str
+    npt_series: str
+
+
 class W24ThreadUTSCoarse(W24ThreadUTS):
     """ Unified National Coarse Thread
 
@@ -343,7 +394,9 @@ def _deserialize_thread_type(
         str: Name of the AskObject
     """
     class_ = {
+        "ACME": W24ThreadACME,
         "ISO_METRIC": W24ThreadISOMetric,
+        "NPT": W24ThreadNPT,
         "SM": W24ThreadSM,
         "WHITWORTH": W24ThreadWhitworth,
         "UTS": W24ThreadUTS,
