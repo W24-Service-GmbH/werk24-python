@@ -47,6 +47,7 @@ from werk24.exceptions import (
     UnsupportedMediaType,
 )
 from werk24.models.ask import W24Ask
+from werk24.models.helpdesk import W24HelpdeskTask
 from werk24.models.techread import (
     W24TechreadAction,
     W24TechreadBaseResponse,
@@ -73,7 +74,7 @@ ENVIRONS = [
     "W24TECHREAD_AUTH_USER_POOL_ID",
     "W24TECHREAD_AUTH_USERNAME",
     "W24TECHREAD_AUTH_PASSWORD",
-    "W24TECHREAD_AUTH_REGION"
+    "W24TECHREAD_AUTH_REGION",
 ]
 """ List of the environment variables used by the
 client """
@@ -92,6 +93,7 @@ even when the files are rejected before they reach the API
 
 DEFAULT_AUTH_REGION = "eu-central-1"
 DEFAULT_SERVER_WSS = "ws-api.w24.co"
+DEFAULT_SUPPORT_BASE_URL = "support.w24.co"
 
 
 LICENSE_ERROR_TEXT = """
@@ -153,7 +155,8 @@ class W24TechreadClient:
         self,
         techread_server_wss: str,
         techread_version: str,
-        development_key: str = None
+        development_key: str = None,
+        support_base_url: str = DEFAULT_SUPPORT_BASE_URL
     ):
         """ Initialize a new W24TechreadClient. If you wonder
         about any of the attributes, have a look at the .env
@@ -183,7 +186,8 @@ class W24TechreadClient:
         self._auth_client: Optional[AuthClient] = None
 
         # Initialize an instance of the HTTPS client
-        self._techread_client_https = TechreadClientHttps(techread_version)
+        self._techread_client_https = TechreadClientHttps(
+            techread_version, support_base_url)
 
         # Initialize an instance of the WEBSOCKET client
         self._techread_client_wss = TechreadClientWss(
@@ -239,7 +243,8 @@ class W24TechreadClient:
         cognito_client_id: str,
         cognito_client_secret: str,
         username: str,
-        password: str
+        password: str,
+
     ) -> None:
         """
         Register with the authentication
@@ -267,7 +272,8 @@ class W24TechreadClient:
         self._auth_client.register(username, password)
 
         # tell the techread clients about it
-        self._techread_client_https.register_auth_client(self._auth_client)
+        self._techread_client_https.register_auth_client(
+            self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
 
         # ensure that we have a token
@@ -809,3 +815,43 @@ class W24TechreadClient:
             message.message_type,
             message.message_subtype)
         return None
+
+    async def create_helpdesk_task(
+        self,
+        task: W24HelpdeskTask
+    ) -> W24HelpdeskTask:
+        """
+        Create a Helpdesk ticket.
+
+        Args:
+            task (W24HelpdeskTask): Helpdesk task to be created
+
+        Raises:
+            BadRequestException: Raised when the request body
+                cannot be interpreted. This normally indicates
+                that the API version has been updated and that
+                we missed a corner case. If you encounter this
+                exception, it is very likely our mistake. Please
+                get in touch!
+
+            UnauthorizedException: Raised when the token
+                or the requested file have expired
+
+            ResourceNotFoundException: Raised when you are requesting
+                an endpoint that does not exist. Again, you should
+                not encounter this, but if you do, let us know.
+
+            RequestTooLargeException: Raised when the status
+                code was 413
+
+            UnsupportedMediaTypException: Raised when the file you
+                submitted cannot be read(because its media type
+                is not supported by the API).
+
+            ServerException: Raised for all other status codes
+                that are not 2xx
+
+        Returns:
+            W24HelpdeskTask: Created helpdesk task with an updated task_id.
+        """
+        return await self._techread_client_https.create_helpdesk_task(task)

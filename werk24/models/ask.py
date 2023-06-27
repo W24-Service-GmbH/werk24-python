@@ -1,6 +1,5 @@
 """Definition of all W24Ask types that are understood by the Werk24 API.
 """
-from werk24.models.process import W24Process
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
@@ -8,6 +7,7 @@ from pydantic import UUID4, BaseModel, HttpUrl
 
 from werk24.models.note import W24Note
 from werk24.models.part_family import W24PartFamilyCharacterization
+from werk24.models.process import W24Process
 
 from .angle import W24Angle
 from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
@@ -846,6 +846,7 @@ W24AskUnion = Union[
     W24AskVariantRoughnesses,
     W24AskVariantThreadElements,
     W24AskInternalScreening,
+    W24AskVariantProcesses
     # W24AskVariantToleranceElements
 ]
 """Union of all W24Asks to ensure proper de-serialization """
