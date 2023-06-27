@@ -14,12 +14,13 @@ class W24HelpdeskImportance(str, Enum):
     COULD_HAVE = "COULD_HAVE"
 
 
-class W24HelpdeskTicket(BaseModel):
+class W24HelpdeskTask(BaseModel):
     """
     Minimalistic HelpDesk Ticket Model.
 
     Attributes:
     ----------
+    task_id (Optional[str]): Unique identifier of the task (if already created).
     request_id (UUID4): Unique identifier of the request.
     observed_outcome (str): Observed outcome that the user wants to report.
     expected_outcome (str): Expected outcome that the user considers correct.
@@ -29,6 +30,7 @@ class W24HelpdeskTicket(BaseModel):
         Leaving it empty is also accepted.
     importance (W24HelpdeskImportance): Importance of the issue.
     """
+    task_id: Optional[str] = None
     request_id: UUID4
     observed_outcome: str
     expected_outcome: str
