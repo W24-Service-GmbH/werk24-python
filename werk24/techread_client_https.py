@@ -314,7 +314,7 @@ class TechreadClientHttps:
         # status code is
         # * 401 (Unauthorized) or
         # * 403 (Forbidden)
-        if status_code in [401, 403]:
+        if status_code in {401, 403}:
             raise UnauthorizedException()
 
         # NOTE: a 404 does not occur, as the
@@ -389,7 +389,7 @@ class TechreadClientHttps:
             self._raise_for_status(url, response.status)
 
         # return the updated task
-        return W24HelpdeskTask.parse_obj(await response.json())
+        return W24HelpdeskTask.parse_raw(await response.text())
 
     def _make_support_url(self, path: str) -> str:
         """ Make the support url for the help desk requests.
