@@ -1,7 +1,8 @@
 """ HTTPS-part of the Werk24 client
 """
+import urllib.parse
 from types import TracebackType
-from typing import Optional, Type
+from typing import Dict, Optional, Type
 
 import aiohttp
 from pydantic import HttpUrl
@@ -14,6 +15,7 @@ from werk24.exceptions import (
     UnauthorizedException,
     UnsupportedMediaType,
 )
+from werk24.models.helpdesk import W24HelpdeskTask
 from werk24.models.techread import W24PresignedPost
 
 from .auth_client import AuthClient
@@ -25,17 +27,19 @@ class TechreadClientHttps:
     to the W24TechreadArchitectureStatus enum
     """
 
-    def __init__(self, techread_version: str):
+    def __init__(self, techread_version: str, support_base_url: str):
         """
         Initialize a new session with the https server.
 
         Arguments:
             techread_server_https {str} -- Domain of the Techread https server
             techread_version {str} -- Techread Version
+            support_base_url {str} -- Base URL for support requests
         """
         self._techread_version = techread_version
         self._techread_session_https: Optional[aiohttp.ClientSession] = None
         self._auth_client: Optional[AuthClient] = None
+        self._support_base_url = support_base_url
 
     async def __aenter__(
             self
@@ -202,8 +206,8 @@ class TechreadClientHttps:
         return await response.content.read()
 
     async def _get(
-            self,
-            url: str
+        self,
+        url: str
     ) -> aiohttp.ClientResponse:
         """ Send a GET request request and return the
         response object. The method automatically
@@ -339,3 +343,75 @@ class TechreadClientHttps:
         if not 200 <= status_code <= 299:
             raise ServerException(
                 f"Request failed '{url}' with code {status_code}")
+
+    async def create_helpdesk_task(
+        self,
+        task: W24HelpdeskTask
+    ) -> W24HelpdeskTask:
+        """
+        Create a Helpdesk ticket.
+
+        Args:
+            task (W24HelpdeskTask): Helpdesk task to be created
+
+        Raises:
+            BadRequestException: Raised when the request body
+                cannot be interpreted. This normally indicates
+                that the API version has been updated and that
+                we missed a corner case. If you encounter this
+                exception, it is very likely our mistake. Please
+                get in touch!
+
+            UnauthorizedException: Raised when the token
+                or the requested file have expired
+
+            ResourceNotFoundException: Raised when you are requesting
+                an endpoint that does not exist. Again, you should
+                not encounter this, but if you do, let us know.
+
+            RequestTooLargeException: Raised when the status
+                code was 413
+
+            UnsupportedMediaTypException: Raised when the file you
+                submitted cannot be read(because its media type
+                is not supported by the API).
+
+            ServerException: Raised for all other status codes
+                that are not 2xx
+
+        Returns:
+            W24HelpdeskTask: Created helpdesk task with an updated task_id.
+        """
+        headers = self._make_helpdesk_headers()
+        url = self._make_support_url("helpdesk/create-task")
+        async with aiohttp.ClientSession(headers=headers) as session:
+            response = await session.post(url, json=task.json())
+            self._raise_for_status(url, response.status)
+
+        # return the updated task
+        return W24HelpdeskTask.parse_obj(await response.json())
+
+    def _make_support_url(self, path: str) -> str:
+        """ Make the support url for the help desk requests.
+
+        Arguments:
+            path {str} -- Path to the endpoint
+
+        Returns:
+            str -- URL to the endpoint
+        """
+        return urllib.parse.urljoin(f"https://{self._support_base_url}", path)
+
+    def _make_helpdesk_headers(self) -> Dict[str, str]:
+        """
+        Make the headers for the help desk requests.
+
+        Simply the authorization header at this stage.
+
+        Returns:
+            Dict[str, str]: Help desk headers
+        """
+        headers = {
+            "Authorization": f"Bearer {self._auth_client.token}"
+        }
+        return headers
