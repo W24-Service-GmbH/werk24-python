@@ -13,7 +13,7 @@ class W24GeneralTolerancesStandard(str, Enum):
     DIN_7168 = "DIN 7168"
     ISO_2768 = "ISO 2768"
     ISO_4759_1 = "ISO 4759-1"
-    DEFINED_ON_SHEET = "DEFINED_ON_SHEET"
+    ASME = "ASME"
 
 
 class W24ToleranceProperty(str, Enum):
@@ -139,6 +139,31 @@ class W24ToleranceClass(BaseModel):
     property: W24ToleranceProperty
 
     table: List[W24ToleranceTableItem]
+
+
+class W24AsmeToleranceTableItem(BaseModel):
+    decimal_length: Decimal
+
+    deviation_min: Decimal
+    deviation_max: Decimal
+
+
+class W24AsmeToleranceClass(BaseModel):
+    """ Tolerance Class which ASME general tolerance to 
+        tolerance property of individual dimensions based on 
+        decimal length of dimension.
+
+    Attributes:
+        property: Property that is being tolerated
+
+        table: Rows of the tolerance table that correspond
+            to the selected tolerance class
+    """
+    blurb: str
+
+    property: W24ToleranceProperty = W24ToleranceProperty.LINEAR
+
+    table: List[W24AsmeToleranceTableItem]
 
 
 class W24GeneralTolerances(W24BaseFeatureModel):
