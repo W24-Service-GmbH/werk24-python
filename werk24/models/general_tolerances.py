@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 from pydantic import BaseModel, validator
 
 from .base_feature import W24BaseFeatureModel
+from .unit import W24UnitLength
 
 
 class W24GeneralTolerancesStandard(str, Enum):
@@ -13,7 +14,7 @@ class W24GeneralTolerancesStandard(str, Enum):
     DIN_7168 = "DIN 7168"
     ISO_2768 = "ISO 2768"
     ISO_4759_1 = "ISO 4759-1"
-    ASME = "ASME"
+    CUSTOM = "CUSTOM"
 
 
 class W24ToleranceProperty(str, Enum):
@@ -36,6 +37,35 @@ class W24GeneralTolerancesPrinciple(str, Enum):
     """
     INDEPENDENCE = "INDEPENDENCE"
     ENVELOPE = "ENVELOPE"
+
+
+class W24NonStandardToleranceTableItem(BaseModel):
+    decimal_length: Optional[Decimal]
+
+    size_min: Optional[Decimal]
+    size_max: Optional[Decimal]
+
+    deviation_min: Decimal
+    deviation_max: Decimal
+    unit: Optional[W24UnitLength] = None
+
+
+class W24NonStandardToleranceClass(BaseModel):
+    """ Tolerance Class for non standard general tolerance to 
+        identify tolerance property of individual dimensions 
+        based on decimal length of dimension.
+
+    Attributes:
+        property: Property that is being tolerated
+
+        table: Rows of the tolerance table that correspond
+            to the selected tolerance class
+    """
+    blurb: str
+
+    property: W24ToleranceProperty = W24ToleranceProperty.LINEAR
+
+    table: List[W24NonStandardToleranceTableItem]
 
 
 class W24ToleranceTableItem(BaseModel):
@@ -139,31 +169,6 @@ class W24ToleranceClass(BaseModel):
     property: W24ToleranceProperty
 
     table: List[W24ToleranceTableItem]
-
-
-class W24AsmeToleranceTableItem(BaseModel):
-    decimal_length: Decimal
-
-    deviation_min: Decimal
-    deviation_max: Decimal
-
-
-class W24AsmeToleranceClass(BaseModel):
-    """ Tolerance Class which ASME general tolerance to 
-        tolerance property of individual dimensions based on 
-        decimal length of dimension.
-
-    Attributes:
-        property: Property that is being tolerated
-
-        table: Rows of the tolerance table that correspond
-            to the selected tolerance class
-    """
-    blurb: str
-
-    property: W24ToleranceProperty = W24ToleranceProperty.LINEAR
-
-    table: List[W24AsmeToleranceTableItem]
 
 
 class W24GeneralTolerances(W24BaseFeatureModel):
