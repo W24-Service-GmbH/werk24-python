@@ -7,9 +7,9 @@ from werk24 import Hook, W24TechreadClient
 async def w24_read_async(
     document_bytes: bytes,
     hooks:  List[Hook],
-    max_pages: int = 1
+    max_pages: int = 5
 ) -> None:
-    """ Convenient handler to submit an asyncronous request to the
+    """ Convenient handler to submit an asynchronous request to the
     Werk24 TechRead API.
 
     Args:
@@ -24,9 +24,9 @@ async def w24_read_async(
 def w24_read_sync(
     document_bytes: bytes,
     hooks:  List[Hook],
-    max_pages: int = 1
+    max_pages: int = 5
 ) -> None:
-    """ Convenient handler to submit a syncronous request to the
+    """ Convenient handler to submit a synchronous request to the
     Werk24 TechRead API.
 
     Args:
