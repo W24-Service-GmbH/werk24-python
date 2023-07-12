@@ -286,7 +286,8 @@ class W24TechreadClient:
 
     @property
     def username(self) -> Optional[str]:
-        """ Make the username accessible to the CLI and GUI
+        """
+        Make the username accessible to the CLI and GUI.
 
         Returns:
             str: username of the currently registered user
@@ -305,9 +306,8 @@ class W24TechreadClient:
         drawing_filename: Optional[str] = None,
         sub_account: Optional[UUID4] = None
     ) -> AsyncIterator[W24TechreadBaseResponse]:
-        """ Send a Technical Drawing to the W24 API to have it automatically
-        interpreted and read. The API will return
-
+        """
+        Send a Technical Drawing to the W24 API to read it.
 
         Arguments:
             drawing (bytes): binary representation of a technical drawing.
@@ -374,7 +374,7 @@ class W24TechreadClient:
                         self._development_key[:8])
 
         # send the initiation command
-        init_response = await self._send_command_init(
+        init_response = await self.init_request(
             asks,
             max_pages,
             drawing_filename,
@@ -385,17 +385,48 @@ class W24TechreadClient:
             yield init_response
             return
 
+        # Start reading the file
+        async for message in self.read_request(init_response, asks, drawing, model):
+            yield message
+
+    async def read_request(
+        self,
+        init_response: W24TechreadInitResponse,
+        asks: List[W24Ask],
+        drawing: bytes,
+        model: Optional[bytes] = None
+    ) -> None:
+        """
+        Read the request after obtaining the init_response.
+
+        This is helpful when we want to perform the reading
+        in the background or in a separate thread.
+
+        Arguments:
+            init_response (W24TechreadInitResponse): InitResponse that
+                was obtained from the init_request method
+            asks (List[W24Ask]): List of asks that we are asking for.
+                This is only used for error handling here.
+            drawing (bytes): Drawing bytes that shall be uploaded
+            model (Optional[bytes], optional): Optional model bytes.
+                Defaults to None.
+
+        Yields:
+            W24TechreadMessage: Messages that are received after the
+                request was submitted
+        """
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
-            await gather(
-                self._techread_client_https.upload_associated_file(
-                    init_response.drawing_presigned_post,
-                    drawing),
-                self._techread_client_https.upload_associated_file(
-                    init_response.model_presigned_post,
-                    model))
+            upload_drawing = self._techread_client_https.upload_associated_file(
+                init_response.drawing_presigned_post,
+                drawing)
+            upload_model = self._techread_client_https.upload_associated_file(
+                init_response.model_presigned_post,
+                model)
+
+            await gather(upload_drawing, upload_model)
 
         # explicitly reraise the exception if the payload is too
         # large
@@ -418,15 +449,18 @@ class W24TechreadClient:
         async for message in self._send_command_read():
             yield message
 
-    async def _send_command_init(
+    async def init_request(
         self,
         asks: List[W24Ask],
         max_pages: int,
         drawing_filename: Optional[str],
         sub_account: Optional[UUID4]
     ) -> W24TechreadInitResponse:
-        """ Send the initiation command to the backend
-        and return the associated response
+        """
+        Initialize a new techread request.
+
+        This method is useful if you want to separate the
+        initialization from the upload and read stages.
 
         This achieves two things:
         1. The server has a couple of 100ms to
@@ -714,19 +748,19 @@ class W24TechreadClient:
                     drawing_filename=drawing_filename,
                     sub_account=sub_account):
 
-                await self._call_hooks_for_message(message, hooks)
+                await self.call_hooks_for_message(message, hooks)
 
         # explicitly reraise server exceptions
         except ServerException:  # pylint: disable=try-except-raise
             raise
 
-    async def _call_hooks_for_message(
-            self,
-            message: W24TechreadMessage,
-            hooks: List[Hook]
+    async def call_hooks_for_message(
+        self,
+        message: W24TechreadMessage,
+        hooks: List[Hook]
     ) -> None:
-        """ Find the correct hook for the read response and
-        call the corresponding hook.
+        """
+        Call the hook function for the response message.
 
         Arguments:
             message {W24TechreadMessage} -- Message returned from the
@@ -768,11 +802,11 @@ class W24TechreadClient:
 
     @staticmethod
     def _get_hook_function_for_message(
-            message: W24TechreadMessage,
-            hooks: List[Hook]
+        message: W24TechreadMessage,
+        hooks: List[Hook]
     ) -> Optional[Callable]:
-        """ Get the hook function that corresponds to the message
-        type.
+        """
+        Get the hook function that corresponds to the message type.
 
         Arguments:
             message {W24TechreadMessage} -- Message returned from the
@@ -789,18 +823,22 @@ class W24TechreadClient:
         # we need to make some extra effort when filtering
         if message.message_type == W24TechreadMessageType.ASK:
             def hook_filter(hook: Hook) -> bool:
-                return hook.ask is not None \
-                    and message.message_subtype.value \
+                return (
+                    hook.ask is not None
+                    and message.message_subtype.value
                     == hook.ask.ask_type.value
+                )
 
         # if the message is of any other type, we just need to
         # compare the the message_type and message_subtype
         else:
             def hook_filter(hook: Hook) -> bool:
-                return hook.message_type is not None \
-                    and hook.message_subtype is not None \
-                    and message.message_type == hook.message_type \
+                return (
+                    hook.message_type is not None
+                    and hook.message_subtype is not None
+                    and message.message_type == hook.message_type
                     and message.message_subtype == hook.message_subtype
+                )
 
         # return the first positive case
         for cur_hook in filter(hook_filter, hooks):
