@@ -527,7 +527,7 @@ class W24Material(W24BaseFeatureModel):
     """
 
     blurb: str
-    raw_ocr_blurb: str
+    raw_ocr_blurb: str = ""
     standard: str
     designation: str
     material_category: Tuple[
