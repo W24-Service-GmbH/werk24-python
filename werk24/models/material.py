@@ -15,7 +15,6 @@ class W24MaterialCategory1(str, Enum):
 
 
 class W24MaterialCategory2(str, Enum):
-
     # FERROUS ALLOYS
     STEEL = "STEEL"
     IRON = "IRON"
@@ -73,7 +72,6 @@ class W24MaterialCategory2(str, Enum):
 
 
 class W24MaterialCategory3(str, Enum):
-
     # FERROUS_ALLOY / STEEL
     STRUCTURAL_OR_CONSTRUCTIONAL_STEEL = "STRUCTURAL_OR_CONSTRUCTIONAL_STEEL"
     STAINLESS_STEEL = "STAINLESS_STEEL"
@@ -507,6 +505,12 @@ class W24Material(W24BaseFeatureModel):
             This will typically include the designation
             and the standard.
 
+        raw_ocr_blurb: Material Name as it was indicated
+            on the drawing. This contains more information
+            than the blurb and is also present when the
+            material was not found in the internal
+            material database.
+
         standard: Material Standard indicated
             on the technical drawing. This used to be
             an enum - but we now have over 100 supported
@@ -521,7 +525,9 @@ class W24Material(W24BaseFeatureModel):
             following W24MaterialCategoryX Tree.
 
     """
+
     blurb: str
+    raw_ocr_blurb: str
     standard: str
     designation: str
     material_category: Tuple[
