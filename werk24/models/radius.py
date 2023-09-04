@@ -1,4 +1,3 @@
-
 """ Defintion of all the W24Radius class its support structures
 """
 
@@ -13,13 +12,15 @@ from .tolerance import W24Tolerance, W24ToleranceGeneral
 
 
 class W24RadiusLabel(BaseModel):
-    """ Radius Label
+    """Radius Label
 
     Attributes:
         blurb: String representation of the Radius for human consumption
 
         quantity: Quantity of the annotated radius, e.g., 2 x R4 returns
             quantity=2
+
+        quality: Deprecated. This was a typo of the quantity.
 
         size: Size of the Radius as referred in the drawing.
 
@@ -34,6 +35,7 @@ class W24RadiusLabel(BaseModel):
 
     blurb: str
 
+    quantity: int = 1
     quality: int = 1
 
     size: W24Size
@@ -44,7 +46,7 @@ class W24RadiusLabel(BaseModel):
 
 
 class W24Radius(W24BaseFeatureModel):
-    """ Radius Feature
+    """Radius Feature
 
     Attributes:
         radius_id: Unique UUID4 identifier. This can be used to provide
@@ -57,6 +59,7 @@ class W24Radius(W24BaseFeatureModel):
             to consider or discard low-confidence radii. This value
             allows you to do so. The value ranges from 0.0 to 1.0
     """
+
     radius_id: UUID4
 
     label: W24RadiusLabel
