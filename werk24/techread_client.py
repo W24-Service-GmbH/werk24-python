@@ -64,7 +64,7 @@ from werk24.techread_client_https import TechreadClientHttps
 from werk24.techread_client_wss import TechreadClientWss
 
 # make the logger
-logger = logging.getLogger('w24_techread_client')
+logger = logging.getLogger("w24_techread_client")
 
 ENVIRONS = [
     "W24TECHREAD_VERSION",
@@ -81,10 +81,8 @@ client """
 
 
 EXCEPTION_MAP = {
-    RequestTooLargeException:
-        W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
-    BadRequestException:
-        W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE
+    RequestTooLargeException: W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
+    BadRequestException: W24TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
 }
 """ Map to translate the local exceptions to official
 W24Exceptions. This allows us to mock consistent responses
@@ -95,6 +93,7 @@ DEFAULT_AUTH_REGION = "eu-central-1"
 DEFAULT_SERVER_WSS = "ws-api.w24.co"
 DEFAULT_SUPPORT_BASE_URL = "support.w24.co"
 
+LICENSE_LOCATIONS = (".werk24", "werk24_license.txt")
 
 LICENSE_ERROR_TEXT = """
 
@@ -132,13 +131,14 @@ Thank you.
 
 
 class Hook(BaseModel):
-    """ Small Object to keep the callback requests.
+    """Small Object to keep the callback requests.
     You can either register a callback request to an
     ask or a message_type.
 
     If you register an ask, be sure to use a complete W24Ask
     definition; not just the ask type.
     """
+
     message_type: Optional[W24TechreadMessageType]
     message_subtype: Optional[W24TechreadMessageSubtype]
     ask: Optional[W24Ask]
@@ -146,7 +146,7 @@ class Hook(BaseModel):
 
 
 class W24TechreadClient:
-    """ Simple W24Client that allows you to use
+    """Simple W24Client that allows you to use
     learn more about the content on your Technical
     Drawings.
     """
@@ -156,9 +156,9 @@ class W24TechreadClient:
         techread_server_wss: str,
         techread_version: str,
         development_key: str = None,
-        support_base_url: str = DEFAULT_SUPPORT_BASE_URL
+        support_base_url: str = DEFAULT_SUPPORT_BASE_URL,
     ):
-        """ Initialize a new W24TechreadClient. If you wonder
+        """Initialize a new W24TechreadClient. If you wonder
         about any of the attributes, have a look at the .env
         file that we provided to you. They contain all the
         information that you will need.
@@ -187,16 +187,16 @@ class W24TechreadClient:
 
         # Initialize an instance of the HTTPS client
         self._techread_client_https = TechreadClientHttps(
-            techread_version, support_base_url)
+            techread_version, support_base_url
+        )
 
         # Initialize an instance of the WEBSOCKET client
         self._techread_client_wss = TechreadClientWss(
-            techread_server_wss, techread_version)
+            techread_server_wss, techread_version
+        )
 
-    async def __aenter__(
-            self
-    ) -> 'W24TechreadClient':
-        """ Create the HTTPS and WSS sessions
+    async def __aenter__(self) -> "W24TechreadClient":
+        """Create the HTTPS and WSS sessions
 
         Raises:
             RuntimeError: Exception is raised if
@@ -218,22 +218,18 @@ class W24TechreadClient:
         return self
 
     async def __aexit__(
-            self,
-            exc_type: Optional[Type[BaseException]],
-            exc_value: Optional[BaseException],
-            traceback: Optional[TracebackType]
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
     ) -> None:
-
-        """ Ensure that the sessions are closed
-        """
+        """Ensure that the sessions are closed"""
 
         # close the HTTPS session
-        await self._techread_client_https.__aexit__(
-            exc_type, exc_value, traceback)
+        await self._techread_client_https.__aexit__(exc_type, exc_value, traceback)
 
         # close the WSS session
-        await self._techread_client_wss.__aexit__(
-            exc_type, exc_value, traceback)
+        await self._techread_client_wss.__aexit__(exc_type, exc_value, traceback)
 
     def register(
         self,
@@ -244,7 +240,6 @@ class W24TechreadClient:
         cognito_client_secret: str,
         username: str,
         password: str,
-
     ) -> None:
         """
         Register with the authentication
@@ -266,14 +261,14 @@ class W24TechreadClient:
             cognito_identity_pool_id,
             cognito_user_pool_id,
             cognito_client_id,
-            cognito_client_secret)
+            cognito_client_secret,
+        )
 
         # register username and password
         self._auth_client.register(username, password)
 
         # tell the techread clients about it
-        self._techread_client_https.register_auth_client(
-            self._auth_client)
+        self._techread_client_https.register_auth_client(self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
 
         # ensure that we have a token
@@ -281,8 +276,9 @@ class W24TechreadClient:
             self._auth_client.login()  # type: ignore
         except AttributeError as exc:
             raise RuntimeError(
-                "No connection to the authentication service was " +
-                "established. Please call register()") from exc
+                "No connection to the authentication service was "
+                + "established. Please call register()"
+            ) from exc
 
     @property
     def username(self) -> Optional[str]:
@@ -304,7 +300,7 @@ class W24TechreadClient:
         model: bytes = None,
         max_pages: int = 1,
         drawing_filename: Optional[str] = None,
-        sub_account: Optional[UUID4] = None
+        sub_account: Optional[UUID4] = None,
     ) -> AsyncIterator[W24TechreadBaseResponse]:
         """
         Send a Technical Drawing to the W24 API to read it.
@@ -370,15 +366,12 @@ class W24TechreadClient:
 
         # tell us when a development key is being used
         if self._development_key:  # pragma: no cover
-            logger.info("Using development key %s***",
-                        self._development_key[:8])
+            logger.info("Using development key %s***", self._development_key[:8])
 
         # send the initiation command
         init_response = await self.init_request(
-            asks,
-            max_pages,
-            drawing_filename,
-            sub_account)
+            asks, max_pages, drawing_filename, sub_account
+        )
 
         # stop if the response is unsuccessful.
         if not init_response.is_successful:
@@ -394,7 +387,7 @@ class W24TechreadClient:
         init_response: W24TechreadInitResponse,
         asks: List[W24Ask],
         drawing: bytes,
-        model: Optional[bytes] = None
+        model: Optional[bytes] = None,
     ) -> None:
         """
         Read the request after obtaining the init_response.
@@ -420,11 +413,11 @@ class W24TechreadClient:
         # upload them separately to Werk24.
         try:
             upload_drawing = self._techread_client_https.upload_associated_file(
-                init_response.drawing_presigned_post,
-                drawing)
+                init_response.drawing_presigned_post, drawing
+            )
             upload_model = self._techread_client_https.upload_associated_file(
-                init_response.model_presigned_post,
-                model)
+                init_response.model_presigned_post, model
+            )
 
             await gather(upload_drawing, upload_model)
 
@@ -454,7 +447,7 @@ class W24TechreadClient:
         asks: List[W24Ask],
         max_pages: int,
         drawing_filename: Optional[str],
-        sub_account: Optional[UUID4]
+        sub_account: Optional[UUID4],
     ) -> W24TechreadInitResponse:
         """
         Initialize a new techread request.
@@ -484,20 +477,19 @@ class W24TechreadClient:
             development_key=self._development_key,
             max_pages=max_pages,
             drawing_filename=drawing_filename,
-            sub_account=sub_account)
+            sub_account=sub_account,
+        )
 
         await self._techread_client_wss.send_command(
-            W24TechreadAction.INITIALIZE.value,
-            request.json())
+            W24TechreadAction.INITIALIZE.value, request.json()
+        )
 
         response = await self._techread_client_wss.recv_message()
         logger.info("Received request_id %s", response.request_id)
         return W24TechreadInitResponse.parse_obj(response.payload_dict)
 
-    async def _send_command_read(
-        self
-    ) -> AsyncGenerator[W24TechreadMessage, None]:
-        """ Send the request request to the backend
+    async def _send_command_read(self) -> AsyncGenerator[W24TechreadMessage, None]:
+        """Send the request request to the backend
         and yield the resulting messages
 
         Yields:
@@ -505,9 +497,7 @@ class W24TechreadClient:
         """
 
         # submit the request the to the API
-        await self._techread_client_wss.send_command(
-            W24TechreadAction.READ.value,
-            "{}")
+        await self._techread_client_wss.send_command(W24TechreadAction.READ.value, "{}")
         logger.info("Techread request submitted")
 
         # Wait for incoming messages from the server.
@@ -518,11 +508,13 @@ class W24TechreadClient:
         # The loop will stop when the websocket is
         # closed
         async for message in self._techread_client_wss.listen():
-
             # check whether we need to download something
             if message.payload_url is not None:
-                message.payload_bytes = await self._techread_client_https \
-                    .download_payload(message.payload_url)
+                message.payload_bytes = (
+                    await self._techread_client_https.download_payload(
+                        message.payload_url
+                    )
+                )
 
             # return the message to the caller for immediate
             # consumption
@@ -531,9 +523,9 @@ class W24TechreadClient:
     @staticmethod
     async def _trigger_asks_exception(
         asks: List[W24Ask],
-        exception_raw: Union[BadRequestException, RequestTooLargeException]
+        exception_raw: Union[BadRequestException, RequestTooLargeException],
     ) -> AsyncGenerator[W24TechreadMessage, None]:
-        """ Trigger exceptions for all the submitted asks.
+        """Trigger exceptions for all the submitted asks.
         This helps us to mock consistent exception handling
         behavior even when the files are rejected before they
         reach the API.
@@ -556,13 +548,13 @@ class W24TechreadClient:
         # a new exception type. Let's tell her by rasing
         # a runtime error
         except KeyError:
-            raise RuntimeError(
-                f"Unknown exception type passed: {type(exception_raw)}")
+            raise RuntimeError(f"Unknown exception type passed: {type(exception_raw)}")
 
         # translate the exception into an official exception
         exception = W24TechreadException(
             exception_level=W24TechreadExceptionLevel.ERROR,
-            exception_type=exception_type)
+            exception_type=exception_type,
+        )
 
         # then yield one message for each of the requested asks
         for cur_ask in asks:
@@ -570,13 +562,12 @@ class W24TechreadClient:
                 request_id=uuid.uuid4(),
                 message_type=W24TechreadMessageType.ASK,
                 message_subtype=cur_ask.ask_type,
-                exceptions=[exception])
+                exceptions=[exception],
+            )
 
-    @ staticmethod
-    def _get_license_environs(
-        license_path: Optional[str]
-    ) -> Dict[str, str]:
-        """ Get the environment variables
+    @staticmethod
+    def _get_license_environs(license_path: Optional[str]) -> Dict[str, str]:
+        """Get the environment variables
         Where we either select the variables from the license
         files. If that fails we fall back to the true environment
         variables.
@@ -591,8 +582,11 @@ class W24TechreadClient:
         """
 
         # Mimick the old default value of .werk24
-        if license_path is None and os.path.exists(".werk24"):
-            license_path = ".werk24"  # pragma: no cover
+        if license_path is None:
+            for c_location in LICENSE_LOCATIONS:
+                if os.path.exists(c_location):
+                    license_path = c_location
+                    break
 
         # First priority: look for the local license path
         if license_path is not None:
@@ -600,7 +594,8 @@ class W24TechreadClient:
                 environs_raw = {
                     k: v
                     for k, v in dotenv.dotenv_values(license_path).items()
-                    if v is not None}
+                    if v is not None
+                }
 
             # if the caller defined a license path, but it does not
             # exist, raise the exception
@@ -625,16 +620,16 @@ class W24TechreadClient:
         auth_region: Optional[str] = None,
         server_https: Optional[str] = None,
         server_wss: Optional[str] = None,
-        version: str = "v2"
+        version: str = "v2",
     ) -> "W24TechreadClient":
-        """ Small helper function that creates a new
+        """Small helper function that creates a new
         W24TechreadClient from the environment info.
 
         Arguments:
             license_path:{Optional[str]} -- path to the License file.
-                By default we are looking for a .werk24 file in the current
-                cwd. If argument is set to None, we are not loading any
-                file and relying on the ENVIRONMENT variables only
+                By default we are looking for a .werk24 or werk24_license.txt
+                file in the current cwd. If argument is set to None, we are
+                not loading any file and relying on the ENVIRONMENT variables only
 
             auth_region: {Optional[str]} -- AWS Region of the Authentication
                 Service.
@@ -665,28 +660,21 @@ class W24TechreadClient:
 
         # define a small helper function that finds the first valid
         # value in the supplied list of possible values
-        def pick_env(
-            var: Optional[str],
-            env_key: str,
-            default: str
-        ) -> str:
+        def pick_env(var: Optional[str], env_key: str, default: str) -> str:
             return var or environs.get(env_key) or default
 
         # then make sure we use the correct priorities
         auth_region = pick_env(
-            auth_region,
-            'W24TECHREAD_AUTH_REGION',
-            DEFAULT_AUTH_REGION)
+            auth_region, "W24TECHREAD_AUTH_REGION", DEFAULT_AUTH_REGION
+        )
 
         server_wss = pick_env(
-            server_wss,
-            'W24TECHREAD_SERVER_WSS_V2',
-            DEFAULT_SERVER_WSS)
+            server_wss, "W24TECHREAD_SERVER_WSS_V2", DEFAULT_SERVER_WSS
+        )
 
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
         try:
-
             # create a reference to the client
             client = W24TechreadClient(server_wss, version)
 
@@ -695,12 +683,13 @@ class W24TechreadClient:
             # not trigger a network request
             client.register(
                 auth_region,
-                environs['W24TECHREAD_AUTH_IDENTITY_POOL_ID'],
-                environs['W24TECHREAD_AUTH_USER_POOL_ID'],
-                environs['W24TECHREAD_AUTH_CLIENT_ID'],
-                environs['W24TECHREAD_AUTH_CLIENT_SECRET'],
-                environs['W24TECHREAD_AUTH_USERNAME'],
-                environs['W24TECHREAD_AUTH_PASSWORD'])
+                environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
+                environs["W24TECHREAD_AUTH_USER_POOL_ID"],
+                environs["W24TECHREAD_AUTH_CLIENT_ID"],
+                environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
+                environs["W24TECHREAD_AUTH_USERNAME"],
+                environs["W24TECHREAD_AUTH_PASSWORD"],
+            )
 
         except KeyError:
             raise LicenseError(LICENSE_ERROR_TEXT)
@@ -714,9 +703,9 @@ class W24TechreadClient:
         hooks: List[Hook],
         max_pages: int = 1,
         drawing_filename: Optional[str] = None,
-        sub_account: Optional[UUID4] = None
+        sub_account: Optional[UUID4] = None,
     ) -> None:
-        """ Send the drawing to the API (can be PDF or image)
+        """Send the drawing to the API (can be PDF or image)
         and register a number of callbacks that are triggered
         once the asks become available.
 
@@ -731,23 +720,19 @@ class W24TechreadClient:
 
         # filter the callback requests to only contain
         # the ask types
-        asks_list = [
-            cur_ask.ask
-            for cur_ask in hooks
-            if cur_ask.ask is not None
-        ]
+        asks_list = [cur_ask.ask for cur_ask in hooks if cur_ask.ask is not None]
 
         try:
             # send out the request and make a generator
             # that triggers when the result of an ask
             # becomes available
             async for message in self.read_drawing(
-                    drawing_bytes,
-                    asks_list,
-                    max_pages=max_pages,
-                    drawing_filename=drawing_filename,
-                    sub_account=sub_account):
-
+                drawing_bytes,
+                asks_list,
+                max_pages=max_pages,
+                drawing_filename=drawing_filename,
+                sub_account=sub_account,
+            ):
                 await self.call_hooks_for_message(message, hooks)
 
         # explicitly reraise server exceptions
@@ -755,9 +740,7 @@ class W24TechreadClient:
             raise
 
     async def call_hooks_for_message(
-        self,
-        message: W24TechreadMessage,
-        hooks: List[Hook]
+        self, message: W24TechreadMessage, hooks: List[Hook]
     ) -> None:
         """
         Call the hook function for the response message.
@@ -789,7 +772,8 @@ class W24TechreadClient:
                 "the message_type '%s'. Please make sure that you are using "
                 "a Callable (e.g, def or lambda)",
                 type(hook_function),
-                message.message_type)
+                message.message_type,
+            )
             return
 
         # if everything went well, we call the trigger with
@@ -802,8 +786,7 @@ class W24TechreadClient:
 
     @staticmethod
     def _get_hook_function_for_message(
-        message: W24TechreadMessage,
-        hooks: List[Hook]
+        message: W24TechreadMessage, hooks: List[Hook]
     ) -> Optional[Callable]:
         """
         Get the hook function that corresponds to the message type.
@@ -822,16 +805,17 @@ class W24TechreadClient:
         # because we allow the user to define the ask in the hook,
         # we need to make some extra effort when filtering
         if message.message_type == W24TechreadMessageType.ASK:
+
             def hook_filter(hook: Hook) -> bool:
                 return (
                     hook.ask is not None
-                    and message.message_subtype.value
-                    == hook.ask.ask_type.value
+                    and message.message_subtype.value == hook.ask.ask_type.value
                 )
 
         # if the message is of any other type, we just need to
         # compare the the message_type and message_subtype
         else:
+
             def hook_filter(hook: Hook) -> bool:
                 return (
                     hook.message_type is not None
@@ -851,13 +835,11 @@ class W24TechreadClient:
         logger.warning(
             "Ignoring message of type %s:%s - no hook registered",  # noqa
             message.message_type,
-            message.message_subtype)
+            message.message_subtype,
+        )
         return None
 
-    async def create_helpdesk_task(
-        self,
-        task: W24HelpdeskTask
-    ) -> W24HelpdeskTask:
+    async def create_helpdesk_task(self, task: W24HelpdeskTask) -> W24HelpdeskTask:
         """
         Create a Helpdesk ticket.
 

@@ -2,13 +2,11 @@
 """
 import argparse
 import asyncio
-from dotenv import load_dotenv
-import werk24.cli.techread
-import werk24.cli.health_check
-import werk24.cli.auth
-import werk24.cli.support
 
-load_dotenv(".werk24")
+import werk24.cli.auth
+import werk24.cli.health_check
+import werk24.cli.support
+import werk24.cli.techread
 
 
 def main() -> None:
