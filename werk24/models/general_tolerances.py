@@ -39,7 +39,7 @@ class W24GeneralTolerancesPrinciple(str, Enum):
     ENVELOPE = "ENVELOPE"
 
 
-class W24NonStandardToleranceTableItem(BaseModel):
+class W24CustomToleranceTableItem(BaseModel):
     decimal_length: Optional[Decimal]
 
     size_min: Optional[Decimal]
@@ -65,7 +65,7 @@ class W24NonStandardToleranceClass(BaseModel):
 
     property: W24ToleranceProperty = W24ToleranceProperty.LINEAR
 
-    table: List[W24NonStandardToleranceTableItem]
+    table: List[W24CustomToleranceTableItem]
 
 
 class W24ToleranceTableItem(BaseModel):
