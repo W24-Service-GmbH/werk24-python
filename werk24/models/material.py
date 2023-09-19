@@ -15,11 +15,12 @@ class W24MaterialCategory1(str, Enum):
 
 
 class W24MaterialCategory2(str, Enum):
+
     # FERROUS ALLOYS
     STEEL = "STEEL"
     IRON = "IRON"
     MAGNETIC_OR_ELECTRICAL_MATERIAL = "MAGNETIC_OR_ELECTRICAL_MATERIAL"
-    SINTERED_POWDEDERD_METAL = "SINTERED_POWDEDERD_METAL"
+    SINTERED_POWDERED_METAL = "SINTERED_POWDERED_METAL"
     WELDING_FILLER_MATERIAL = "WELDING_FILLER_MATERIAL"
 
     # NONFERROUS ALLOY
@@ -32,6 +33,7 @@ class W24MaterialCategory2(str, Enum):
     COBALT = "COBALT"
     COPPER = "COPPER"
     GALLIUM = "GALLIUM"
+    IRIDIUM = "IRIDIUM"
     LEAD = "LEAD"
     MAGNESIUM = "MAGNESIUM"
     MANGANESE = "MANGANESE"
@@ -43,6 +45,7 @@ class W24MaterialCategory2(str, Enum):
     REAR_EARTHS = "REAR_EARTHS"
     SELENIUM = "SELENIUM"
     SILICON = "SILICON"
+    TANTALUM = "TANTALUM"
     THALLIUM = "THALLIUM"
     TIN = "TIN"
     TITANIUM = "TITANIUM"
@@ -72,6 +75,7 @@ class W24MaterialCategory2(str, Enum):
 
 
 class W24MaterialCategory3(str, Enum):
+
     # FERROUS_ALLOY / STEEL
     STRUCTURAL_OR_CONSTRUCTIONAL_STEEL = "STRUCTURAL_OR_CONSTRUCTIONAL_STEEL"
     STAINLESS_STEEL = "STAINLESS_STEEL"
@@ -491,6 +495,30 @@ class W24MaterialCategory3(str, Enum):
     POLYPHENYLENE_OR_POLYSTYRENE_HIPS = "POLYPHENYLENE_OR_POLYSTYRENE_HIPS"
     POLYCARBONATE = "POLYCARBONATE"
 
+    # CERAMIC / REFRACTORY
+    ALUMINA_BASED_CERAMIC = "ALUMINA_BASED_CERAMIC"
+    CALCIA_BASED_CERAMIC = "CALCIA_BASED_CERAMIC"
+    CARBON_BASED_CERAMIC = "CARBON_BASED_CERAMIC"
+    CHROMIA_BASED_CERAMIC = "CHROMIA_BASED_CERAMIC"
+    MAGNESIA_BASED_CERAMIC = "MAGNESIA_BASED_CERAMIC"
+    MONOLOTHIC = "MONOLOTHIC"
+    SIC_BASED_CERAMIC = "SIC_BASED_CERAMIC"
+    SILICA_BASED_CERAMIC = "SILICA_BASED_CERAMIC"
+    ZIRCONIA_BASED_CERAMIC = "ZIRCONIA_BASED_CERAMIC"
+
+    # CERAMIC / TECHNICAL_CERAMIC
+    BORIDE_CERAMIC = "BORIDE_CERAMIC"
+    CARBIDE_CERAMIC = "CARBIDE_CERAMIC"
+    GLASS_CERAMIC = "GLASS_CERAMIC"
+    MIXED_CERAMIC = "MIXED_CERAMIC"
+    NITRIDE_CERAMIC = "NITRIDE_CERAMIC"
+    SILICATE_CERAMIC = "SILICATE_CERAMIC"
+    SINGLE_OXIDE_CERAMIC = "SINGLE_OXIDE_CERAMIC"
+    TITANATE_CERAMIC = "TITANATE_CERAMIC"
+
+    # CERAMIC / FIBER
+    FIBER_CERAMIC = "FIBER_CERAMIC"
+
 
 class W24Material(W24BaseFeatureModel):
     """W24 Object for Materials.
@@ -504,12 +532,6 @@ class W24Material(W24BaseFeatureModel):
         blurb: Material Name for human consumption.
             This will typically include the designation
             and the standard.
-
-        raw_ocr_blurb: Material Name as it was indicated
-            on the drawing. This contains more information
-            than the blurb and is also present when the
-            material was not found in the internal
-            material database.
 
         standard: Material Standard indicated
             on the technical drawing. This used to be
@@ -525,9 +547,7 @@ class W24Material(W24BaseFeatureModel):
             following W24MaterialCategoryX Tree.
 
     """
-
     blurb: str
-    raw_ocr_blurb: str = ""
     standard: str
     designation: str
     material_category: Tuple[
