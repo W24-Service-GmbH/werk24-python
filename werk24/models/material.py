@@ -15,11 +15,11 @@ class W24MaterialCategory1(str, Enum):
 
 
 class W24MaterialCategory2(str, Enum):
+
     # FERROUS ALLOYS
     STEEL = "STEEL"
     IRON = "IRON"
     MAGNETIC_OR_ELECTRICAL_MATERIAL = "MAGNETIC_OR_ELECTRICAL_MATERIAL"
-    SINTERED_POWDEDERD_METAL = "SINTERED_POWDEDERD_METAL"
     SINTERED_POWDERED_METAL = "SINTERED_POWDERED_METAL"
     WELDING_FILLER_MATERIAL = "WELDING_FILLER_MATERIAL"
 
@@ -53,32 +53,39 @@ class W24MaterialCategory2(str, Enum):
     VANADIUM = "VANADIUM"
     ZINC = "ZINC"
     ZIRCONIUM = "ZIRCONIUM"
+
     # POLYMER
     THERMOPLAST = "THERMOPLAST"
     THERMOSET = "THERMOSET"
     THERMOPLASTIC_ELASTOMER = "THERMOPLASTIC_ELASTOMER"
     THERMOSET_ELASTOMER = "THERMOSET_ELASTOMER"
     POLYMER_FOAM = "POLYMER_FOAM"
+
     # CERAMIC
     REFRACTORY = "REFRACTORY"
     TECHNICAL_CERAMIC = "TECHNICAL_CERAMIC"
     CERAMIC_FOAM = "CERAMIC_FOAM"
+
     # COMPOSITE
     MATRIX = "MATRIX"
     REINFORCEMENT = "REINFORCEMENT"
+
     # ORGANIC
     WOOD = "WOOD"
 
 
 class W24MaterialCategory3(str, Enum):
+
     # FERROUS_ALLOY / STEEL
     STRUCTURAL_OR_CONSTRUCTIONAL_STEEL = "STRUCTURAL_OR_CONSTRUCTIONAL_STEEL"
     STAINLESS_STEEL = "STAINLESS_STEEL"
     TOOL_STEEL = "TOOL_STEEL"
     CAST_STEEL = "CAST_STEEL"
+
     # FERROUS_ALLOY / IRON
     CAST_IRON = "CAST_IRON"
     FERROALLOY = "FERROALLOY"
+
     # POLYMER / THERMOPLAST
     ABS = "ABS"
     ABS_PC = "ABS_PC"
@@ -380,6 +387,7 @@ class W24MaterialCategory3(str, Enum):
     VLDPE = "VLDPE"
     XLPE = "XLPE"
     XLPO = "XLPO"
+
     # POLYMER / THERMOSET
     CA = "CA"
     EP = "EP"
@@ -392,6 +400,7 @@ class W24MaterialCategory3(str, Enum):
     UF = "UF"
     UP = "UP"
     VE = "VE"
+
     # POLYMER / THERMOPLASTIC_ELASTOMER
     MPR = "MPR"
     PCU = "PCU"
@@ -425,6 +434,7 @@ class W24MaterialCategory3(str, Enum):
     TPV_NBR = "TPV_NBR"
     TSPCU = "TSPCU"
     TSPU = "TSPU"
+
     # POLYMER / THERMOSET_ELASTOMER
     ACM = "ACM"
     ACSM = "ACSM"
@@ -471,12 +481,15 @@ class W24MaterialCategory3(str, Enum):
     VMQ_PVMQ = "VMQ_PVMQ"
     XNBR = "XNBR"
     XNBR_PVC = "XNBR_PVC"
+
     # COMPOSITE
     CARBON_FIBER_COMPOSITE = "CARBON_FIBER_COMPOSITE"
     GLASS_FIBER_COMPOSITE = "GLASS_FIBER_COMPOSITE"
+
     # REINFORCEMENT
     FIBER_REINFORCEMENT = "FIBER_REINFORCEMENT"
     STRUCTURAL_COMPOSITE = "STRUCTURAL_COMPOSITE"
+
     # FOAM / POLYMER_FOAM
     POLYPHENYLENE_OR_POLYSTYRENE = "POLYPHENYLENE_OR_POLYSTYRENE"
     POLYPHENYLENE_OR_POLYSTYRENE_HIPS = "POLYPHENYLENE_OR_POLYSTYRENE_HIPS"
@@ -509,24 +522,30 @@ class W24MaterialCategory3(str, Enum):
 
 class W24Material(W24BaseFeatureModel):
     """W24 Object for Materials.
+
     Parsed Material object that can either be
     associated to the TitleBlock or derived from
     all the available information (including the
     text on the canvas.
+
     Attributes:
         blurb: Material Name for human consumption.
             This will typically include the designation
             and the standard.
+
         standard: Material Standard indicated
             on the technical drawing. This used to be
             an enum - but we now have over 100 supported
             material standards and the number is increasing
             weekly. So a string seems to be more appropriate.
+
         designation: Name of the material in accordance
             with the material standard. An alternative name
             would be material_designation.
+
         material_category: Categorization of the material
             following W24MaterialCategoryX Tree.
+
     """
     blurb: str
     standard: str
@@ -536,6 +555,7 @@ class W24Material(W24BaseFeatureModel):
         Optional[W24MaterialCategory2],
         Optional[W24MaterialCategory3],
     ]
+
     # ! DEPRECATED in version 1.4.0
     material_family: Optional[Any] = None
     material_class: Optional[Any] = None
