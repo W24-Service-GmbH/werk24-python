@@ -1,10 +1,12 @@
 from decimal import Decimal
 from enum import Enum
 from typing import List, Optional, Union
+
 from pydantic import BaseModel, validator
 
+from werk24.models.unit import W24UnitLength
+
 from .base_feature import W24BaseFeatureModel
-from .unit import W24UnitLength
 
 
 class W24GeneralTolerancesStandard(str, Enum):
@@ -14,7 +16,7 @@ class W24GeneralTolerancesStandard(str, Enum):
     DIN_7168 = "DIN 7168"
     ISO_2768 = "ISO 2768"
     ISO_4759_1 = "ISO 4759-1"
-    CUSTOM = "CUSTOM"
+    TOLERANCE_NOTE = "TOLERANCE_NOTE"
 
 
 class W24ToleranceProperty(str, Enum):
@@ -39,36 +41,42 @@ class W24GeneralTolerancesPrinciple(str, Enum):
     ENVELOPE = "ENVELOPE"
 
 
-class W24CustomToleranceTableItem(BaseModel):
-    decimal_length: Optional[Decimal]
-
-    size_min: Optional[Decimal]
-    size_max: Optional[Decimal]
-
-    deviation_min: Decimal
-    deviation_max: Decimal
-    unit: Optional[W24UnitLength] = None
-
-
-class W24NonStandardToleranceClass(BaseModel):
-    """ Tolerance Class for non standard general tolerance to 
-        identify tolerance property of individual dimensions 
-        based on decimal length of dimension.
-
-    Attributes:
-        property: Property that is being tolerated
-
-        table: Rows of the tolerance table that correspond
-            to the selected tolerance class
+class W24IntervalEnd(str, Enum):
     """
-    blurb: str
-
-    property: W24ToleranceProperty = W24ToleranceProperty.LINEAR
-
-    table: List[W24CustomToleranceTableItem]
+    Enum for handling the interval ends.
+    Open for  `<`
+    Close for `<=`
+    """
+    OPEN = "OPEN"
+    CLOSE = "CLOSE"
 
 
 class W24ToleranceTableItem(BaseModel):
+    """
+    Tolerance Table Item.
+
+    Attributes:
+        nominal_min: Lower bound of the nominal value
+        nominal_min_end: Interval end of the lower bound
+        nominal_max: Upper bound of the nominal value
+        nominal_max_end: Interval end of the upper bound
+        decimal_places: Number of decimal places. This is
+            required for US-type tolerances.
+        deviation_min: Lower bound of the deviation
+        deviation_max: Upper bound of the deviation
+    """
+
+    nominal_min: Optional[Decimal]
+    nominal_min_end: W24IntervalEnd = W24IntervalEnd.OPEN
+    nominal_max: Optional[Decimal]
+    nominal_max_end: W24IntervalEnd = W24IntervalEnd.CLOSE
+
+    decimal_places: Optional[int] = None
+
+    deviation_min: Optional[Decimal]
+    deviation_max: Optional[Decimal]
+
+    unit: Optional[W24UnitLength] = None
 
     @validator('nominal_min', pre=True)
     def nominal_min_validator(  # NOQA
@@ -94,7 +102,7 @@ class W24ToleranceTableItem(BaseModel):
     def _convert_decimal(
         raw: Union[str, float, None]
     ) -> Optional[Decimal]:
-        """ Handle the decimal converstion
+        """ Handle the decimal conversion
 
         Args:
             raw (Union[str, float, None]): Raw value
@@ -145,11 +153,6 @@ class W24ToleranceTableItem(BaseModel):
         # accept the value
         return decimal
 
-    nominal_min: Optional[Decimal]
-    nominal_max: Optional[Decimal]
-    deviation_min: Optional[Decimal]
-    deviation_max: Optional[Decimal]
-
 
 class W24ToleranceClass(BaseModel):
     """ Tolerance Class which matches an individual attribute
@@ -165,55 +168,37 @@ class W24ToleranceClass(BaseModel):
             to the selected tolerance class
     """
     blurb: str
-
     property: W24ToleranceProperty
-
     table: List[W24ToleranceTableItem]
 
 
 class W24GeneralTolerances(W24BaseFeatureModel):
-    """ Object representing the General Tolerances indicated
-    on the Title Block of the Technical Drawing.
     """
+    General Tolerances on the Title Block of the Technical Drawing.
 
+    Attributes:
+        blurb: Blurb of the general tolerances for human consumption.
+        tolerance_standard: General Tolerance Standard that was defined
+            in the Drawing
+        principle: Principle that is annotated on the general tolerance
+            by "-E" (or the lack of if).
+        angular_class: Angular toleration class
+        flatness_class: Flatness toleration class
+        straightness_class: Straightness toleration class
+        linear_class: Linear toleration class
+        radius_class: Radius and chamfer toleration class
+        symmetry_class: Symmetry toleration class
+        perpendicularity_class: Perpendicularity toleration class
+
+    """
     blurb: str
-    """ Blurb of the general tolerances for human consumption
-    """
-
     tolerance_standard: W24GeneralTolerancesStandard
-    """ GeneralTolerance Standard that was defined
-    in the Drawing
-    """
-
     principle: Optional[W24GeneralTolerancesPrinciple]
-    """ Principle that is annotated on the general
-    tolerance by "-E" (or the lack of if).
-
-    NOTE: some general tolerance standards do not define
-    a default principle. If it is not stated explicitly
-    on the drawing, the `principle` value is set to `None`.
-    """
-
     angular_class: Optional[W24ToleranceClass]
-    """ Angular toleration class """
-
     flatness_class: Optional[W24ToleranceClass]
-    """ Flatness toleration class """
-
     straightness_class: Optional[W24ToleranceClass]
-    """ Straightness toleration class """
-
     linear_class: Optional[W24ToleranceClass]
-    """ Linear toleration class """
-
     radius_class: Optional[W24ToleranceClass]
-    """ Radius and chamfer toleration class """
-
     runout_class: Optional[W24ToleranceClass]
-    """ Runout toleration class """
-
     symmetry_class: Optional[W24ToleranceClass]
-    """ Symmetry toleration class """
-
     perpendicularity_class: Optional[W24ToleranceClass]
-    """ Perpendicularity toleration class - not defined in DIN7168 """
