@@ -16,6 +16,7 @@ from werk24.exceptions import RequestTooLargeException
 from werk24.models.ask import (
     W24AskCanvasThumbnail,
     W24AskPageThumbnail,
+    W24AskPartFamilyCharacterization,
     W24AskSectionalThumbnail,
     W24AskSheetAnonymization,
     W24AskSheetThumbnail,
@@ -323,5 +324,16 @@ def _make_hooks_from_args(args: argparse.Namespace) -> List[Hook]:
         for c in hook_config
         if getattr(args, c.arg)
     ] + [hook_error_internal, hook_progress_started]
+
+    # take special care of teh W24AskPartFamilyCharacterization
+    if args.part_family_id is not None:
+        c_hook = Hook(
+            ask=W24AskPartFamilyCharacterization(part_family_id=args.part_family_id),
+            function=lambda m: _print_payload(
+                "Part Family Characterization", m.payload_dict
+            ),
+        )
+        hooks.append(c_hook)
+
 
     return hooks
