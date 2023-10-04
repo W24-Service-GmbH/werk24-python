@@ -4,6 +4,7 @@ import argparse
 import io
 import json
 import logging
+import os
 from collections import namedtuple
 from typing import Any, Dict, List, Optional
 
@@ -34,10 +35,13 @@ from werk24.models.techread import (
     W24TechreadMessageSubtypeProgress,
     W24TechreadMessageType,
 )
-from werk24.techread_client import Hook
+from werk24.techread_client import LICENSE_LOCATIONS, Hook
 
 # load the environment variables
-load_dotenv(".werk24")
+for c_location in LICENSE_LOCATIONS:
+    if os.path.exists(c_location):
+        load_dotenv(c_location)
+        break
 
 # set the log level to info for the test setting
 # We recommend using logging.WARNING for production
@@ -330,5 +334,6 @@ def _make_hooks_from_args(args: argparse.Namespace) -> List[Hook]:
             ),
         )
         hooks.append(c_hook)
+
 
     return hooks

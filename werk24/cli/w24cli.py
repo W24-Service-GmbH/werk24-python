@@ -2,12 +2,11 @@
 """
 import argparse
 import asyncio
-from dotenv import load_dotenv
-import werk24.cli.techread
-import werk24.cli.auth
-import werk24.cli.support
 
-load_dotenv(".werk24")
+import werk24.cli.auth
+import werk24.cli.health_check
+import werk24.cli.support
+import werk24.cli.techread
 
 
 def main() -> None:
@@ -30,6 +29,9 @@ def main() -> None:
 
     elif args.service == "support":
         asyncio.run(werk24.cli.support.main(args))
+
+    elif args.service == "health_check":
+        asyncio.run(werk24.cli.health_check.main(args))
 
 
 def _add_support_parser(subparsers):
@@ -161,6 +163,7 @@ def _add_techread_parser(subparsers):
         action="store_true",
     )
 
+
     parser_techread.add_argument(
         "--ask-titleblock", help="ask for the Title Block", action="store_true"  # noqa
     )
@@ -171,6 +174,11 @@ def _add_techread_parser(subparsers):
         action="store",
         dest="part_family_id",
     )
+
+    parser_health_check = subparsers.add_parser(
+        "health_check", help="Perform Health Checks"
+    )
+    parser_health_check.add_argument("type", help="Type of Health Check to perform")
 
 
 if __name__ == "__main__":
