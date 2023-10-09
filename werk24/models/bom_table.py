@@ -6,6 +6,17 @@ from pydantic import BaseModel
 from werk24.models.revision_table import W24GridSquare
 
 
+class BomQuantity(BaseModel):
+    """Quantity of parts listed in BOM
+
+    Args:
+        quantity (str): Quantity of the part. 
+        unit (Optional[str]): Unit of the quantity. 
+    """
+    quantity: str
+    unit: Optional[str]
+
+
 class W24BomTableRow(BaseModel):
     """ Row of a BOM table
 
@@ -33,7 +44,7 @@ class W24BomTableRow(BaseModel):
     """
     serial: Optional[str]
 
-    quantity: str
+    quantity: BomQuantity
 
     position: Optional[str]
 
@@ -43,7 +54,7 @@ class W24BomTableRow(BaseModel):
 
     bom_material: Optional[str]
 
-    weight: str
+    weight: Optional[str]
 
     grid_squares: List[W24GridSquare]
 
