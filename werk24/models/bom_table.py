@@ -10,14 +10,14 @@ class W24BomTableRow(BaseModel):
     """ Row of a BOM table
 
     Attributes:
-        serial (Optional[str]): Serial number of the part.
+        serial (Optional[str]): Serial number or Item Number of the part.
 
         quantity (Optional[str]): Quantity of the part. 
 
         position (Optional[str]): Position of the part on the 
             assembly. 
 
-        part_number (Optional[str]): Part Number or Item Number of 
+        part_number (Optional[str]): Part Number of 
             the part listed in the bill of material.
 
         designation Optional[str]: Designation/Title of the part
