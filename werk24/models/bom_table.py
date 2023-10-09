@@ -14,7 +14,7 @@ class W24BomTableRow(BaseModel):
 
         quantity (Optional[str]): Quantity of the part. 
 
-        bom_position (Optional[str]): Position of the part on the 
+        position (Optional[str]): Position of the part on the 
             assembly. 
 
         part_number (Optional[str]): Part Number or Item Number of 
@@ -35,7 +35,7 @@ class W24BomTableRow(BaseModel):
 
     quantity: str
 
-    bom_position: Optional[str]
+    position: Optional[str]
 
     part_number: Optional[str]
 
