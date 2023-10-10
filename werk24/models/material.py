@@ -2,7 +2,7 @@
 """
 from enum import Enum
 from typing import Tuple, Optional, Any
-from werk24.models.base_feature import W24BaseFeatureModel
+from werk24.models.base_feature import W24BaseFeatureModel, BaseModel
 
 
 class W24MaterialCategory1(str, Enum):
@@ -521,7 +521,7 @@ class W24MaterialCategory3(str, Enum):
 
 
 class W24Material(W24BaseFeatureModel):
-    """W24 Object for Materials.
+    """ W24 Object for Materials.
 
     Parsed Material object that can either be
     associated to the TitleBlock or derived from
@@ -529,6 +529,7 @@ class W24Material(W24BaseFeatureModel):
     text on the canvas.
 
     Attributes:
+    ----------
         blurb: Material Name for human consumption.
             This will typically include the designation
             and the standard.
@@ -571,3 +572,37 @@ class W24Material(W24BaseFeatureModel):
     material_group: Optional[Any] = None
     material_standard: Any
     material_code: str
+
+
+class W24MaterialSet(BaseModel):
+    """ Set of Materials are used when two or more materials are defined 
+        for a part which are applicable together. 
+
+    Args:
+    ----
+        material (list[W24material]): List of W24Materials that are 
+            defined together for a part. 
+            For example,
+                Material_A+Material_B+MAterial_C
+                Commonly occurs with polymers like PA+PVC+GF
+
+    """
+    material: list[W24Material]
+
+
+class W24MaterialOption(BaseModel):
+    """ Material options are used when a set of material is
+        defined for a part as an option. 
+        For example, in a Bill of Material. 
+
+    Args:
+    ----
+        material_set (list[W24MaterialSet]): Material Set can contain a 
+            combination of material that could be valid together.
+            For example: (Material_A+Material_B) or (Material_C+Material_D)
+                            are the material options defined. 
+                            Here,
+                            (Material_A+Material_B) is a material set
+                            (Material_C+Material_D) is another material set
+    """
+    material_set: list[W24MaterialSet]
