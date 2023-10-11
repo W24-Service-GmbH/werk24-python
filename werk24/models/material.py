@@ -1,7 +1,7 @@
 """ Material Models
 """
 from enum import Enum
-from typing import Tuple, Optional, Any
+from typing import Tuple, Optional, Any, List
 from werk24.models.base_feature import W24BaseFeatureModel, BaseModel
 
 
@@ -587,7 +587,7 @@ class W24MaterialSet(BaseModel):
                 Commonly occurs with polymers like PA+PVC+GF
 
     """
-    material: list[W24Material]
+    material: List[W24Material]
 
 
 class W24MaterialOption(BaseModel):
@@ -605,4 +605,4 @@ class W24MaterialOption(BaseModel):
                             (Material_A+Material_B) is a material set
                             (Material_C+Material_D) is another material set
     """
-    material_set: list[W24MaterialSet]
+    material_set: List[W24MaterialSet]
