@@ -588,21 +588,3 @@ class W24MaterialSet(BaseModel):
 
     """
     material: List[W24Material]
-
-
-class W24MaterialOption(BaseModel):
-    """ Material options are used when a set of material is
-        defined for a part as an option. 
-        For example, in a Bill of Material. 
-
-    Args:
-    ----
-        material_set (list[W24MaterialSet]): Material Set can contain a 
-            combination of material that could be valid together.
-            For example: (Material_A+Material_B) or (Material_C+Material_D)
-                            are the material options defined. 
-                            Here,
-                            (Material_A+Material_B) is a material set
-                            (Material_C+Material_D) is another material set
-    """
-    material_set: List[W24MaterialSet]
