@@ -574,20 +574,6 @@ class W24Material(W24BaseFeatureModel):
     material_code: str
 
 
-def get_material_set_blurb(
-    material: List[W24Material]
-) -> str:
-    if len(material) != 0:
-        if len(material) > 1:
-            for i in range(len(material)):
-                material_list = " and ".join(f"{material[i].blurb}")
-            return f"({material_list})"
-        elif len(material) == 1:
-            return f"{material[0].blurb}"
-    else:
-        return ""
-
-
 class W24MaterialSet(BaseModel):
     """ Set of Materials are used when two or more materials are defined 
         for a part which are applicable together. 
