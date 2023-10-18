@@ -588,3 +588,4 @@ class W24MaterialSet(BaseModel):
 
     """
     material: List[W24Material]
+    blurb: str
