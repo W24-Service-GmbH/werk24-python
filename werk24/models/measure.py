@@ -8,6 +8,7 @@ from typing import List, Optional
 from pydantic import UUID4, BaseModel
 
 from .chamfer import W24Chamfer
+from .hole_feature import W24CounterBore, W24CounterDrill, W24CounterSink
 from .depth import W24Depth
 from .base_feature import W24BaseFeatureModel
 from .size import W24Size
@@ -132,6 +133,15 @@ class W24MeasureLabel(BaseModel):
 
         depth: Depth of the drilling or thread. Uses the same dimensions
 
+        counterbore: Counterbore details. This is usually defined for holes
+            threads. 
+
+        countersink: Countersink details. This is usually defined for holes
+            threads. 
+
+        counterdrill: Counterdrill details. This is usually defined for holes
+            threads. 
+
     """
 
     @validator('size_tolerance', pre=True)
@@ -157,6 +167,12 @@ class W24MeasureLabel(BaseModel):
     depth: Optional[W24Depth] = None
 
     test_dimension: Optional[W24TestDimension] = None
+
+    counterbore: List[W24CounterBore] = []
+
+    countersink: List[W24CounterSink] = []
+
+    counterdrill: List[W24CounterDrill] = []
 
 
 class W24Measure(W24BaseFeatureModel):
