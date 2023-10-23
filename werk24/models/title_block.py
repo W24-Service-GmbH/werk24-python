@@ -13,7 +13,7 @@ from .weight import W24Weight
 
 
 class W24TitleBlockItem(W24BaseFeatureModel):
-    """ Per-Language caption or value
+    """Per-Language caption or value
 
     Attributes:
 
@@ -28,7 +28,7 @@ class W24TitleBlockItem(W24BaseFeatureModel):
 
 
 class W24CaptionValuePair(BaseModel):
-    """ Caption-Value pair for that were found on the Title Block.
+    """Caption-Value pair for that were found on the Title Block.
 
     Attributes:
 
@@ -40,11 +40,37 @@ class W24CaptionValuePair(BaseModel):
             on the drawing. This behavior might however change in the
             future.
     """
+
     blurb: str
 
     captions: List[W24TitleBlockItem]
-
     values: List[W24TitleBlockItem]
+
+
+class W24IdentifierType(str, Enum):
+    """List of Identifier Types supported by Werk24"""
+
+    CUSTOMER_NUMBER = "CUSTOMER_NUMBER"
+    DRAWING_NUMBER = "DRAWING_NUMBER"
+    DOCUMENT_NUMBER = "DOCUMENT_NUMBER"
+    ERP_NUMBER = "ERP_NUMBER"
+    IDENTIFICATION_NUMBER = "IDENTIFICATION_NUMBER"
+    ITEM_NUMBER = "ITEM_NUMBER"
+    MANUFACTURER_NUMBER = "MANUFACTURER_NUMBER"
+    ORDER_NUMBER = "ORDER_NUMBER"
+    PART_NUMBER = "PART_NUMBER"
+    PROJECT_NUMBER = "PROJECT_NUMBER"
+    SUPPLIER_NUMBER = "SUPPLIER_NUMBER"
+
+
+class W24IdentifierPair(W24CaptionValuePair):
+    """Caption-Value Pair for Identifies
+
+    Attributes:
+        identifier_type (W24IdentifierType) Type of identifier.
+    """
+
+    identfier_type: W24IdentifierType
 
 
 class W24FileExtensionType(str, Enum):
@@ -55,6 +81,7 @@ class W24FileExtensionType(str, Enum):
     DRAWING, while step and stl extensions will be mapped
     to MODEL.
     """
+
     DRAWING = "DRAWING"
     MODEL = "MODEL"
     UNKNOWN = "UNKNOWN"
@@ -66,6 +93,7 @@ class W24FilePathType(str, Enum):
     POSIX (unix) or WINDOWS path is used. When only a filename
     is indicated, the value will be UNKNOWN
     """
+
     POSIX = "POSIX"
     WINDOWS = "WINDOWS"
     UNKNOWN = "UNKNOWN"
@@ -95,6 +123,7 @@ class W24Filename(W24BaseFeatureModel):
             found an absolute path. UNKNOWN if we only read
             a filename without prefix.
     """
+
     blurb: str
 
     filename: str
@@ -120,8 +149,11 @@ class W24TitleBlock(BaseModel):
             Keep in mind that the drawing might define multiple
             variants that each specify their own part id
 
-        reference_ids: List of additional reference IDs
-            detected on the Drawing
+        reference_ids: List of all the identifiers that we found on the
+            drawing. The reference ids will hold all the ids that we found
+            on the drawing. These will include both the drawing/part numbers
+            as well as all the other ids that we identified in addition,
+            such as the Order number, the Item number and so on.
 
         general_tolerances: General Tolerances quoted on the TitleBlock
 
@@ -148,10 +180,8 @@ class W24TitleBlock(BaseModel):
     designation: Optional[W24CaptionValuePair]
 
     drawing_id: Optional[W24CaptionValuePair]
-
     part_ids: List[W24CaptionValuePair] = []
-
-    reference_ids: List[W24CaptionValuePair]
+    reference_ids: List[W24IdentifierPair] = []
 
     general_tolerances: Optional[W24GeneralTolerances]
 
@@ -164,10 +194,9 @@ class W24TitleBlock(BaseModel):
 
     colors: List[W24PropertyColor] = []
 
-    @validator('designation', pre=True)
+    @validator("designation", pre=True)
     def designation_validator(
-        cls,
-        raw: Dict[str, Any]
+        cls, raw: Dict[str, Any]
     ) -> Optional[W24CaptionValuePair]:
         """
         Workaround to deal with the transition period
@@ -188,11 +217,8 @@ class W24TitleBlock(BaseModel):
         """
         return cls._parse_caption_value_pair(raw)
 
-    @validator('drawing_id', pre=True)
-    def drawing_id_validator(
-        cls,
-        raw: Dict[str, Any]
-    ) -> Optional[W24CaptionValuePair]:
+    @validator("drawing_id", pre=True)
+    def drawing_id_validator(cls, raw: Dict[str, Any]) -> Optional[W24CaptionValuePair]:
         """
         Workaround to deal with the transition period
         while we move from the single-value to the multi-value
@@ -212,10 +238,9 @@ class W24TitleBlock(BaseModel):
         """
         return cls._parse_caption_value_pair(raw)
 
-    @validator('reference_ids', pre=True)
+    @validator("reference_ids", pre=True)
     def reference_ids_validator(
-        cls,
-        raw: List[Dict[str, Any]]
+        cls, raw: List[Dict[str, Any]]
     ) -> List[W24CaptionValuePair]:
         """
         Workaround to deal with the transition period
@@ -234,10 +259,7 @@ class W24TitleBlock(BaseModel):
 
             List[W24CaptionValuePair]: Parse value-caption pair
         """
-        result = [
-            cls._parse_caption_value_pair(e)
-            for e in raw
-        ]
+        result = [cls._parse_caption_value_pair(e) for e in raw]
         return [r for r in result if r is not None]
 
     @staticmethod
@@ -267,11 +289,8 @@ class W24TitleBlock(BaseModel):
         if raw is None:
             return None
 
-        if 'value' in raw.keys():
-            raw['values'] = [{
-                'language': None,
-                'text': raw.get('value')
-            }]
-            del raw['value']
+        if "value" in raw.keys():
+            raw["values"] = [{"language": None, "text": raw.get("value")}]
+            del raw["value"]
 
         return W24CaptionValuePair.parse_obj(raw)
