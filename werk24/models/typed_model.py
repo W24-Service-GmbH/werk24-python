@@ -44,7 +44,7 @@ class W24TypedModel(BaseModel):
         model that shall be called.
     """
 
-    _subtypes_: Dict[Tuple[str, ...], BaseModel] = {}
+    __subtypes__ = {}
 
     class Config:
         arbitrary_types_allowed = True
@@ -61,17 +61,19 @@ class W24TypedModel(BaseModel):
             Quantity: lambda v: str(v)
         }
 
-    def __init_subclass__(cls):
+    @classmethod
+    def __pydantic_init_subclass__(
+        cls,
+    ):
         """Called when a subclass is specified.
 
         Registers the class locally.
         """
-        if pydantic.__version__[0] == 1:
-            key_ = tuple(
-                [cls._first_child()]
-                + [cls.__fields__[disc].default for disc in cls.Config.discriminators]
-            )
-            cls._subtypes_[key_] = cls
+        key_ = tuple(
+            [cls._first_child()]
+            + [cls.model_fields[disc].default for disc in cls.Config.discriminators]
+        )
+        cls.__subtypes__[key_] = cls
 
     @classmethod
     def _first_child(cls):
@@ -92,7 +94,7 @@ class W24TypedModel(BaseModel):
 
         # check whether the subtype actually exists.
         # Be careful with updates here.
-        sub = cls._subtypes_.get(key_)
+        sub = cls.__subtypes__.get(key_)
         if sub is None:
             raise TypeError(f"Unsupported sub-type: {key_}")
 
