@@ -159,8 +159,8 @@ class W24Ask(BaseModel):
         request; our system them processes the drawing when the
         system load is low.
     """
-    ask_type: W24AskType
 
+    ask_type: W24AskType
     is_training: bool = False
 
 
@@ -178,6 +178,7 @@ class W24AskThumbnail(W24Ask):
         request color images or to set a resolution limit.
         If this is a priority to you, please let us know.
     """
+
     file_format: W24FileFormatThumbnail = W24FileFormatThumbnail.JPEG
 
 
@@ -190,7 +191,8 @@ class W24AskPageThumbnail(W24AskThumbnail):
         even when the Technical Drawing that you submitted was
         black-on-white.
     """
-    ask_type = W24AskType.PAGE_THUMBNAIL
+
+    ask_type: W24AskType = W24AskType.PAGE_THUMBNAIL
 
 
 class W24AskSheetThumbnail(W24AskThumbnail):
@@ -203,7 +205,8 @@ class W24AskSheetThumbnail(W24AskThumbnail):
         even when the Technical Drawing that you submitted was
         black-on-white.
     """
-    ask_type = W24AskType.SHEET_THUMBNAIL
+
+    ask_type: W24AskType = W24AskType.SHEET_THUMBNAIL
 
 
 class W24AskSheetAnonymization(W24AskThumbnail):
@@ -239,7 +242,8 @@ class W24AskSheetAnonymization(W24AskThumbnail):
             only grayscale is supported.
 
     """
-    ask_type = W24AskType.SHEET_ANONYMIZATION
+
+    ask_type: W24AskType = W24AskType.SHEET_ANONYMIZATION
 
     replacement_logo_url: Optional[HttpUrl] = None
 
@@ -273,7 +277,8 @@ class W24AskPartFamilyCharacterization(W24Ask):
             that we will provide to you after the part family
             post processor is implemented.
     """
-    ask_type = W24AskType.PART_FAMILY_CHARACTERIZATION
+
+    ask_type: W24AskType = W24AskType.PART_FAMILY_CHARACTERIZATION
 
     part_family_id: UUID4
 
@@ -288,6 +293,7 @@ class W24AskPartFamilyCharacterizationResponse(BaseModel):
 
         sheet_id (UUID4):Id of the sheet
     """
+
     page_id: UUID4
     sheet_id: UUID4
     part_family_characterizations: List[W24PartFamilyCharacterization]
@@ -311,7 +317,8 @@ class W24AskCanvasThumbnail(W24AskThumbnail):
             !!! important information. Run a risk analysis
             !!! before using this attribute
     """
-    ask_type = W24AskType.CANVAS_THUMBNAIL
+
+    ask_type: W24AskType = W24AskType.CANVAS_THUMBNAIL
 
     remove_canvas_notes__dangerous: bool = False
 
@@ -325,7 +332,8 @@ class W24AskSectionalThumbnail(W24AskThumbnail):
         even when the Technical Drawing that you submitted was
         black-on-white.
     """
-    ask_type = W24AskType.SECTIONAL_THUMBNAIL
+
+    ask_type: W24AskType = W24AskType.SECTIONAL_THUMBNAIL
 
 
 class W24AskVariantAngles(W24Ask):
@@ -333,7 +341,8 @@ class W24AskVariantAngles(W24Ask):
     measures that were detected on all sectionals of a
     variant.
     """
-    ask_type = W24AskType.VARIANT_ANGLES
+
+    ask_type: W24AskType = W24AskType.VARIANT_ANGLES
 
 
 class W24AskVariantAnglesResponse(BaseModel):
@@ -354,6 +363,7 @@ class W24AskVariantAnglesResponse(BaseModel):
         angles: List of Angles that were found for the Variant
             on the Sectional.
     """
+
     variant_id: UUID4
     sectional_id: UUID4
     angles: List[W24Angle]
@@ -365,7 +375,7 @@ class W24AskVariantRoughnesses(W24Ask):
     the variant.
     """
 
-    ask_type = W24AskType.VARIANT_ROUGHNESSES
+    ask_type: W24AskType = W24AskType.VARIANT_ROUGHNESSES
 
 
 class W24AskVariantRoughnessesResponse(BaseModel):
@@ -386,6 +396,7 @@ class W24AskVariantRoughnessesResponse(BaseModel):
         roughnesses: List of Roughnesses that were found for the
             Variant on the Sectional.
     """
+
     variant_id: UUID4
     sectional_id: UUID4
     roughnesses: List[W24Roughness]
@@ -395,7 +406,8 @@ class W24AskVariantRadii(W24Ask):
     """With this Ask you are requesting the list of all
     radii that were detected for the variant.
     """
-    ask_type = W24AskType.VARIANT_RADII
+
+    ask_type: W24AskType = W24AskType.VARIANT_RADII
 
 
 class W24AskVariantRadiiResponse(BaseModel):
@@ -416,6 +428,7 @@ class W24AskVariantRadiiResponse(BaseModel):
         radii: List of Radii that were found for the
             Variant on the Sectional.
     """
+
     variant_id: UUID4
     sectional_id: UUID4
     radii: List[W24Radius]
@@ -436,7 +449,8 @@ class W24AskVariantMeasures(W24Ask):
             W24Measure objects also contain a confidence score
             that allows you to filter even further.
     """
-    ask_type = W24AskType.VARIANT_MEASURES
+
+    ask_type: W24AskType = W24AskType.VARIANT_MEASURES
 
     confidence_min: float = 0.2
 
@@ -463,6 +477,7 @@ class W24AskVariantMeasuresResponse(BaseModel):
         Be aware that requesting the measures will
         yield one responds for each variant and sectional
     """
+
     variant_id: UUID4
     sectional_id: UUID4
     measures: List[W24Measure]
@@ -479,7 +494,8 @@ class W24AskVariantLeaders(W24Ask):
         activated for your account. Otherwise the request
         will be ignored.
     """
-    ask_type = W24AskType.VARIANT_LEADERS
+
+    ask_type: W24AskType = W24AskType.VARIANT_LEADERS
 
 
 class W24AskVariantLeadersResponse(BaseModel):
@@ -501,6 +517,7 @@ class W24AskVariantLeadersResponse(BaseModel):
         leaders: List of Leaders that were found for the
             Variant on the Sectional.
     """
+
     variant_id: UUID4
     sectional_id: UUID4
     leaders: List[W24Leader]
@@ -526,7 +543,8 @@ class W24AskVariantMaterial(W24Ask):
         activated for your account. Otherwise the request
         will be ignored.
     """
-    ask_type = W24AskType.VARIANT_MATERIAL
+
+    ask_type: W24AskType = W24AskType.VARIANT_MATERIAL
 
     material_hint: Optional[str] = None
 
@@ -535,14 +553,16 @@ class W24AskTitleBlock(W24Ask):
     """This ask requests all information that
     we can obtain from the title block
     """
-    ask_type = W24AskType.TITLE_BLOCK
+
+    ask_type: W24AskType = W24AskType.TITLE_BLOCK
 
 
 class W24AskRevisionTable(W24Ask):
     """With this Ask you are requesting the list of all
     revision tables in the document
     """
-    ask_type = W24AskType.REVISION_TABLE
+
+    ask_type: W24AskType = W24AskType.REVISION_TABLE
 
 
 class W24AskRevisionTableResponse(BaseModel):
@@ -555,6 +575,7 @@ class W24AskRevisionTableResponse(BaseModel):
             the content that was extracted from the
             drawing
     """
+
     revision_table: W24RevisionTable
 
 
@@ -563,7 +584,8 @@ class W24AskVariantGDTs(W24Ask):
     Geometric Dimensions and Tolerances
     that were detected for the Variant.
     """
-    ask_type = W24AskType.VARIANT_GDTS
+
+    ask_type: W24AskType = W24AskType.VARIANT_GDTS
 
 
 class W24AskVariantGDTsResponse(BaseModel):
@@ -584,6 +606,7 @@ class W24AskVariantGDTsResponse(BaseModel):
         gdts: List of GD&Ts that were found for the
             Variant on the Sectional.
     """
+
     variant_id: UUID4
     sectional_id: UUID4
     gdts: List[W24GDT]
@@ -597,7 +620,8 @@ class W24AskTrain(W24Ask):
         This is deprecated. Please use the attribute is_training=True
         instead.
     """
-    ask_type = W24AskType.TRAIN
+
+    ask_type: W24AskType = W24AskType.TRAIN
 
 
 class W24AskVariantCAD(W24Ask):
@@ -614,7 +638,8 @@ class W24AskVariantCAD(W24Ask):
         of a flat part and can only be used for 2 dimensional
         applications (e.g. sheet metal).
     """
-    ask_type = W24AskType.VARIANT_CAD
+
+    ask_type: W24AskType = W24AskType.VARIANT_CAD
 
     output_format: W24FileFormatVariantCAD = W24FileFormatVariantCAD.DXF
 
@@ -656,6 +681,7 @@ class W24AskVariantCADResponse(BaseModel):
         before using these two attributes.
 
     """
+
     variant_id: UUID4
 
     num_sectionals: int = 0
@@ -668,7 +694,7 @@ class W24AskVariantExternalDimensions(W24Ask):
     variant on the Document.
     """
 
-    ask_type = W24AskType.VARIANT_EXTERNAL_DIMENSIONS
+    ask_type: W24AskType = W24AskType.VARIANT_EXTERNAL_DIMENSIONS
 
 
 class W24AskVariantExternalDimensionsResponse(BaseModel):
@@ -691,6 +717,7 @@ class W24AskVariantExternalDimensionsResponse(BaseModel):
         !!! the cuboid and cylinder are not necessarily aligned. So might
         !!! receive different depths of the cuboid and the cylinder.
     """
+
     variant_id: UUID4
     enclosing_cuboid: Optional[W24GeometricShapeCuboid]
     enclosing_cylinder: Optional[W24GeometricShapeCylinder]
@@ -698,9 +725,9 @@ class W24AskVariantExternalDimensionsResponse(BaseModel):
 
 
 class W24AskProductPMIExtract(W24Ask):
-    """Ask object to request the PMIExtract Product.
-    """
-    ask_type = W24AskType.PRODUCT_PMI_EXTRACT
+    """Ask object to request the PMIExtract Product."""
+
+    ask_type: W24AskType = W24AskType.PRODUCT_PMI_EXTRACT
 
 
 class W24AskProductPMIExtractResponse(BaseModel):
@@ -735,6 +762,7 @@ class W24AskProductPMIExtractResponse(BaseModel):
             roughnesses. Note: in the PMIExtract, the position will not
             be returned.
     """
+
     variant_id: UUID4
     material: Optional[W24Material]
     general_tolerances: Optional[W24GeneralTolerances]
@@ -745,9 +773,9 @@ class W24AskProductPMIExtractResponse(BaseModel):
 
 
 class W24AskVariantThreadElements(W24Ask):
-    """Ask object to obtain the thread elements
-    """
-    ask_type = W24AskType.VARIANT_THREAD_ELEMENTS
+    """Ask object to obtain the thread elements"""
+
+    ask_type: W24AskType = W24AskType.VARIANT_THREAD_ELEMENTS
 
 
 class W24AskVariantThreadElementsResponse(BaseModel):
@@ -760,15 +788,16 @@ class W24AskVariantThreadElementsResponse(BaseModel):
             for details.
 
     """
+
     variant_id: UUID4
     sectional_id: UUID4
     thread_elements: List[W24ThreadElement]
 
 
 class W24AskNotes(W24Ask):
-    """Ask all the notes on the Canvas and the sectionals
-    """
-    ask_type = W24AskType.NOTES
+    """Ask all the notes on the Canvas and the sectionals"""
+
+    ask_type: W24AskType = W24AskType.NOTES
 
 
 class W24AskNotesResponse(BaseModel):
@@ -779,6 +808,7 @@ class W24AskNotesResponse(BaseModel):
         notes(List[W24Ask]): List of the notes that were
             identified.
     """
+
     notes: List[W24Note]
 
 
@@ -787,13 +817,14 @@ class W24AskInternalScreening(W24Ask):
 
     NOTE: not available on the public API.
     """
-    ask_type = W24AskType.INTERNAL_SCREENING
+
+    ask_type: W24AskType = W24AskType.INTERNAL_SCREENING
 
 
 class W24AskVariantProcesses(W24Ask):
-    """Ask to receive the processes associated with the Variant.
-    """
-    ask_type = W24AskType.VARIANT_PROCESSES
+    """Ask to receive the processes associated with the Variant."""
+
+    ask_type: W24AskType = W24AskType.VARIANT_PROCESSES
 
 
 class W24AskVariantProcessesResponse(BaseModel):
@@ -803,12 +834,14 @@ class W24AskVariantProcessesResponse(BaseModel):
         processes (List[W24Process]): List of all the
             processes that were identified on the drawing.
     """
+
     processes: List[W24Process]
+
 
 # class W24AskVariantToleranceElements(W24Ask):
 #     """Ask object to obtain the tolerance elements
 #     """
-#     ask_type = W24AskType.VARIANT_TOLERANCE_ELEMENTS
+#     ask_type: W24AskType = W24AskType.VARIANT_TOLERANCE_ELEMENTS
 
 # class W24AskVariantToleranceElementsResponse(BaseModel):
 #     """Response object corresponding to the W24AskVariantThreadElements
@@ -865,7 +898,7 @@ def deserialize_ask(
         W24AskUnion: Corresponding ask type
     """
     if isinstance(raw, dict):
-        ask_type = _deserialize_ask_type(raw.get('ask_type', ''))
+        ask_type = _deserialize_ask_type(raw.get("ask_type", ""))
         return ask_type.parse_obj(raw)
 
     if isinstance(raw, W24Ask):
@@ -874,9 +907,7 @@ def deserialize_ask(
     raise ValueError(f"Unsupported value type '{type(raw)}'")
 
 
-def _deserialize_ask_type(
-    ask_type: str
-) -> Type[W24Ask]:
+def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
     """Get the Ask Class from the ask type
 
     Args:

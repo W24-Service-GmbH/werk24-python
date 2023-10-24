@@ -12,24 +12,25 @@ from .ask import W24Ask, W24AskType, deserialize_ask
 
 
 class W24TechreadAction(str, Enum):
-    """ List of supported actions by the Techread API
-    """
+    """List of supported actions by the Techread API"""
+
     INITIALIZE = "INITIALIZE"
     READ = "READ"
 
 
 class W24TechreadCommand(BaseModel):
-    """ Command that is sent from the client to the Server
-    """
+    """Command that is sent from the client to the Server"""
+
     action: W24TechreadAction
     message: Json
 
 
 class W24TechreadMessageType(str, Enum):
-    """ Message Type of the message that is sent
+    """Message Type of the message that is sent
     from the server to the client in response to
     a request.
     """
+
     ASK = "ASK"
     ERROR = "ERROR"  # !!! DEPRECATED
     PROGRESS = "PROGRESS"
@@ -37,28 +38,29 @@ class W24TechreadMessageType(str, Enum):
 
 
 class W24TechreadMessageSubtypeError(str, Enum):
-    """ Message Subtype for the MessageType: ERROR
+    """Message Subtype for the MessageType: ERROR
 
     !!! danger
         The SubtypeError is deprecated in favor of
         the exceptions attribute that is attached to
         the W24AskMessage.
     """
+
     UNSUPPORTED_DRAWING_FILE_FORMAT = "UNSUPPORTED_DRAWING_FILE_FORMAT"
     INTERNAL = "INTERNAL"
     TIMEOUT = "TIMEOUT"
 
 
 class W24TechreadMessageSubtypeRejection(str, Enum):
-    """ Message Subtype for the MessageType: REJECTION
-    """
+    """Message Subtype for the MessageType: REJECTION"""
+
     COMPLEXITY_EXCEEDED = "COMPLEXITY_EXCEEDED"
     PAPER_SIZE_LIMIT_EXCEEDED = "PAPER_SIZE_LIMIT_EXCEEDED"
 
 
 class W24TechreadMessageSubtypeProgress(str, Enum):
-    """ Message Subtype for the MessageType: PROGRESS
-    """
+    """Message Subtype for the MessageType: PROGRESS"""
+
     INITIALIZATION_SUCCESS = "INITIALIZATION_SUCCESS"
     COMPLETED = "COMPLETED"
     STARTED = "STARTED"
@@ -72,14 +74,15 @@ defined in W24AskTypes
 W24TechreadMessageSubtype = Union[
     W24TechreadMessageSubtypeError,
     W24TechreadMessageSubtypeProgress,
-    W24TechreadMessageSubtypeAsk]
+    W24TechreadMessageSubtypeAsk,
+]
 """ Shorthand to summorize all the supported
 MessageTypes
 """
 
 
 class W24TechreadExceptionType(str, Enum):
-    """ List of all the error types that can possibly
+    """List of all the error types that can possibly
     be associated to the error type.
     """
 
@@ -137,7 +140,7 @@ class W24TechreadExceptionType(str, Enum):
 
 
 class W24TechreadExceptionLevel(str, Enum):
-    """ Severity level for the Error
+    """Severity level for the Error
 
     !!! note
         This is defined for future-compatibility.
@@ -158,7 +161,7 @@ class W24TechreadExceptionLevel(str, Enum):
 
 
 class W24TechreadException(BaseModel):
-    """ Error message that accompanies the W24TechreadMessage
+    """Error message that accompanies the W24TechreadMessage
     if an error occured.
 
     Attributes:
@@ -181,6 +184,7 @@ class W24TechreadBaseResponse(BaseModel):
             that occured during the processing.
 
     """
+
     exceptions: List[W24TechreadException] = []
 
     @property
@@ -199,7 +203,7 @@ class W24TechreadBaseResponse(BaseModel):
 
 
 class W24TechreadMessage(W24TechreadBaseResponse):
-    """ Message format for messages that are sent
+    """Message format for messages that are sent
     from the server to the client.
 
     Attributes:
@@ -228,6 +232,7 @@ class W24TechreadMessage(W24TechreadBaseResponse):
 
 
     """
+
     request_id: UUID4
 
     message_type: W24TechreadMessageType
@@ -244,7 +249,7 @@ class W24TechreadMessage(W24TechreadBaseResponse):
 
 
 class W24TechreadRequest(BaseModel):
-    """ Definition of a W24DrawingReadRequest containing
+    """Definition of a W24DrawingReadRequest containing
     all the asks (i.e., things you want to learn about
     the technical drawing).
 
@@ -267,11 +272,12 @@ class W24TechreadRequest(BaseModel):
             be attributed to. Sub-accounts allow you to keep the requests
             of multiple of your customers separate.
     """
+
     asks: List[W24Ask] = []
 
     development_key: Optional[str] = None
 
-    client_version = __version__
+    client_version: str = __version__
 
     max_pages: int = 1
 
@@ -279,12 +285,9 @@ class W24TechreadRequest(BaseModel):
 
     sub_account: Optional[UUID4] = None
 
-    @validator('asks', pre=True)
-    def ask_list_validator(
-        cls,
-        raw: List[Dict[str, Any]]
-    ) -> List[W24Ask]:
-        """ Validator to de-serialize the asks. The de-serialization
+    @validator("asks", pre=True)
+    def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24Ask]:
+        """Validator to de-serialize the asks. The de-serialization
         is based on the ask_type attribute of the object. Pydantic
         does not support this out-of-the box
 
@@ -298,7 +301,7 @@ class W24TechreadRequest(BaseModel):
 
 
 class W24PresignedPost(BaseModel):
-    """ Details of the presigned post that allow you to upload
+    """Details of the presigned post that allow you to upload
     a file to our file system.
 
     Attributes:
@@ -309,11 +312,11 @@ class W24PresignedPost(BaseModel):
 
     url: HttpUrl
 
-    fields_: Dict[str, str] = Field(alias='fields', default={})
+    fields_: Dict[str, str] = Field(alias="fields", default={})
 
 
 class W24TechreadInitResponse(W24TechreadBaseResponse):
-    """ API response to the Initialize request
+    """API response to the Initialize request
 
     Attributes:
         drawing_presigned_post: Presigned Post for uploading the drawing

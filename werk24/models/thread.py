@@ -17,13 +17,14 @@ from .gender import W24Gender
 
 
 class W24ThreadType(str, Enum):
-    """ Enum for the individual thread types
+    """Enum for the individual thread types
 
     NOTE: UTS_COARSE, UTS_FINE, UTS_EXTRAFINE and UTS_SPECIAL
         as individual types will be deprecated. Their information
         individual `threads_per_inch` information will be stored
         in the corresponding variable.
     """
+
     ISO_METRIC = "ISO_METRIC"
     WHITWORTH = "WHITWORTH"
     UTS = "UTS"
@@ -45,15 +46,16 @@ class W24ThreadType(str, Enum):
 
 
 class W24ThreadHandedness(str, Enum):
-    """ Enum describing the direction of the
+    """Enum describing the direction of the
     thread
     """
+
     LEFT = "LEFT"
     RIGHT = "RIGHT"
 
 
 class W24ThreadMultiStart(BaseModel):
-    """ Multi-Start Thread Information
+    """Multi-Start Thread Information
 
     A common example of multi-start threads are the cap on a plastic
     water bottle. The cap will screw on quickly because a multi-start thread.
@@ -67,12 +69,13 @@ class W24ThreadMultiStart(BaseModel):
             in parallel to one another.
 
     """
+
     thread_lead: Optional[Decimal]
     number_of_starts: int = 1
 
 
 class W24Thread(BaseModel, abc.ABC):
-    """ Abstract Base Class for all Threads
+    """Abstract Base Class for all Threads
 
     Attributes:
         blurb (str): String representation of the thread for human consumption
@@ -113,6 +116,7 @@ class W24Thread(BaseModel, abc.ABC):
             bore length can be found in the W24MeasureElement.depth attribute
 
     """
+
     blurb: str
 
     diameter: Decimal
@@ -133,15 +137,15 @@ class W24Thread(BaseModel, abc.ABC):
 
 
 class W24ThreadISOMetricThreadEngagementClass(str, Enum):
-    """Thread Engagement in accordance with ISO 965-1:1998
-    """
+    """Thread Engagement in accordance with ISO 965-1:1998"""
+
     SHORT = "SHORT"
     NORMAL = "NORMAL"
     LONG = "LONG"
 
 
 class W24ThreadISOMetric(W24Thread):
-    """ Metric ISO Thread following ISO 1502
+    """Metric ISO Thread following ISO 1502
 
     Supports
     * DIN 14-1 threads (i.e., diameter < 1mm)
@@ -172,7 +176,8 @@ class W24ThreadISOMetric(W24Thread):
             tolerance class for the pitch diameter of the outer thread.
 
     """
-    thread_type = W24ThreadType.ISO_METRIC
+
+    thread_type: W24ThreadType = W24ThreadType.ISO_METRIC
 
     female_major_diameter_tolerance: Optional[W24Tolerance]
     female_pitch_diameter_tolerance: Optional[W24Tolerance]
@@ -182,9 +187,9 @@ class W24ThreadISOMetric(W24Thread):
 
 class W24ThreadSM(W24Thread):
 
-    """ Sewing Machine Threads (SM)
-        SM thread is used in sewing machine, 
-        recently it is also being used in Optical Industry. 
+    """Sewing Machine Threads (SM)
+        SM thread is used in sewing machine,
+        recently it is also being used in Optical Industry.
 
     Attributes:
         sm_size: Only few sizes are available (05,1,1.5,2,3)
@@ -193,14 +198,15 @@ class W24ThreadSM(W24Thread):
         threads_per_inch: Threads per inch is fixed to 40.
 
     """
-    thread_type = W24ThreadType.SM
+
+    thread_type: W24ThreadType = W24ThreadType.SM
 
     sm_size: Decimal
 
 
 class W24ThreadUTS(W24Thread):
 
-    """ Unified Thread Standard (UTS) base class for
+    """Unified Thread Standard (UTS) base class for
     * UNC - Unified National Coarse Thread
     * UNF - Unified National Fine Thread
     * UNEF - Unified National Extrafine Thread
@@ -222,7 +228,8 @@ class W24ThreadUTS(W24Thread):
             * 1A, 2A, 3A for external threads
             * 1B, 2B, 3B for internal threads
     """
-    thread_type = W24ThreadType.UTS
+
+    thread_type: W24ThreadType = W24ThreadType.UTS
 
     uts_size: str
     uts_series: str
@@ -232,7 +239,7 @@ class W24ThreadUTS(W24Thread):
 
 class W24ThreadACME(W24Thread):
 
-    """ American Corps of Mechanical Engineering (ACME)  defines
+    """American Corps of Mechanical Engineering (ACME)  defines
     * ACME - American Corps of Mechanical Engineering Thread
     * STUB ACME - STUB American Corps of Mechanical Engineering Thread
 
@@ -248,7 +255,8 @@ class W24ThreadACME(W24Thread):
         threads_per_inch: Threads per inch. can be Decimal / Fraction.
 
     """
-    thread_type = W24ThreadType.ACME
+
+    thread_type: W24ThreadType = W24ThreadType.ACME
 
     acme_size: str
     acme_series: str
@@ -256,8 +264,8 @@ class W24ThreadACME(W24Thread):
 
 class W24ThreadNPT(W24Thread):
 
-    """ American National Standard Pipe Thread standards, 
-        often called National Pipe Thread (NPT) standards.  
+    """American National Standard Pipe Thread standards,
+        often called National Pipe Thread (NPT) standards.
     * NPT - National pipe taper
     * NPS - National pipe straight
 
@@ -273,46 +281,51 @@ class W24ThreadNPT(W24Thread):
         threads_per_inch: Threads per inch. can be Decimal / Fraction.
 
     """
-    thread_type = W24ThreadType.NPT
+
+    thread_type: W24ThreadType = W24ThreadType.NPT
 
     npt_size: str
     npt_series: str
 
 
 class W24ThreadUTSCoarse(W24ThreadUTS):
-    """ Unified National Coarse Thread
+    """Unified National Coarse Thread
 
     NOTE: will be deprecated in favor of W24ThreadUTS
     """
-    thread_type = W24ThreadType.UTS_COARSE
+
+    thread_type: W24ThreadType = W24ThreadType.UTS_COARSE
 
 
 class W24ThreadUTSFine(W24ThreadUTS):
-    """ Unified National Fine Thread
+    """Unified National Fine Thread
 
     NOTE: will be deprecated in favor of W24ThreadUTS
     """
-    thread_type = W24ThreadType.UTS_FINE
+
+    thread_type: W24ThreadType = W24ThreadType.UTS_FINE
 
 
 class W24ThreadUTSExtrafine(W24ThreadUTS):
-    """ Unified National Extrafine Thread
+    """Unified National Extrafine Thread
 
     NOTE: will be deprecated in favor of W24ThreadUTS
     """
-    thread_type = W24ThreadType.UTS_EXTRAFINE
+
+    thread_type: W24ThreadType = W24ThreadType.UTS_EXTRAFINE
 
 
 class W24ThreadUTSSpecial(W24ThreadUTS):
-    """ Unified National Special Thread
+    """Unified National Special Thread
 
     NOTE: will be deprecated in favor of W24ThreadUTS
     """
-    thread_type = W24ThreadType.UTS_SPECIAL
+
+    thread_type: W24ThreadType = W24ThreadType.UTS_SPECIAL
 
 
 class W24ThreadWhitworth(W24Thread):
-    """ Whitworth Thread following ISO 228-1
+    """Whitworth Thread following ISO 228-1
 
     Attributes:
         whitworth_size: Size number (for historic reasons
@@ -321,7 +334,8 @@ class W24ThreadWhitworth(W24Thread):
         tolerance_class: Tolerance field
 
     """
-    thread_type = W24ThreadType.WHITWORTH
+
+    thread_type: W24ThreadType = W24ThreadType.WHITWORTH
 
     whitworth_size: Decimal
 
@@ -361,12 +375,9 @@ class W24ThreadFeature(W24BaseFeatureModel):
 
     threads: List[W24Thread]
 
-    @validator('threads', pre=True, allow_reuse=True)
-    def ask_list_validator(
-        cls,
-        raw: List[Dict[str, Any]]
-    ) -> List[W24Thread]:
-        """ Validator to de-serialize the asks. The de-serialization
+    @validator("threads", pre=True, allow_reuse=True)
+    def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24Thread]:
+        """Validator to de-serialize the asks. The de-serialization
         is based on the ask_type attribute of the object. Pydantic
         does not support this out-of-the box
 
@@ -379,10 +390,8 @@ class W24ThreadFeature(W24BaseFeatureModel):
         return [_deserialize_thread_type(t) for t in raw]
 
 
-def _deserialize_thread_type(
-    thread_type: str
-) -> Type[W24Thread]:
-    """ Get the Ask Class from the ask type
+def _deserialize_thread_type(thread_type: str) -> Type[W24Thread]:
+    """Get the Ask Class from the ask type
 
     Args:
         ask_type (str): Ask type in question
