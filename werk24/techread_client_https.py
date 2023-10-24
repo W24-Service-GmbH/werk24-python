@@ -135,10 +135,10 @@ class TechreadClientHttps:
         # create a new fresh session that does not
         # carry the authentication token
         async with aiohttp.ClientSession() as sess:
-            async with sess.post(presigned_post.url, data=form) as resp:
+            async with sess.post(str(presigned_post.url), data=form) as resp:
                 # check the status code of the response and
                 # raise the appropriate exception
-                self._raise_for_status(presigned_post.url, resp.status)
+                self._raise_for_status(str(presigned_post.url), resp.status)
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
         """Return the payload from the server
@@ -245,7 +245,7 @@ class TechreadClientHttps:
             raise RuntimeError("You executed a command without opening a session")
 
         # send the request
-        response = await self._techread_session_https.get(url)
+        response = await self._techread_session_https.get(str(url))
 
         # check the status code of the response and
         # raise the appropriate exception
