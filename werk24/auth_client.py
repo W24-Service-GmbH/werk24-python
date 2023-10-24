@@ -7,13 +7,15 @@ import time
 from typing import Optional, Tuple
 
 import boto3
+from botocore import UNSIGNED
+from botocore.client import Config
 from botocore.exceptions import ClientError
 
 from werk24.exceptions import UnauthorizedException
 
 
 class AuthClient:
-    """ Client Module that handles the authentication
+    """Client Module that handles the authentication
     with AWS Cognito.
 
     Raises:
@@ -30,9 +32,8 @@ class AuthClient:
         cognito_identity_pool_id: str,
         cognito_user_pool_id: str,
         cognito_client_id: str,
-        cognito_client_secret: str
+        cognito_client_secret: str,
     ):
-
         # store the settings
         self._cognito_region = cognito_region
         self._cognito_identity_pool_id = cognito_identity_pool_id
@@ -50,7 +51,7 @@ class AuthClient:
         self.refresh_token: Optional[str] = None
 
     def register(self, username: str, password: str) -> None:
-        """ Store the username and password locally so
+        """Store the username and password locally so
         that it can be used to obtain the token
 
         Arguments:
@@ -61,7 +62,7 @@ class AuthClient:
         self._password = password
 
     def _get_generic_identity(self) -> Tuple[str, str]:
-        """ The AWS Cognito User Pools can only be accessed with
+        """The AWS Cognito User Pools can only be accessed with
         credentials (even if they are generic). This function
         calls the AWS Cognito IDENTITY POOL to obtain the generic
         and unpriviledged credientials
@@ -77,18 +78,22 @@ class AuthClient:
         # make the identity client
         try:
             identity_client = boto3.client(
-                'cognito-identity',
-                self._cognito_region)
+                "cognito-identity",
+                config=Config(signature_version=UNSIGNED),
+                region_name=self._cognito_region,
+            )
 
             # get a new identity id
             identity_response = identity_client.get_id(
-                IdentityPoolId=self._cognito_identity_pool_id)
-            identity_id = identity_response['IdentityId']
+                IdentityPoolId=self._cognito_identity_pool_id
+            )
+            identity_id = identity_response["IdentityId"]
 
             # obtain the associated credentials
-            credentials_response = identity_client \
-                .get_credentials_for_identity(IdentityId=identity_id)
-            credentials = credentials_response['Credentials']
+            credentials_response = identity_client.get_credentials_for_identity(
+                IdentityId=identity_id
+            )
+            credentials = credentials_response["Credentials"]
 
         except KeyError:
             raise UnauthorizedException("Invalid Cognito configuration")
@@ -97,18 +102,18 @@ class AuthClient:
             raise
 
         # get the access key / secret key
-        access_key = credentials.get('AccessKeyId')
-        secret_key = credentials.get('SecretKey')
+        access_key = credentials.get("AccessKeyId")
+        secret_key = credentials.get("SecretKey")
         if access_key is None or secret_key is None:
             raise UnauthorizedException(
-                "Unable to obtain Access and Secret Key from "
-                "Cognito Identity Pool")
+                "Unable to obtain Access and Secret Key from " "Cognito Identity Pool"
+            )
 
         # that's it
         return access_key, secret_key
 
     def _make_cognito_client(self) -> boto3.session.Session.client:
-        """ Make the Cognito Client to communicate with
+        """Make the Cognito Client to communicate with
         AWS Cognito
 
         Returns:
@@ -125,12 +130,13 @@ class AuthClient:
                 "cognito-idp",
                 region_name=self._cognito_region,
                 aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key)
+                aws_secret_access_key=secret_key,
+            )
         except ClientError:
             raise UnauthorizedException("Cognito IDP Client Error")
 
     def _make_cognito_secret_hash(self, username: str) -> str:
-        """ Make the keyed-hash message authentication code (HMAC) calculated
+        """Make the keyed-hash message authentication code (HMAC) calculated
         using the secret key of a user pool client and username plus the client
         ID in the message.
 
@@ -147,16 +153,15 @@ class AuthClient:
         # make the secret
         dig = hmac.new(
             self._cognito_client_secret.encode("UTF-8"),
-            msg=message.encode('UTF-8'),
-            digestmod=hashlib.sha256).digest()
+            msg=message.encode("UTF-8"),
+            digestmod=hashlib.sha256,
+        ).digest()
 
         # turn the secret into a str object
         return base64.b64encode(dig).decode()
 
-    def login(
-        self
-    ) -> None:
-        """ Login with AWS Cognito
+    def login(self) -> None:
+        """Login with AWS Cognito
 
         Raises:
             UnauthorizedException: Raised when the user credentials
@@ -165,11 +170,8 @@ class AuthClient:
         if self.token is None or self._token_has_expired():
             self._login()
 
-    def _token_has_expired(
-        self,
-        slack_minutes: int = 60
-    ) -> bool:
-        """ Check whether the token has already expired
+    def _token_has_expired(self, slack_minutes: int = 60) -> bool:
+        """Check whether the token has already expired
 
         Returns:
             bool: True if exptired, False otherwise.
@@ -180,7 +182,7 @@ class AuthClient:
         return time.time() > self.expires_at - slack_minutes
 
     def _login(self):
-        """ Preform the login with AWS Cognito
+        """Preform the login with AWS Cognito
 
         Raises:
             UnauthorizedException: Raised when the user is not authorized
@@ -197,17 +199,18 @@ class AuthClient:
 
         # make the authentication data
         auth_data = {
-            'USERNAME': self.username,
-            'PASSWORD': self._password,
-            'SECRET_HASH': self._make_cognito_secret_hash(self.username)
+            "USERNAME": self.username,
+            "PASSWORD": self._password,
+            "SECRET_HASH": self._make_cognito_secret_hash(self.username),
         }
 
         # get the jwt token from AWS cognito
         try:
             resp = cognito_client.initiate_auth(
-                AuthFlow='USER_PASSWORD_AUTH',
+                AuthFlow="USER_PASSWORD_AUTH",
                 AuthParameters=auth_data,
-                ClientId=self._cognito_client_id)
+                ClientId=self._cognito_client_id,
+            )
 
         # We will receive an error message directly from AWS Cognito
         # if anything goes wrong. The error message will be valuable,
@@ -218,10 +221,9 @@ class AuthClient:
 
         # store the jwt token
         try:
-            result = resp['AuthenticationResult']
-            self.token = result['IdToken']
-            self.expires_at = time.time() + int(result['ExpiresIn'])
-            self.refresh_token = result['RefreshToken']
+            result = resp["AuthenticationResult"]
+            self.token = result["IdToken"]
+            self.expires_at = time.time() + int(result["ExpiresIn"])
+            self.refresh_token = result["RefreshToken"]
         except KeyError:
-            raise UnauthorizedException(
-                "Unable to obtain JWT Token from AWS Cognito.")
+            raise UnauthorizedException("Unable to obtain JWT Token from AWS Cognito.")
