@@ -14,14 +14,12 @@ def _get_version(version_file: str) -> str:
     if match:
         return match.group(1)
 
-    raise RuntimeError(
-        "Unable to find version string in %s." %
-        (VERSIONFILE,))
+    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 
 def _get_description() -> str:
     this_directory = path.abspath(path.dirname(__file__))
-    with open(path.join(this_directory, 'README.md')) as file_handle:
+    with open(path.join(this_directory, "README.md")) as file_handle:
         return file_handle.read()
 
 
@@ -39,10 +37,8 @@ setup(
             "w24gui=werk24.gui.w24gui:main",
         ]
     },
-    extras_require={
-        "gui": ["PyQt5", "pillow"]
-    },
-    license='commercial',
+    extras_require={"gui": ["PyQt5", "pillow"]},
+    license="commercial",
     packages=[
         "werk24",
         "werk24.cli",
@@ -50,36 +46,53 @@ setup(
         "werk24.models",
     ],
     include_package_data=True,
-
     package_data={"werk24": ["assets/*"]},
     install_requires=[
         "aiohttp >= 3.8.3",
         "boto3 >= 1.14.44",
         "devtools >=0.9.0",
-        "pydantic>=1.4,<=2.0",
-        "typing-extensions==4.5.0",
+        "pydantic>=2.2",
         "python-dotenv>=0.10.1",
         "websockets >= 10.3",
-        "pint >= 0.21"
+        "pint >= 0.21",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
-        "Topic :: Scientific/Engineering :: Image Recognition"],
-    keywords=[
-        'Digitisation', 'Digitization', 'Engineering Drawing',
-        'Engineering Drawings', 'Technical Drawing', 'Technical Drawings',
-        'CAD', 'CAD Drawing', 'Data Extraction', 'Information Extraction',
-        'Model Based Definition', 'EN10027', 'ISO2768', 'Title Block',
-        'General Tolerances', 'Material', 'Drawing ID', 'Drawing Designation',
-        'Product Manufacturing Information', 'PMI', 'Scanned Document',
-        'Bill of Material', 'BOM', 'Anonymiziation', 'RFQ', 'GD&T',
-        'General Dimensioning and Toleration', 'Vectorization'
+        "Topic :: Scientific/Engineering :: Image Recognition",
     ],
-    python_requires='>=3.7.1',
-    project_urls={
-        "Documentation": "https://docs.werk24.io/"
-    },
-    long_description_content_type='text/markdown',
+    keywords=[
+        "Digitisation",
+        "Digitization",
+        "Engineering Drawing",
+        "Engineering Drawings",
+        "Technical Drawing",
+        "Technical Drawings",
+        "CAD",
+        "CAD Drawing",
+        "Data Extraction",
+        "Information Extraction",
+        "Model Based Definition",
+        "EN10027",
+        "ISO2768",
+        "Title Block",
+        "General Tolerances",
+        "Material",
+        "Drawing ID",
+        "Drawing Designation",
+        "Product Manufacturing Information",
+        "PMI",
+        "Scanned Document",
+        "Bill of Material",
+        "BOM",
+        "Anonymiziation",
+        "RFQ",
+        "GD&T",
+        "General Dimensioning and Toleration",
+        "Vectorization",
+    ],
+    python_requires=">=3.7.1",
+    project_urls={"Documentation": "https://docs.werk24.io/"},
+    long_description_content_type="text/markdown",
     long_description=_get_description(),
 )

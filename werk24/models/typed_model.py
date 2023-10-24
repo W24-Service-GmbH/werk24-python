@@ -28,7 +28,7 @@ print(MetaData.parse_obj(obj))
 
 """
 from typing import Dict, Tuple
-
+import pydantic
 from pydantic import BaseModel
 from pint import Quantity
 
@@ -44,7 +44,7 @@ class W24TypedModel(BaseModel):
         model that shall be called.
     """
 
-    _subtypes_: Dict[Tuple[str, ...], BaseModel] = {}
+    __subtypes__ = {}
 
     class Config:
         arbitrary_types_allowed = True
@@ -61,19 +61,19 @@ class W24TypedModel(BaseModel):
             Quantity: lambda v: str(v)
         }
 
-    def __init_subclass__(cls):
+    @classmethod
+    def __pydantic_init_subclass__(
+        cls,
+    ):
         """Called when a subclass is specified.
 
         Registers the class locally.
         """
-        # get the key from the default values.
         key_ = tuple(
-            [cls._first_child()] + [
-                cls.__fields__[disc].default
-                for disc in cls.Config.discriminators
-            ])
-
-        cls._subtypes_[key_] = cls
+            [cls._first_child()]
+            + [cls.model_fields[disc].default for disc in cls.Config.discriminators]
+        )
+        cls.__subtypes__[key_] = cls
 
     @classmethod
     def _first_child(cls):
@@ -88,26 +88,20 @@ class W24TypedModel(BaseModel):
 
     @classmethod
     def _convert_to_real_type_(cls, data):
-        """Convert the data to the correct subtype.
-        """
+        """Convert the data to the correct subtype."""
         # get the key from the data.
-        key_ = tuple(
-            [cls] + [
-                data.get(disc)
-                for disc in cls.Config.discriminators
-            ])
+        key_ = tuple([cls] + [data.get(disc) for disc in cls.Config.discriminators])
 
         # check whether the subtype actually exists.
         # Be careful with updates here.
-        sub = cls._subtypes_.get(key_)
+        sub = cls.__subtypes__.get(key_)
         if sub is None:
             raise TypeError(f"Unsupported sub-type: {key_}")
 
         # parse the object using the subclass
         return sub(**data)
 
-    @ classmethod
+    @classmethod
     def parse_obj(cls, obj):
-        """Parse the object with the correct deserializer.
-        """
+        """Parse the object with the correct deserializer."""
         return cls._convert_to_real_type_(obj)
