@@ -27,11 +27,9 @@ obj = MetaDataDesignation(blurb="a", designation="b").dict()
 print(MetaData.parse_obj(obj))
 
 """
-from typing import Dict, Tuple
-import pydantic
 from pydantic import BaseModel
 from pint import Quantity
-
+from pydantic_core import PydanticUndefined
 
 class W24TypedModel(BaseModel):
     """
@@ -71,7 +69,12 @@ class W24TypedModel(BaseModel):
         """
         key_ = tuple(
             [cls._first_child()]
-            + [cls.model_fields[disc].default for disc in cls.Config.discriminators]
+            + [
+                None
+                if cls.model_fields[disc].default == PydanticUndefined
+                else cls.model_fields[disc].default
+                for disc in cls.Config.discriminators
+            ]
         )
         cls.__subtypes__[key_] = cls
 
