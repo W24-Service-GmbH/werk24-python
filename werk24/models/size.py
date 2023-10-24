@@ -44,6 +44,7 @@ class W24Size(BaseModel, abc.ABC):
         In some cases it might be possible that
         the units are unknown.
     """
+
     blurb: str
     size_type: W24SizeType
     nominal_size: Decimal
@@ -55,28 +56,31 @@ class W24SizeNominal(W24Size):
     Nominal size for a W24Size.
     """
 
-    size_type = W24SizeType.NOMINAL
+    size_type: W24SizeType = W24SizeType.NOMINAL
 
 
 class W24SizeSphericalDiameter(W24Size):
     """
     Spherical Diameter size for a W24Size.
     """
-    size_type = W24SizeType.SPHERICAL_DIAMETER
+
+    size_type: W24SizeType = W24SizeType.SPHERICAL_DIAMETER
 
 
 class W24SizeDiameter(W24Size):
     """
     Diameter size for a W24Size.
     """
-    size_type = W24SizeType.DIAMETER
+
+    size_type: W24SizeType = W24SizeType.DIAMETER
 
 
 class W24SizeSquare(W24Size):
     """
     Square size for a W24Size.
     """
-    size_type = W24SizeType.SQUARE
+
+    size_type: W24SizeType = W24SizeType.SQUARE
 
 
 class W24SizeWidthsAcrossFlats(W24Size):
@@ -88,6 +92,7 @@ class W24SizeWidthsAcrossFlats(W24Size):
     width_across_flats: Size across flats
         aka. wrench size.
     """
-    size_type = W24SizeType.WIDTH_ACROSS_FLATS
+
+    size_type: W24SizeType = W24SizeType.WIDTH_ACROSS_FLATS
 
     width_across_flats: Decimal

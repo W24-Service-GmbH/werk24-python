@@ -139,9 +139,9 @@ class Hook(BaseModel):
     definition; not just the ask type.
     """
 
-    message_type: Optional[W24TechreadMessageType]
-    message_subtype: Optional[W24TechreadMessageSubtype]
-    ask: Optional[W24Ask]
+    message_type: Optional[W24TechreadMessageType] = None
+    message_subtype: Optional[W24TechreadMessageSubtype] = None
+    ask: Optional[W24Ask] = None
     function: Callable
 
 

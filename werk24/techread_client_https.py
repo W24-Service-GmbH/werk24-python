@@ -23,7 +23,7 @@ from .auth_client import AuthClient
 
 class TechreadClientHttps:
 
-    """ Translation map from the server response
+    """Translation map from the server response
     to the W24TechreadArchitectureStatus enum
     """
 
@@ -41,10 +41,8 @@ class TechreadClientHttps:
         self._auth_client: Optional[AuthClient] = None
         self._support_base_url = support_base_url
 
-    async def __aenter__(
-            self
-    ) -> 'TechreadClientHttps':
-        """ Create a new HTTP session that is being used for the whole
+    async def __aenter__(self) -> "TechreadClientHttps":
+        """Create a new HTTP session that is being used for the whole
         connection. Be sure to keep the session alive.
 
         Raises:
@@ -62,11 +60,9 @@ class TechreadClientHttps:
         self,
         exc_type: Optional[Type[BaseException]],
         exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType]
+        traceback: Optional[TracebackType],
     ) -> None:
-
-        """ Close the session
-        """
+        """Close the session"""
         if self._techread_session_https is not None:
             await self._techread_session_https.close()
 
@@ -80,11 +76,9 @@ class TechreadClientHttps:
         self._auth_client = auth_client
 
     async def upload_associated_file(
-        self,
-        presigned_post: W24PresignedPost,
-        content: Optional[bytes]
+        self, presigned_post: W24PresignedPost, content: Optional[bytes]
     ) -> None:
-        """ Upload an associated file to the API.
+        """Upload an associated file to the API.
         This can either be a technical drawing or a
         3D model. Potentially we will sometime extend
         this to also include cover pages.
@@ -136,18 +130,18 @@ class TechreadClientHttps:
         form = aiohttp.FormData()
         for key, value in presigned_post.fields_.items():
             form.add_field(key, value)
-        form.add_field('file', content)
+        form.add_field("file", content)
 
         # create a new fresh session that does not
         # carry the authentication token
         async with aiohttp.ClientSession() as sess:
-            async with sess.post(presigned_post.url, data=form) as resp:
+            async with sess.post(str(presigned_post.url), data=form) as resp:
                 # check the status code of the response and
                 # raise the appropriate exception
-                self._raise_for_status(presigned_post.url, resp.status)
+                self._raise_for_status(str(presigned_post.url), resp.status)
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
-        """ Return the payload from the server
+        """Return the payload from the server
 
         Arguments:
             payload_url {HttpUrl} -- Url of the payload
@@ -196,20 +190,20 @@ class TechreadClientHttps:
             response = await self._get(payload_url)
 
         # reraise the exceptions
-        except (UnauthorizedException,  # pylint: disable=try-except-raise
-                RequestTooLargeException,
-                ServerException, BadRequestException,
-                ResourceNotFoundException):
+        except (
+            UnauthorizedException,  # pylint: disable=try-except-raise
+            RequestTooLargeException,
+            ServerException,
+            BadRequestException,
+            ResourceNotFoundException,
+        ):
             raise
 
         # otherwise return the response text
         return await response.content.read()
 
-    async def _get(
-        self,
-        url: str
-    ) -> aiohttp.ClientResponse:
-        """ Send a GET request request and return the
+    async def _get(self, url: str) -> aiohttp.ClientResponse:
+        """Send a GET request request and return the
         response object. The method automatically
         injects the authentication token into the
         request.
@@ -248,11 +242,10 @@ class TechreadClientHttps:
 
         # ensure that the session was started
         if self._techread_session_https is None:
-            raise RuntimeError(
-                "You executed a command without opening a session")
+            raise RuntimeError("You executed a command without opening a session")
 
         # send the request
-        response = await self._techread_session_https.get(url)
+        response = await self._techread_session_https.get(str(url))
 
         # check the status code of the response and
         # raise the appropriate exception
@@ -265,11 +258,8 @@ class TechreadClientHttps:
         return response
 
     @staticmethod
-    def _raise_for_status(
-            url: str,
-            status_code: int
-    ) -> None:
-        """ Raise the correct exception depending on the
+    def _raise_for_status(url: str, status_code: int) -> None:
+        """Raise the correct exception depending on the
         status code
 
         Arguments:
@@ -341,13 +331,9 @@ class TechreadClientHttps:
         # than unauthorized or 200 (OK), we trigger
         # a ServerException.
         if not 200 <= status_code <= 299:
-            raise ServerException(
-                f"Request failed '{url}' with code {status_code}")
+            raise ServerException(f"Request failed '{url}' with code {status_code}")
 
-    async def create_helpdesk_task(
-        self,
-        task: W24HelpdeskTask
-    ) -> W24HelpdeskTask:
+    async def create_helpdesk_task(self, task: W24HelpdeskTask) -> W24HelpdeskTask:
         """
         Create a Helpdesk ticket.
 
@@ -392,7 +378,7 @@ class TechreadClientHttps:
         return W24HelpdeskTask.parse_raw(await response.text())
 
     def _make_support_url(self, path: str) -> str:
-        """ Make the support url for the help desk requests.
+        """Make the support url for the help desk requests.
 
         Arguments:
             path {str} -- Path to the endpoint
@@ -411,7 +397,5 @@ class TechreadClientHttps:
         Returns:
             Dict[str, str]: Help desk headers
         """
-        headers = {
-            "Authorization": f"Bearer {self._auth_client.token}"
-        }
+        headers = {"Authorization": f"Bearer {self._auth_client.token}"}
         return headers
