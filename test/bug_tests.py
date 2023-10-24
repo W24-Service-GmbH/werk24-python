@@ -17,5 +17,5 @@ class TestGeometricShape(AsyncTestCase):
 
     def test_typed_serialization(self):
         obj = W24ToleranceGeneral().dict()
-        a = W24Tolerance.parse_obj(obj)
-        print(type(a))
+        des = W24Tolerance.parse_obj(obj)
+        self.assertEqual(type(des), W24ToleranceGeneral)
