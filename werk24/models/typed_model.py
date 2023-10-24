@@ -28,7 +28,7 @@ print(MetaData.parse_obj(obj))
 
 """
 from typing import Dict, Tuple
-
+import pydantic
 from pydantic import BaseModel
 from pint import Quantity
 
@@ -66,14 +66,12 @@ class W24TypedModel(BaseModel):
 
         Registers the class locally.
         """
-        # get the key from the default values.
-        key_ = tuple(
-            [cls._first_child()] + [
-                cls.__fields__[disc].default
-                for disc in cls.Config.discriminators
-            ])
-
-        cls._subtypes_[key_] = cls
+        if pydantic.__version__[0] == 1:
+            key_ = tuple(
+                [cls._first_child()]
+                + [cls.__fields__[disc].default for disc in cls.Config.discriminators]
+            )
+            cls._subtypes_[key_] = cls
 
     @classmethod
     def _first_child(cls):
@@ -88,14 +86,9 @@ class W24TypedModel(BaseModel):
 
     @classmethod
     def _convert_to_real_type_(cls, data):
-        """Convert the data to the correct subtype.
-        """
+        """Convert the data to the correct subtype."""
         # get the key from the data.
-        key_ = tuple(
-            [cls] + [
-                data.get(disc)
-                for disc in cls.Config.discriminators
-            ])
+        key_ = tuple([cls] + [data.get(disc) for disc in cls.Config.discriminators])
 
         # check whether the subtype actually exists.
         # Be careful with updates here.
@@ -106,8 +99,7 @@ class W24TypedModel(BaseModel):
         # parse the object using the subclass
         return sub(**data)
 
-    @ classmethod
+    @classmethod
     def parse_obj(cls, obj):
-        """Parse the object with the correct deserializer.
-        """
+        """Parse the object with the correct deserializer."""
         return cls._convert_to_real_type_(obj)

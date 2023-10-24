@@ -12,7 +12,7 @@ from .gender import W24Gender
 
 
 class W24Tolerance(W24TypedModel):
-    """ Abstract Base Class to cover the Tolerances.
+    """Abstract Base Class to cover the Tolerances.
 
     Attributes:
         blurb (str): String representation for human consumption
@@ -20,23 +20,24 @@ class W24Tolerance(W24TypedModel):
         toleration_type (W24SizeToleranceType):  Toleration Type for
             deserialization
     """
+
     class Config:
-        discriminators = ('toleration_type',)
+        discriminators = ("toleration_type",)
 
     blurb: str
     toleration_type: str
 
 
 class W24ToleranceGradeWarning(str, Enum):
-    """ Warnings associated with the Tolerance Grade.
-    """
+    """Warnings associated with the Tolerance Grade."""
+
     SIZE_LARGER_THAN_NORM = "SIZE_LARGER_THAN_NORM"
     TOLERANCE_WIDTH_SMALLER_THAN_NORM = "TOLERANCE_WIDTH_SMALLER_THAN_NORM"
     TOLERANCE_WIDTH_LARGER_THAN_NORM = "TOLERANCE_WIDTH_LARGER_THAN_NORM"
 
 
 class W24ToleranceGrade(BaseModel):
-    """ Tolerance Grade following ISO 286-1
+    """Tolerance Grade following ISO 286-1
 
     Attributes:
         blurb (Optional[str]): Blurb for human consumption.
@@ -58,6 +59,7 @@ class W24ToleranceGrade(BaseModel):
             return an untoleranced measure of nominal size 3.
 
     """
+
     blurb: str
 
     grade: Optional[str]
@@ -66,7 +68,7 @@ class W24ToleranceGrade(BaseModel):
 
 
 class W24ToleranceFitsizeISO(W24Tolerance):
-    """ ISO fit size tolerances
+    """ISO fit size tolerances
 
     Attributes:
         blurb (str): Text representation for human consumption.
@@ -83,6 +85,7 @@ class W24ToleranceFitsizeISO(W24Tolerance):
         tolerance_grade (Optional[int]): Tolerance Grade corresponding
             to ISO 286-1. In German IT-Grad.
     """
+
     toleration_type: str = "FIT_SIZE_ISO"
 
     deviation_lower: Decimal
@@ -95,22 +98,22 @@ class W24ToleranceFitsizeISO(W24Tolerance):
 
     @property
     def deviation_width(self) -> Decimal:
-        """ Deviation Width
+        """Deviation Width
 
         Returns:
             Decimal: Deviation width
         """
-        return self.deviation_upper-self.deviation_lower
+        return self.deviation_upper - self.deviation_lower
 
 
 class W24ToleranceReference(W24Tolerance):
-    """Measures written in brackets are Reference.
-    """
+    """Measures written in brackets are Reference."""
+
     toleration_type: str = "REFERENCE"
 
 
 class W24ToleranceOffSize(W24Tolerance):
-    """ Off-size based tolerances
+    """Off-size based tolerances
 
     Attributes:
         blurb (str): Text representation for human consumption.
@@ -124,6 +127,7 @@ class W24ToleranceOffSize(W24Tolerance):
         tolerance_grade (int): Tolerance Grade corresponding to
             ISO 286-1. In German IT-Grad.
     """
+
     toleration_type: str = "OFF_SIZE"
     deviation_lower: Decimal
     deviation_upper: Decimal
@@ -131,7 +135,7 @@ class W24ToleranceOffSize(W24Tolerance):
 
 
 class W24ToleranceGeneral(W24Tolerance):
-    """ General Tolerances
+    """General Tolerances
 
     Attributes:
         tolerance_type: W24SizeToleranceType General Tolerances
@@ -158,17 +162,18 @@ class W24ToleranceGeneral(W24Tolerance):
         tolerance_grade (int): Tolerance Grade corresponding to
             ISO 286-1. (German: IT-Grad).
     """
+
     toleration_type: str = "GENERAL_TOLERANCES"
     blurb: str = ""
-    standard: Optional[W24Standard]
-    standard_class: Optional[str]
-    deviation_lower: Optional[Decimal]
-    deviation_upper: Optional[Decimal]
-    tolerance_grade: Optional[W24ToleranceGrade]
+    standard: Optional[W24Standard] = None
+    standard_class: Optional[str] = None
+    deviation_lower: Optional[Decimal] = None
+    deviation_upper: Optional[Decimal] = None
+    tolerance_grade: Optional[W24ToleranceGrade] = None
 
 
 class W24ToleranceTheoreticallyExact(W24Tolerance):
-    """ Theoretically Exact Measures after ISO 5458
+    """Theoretically Exact Measures after ISO 5458
     must not be tolerated. They are indicated by a small
     rectangular frame.
 
@@ -186,31 +191,35 @@ class W24ToleranceTheoreticallyExact(W24Tolerance):
             +------------+
         In these situations the toleration takes priority.
     """
+
     toleration_type: str = "THEORETICALLY_EXACT"
 
 
 class W24ToleranceMinimum(W24Tolerance):
-    """ Minimum Size of a measure
+    """Minimum Size of a measure
     Example:
         min. 15
     """
+
     toleration_type: str = "MINIMUM"
 
 
 class W24ToleranceMaximum(W24Tolerance):
-    """ Maximum Size of a measure
+    """Maximum Size of a measure
     Example:
         max 15
     """
+
     toleration_type: str = "MAXIMUM"
 
 
 class W24ToleranceApproximation(W24Tolerance):
-    """ Approximation of a measure
+    """Approximation of a measure
     Example:
         ~ 15
         ca. 14
     """
+
     toleration_type: str = "APPROXIMATION"
 
 
@@ -227,6 +236,7 @@ class W24ToleranceFeature(W24BaseFeatureModel):
         length: Length of the slug corresponding to the tolerance feature.
 
     """
+
     gender: Optional[W24Gender]
 
     length: Optional[Decimal]

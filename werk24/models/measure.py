@@ -1,4 +1,3 @@
-
 """ Defintion of all the W24Measure class its support structures
 """
 
@@ -46,6 +45,7 @@ class W24MeasureWarning(BaseModel):
     Warnings are issued when something about the label
     or measure is not conforming with convention
     """
+
     warning_type: W24MeasureWarningType
 
 
@@ -56,7 +56,10 @@ class W24MeasureWarningUnconvetionalToleranceOrder(W24MeasureWarning):
 
     EXAMPLE: 3 -0.1/+0.1 (rather than 3 +0.1/-0.1)
     """
-    warning_type = W24MeasureWarningType.UNCONVENTIONAL_TOLERANCE_ORDER
+
+    warning_type: W24MeasureWarningType = (
+        W24MeasureWarningType.UNCONVENTIONAL_TOLERANCE_ORDER
+    )
 
 
 class W24MeasureWarningUnproportional(W24MeasureWarning):
@@ -85,11 +88,12 @@ class W24MeasureWarningUnproportional(W24MeasureWarning):
     the likelihood of case 2 and case 3. If this becomes a
     true concern in your application, please reach out to us
     """
-    warning_type = W24MeasureWarningType.UNPROPORTIONAL
+
+    warning_type: W24MeasureWarningType = W24MeasureWarningType.UNPROPORTIONAL
 
 
 class W24MeasureLabel(BaseModel):
-    """ Measure Label
+    """Measure Label
 
     Attributes:
 
@@ -134,17 +138,17 @@ class W24MeasureLabel(BaseModel):
         depth: Depth of the drilling or thread. Uses the same dimensions
 
         counterbore: Counterbore details. This is usually defined for holes
-            threads. 
+            threads.
 
         countersink: Countersink details. This is usually defined for holes
-            threads. 
+            threads.
 
         counterdrill: Counterdrill details. This is usually defined for holes
-            threads. 
+            threads.
 
     """
 
-    @validator('size_tolerance', pre=True)
+    @validator("size_tolerance", pre=True)
     def deserialize_size_tolerance(cls, v):
         if isinstance(v, W24Tolerance):
             return v
@@ -176,7 +180,7 @@ class W24MeasureLabel(BaseModel):
 
 
 class W24Measure(W24BaseFeatureModel):
-    """ Measure object
+    """Measure object
 
     Attributes:
 
@@ -194,6 +198,7 @@ class W24Measure(W24BaseFeatureModel):
             0.0 to 1.0
 
     """
+
     measure_id: Optional[UUID4] = None
 
     label: W24MeasureLabel
