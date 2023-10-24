@@ -78,7 +78,9 @@ class AuthClient:
         # make the identity client
         try:
             identity_client = boto3.client(
-                "cognito-identity", config=Config(signature_version=UNSIGNED)
+                "cognito-identity",
+                config=Config(signature_version=UNSIGNED),
+                region_name=self._cognito_region,
             )
 
             # get a new identity id
