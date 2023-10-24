@@ -27,8 +27,6 @@ obj = MetaDataDesignation(blurb="a", designation="b").dict()
 print(MetaData.parse_obj(obj))
 
 """
-from typing import Dict, Tuple
-import pydantic
 from pydantic import BaseModel
 from pint import Quantity
 
