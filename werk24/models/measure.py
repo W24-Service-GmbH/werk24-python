@@ -15,14 +15,8 @@ from .test_dimension import W24TestDimension
 from .thread import W24Thread
 from .tolerance import (
     W24Tolerance,
-    W24ToleranceApproximation,
-    W24ToleranceFitsizeISO,
+    W24ToleranceType,
     W24ToleranceGeneral,
-    W24ToleranceMaximum,
-    W24ToleranceMinimum,
-    W24ToleranceOffSize,
-    W24ToleranceReference,
-    W24ToleranceTheoreticallyExact,
 )
 from .unit import W24UnitLength
 
@@ -169,17 +163,7 @@ class W24MeasureLabel(BaseModel):
 
     size: W24Size
 
-    size_tolerance: Union[
-        W24ToleranceFitsizeISO,
-        W24ToleranceReference,
-        W24ToleranceOffSize,
-        W24ToleranceGeneral,
-        W24ToleranceTheoreticallyExact,
-        W24ToleranceMinimum,
-        W24ToleranceMaximum,
-        W24ToleranceApproximation,
-        W24ToleranceGeneral,
-    ] = W24ToleranceGeneral()
+    size_tolerance: W24ToleranceType = W24ToleranceGeneral()
 
     unit: Optional[W24UnitLength] = None
 
