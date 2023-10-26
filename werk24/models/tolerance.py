@@ -1,6 +1,6 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -242,3 +242,15 @@ class W24ToleranceFeature(W24BaseFeatureModel):
     length: Optional[Decimal]
 
     tolerance: W24Tolerance
+
+
+W24ToleranceType = Union[
+    W24ToleranceApproximation,
+    W24ToleranceFitsizeISO,
+    W24ToleranceGeneral,
+    W24ToleranceMaximum,
+    W24ToleranceMinimum,
+    W24ToleranceOffSize,
+    W24ToleranceReference,
+    W24ToleranceTheoreticallyExact,
+]
