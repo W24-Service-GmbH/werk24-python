@@ -14,7 +14,7 @@ from .size import W24Size
 from .test_dimension import W24TestDimension
 from .thread import W24Thread
 from .unit import W24UnitLength
-from .tolerance import W24Tolerance, W24ToleranceGeneral
+from .tolerance import W24Tolerance, W24ToleranceGeneral, W24ToleranceType
 from pydantic import validator
 
 
@@ -160,7 +160,7 @@ class W24MeasureLabel(BaseModel):
 
     size: W24Size
 
-    size_tolerance: W24Tolerance = W24ToleranceGeneral()
+    size_tolerance: W24ToleranceType = W24ToleranceGeneral()
 
     unit: Optional[W24UnitLength] = None
 
