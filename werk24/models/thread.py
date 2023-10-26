@@ -12,7 +12,7 @@ from pydantic import BaseModel, validator
 from werk24.models.base_feature import W24BaseFeatureModel
 
 from .unit import W24UnitLength
-from .tolerance import W24Tolerance
+from .tolerance import W24ToleranceType
 from .gender import W24Gender
 
 
@@ -179,10 +179,10 @@ class W24ThreadISOMetric(W24Thread):
 
     thread_type: W24ThreadType = W24ThreadType.ISO_METRIC
 
-    female_major_diameter_tolerance: Optional[W24Tolerance]
-    female_pitch_diameter_tolerance: Optional[W24Tolerance]
-    male_major_diameter_tolerance: Optional[W24Tolerance]
-    male_pitch_diameter_tolerance: Optional[W24Tolerance]
+    female_major_diameter_tolerance: Optional[W24ToleranceType]
+    female_pitch_diameter_tolerance: Optional[W24ToleranceType]
+    male_major_diameter_tolerance: Optional[W24ToleranceType]
+    male_pitch_diameter_tolerance: Optional[W24ToleranceType]
 
 
 class W24ThreadSM(W24Thread):

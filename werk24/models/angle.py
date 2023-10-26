@@ -4,12 +4,12 @@ from typing import Optional, Tuple
 from pydantic import UUID4, BaseModel
 
 from .base_feature import W24BaseFeatureModel
-from .tolerance import W24Tolerance
+from .tolerance import W24ToleranceType
 from .unit import W24UnitAngle
 
 
 class W24AngleSize(BaseModel):
-    """ Size of an Angle including its tolerance
+    """Size of an Angle including its tolerance
 
     Attributes:
 
@@ -20,13 +20,14 @@ class W24AngleSize(BaseModel):
         unit: Angle Unit. Currently only degrees are
             supported.
     """
+
     blurb: str
     angle: Decimal
     unit: W24UnitAngle = W24UnitAngle.DEGREE
 
 
 class W24AngleLabel(BaseModel):
-    """ Label associated with an Angle indicated
+    """Label associated with an Angle indicated
     on the Technical Drawing
 
     Attributes:
@@ -36,14 +37,15 @@ class W24AngleLabel(BaseModel):
         angle: Nominal angle size
         angle_tolerance: Tolerated deviations
     """
+
     blurb: str
     quantity: int
     angle: W24AngleSize
-    angle_tolerance: W24Tolerance
+    angle_tolerance: W24ToleranceType
 
 
 class W24Angle(W24BaseFeatureModel):
-    """ Tolerated Angle detected on a sectional of the
+    """Tolerated Angle detected on a sectional of the
     Technical Drawing
 
     Attributes:
