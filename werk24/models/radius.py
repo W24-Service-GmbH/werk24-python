@@ -1,13 +1,23 @@
 """ Defintion of all the W24Radius class its support structures
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import UUID4, BaseModel, validator
 
 from .base_feature import W24BaseFeatureModel
 from .size import W24Size
-from .tolerance import W24Tolerance, W24ToleranceGeneral
+from .tolerance import (
+    W24Tolerance,
+    W24ToleranceApproximation,
+    W24ToleranceFitsizeISO,
+    W24ToleranceGeneral,
+    W24ToleranceMaximum,
+    W24ToleranceMinimum,
+    W24ToleranceOffSize,
+    W24ToleranceReference,
+    W24ToleranceTheoreticallyExact,
+)
 from .unit import W24UnitLength
 
 
@@ -33,7 +43,7 @@ class W24RadiusLabel(BaseModel):
             for the complete drawing. Exceptions are very rare, but exist.
     """
 
-    @validator('size_tolerance', pre=True)
+    @validator("size_tolerance", pre=True)
     def deserialize_size_tolerance(cls, v):
         if isinstance(v, W24Tolerance):
             return v
@@ -46,7 +56,17 @@ class W24RadiusLabel(BaseModel):
 
     size: W24Size
 
-    size_tolerance: W24Tolerance = W24ToleranceGeneral()
+    size_tolerance: Union[
+        W24ToleranceFitsizeISO,
+        W24ToleranceReference,
+        W24ToleranceOffSize,
+        W24ToleranceGeneral,
+        W24ToleranceTheoreticallyExact,
+        W24ToleranceMinimum,
+        W24ToleranceMaximum,
+        W24ToleranceApproximation,
+        W24ToleranceGeneral,
+    ] = W24ToleranceGeneral()
 
     unit: Optional[W24UnitLength] = None
 
