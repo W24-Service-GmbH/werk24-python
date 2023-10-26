@@ -242,15 +242,3 @@ class W24ToleranceFeature(W24BaseFeatureModel):
     length: Optional[Decimal]
 
     tolerance: W24Tolerance
-
-
-W24ToleranceType = (
-    W24ToleranceFitsizeISO
-    | W24ToleranceReference
-    | W24ToleranceOffSize
-    | W24ToleranceGeneral
-    | W24ToleranceTheoreticallyExact
-    | W24ToleranceMinimum
-    | W24ToleranceMaximum
-    | W24ToleranceApproximation
-)
