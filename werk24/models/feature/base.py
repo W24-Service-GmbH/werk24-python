@@ -18,7 +18,8 @@ class W24Feature(BaseModel):
         standard (Optional[W24Standard]): if available,
             the standard that defines the feature.
     """
+
     blurb: str
     feature_type: Any
-    feature_subtype: Any
+    feature_subtype: Any = None
     standard: Optional[W24Standard] = None

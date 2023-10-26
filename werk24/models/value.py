@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import Optional, Union
 
 from pint import Quantity, UnitRegistry
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_serializer, validator
 
 from werk24.models.tolerance import W24Tolerance
 
@@ -21,10 +21,11 @@ class W24PhysicalQuantity(BaseModel):
             format of pint.
         tolerance (Optional[W24Tolerance]): Tolerance
     """
+
     class Config:
         arbitrary_types_allowed = True
 
-    @validator('value', pre=True)
+    @validator("value", pre=True)
     def value_validation(cls, value: Union[str, Quantity]) -> Quantity:
         """Perform the de-serialization of the value.
 
@@ -44,6 +45,10 @@ class W24PhysicalQuantity(BaseModel):
     blurb: str
     value: Quantity
     tolerance: Optional[W24Tolerance] = None
+
+    @field_serializer("value")
+    def serialize_value(self, value, _info):
+        return str(value)
 
 
 class W24Value(BaseModel):

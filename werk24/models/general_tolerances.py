@@ -10,9 +10,10 @@ from .base_feature import W24BaseFeatureModel
 
 
 class W24GeneralTolerancesStandard(str, Enum):
-    """ Enum of all supported
+    """Enum of all supported
     General Tolerance Standards
     """
+
     DIN_7168 = "DIN 7168"
     ISO_2768 = "ISO 2768"
     ISO_4759_1 = "ISO 4759-1"
@@ -20,9 +21,10 @@ class W24GeneralTolerancesStandard(str, Enum):
 
 
 class W24ToleranceProperty(str, Enum):
-    """ Enum of all attributes that can
+    """Enum of all attributes that can
     be described by general tolerances
     """
+
     ANGULAR = "ANGULAR"
     FLATNESS = "FLATNESS"
     LINEAR = "LINEAR"
@@ -34,9 +36,10 @@ class W24ToleranceProperty(str, Enum):
 
 
 class W24GeneralTolerancesPrinciple(str, Enum):
-    """ Enum of the supported General Tolerance
+    """Enum of the supported General Tolerance
     Principles.
     """
+
     INDEPENDENCE = "INDEPENDENCE"
     ENVELOPE = "ENVELOPE"
 
@@ -47,6 +50,7 @@ class W24IntervalEnd(str, Enum):
     Open for  `<`
     Close for `<=`
     """
+
     OPEN = "OPEN"
     CLOSE = "CLOSE"
 
@@ -78,31 +82,27 @@ class W24ToleranceTableItem(BaseModel):
 
     unit: Optional[W24UnitLength] = None
 
-    @validator('nominal_min', pre=True)
+    @validator("nominal_min", pre=True)
     def nominal_min_validator(  # NOQA
-        cls,
-        raw: Union[str, float, None]
+        cls, raw: Union[str, float, None]
     ) -> Optional[Decimal]:
-        """ Ensure the proper conversion of the the
+        """Ensure the proper conversion of the the
         Decimal value
         """
         return cls._convert_decimal(raw)
 
-    @validator('nominal_max', pre=True)
+    @validator("nominal_max", pre=True)
     def nominal_max_validator(  # NOQA
-        cls,
-        raw: Union[str, float, None]
+        cls, raw: Union[str, float, None]
     ) -> Optional[Decimal]:
-        """ Ensure the proper conversion of the the
+        """Ensure the proper conversion of the the
         Decimal value
         """
         return cls._convert_decimal(raw)
 
     @staticmethod
-    def _convert_decimal(
-        raw: Union[str, float, None]
-    ) -> Optional[Decimal]:
-        """ Handle the decimal conversion
+    def _convert_decimal(raw: Union[str, float, None]) -> Optional[Decimal]:
+        """Handle the decimal conversion
 
         Args:
             raw (Union[str, float, None]): Raw value
@@ -120,9 +120,7 @@ class W24ToleranceTableItem(BaseModel):
 
         # ensure we are working with
         # the correct type
-        if isinstance(raw, str) \
-            or isinstance(raw, float)\
-                or isinstance(raw, int):
+        if isinstance(raw, str) or isinstance(raw, float) or isinstance(raw, int):
             decimal = Decimal(raw)
 
         # accept decimal
@@ -140,22 +138,19 @@ class W24ToleranceTableItem(BaseModel):
 
         # interpret the values
         # handle the special values
-        if decimal in {
-                Decimal("Infinity"),
-                Decimal("-Infinity"),
-                Decimal("NaN")}:
+        if decimal in {Decimal("Infinity"), Decimal("-Infinity"), Decimal("NaN")}:
             return None
 
         # enforce zero to be positive
-        if decimal == Decimal('-0'):
-            return Decimal('0')
+        if decimal == Decimal("-0"):
+            return Decimal("0")
 
         # accept the value
         return decimal
 
 
 class W24ToleranceClass(BaseModel):
-    """ Tolerance Class which matches an individual attribute
+    """Tolerance Class which matches an individual attribute
     of the General Tolerances to a tolerance property and
     tolerance table
 
@@ -167,6 +162,7 @@ class W24ToleranceClass(BaseModel):
         table: Rows of the tolerance table that correspond
             to the selected tolerance class
     """
+
     blurb: str
     property: W24ToleranceProperty
     table: List[W24ToleranceTableItem]
@@ -191,14 +187,15 @@ class W24GeneralTolerances(W24BaseFeatureModel):
         perpendicularity_class: Perpendicularity toleration class
 
     """
+
     blurb: str
     tolerance_standard: W24GeneralTolerancesStandard
-    principle: Optional[W24GeneralTolerancesPrinciple]
-    angular_class: Optional[W24ToleranceClass]
-    flatness_class: Optional[W24ToleranceClass]
-    straightness_class: Optional[W24ToleranceClass]
-    linear_class: Optional[W24ToleranceClass]
-    radius_class: Optional[W24ToleranceClass]
-    runout_class: Optional[W24ToleranceClass]
-    symmetry_class: Optional[W24ToleranceClass]
-    perpendicularity_class: Optional[W24ToleranceClass]
+    principle: Optional[W24GeneralTolerancesPrinciple] = None
+    angular_class: Optional[W24ToleranceClass] = None
+    flatness_class: Optional[W24ToleranceClass] = None
+    straightness_class: Optional[W24ToleranceClass] = None
+    linear_class: Optional[W24ToleranceClass] = None
+    radius_class: Optional[W24ToleranceClass] = None
+    runout_class: Optional[W24ToleranceClass] = None
+    symmetry_class: Optional[W24ToleranceClass] = None
+    perpendicularity_class: Optional[W24ToleranceClass] = None

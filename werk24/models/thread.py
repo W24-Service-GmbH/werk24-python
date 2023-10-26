@@ -133,7 +133,7 @@ class W24Thread(BaseModel, abc.ABC):
 
     multi_start: W24ThreadMultiStart
 
-    length: Optional[Decimal]
+    length: Optional[Decimal] = None
 
 
 class W24ThreadISOMetricThreadEngagementClass(str, Enum):
