@@ -4,7 +4,7 @@ the W24 Techread API.
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import UUID4, BaseModel, Field, HttpUrl, Json, validator
+from pydantic import UUID4, BaseModel, Field, HttpUrl, Json, validator, ConfigDict
 
 from werk24._version import __version__
 
@@ -327,6 +327,12 @@ class W24TechreadInitResponse(W24TechreadBaseResponse):
             occured
 
     """
+
+    # Pydantic in Version 2.0 claims the whole `model_` variable space
+    # as its own. This collides with the model variable that is already
+    # in use. This configuration at least suppresses the warning.
+    # See https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.protected_namespaces
+    model_config = ConfigDict(protected_namespaces=())
 
     drawing_presigned_post: W24PresignedPost
 
