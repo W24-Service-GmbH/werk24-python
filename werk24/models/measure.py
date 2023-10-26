@@ -2,20 +2,29 @@
 """
 
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from pydantic import UUID4, BaseModel
+from pydantic import UUID4, BaseModel, validator
 
-from .chamfer import W24Chamfer
-from .hole_feature import W24CounterBore, W24CounterDrill, W24CounterSink
-from .depth import W24Depth
 from .base_feature import W24BaseFeatureModel
+from .chamfer import W24Chamfer
+from .depth import W24Depth
+from .hole_feature import W24CounterBore, W24CounterDrill, W24CounterSink
 from .size import W24Size
 from .test_dimension import W24TestDimension
 from .thread import W24Thread
+from .tolerance import (
+    W24Tolerance,
+    W24ToleranceApproximation,
+    W24ToleranceFitsizeISO,
+    W24ToleranceGeneral,
+    W24ToleranceMaximum,
+    W24ToleranceMinimum,
+    W24ToleranceOffSize,
+    W24ToleranceReference,
+    W24ToleranceTheoreticallyExact,
+)
 from .unit import W24UnitLength
-from .tolerance import W24Tolerance, W24ToleranceGeneral
-from pydantic import validator
 
 
 class W24MeasureWarningType(str, Enum):
@@ -160,7 +169,17 @@ class W24MeasureLabel(BaseModel):
 
     size: W24Size
 
-    size_tolerance: W24Tolerance = W24ToleranceGeneral()
+    size_tolerance: Union[
+        W24ToleranceFitsizeISO,
+        W24ToleranceReference,
+        W24ToleranceOffSize,
+        W24ToleranceGeneral,
+        W24ToleranceTheoreticallyExact,
+        W24ToleranceMinimum,
+        W24ToleranceMaximum,
+        W24ToleranceApproximation,
+        W24ToleranceGeneral,
+    ] = W24ToleranceGeneral()
 
     unit: Optional[W24UnitLength] = None
 
