@@ -369,13 +369,13 @@ class W24TechreadClient:
             logger.info("Using development key %s***", self._development_key[:8])
 
         # send the initiation command
-        init_response = await self.init_request(
+        init_message, init_response = await self.init_request(
             asks, max_pages, drawing_filename, sub_account
         )
+        yield init_message
 
         # stop if the response is unsuccessful.
         if not init_response.is_successful:
-            yield init_response
             return
 
         # Start reading the file
@@ -448,7 +448,7 @@ class W24TechreadClient:
         max_pages: int,
         drawing_filename: Optional[str],
         sub_account: Optional[UUID4],
-    ) -> W24TechreadInitResponse:
+    ) -> tuple[W24TechreadMessage, W24TechreadInitResponse]:
         """
         Initialize a new techread request.
 
@@ -484,9 +484,10 @@ class W24TechreadClient:
             W24TechreadAction.INITIALIZE.value, request.json()
         )
 
-        response = await self._techread_client_wss.recv_message()
-        logger.info("Received request_id %s", response.request_id)
-        return W24TechreadInitResponse.parse_obj(response.payload_dict)
+        message = await self._techread_client_wss.recv_message()
+        logger.info("Received request_id %s", message.request_id)
+        response = W24TechreadInitResponse.parse_obj(message.payload_dict)
+        return message, response
 
     async def _send_command_read(self) -> AsyncGenerator[W24TechreadMessage, None]:
         """Send the request request to the backend
