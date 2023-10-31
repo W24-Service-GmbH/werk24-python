@@ -32,6 +32,8 @@ class TestPage(TestBase):
             request = session.read_drawing(DRAWING, [W24AskPageThumbnail()])
 
             # check whether the first message give us the state information
+            message_init = await request.__anext__()
+            self._assert_message_is_progress_initiated(message_init)
             message_first = await request.__anext__()
             self._assert_message_is_progress_started(message_first)
 
