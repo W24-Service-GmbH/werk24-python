@@ -14,9 +14,8 @@ DRAWING_BYTES = get_drawing()
 
 
 class TestTitleBlock(TestBase):
-
     async def test_read_title_block(self):
-        """ Is TitleBlock read correctly?
+        """Is TitleBlock read correctly?
 
         User Story: As API user, I want to obtain the
         title block information from the Technical Drawing
@@ -26,23 +25,22 @@ class TestTitleBlock(TestBase):
 
         client = W24TechreadClient.make_from_env(None)
         async with client as session:
-            request = session.read_drawing( DRAWING_BYTES, asks)
+            request = session.read_drawing(DRAWING_BYTES, asks)
 
             # check whether the first message give us the state information
-            self._assert_message_is_progress_started(
-                await request.__anext__())
+            self._assert_message_is_progress_initiated(await request.__anext__())
+            self._assert_message_is_progress_started(await request.__anext__())
 
             # check whether the second message gives us the information
             # about the requested thumbnail
             response = await request.__anext__()
-            self._assert_message_is_ask_response(
-                response,
-                W24AskType.TITLE_BLOCK)
+            self._assert_message_is_ask_response(response, W24AskType.TITLE_BLOCK)
 
             # check whether we close the iteration correctly
             completed = await request.__anext__()
-            self.assertEqual(completed.message_subtype,
-                             W24TechreadMessageSubtypeProgress.COMPLETED)
+            self.assertEqual(
+                completed.message_subtype, W24TechreadMessageSubtypeProgress.COMPLETED
+            )
 
             # check whether the payload can be parsed correctly
             W24TitleBlock.parse_obj(response.payload_dict)

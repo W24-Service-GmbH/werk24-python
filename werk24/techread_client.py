@@ -33,6 +33,7 @@ from typing import (
     Optional,
     Type,
     Union,
+    Tuple,
 )
 
 import dotenv
@@ -301,7 +302,7 @@ class W24TechreadClient:
         max_pages: int = 1,
         drawing_filename: Optional[str] = None,
         sub_account: Optional[UUID4] = None,
-    ) -> AsyncIterator[W24TechreadBaseResponse]:
+    ) -> AsyncIterator[W24TechreadMessage]:
         """
         Send a Technical Drawing to the W24 API to read it.
 
@@ -448,7 +449,7 @@ class W24TechreadClient:
         max_pages: int,
         drawing_filename: Optional[str],
         sub_account: Optional[UUID4],
-    ) -> tuple[W24TechreadMessage, W24TechreadInitResponse]:
+    ) -> Tuple[W24TechreadMessage, W24TechreadInitResponse]:
         """
         Initialize a new techread request.
 
