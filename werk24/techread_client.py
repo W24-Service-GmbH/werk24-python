@@ -32,11 +32,7 @@ from typing import (
     List,
     Optional,
     Type,
-<<<<<<< HEAD
     Union,
-=======
-    Union,    
->>>>>>> 5ee525f47b8299c7e4a8091c85a111949170077e
     Tuple,
 )
 
