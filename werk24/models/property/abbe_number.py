@@ -10,7 +10,7 @@ from werk24.models.typed_model import W24TypedModel
 
 class W24PropertyAbbeTolerance(W24TypedModel):
     class Config:
-        discriminators = "abbe_tolerance_type"
+        discriminators = ("abbe_tolerance_type",)
 
     blurb: str
     abbe_tolerance_type: Any

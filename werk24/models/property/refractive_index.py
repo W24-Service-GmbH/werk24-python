@@ -33,6 +33,8 @@ class W24PropertyRefractiveVariation(W24TypedModel):
     class Config:
         discriminators = ("variation_type",)
 
+    variation_type: Any
+
 
 class W24PropertyRefractiveVariationSchottGrade(W24PropertyRefractiveVariation):
     variation_type: Literal["SCHOTT_GRADE"] = "SCHOTT_GRADE"
