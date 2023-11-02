@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import Optional, Union
 
 from pint import Quantity, UnitRegistry
-from pydantic import BaseModel, field_serializer, validator
+from pydantic import BaseModel, field_serializer, validator, Field
 
 from werk24.models.tolerance import W24Tolerance
 
@@ -55,3 +55,10 @@ class W24Value(BaseModel):
     blurb: str
     value: Decimal
     tolerance: Optional[W24Tolerance] = None
+
+
+class W24ExponentialValue(BaseModel):
+    blurb: str
+    sign: str = Field(examples=["+", "-", "±"])
+    base: Decimal
+    exponent: Decimal
