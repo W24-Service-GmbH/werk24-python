@@ -7,7 +7,7 @@ from werk24.models.value import W24PhysicalQuantity, ureg
 
 
 class W24PropertyStressBirefringence(W24Property):
-    """Parent for all Glas Homogeneity Properties"""
+    """Parent for all Glass Homogeneity Properties"""
 
     property_type: Literal["STRESS_BIREFRINGENCE"] = "STRESS_BIREFRINGENCE"
 
