@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import Field
 
 from werk24.models.property.base import W24Property
-from werk24.models.property.glas_homogeneity import W24Iso10110Grade, W24Iso10110Limits
+from werk24.models.property.glass_homogeneity import W24Iso10110Grade, W24Iso10110Limits
 from typing import Union
 
 
