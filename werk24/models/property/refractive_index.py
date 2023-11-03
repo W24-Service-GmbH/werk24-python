@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Literal, Optional, Any
+from typing import Literal, Optional, Any, Union
 
 from pydantic import Field
 
@@ -12,7 +12,6 @@ class W24PropertyRefractiveTolerance(W24TypedModel):
     class Config:
         discriminators = ("abbe_tolerance_type",)
 
-    blurb: str
     abbe_tolerance_type: Any
 
 
@@ -29,7 +28,14 @@ class W24PropertyRefractiveToleranceStep(W24PropertyRefractiveTolerance):
     step: Decimal = Field(examples=[Decimal("3"), Decimal("0.5")])
 
 
-class W24PropertyRefractiveVariation(W24TypedModel):
+W24PropertyRefractiveToleranceType = Union[
+    W24PropertyRefractiveToleranceValue, W24PropertyRefractiveToleranceStep
+]
+
+from pydantic import BaseModel
+
+
+class W24PropertyRefractiveVariation(BaseModel):
     class Config:
         discriminators = ("variation_type",)
 
@@ -48,13 +54,24 @@ class W24PropertyRefractiveVariationIso12123(W24PropertyRefractiveVariation):
     grade: str = Field(examples=["NV20", "NV10", "NV05"])
 
 
+W24PropertyRefractiveVariationType = Union[
+    W24PropertyRefractiveVariationSchottGrade,
+    # W24PropertyRefractiveVariationIso12123
+    None,
+]
+
+
 class W24PropertyRefractiveIndex(W24Property):
+    property_type: Literal["REFRACTIVE_INDEX"] = "REFRACTIVE_INDEX"
+
+
+class W24PropertyRefractiveIndexValue(W24PropertyRefractiveIndex):
     property_subtype: Literal["VALUE"] = "VALUE"
 
     blurb: str = Field(
         examples=[
-            "nd = 1,72047±0,0005",
-            "ne = 1,57487±0,0005",
+            "nd = 1.72047 ±0.0005",
+            "ne = 1.57487 ±0.0005",
         ]
     )
 
@@ -65,5 +82,10 @@ class W24PropertyRefractiveIndex(W24Property):
         ]
     )
     value: Decimal = Field(examples=[Decimal("1.72047")])
-    tolerance: Optional[W24PropertyRefractiveTolerance]
-    variation: Optional[W24PropertyRefractiveVariation]
+    tolerance: Optional[W24PropertyRefractiveToleranceType]
+    variation: Optional[W24PropertyRefractiveVariationType] = Field(
+        examples=[W24PropertyRefractiveVariationSchottGrade(blurb="NV20", grade="NV20")]
+    )
+
+
+W24PropertyRefractiveIndexType = W24PropertyRefractiveIndexValue

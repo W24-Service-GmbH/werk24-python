@@ -1,5 +1,5 @@
 from werk24.models.property.base import W24Property
-from typing import Literal
+from typing import Literal, Union
 from pydantic import Field, BaseModel
 from decimal import Decimal
 from werk24.models.value import W24PhysicalQuantity, ureg
@@ -28,40 +28,48 @@ class W24Iso10110Limits(BaseModel):
     )
 
 
-class W24PropertyGlasHomogeneity(W24Property):
-    """Parent for all Glas Homogeneity Properties"""
+class W24PropertyGlassHomogeneity(W24Property):
+    """Parent for all Glass Homogeneity Properties"""
 
     property_type: Literal["GLAS_HOMOGENEITY"] = "GLAS_HOMOGENEITY"
 
 
-class W24PropertyGlasHomogeneitySchottGrade(W24PropertyGlasHomogeneity):
+class W24PropertyGlassHomogeneitySchottGrade(W24PropertyGlassHomogeneity):
     """Schott Homogeneity Grade"""
 
-    property_type: Literal["SCHOTT_GRADE"] = "SCHOTT_GRADE"
+    property_subtype: Literal["SCHOTT_GRADE"] = "SCHOTT_GRADE"
     blurb: str = Field(examples=["H1", "H2", "H3"])
     grade: str = Field(examples=["H1", "H2", "H3"])
 
 
-class W24PropertyGlasHomogeneityIso10110Grade(W24PropertyGlasHomogeneity):
+class W24PropertyGlassHomogeneityIso10110Grade(W24PropertyGlassHomogeneity):
     """ISO 10110 Homogeneity Grade"""
 
-    property_type: Literal["ISO_10110_GRADE"] = "ISO_10110_GRADE"
+    property_subtype: Literal["ISO_10110_GRADE"] = "ISO_10110_GRADE"
     blurb: str = Field(examples=["2/3;1"])
     grade: W24Iso10110Grade
 
 
-class W24PropertyGlasHomogeneityIso10110ToleranceLimit(W24PropertyGlasHomogeneity):
+class W24PropertyGlassHomogeneityIso10110ToleranceLimit(W24PropertyGlassHomogeneity):
     """ISO 10110 Homogeneity Tolerance Limit"""
 
-    property_type: Literal["ISO_10110_TOLERANCE_LIMIT"] = "ISO_10110_TOLERANCE_LIMIT"
+    property_subtype: Literal["ISO_10110_TOLERANCE_LIMIT"] = "ISO_10110_TOLERANCE_LIMIT"
     blurb: str = Field(examples=["5* 10^-6; <15nm"])
     limits: W24Iso10110Limits
 
 
-class W24PropertyGlasHomogeneityIso10110NhGrade(W24PropertyGlasHomogeneity):
+class W24PropertyGlassHomogeneityIso10110NhGrade(W24PropertyGlassHomogeneity):
     """ISO 10110 Homogeneity NH Grade"""
 
-    property_type: Literal["ISO_10110_NH_GRADE"] = "ISO_10110_NH_GRADE"
+    property_subtype: Literal["ISO_10110_NH_GRADE"] = "ISO_10110_NH_GRADE"
     blurb: str = Field(examples=["NH040"])
     grade: str = Field(examples=["NH040"])
     tolerance_limit: Decimal = Field(examples=[Decimal(str("40e-6"))])
+
+
+W24PropertyGlassHomogeneityType = Union[
+    W24PropertyGlassHomogeneitySchottGrade,
+    W24PropertyGlassHomogeneityIso10110Grade,
+    W24PropertyGlassHomogeneityIso10110ToleranceLimit,
+    W24PropertyGlassHomogeneityIso10110NhGrade,
+]
