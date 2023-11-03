@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Union
 
 from pydantic import Field
 
@@ -28,3 +28,9 @@ class W24PropertyStressBirefringenceIso10110Grade(W24PropertyStressBirefringence
     property_subtype: Literal["ISO_10110_GRADE"] = "ISO_10110_GRADE"
     blurb: str = Field(examples=["SB20", "SB02"])
     grade: str = Field(examples=["SB20", "SB02"])
+
+
+W24PropertyStressBirefringenceType = Union[
+    W24PropertyStressBirefringenceIso10110Value,
+    W24PropertyStressBirefringenceIso10110Grade,
+]

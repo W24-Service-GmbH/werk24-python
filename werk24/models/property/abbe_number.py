@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 from pydantic import Field
 
@@ -18,6 +18,7 @@ class W24PropertyAbbeTolerance(W24TypedModel):
 
 class W24PropertyAbbeToleranceValue(W24PropertyAbbeTolerance):
     abbe_tolerance_type: Literal["VALUE"] = "VALUE"
+    blurb: str = Field(examples=["±0.8%"])
     deviation_upper: Optional[Decimal] = Field(examples=[Decimal("0.8")])
     deviation_lower: Optional[Decimal] = Field(examples=[Decimal("-0.8")])
 
@@ -28,6 +29,11 @@ class W24PropertyAbbeToleranceStep(W24PropertyAbbeTolerance):
     step: Decimal = Field(examples=[Decimal("3"), Decimal("0.5")])
 
 
+W24PropertyAbbeToleranceType = Union[
+    W24PropertyAbbeToleranceValue, W24PropertyAbbeToleranceStep
+]
+
+
 class W24PropertyAbbeValue(W24Property):
     property_type: Literal["ABBE_NUMBER"] = "ABBE_NUMBER"
 
@@ -35,7 +41,7 @@ class W24PropertyAbbeValue(W24Property):
 class W24PropertyAbbeValueNumberValue(W24PropertyAbbeValue):
     property_subtype: Literal["VALUE"] = "VALUE"
 
-    blurb: str = Field(examples=["vd = 34.70 ±0.8% ", "ve = 57.27 ±0.5%"])
+    blurb: str = Field(examples=["vd = 34.70 ±0.8%", "ve = 57.27 ±0.5%"])
 
     line: W24FraunhoferLine = Field(
         examples=[
@@ -44,4 +50,7 @@ class W24PropertyAbbeValueNumberValue(W24PropertyAbbeValue):
         ]
     )
     value: Decimal = Field(examples=[Decimal("34.70")])
-    tolerance: Optional[W24PropertyAbbeTolerance]
+    tolerance: Optional[W24PropertyAbbeToleranceType]
+
+
+W24PropertyAbbeValueType = W24PropertyAbbeValueNumberValue

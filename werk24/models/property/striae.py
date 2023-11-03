@@ -4,6 +4,7 @@ from pydantic import Field
 
 from werk24.models.property.base import W24Property
 from werk24.models.property.glas_homogeneity import W24Iso10110Grade, W24Iso10110Limits
+from typing import Union
 
 
 class W24PropertyStriae(W24Property):
@@ -76,3 +77,9 @@ class W24PropertyStriaeIso12123(W24PropertyStriae):
 
 #     property_subtype: Literal["MIL_G_1748_B"] = "MIL_G_1748_B"
 #     grade: str
+W24PropertyStriaeType = Union[
+    W24PropertyStriaeSchottGrade,
+    W24PropertyStriaeIso10110Grade,
+    W24PropertyStriaeIso10110Limits,
+    W24PropertyStriaeIso12123,
+]
