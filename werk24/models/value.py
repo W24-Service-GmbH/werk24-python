@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import Optional, Annotated
 
 from pint import Quantity as PintQuantity, UnitRegistry
-from pydantic import BaseModel, Field, AfterValidator, WithJsonSchema, PlainSerializer
+from pydantic import BaseModel, Field, BeforeValidator, WithJsonSchema, PlainSerializer
 
 from werk24.models.tolerance import W24Tolerance
 
@@ -10,7 +10,7 @@ ureg = UnitRegistry()
 
 Quantity = Annotated[
     PintQuantity,
-    AfterValidator(lambda x: x if isinstance(x, PintQuantity) else ureg(str(x))),
+    BeforeValidator(lambda x: x if isinstance(x, PintQuantity) else ureg(str(x))),
     PlainSerializer(lambda x: str(x), return_type=str),
     WithJsonSchema({"type": "string"}, mode="serialization"),
     WithJsonSchema({"type": "string"}, mode="validation"),
