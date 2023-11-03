@@ -175,11 +175,11 @@ class W24MeasureLabel(BaseModel):
 
     test_dimension: Optional[W24TestDimension] = None
 
-    counterbore: List[W24CounterBore] = []
+    counterbores: List[W24CounterBore] = []
 
-    countersink: List[W24CounterSink] = []
+    countersinks: List[W24CounterSink] = []
 
-    counterdrill: List[W24CounterDrill] = []
+    counterdrills: List[W24CounterDrill] = []
 
 
 class W24Measure(W24BaseFeatureModel):
