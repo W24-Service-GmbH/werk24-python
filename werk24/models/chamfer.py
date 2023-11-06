@@ -6,7 +6,7 @@ from .unit import W24UnitAngle
 
 
 class W24Chamfer(BaseModel):
-    """ Chamfer in degree.
+    """Chamfer in degree.
 
     Attributes:
         blurb: String representation for human consumption
