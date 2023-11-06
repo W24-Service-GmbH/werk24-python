@@ -2,6 +2,7 @@
 """
 
 from typing import Optional, Union
+from enum import Enum
 
 from pydantic import UUID4, BaseModel, validator
 
@@ -21,11 +22,23 @@ from .tolerance import (
 from .unit import W24UnitLength
 
 
+class W24CurvatureType(str, Enum):
+    """Curvature types of Radius
+    """
+    CONCAVE = "CONCAVE"
+    CONVEX = "CONVEX"
+
+
 class W24RadiusLabel(BaseModel):
     """Radius Label
 
     Attributes:
+    ----------
         blurb: String representation of the Radius for human consumption
+
+        curvature_type: type of radius curvature. Mostly used in optical 
+            radii. It can be concave or convex. If no information is 
+            available, default to None.
 
         quantity: Quantity of the annotated radius, e.g., 2 x R4 returns
             quantity=2
@@ -50,6 +63,8 @@ class W24RadiusLabel(BaseModel):
         return W24Tolerance.parse_obj(v)
 
     blurb: str
+
+    curvature_type: Optional[W24CurvatureType] = None
 
     quantity: int = 1
     quality: int = 1
