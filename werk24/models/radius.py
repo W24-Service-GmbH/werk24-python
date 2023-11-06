@@ -2,6 +2,7 @@
 """
 
 from typing import Optional, Union
+from enum import Enum
 
 from pydantic import UUID4, BaseModel, validator
 
@@ -21,7 +22,7 @@ from .tolerance import (
 from .unit import W24UnitLength
 
 
-class W24RadiusCurvature(BaseModel):
+class W24RadiusCurvature(str, Enum):
     """Curvature types of Radius
     """
     CONCAVE = "CONCAVE"
