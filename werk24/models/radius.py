@@ -22,7 +22,7 @@ from .tolerance import (
 from .unit import W24UnitLength
 
 
-class W24RadiusCurvature(str, Enum):
+class W24CurvatureType(str, Enum):
     """Curvature types of Radius
     """
     CONCAVE = "CONCAVE"
@@ -37,7 +37,8 @@ class W24RadiusLabel(BaseModel):
         blurb: String representation of the Radius for human consumption
 
         curvature_type: type of radius curvature. Mostly used in optical 
-            radii. It can be concave or convex. 
+            radii. It can be concave or convex. If no information is 
+            available, default to None.
 
         quantity: Quantity of the annotated radius, e.g., 2 x R4 returns
             quantity=2
@@ -63,7 +64,7 @@ class W24RadiusLabel(BaseModel):
 
     blurb: str
 
-    curvature_type: Optional[W24RadiusCurvature] = None
+    curvature_type: Optional[W24CurvatureType] = None
 
     quantity: int = 1
     quality: int = 1
