@@ -32,7 +32,11 @@ class W24RadiusLabel(BaseModel):
     """Radius Label
 
     Attributes:
+    ----------
         blurb: String representation of the Radius for human consumption
+
+        curvature_type: type of radius curvature. Mostly used in optical 
+            radii. It can be concave or convex. 
 
         quantity: Quantity of the annotated radius, e.g., 2 x R4 returns
             quantity=2
