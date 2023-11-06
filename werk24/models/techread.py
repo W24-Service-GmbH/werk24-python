@@ -8,7 +8,7 @@ from pydantic import UUID4, BaseModel, Field, HttpUrl, Json, validator, ConfigDi
 
 from werk24._version import __version__
 
-from .ask import W24Ask, W24AskType, deserialize_ask
+from .ask import W24AskType, deserialize_ask, W24AskUnion
 
 
 class W24TechreadAction(str, Enum):
@@ -273,7 +273,7 @@ class W24TechreadRequest(BaseModel):
             of multiple of your customers separate.
     """
 
-    asks: List[W24Ask] = []
+    asks: List[W24AskUnion] = []
 
     development_key: Optional[str] = None
 
@@ -286,7 +286,7 @@ class W24TechreadRequest(BaseModel):
     sub_account: Optional[UUID4] = None
 
     @validator("asks", pre=True)
-    def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24Ask]:
+    def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24AskUnion]:
         """Validator to de-serialize the asks. The de-serialization
         is based on the ask_type attribute of the object. Pydantic
         does not support this out-of-the box
