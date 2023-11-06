@@ -21,6 +21,13 @@ from .tolerance import (
 from .unit import W24UnitLength
 
 
+class W24RadiusCurvature(BaseModel):
+    """Curvature types of Radius
+    """
+    CONCAVE = "CONCAVE"
+    CONVEX = "CONVEX"
+
+
 class W24RadiusLabel(BaseModel):
     """Radius Label
 
@@ -50,6 +57,8 @@ class W24RadiusLabel(BaseModel):
         return W24Tolerance.parse_obj(v)
 
     blurb: str
+
+    curvature_type: Optional[W24RadiusCurvature] = None
 
     quantity: int = 1
     quality: int = 1
