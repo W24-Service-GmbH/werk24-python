@@ -91,7 +91,7 @@ setup(
         "General Dimensioning and Toleration",
         "Vectorization",
     ],
-    python_requires=">=3.7.1",
+    python_requires=">=3.9.0",
     project_urls={"Documentation": "https://docs.werk24.io/"},
     long_description_content_type="text/markdown",
     long_description=_get_description(),
