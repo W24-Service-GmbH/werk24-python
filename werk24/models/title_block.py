@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, validator
 
+from werk24.models.bom_table import W24BomTable
 from werk24.models.property.color import W24PropertyColor
 
 from .base_feature import W24BaseFeatureModel
@@ -175,6 +176,10 @@ class W24TitleBlock(BaseModel):
 
         colors: List of colors detected on the TitleBlock or in the
             canvas notes.
+
+        bom_table: Reference to the Bill of Material Table. None
+            if you are running on an old client or when no BOM
+            table was found.
     """
 
     designation: Optional[W24CaptionValuePair]
@@ -193,6 +198,8 @@ class W24TitleBlock(BaseModel):
     filename_drawing: Optional[W24Filename] = None
 
     colors: List[W24PropertyColor] = []
+
+    bom_table: Optional[W24BomTable] = None
 
     @validator("designation", pre=True)
     def designation_validator(
