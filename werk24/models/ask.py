@@ -137,6 +137,10 @@ class W24AskType(str, Enum):
     """Ask for internal screening - not available through public API
     """
 
+    DEBUG = "DEBUG"
+    """ Ask for internal debugging - internal use only
+    """
+
 
 class W24Ask(BaseModel):
     """Base model from which all Asks inherit
