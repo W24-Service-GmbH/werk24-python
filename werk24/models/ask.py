@@ -848,7 +848,7 @@ class W24AskDebug(W24Ask):
         debug_key (str): Debugging type that you want 
             to trigger.
     """
-    ask_type: W24AskType = W24AskType.VARIANT_PROCESSES
+    ask_type: W24AskType = W24AskType.DEBUG
     debug_key: str = ""
 
 class W24AskDebugResponse(BaseModel):
