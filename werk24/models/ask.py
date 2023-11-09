@@ -837,6 +837,19 @@ class W24AskVariantProcessesResponse(BaseModel):
 
     processes: List[W24Process]
 
+class W24AskDebug(W24Ask):
+    """ Internal object
+
+    Attributes:
+        debug_key (str): Debugging type that you want 
+            to trigger.
+    """
+    ask_type: W24AskType = W24AskType.VARIANT_PROCESSES
+    debug_key: str = ""
+
+class W24AskDebugResponse(BaseModel):
+    repsonse_url: HttpUrl
+
 
 # class W24AskVariantToleranceElements(W24Ask):
 #     """Ask object to obtain the tolerance elements
@@ -879,7 +892,8 @@ W24AskUnion = Union[
     W24AskVariantRoughnesses,
     W24AskVariantThreadElements,
     W24AskInternalScreening,
-    W24AskVariantProcesses
+    W24AskVariantProcesses,
+    W24AskDebug
     # W24AskVariantToleranceElements
 ]
 """Union of all W24Asks to ensure proper de-serialization """
@@ -946,6 +960,7 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         "VARIANT_THREAD_ELEMENTS": W24AskVariantThreadElements,
         # "VARIANT_TOLERANCE_ELEMENTS":W24AskVariantToleranceElements,
         "VARIANT_PROCESSES": W24AskVariantProcesses,
+        "DEBUG": W24AskDebug,
     }.get(ask_type, None)
 
     if class_ is None:
