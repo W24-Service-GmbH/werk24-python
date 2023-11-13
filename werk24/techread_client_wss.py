@@ -14,7 +14,7 @@ from .auth_client import AuthClient
 
 
 class TechreadClientWss:
-    """ TechreadClient subpart that handles the websocket
+    """TechreadClient subpart that handles the websocket
     communication with the server.
     """
 
@@ -24,10 +24,8 @@ class TechreadClientWss:
         self._techread_version = techread_version
         self._techread_session_wss: Optional[WebSocketClientProtocol] = None
 
-    async def __aenter__(
-            self
-    ) -> 'TechreadClientWss':
-        """ Enter the session with the wss server
+    async def __aenter__(self) -> "TechreadClientWss":
+        """Enter the session with the wss server
 
         Raises:
             RuntimeError  -- Raise when the developer enters the session
@@ -41,31 +39,33 @@ class TechreadClientWss:
         if self._auth_client is None:
             raise RuntimeError(
                 "You need to call register_auth_client() before you can start"
-                + " the session")
+                + " the session"
+            )
 
         # make the endpoint
         endpoint = "wss://{}/{}".format(
-            self._techread_server_wss,
-            self._techread_version)
+            self._techread_server_wss, self._techread_version
+        )
 
         # make the ehaders
         headers = [("Authorization", f"Bearer {self._auth_client.token}")]
 
         # now make the session
-        self._techread_session_wss = await websockets.connect(endpoint, extra_headers=headers)
+        self._techread_session_wss = await websockets.connect(
+            endpoint,
+            extra_headers=headers,
+        )
 
         # return ourselfves
         return self
 
     async def __aexit__(
-            self,
-            exc_type: Optional[Type[BaseException]],
-            exc_value: Optional[BaseException],
-            traceback: Optional[TracebackType]
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
     ) -> None:
-
-        """ Close the session
-        """
+        """Close the session"""
         if self._techread_session_wss is not None:
             await self._techread_session_wss.close()
 
@@ -78,12 +78,8 @@ class TechreadClientWss:
         """
         self._auth_client = auth_client
 
-    async def send_command(
-            self,
-            action: str,
-            message: str = "{}"
-    ) -> None:
-        """ Send a command to the websocket.
+    async def send_command(self, action: str, message: str = "{}") -> None:
+        """Send a command to the websocket.
 
         The function wrapps your action and message into
         a W24TechreadCommand object, translates it to
@@ -106,7 +102,8 @@ class TechreadClientWss:
         # make sure that we have an AuthClient
         if self._techread_session_wss is None:
             raise RuntimeError(
-                "You need to call enter the profile before sending a command")
+                "You need to call enter the profile before sending a command"
+            )
 
         # make the command
         command = W24TechreadCommand(action=action, message=message)
@@ -115,7 +112,7 @@ class TechreadClientWss:
         await self._techread_session_wss.send(command.json())
 
     async def recv_message(self) -> W24TechreadMessage:
-        """ Receive a message from the websocket and interpret
+        """Receive a message from the websocket and interpret
         the result as W24TechreadMessage
 
         Raises:
@@ -129,7 +126,8 @@ class TechreadClientWss:
         # make sure that we have an AuthClient
         if self._techread_session_wss is None:
             raise RuntimeError(
-                "You need to call enter the profile before receiving command")
+                "You need to call enter the profile before receiving command"
+            )
 
         # wait for the websocket to say something
         message_raw = str(await self._techread_session_wss.recv())
@@ -142,7 +140,7 @@ class TechreadClientWss:
 
     @staticmethod
     async def _process_message(message_raw: str) -> W24TechreadMessage:
-        """ Interpret the raw websocket message and
+        """Interpret the raw websocket message and
         turn it into a W24TechreadMessage
 
         Arguments:
@@ -167,26 +165,24 @@ class TechreadClientWss:
         # if that fails, we are probably receiving a
         # message from the gateway directly
         except ValidationError:
-
             # The Gateway responds with the format
             # {"message": str, "connectionId":str, "requestId":str}
             # Obtain the message
             response = json.loads(message_raw)
-            message = response.get('message')
+            message = response.get("message")
 
             # raise a specific exception if the
             # requested action was forbidden
-            if message == 'Forbidden':
+            if message == "Forbidden":
                 raise UnauthorizedException("Requested Action forbidden")
 
             # otherwise fail with an UnknownException
-            raise ServerException(
-                f"Unexpected server response '{message_raw}'.")
+            raise ServerException(f"Unexpected server response '{message_raw}'.")
 
         return message
 
     async def listen(self) -> AsyncGenerator[W24TechreadMessage, None]:
-        """ Simple generator that waits for
+        """Simple generator that waits for
         messages on the websocket, interprets
         them and yields them
 
@@ -200,11 +196,9 @@ class TechreadClientWss:
 
         # make sure that we have an AuthClient
         if self._techread_session_wss is None:
-            raise RuntimeError(
-                "You need to call enter the profile before listening")
+            raise RuntimeError("You need to call enter the profile before listening")
 
         # wait for incoming messages
         async for message_raw in self._techread_session_wss:
-
             # process the message and return them to the caller
             yield await self._process_message(str(message_raw))

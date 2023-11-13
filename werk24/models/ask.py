@@ -841,15 +841,18 @@ class W24AskVariantProcessesResponse(BaseModel):
 
     processes: List[W24Process]
 
+
 class W24AskDebug(W24Ask):
-    """ Internal object
+    """Internal object
 
     Attributes:
-        debug_key (str): Debugging type that you want 
+        debug_key (str): Debugging type that you want
             to trigger.
     """
+
     ask_type: W24AskType = W24AskType.DEBUG
     debug_key: str = ""
+
 
 class W24AskDebugResponse(BaseModel):
     repsonse_url: HttpUrl
