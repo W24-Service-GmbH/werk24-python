@@ -163,7 +163,6 @@ def _add_techread_parser(subparsers):
         action="store_true",
     )
 
-
     parser_techread.add_argument(
         "--ask-titleblock", help="ask for the Title Block", action="store_true"  # noqa
     )
@@ -173,6 +172,13 @@ def _add_techread_parser(subparsers):
         help="ask for the Part Family Characterization",  # noqa
         action="store",
         dest="part_family_id",
+    )
+
+    parser_techread.add_argument(
+        "--ask-debug",
+        help="internal debug option",
+        action="store",
+        dest="debug_key",
     )
 
     parser_health_check = subparsers.add_parser(

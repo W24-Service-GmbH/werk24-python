@@ -26,6 +26,7 @@ from werk24.models.ask import (
     W24AskVariantGDTs,
     W24AskVariantMeasures,
     W24AskVariantRadii,
+    W24AskDebug,
     W24AskVariantRoughnesses,
     W24AskVariantThreadElements,
 )
@@ -53,6 +54,13 @@ logging.basicConfig(
 
 # get the local logger
 logger = logging.getLogger(__name__)  # pylint:disable = invalid-name
+
+
+def _open_in_webbrowser(url: str) -> None:
+    """Open a URL in the Webbrowser"""
+    import webbrowser
+
+    webbrowser.open(str(url), new=2)
 
 
 # make the configuration of what hooks we want to handle and how
@@ -334,6 +342,12 @@ def _make_hooks_from_args(args: argparse.Namespace) -> List[Hook]:
             ),
         )
         hooks.append(c_hook)
-
+    if args.debug_key is not None:
+        c_hook = Hook(
+            ask=W24AskDebug(debug_key=args.debug_key),
+            # function=lambda m: _print_payload("Ask Debug", m.payload_dict),
+            function=lambda m: _open_in_webbrowser(m.payload_url),
+        )
+        hooks.append(c_hook)
 
     return hooks
