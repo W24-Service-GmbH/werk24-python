@@ -18,7 +18,8 @@ class W24PropertyStressBirefringenceIso10110Value(W24PropertyStressBirefringence
     property_subtype: Literal["ISO_10110_VALUE"] = "ISO_10110_VALUE"
     blurb: str = Field(examples=["0/8"])
     value: W24PhysicalQuantity = Field(
-        examples=[W24PhysicalQuantity(blurb="8nm/cm", value=8 * ureg.nm / ureg.cm)]
+        examples=[W24PhysicalQuantity(
+            blurb="8nm/cm", value=8 * ureg.nm / ureg.cm)]
     )
 
 
@@ -28,6 +29,12 @@ class W24PropertyStressBirefringenceIso10110Grade(W24PropertyStressBirefringence
     property_subtype: Literal["ISO_10110_GRADE"] = "ISO_10110_GRADE"
     blurb: str = Field(examples=["SB20", "SB02"])
     grade: str = Field(examples=["SB20", "SB02"])
+
+
+class W24PropertyStressBirefringenceSchottGrade(W24PropertyStressBirefringence):
+    property_subtype: Literal["SCHOTT_GRADE"] = "SCHOTT_GRADE"
+    blurb: str = Field(examples=["Fine Annealed"])
+    grade: str = Field(examples=["Fine Annealed"])
 
 
 W24PropertyStressBirefringenceType = Union[
