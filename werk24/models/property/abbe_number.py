@@ -43,13 +43,13 @@ class W24PropertyAbbeValueNumberValue(W24PropertyAbbeValue):
 
     blurb: str = Field(examples=["vd = 34.70 ±0.8%", "ve = 57.27 ±0.5%"])
 
-    line: W24FraunhoferLine = Field(
+    line: Optional[W24FraunhoferLine] = Field(
         examples=[
             W24FraunhoferLine.D_LINE,
             W24FraunhoferLine.E_LINE,
         ]
     )
-    value: Decimal = Field(examples=[Decimal("34.70")])
+    value: Optional[Decimal] = Field(examples=[Decimal("34.70")])
     tolerance: Optional[W24PropertyAbbeToleranceType]
 
 
