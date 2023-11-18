@@ -3,11 +3,16 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-from pydantic import UUID4, BaseModel, HttpUrl
-
+from pydantic import UUID4, BaseModel, Field, HttpUrl, model_validator
+from pydantic_extra_types.color import Color
+from werk24.models.alignment import W24AlignmentHorizontal, W24AlignmentVertical
+from werk24.models.alphabet import W24Alphabet
+from werk24.models.font import W24Font
+from werk24.models.icon import W24Icon
 from werk24.models.note import W24Note
 from werk24.models.part_family import W24PartFamilyCharacterization
 from werk24.models.process import W24Process
+from werk24.models.font import W24FontMap
 
 from .angle import W24Angle
 from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
@@ -98,7 +103,7 @@ class W24AskType(str, Enum):
     """
 
     VARIANT_MATERIAL = "VARIANT_MATERIAL"
-    """Material that was detected on the data fields of the
+    """Material that was detected on the data cells of the
     drawing or within a variant table
     """
 
@@ -202,7 +207,7 @@ class W24AskPageThumbnail(W24AskThumbnail):
 class W24AskSheetThumbnail(W24AskThumbnail):
     """Requests a thumbnail of each sheet on each page in
     the document. The sheet will only contain the pixels within
-    the main frame that surrounds the canvas and header fields.
+    the main frame that surrounds the canvas and header cells.
 
     !!! note
         We preprocess the sheet so that it is always white-on-black,
@@ -216,7 +221,7 @@ class W24AskSheetThumbnail(W24AskThumbnail):
 class W24AskSheetAnonymization(W24AskThumbnail):
     """Requests an ANONYMIZED thumbnail of each sheet on each page
     in the document. The sheet will only contain the pixels within
-    the main frame that surrounds the canvas and header fields.
+    the main frame that surrounds the canvas and header cells.
 
     !!! note
         We preprocess the sheet so that it is always white-on-black,
@@ -974,3 +979,162 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         raise ValueError(f"Unknown Ask Type '{ask_type}'")
 
     return class_
+
+
+class W24SheetRebrandColorField(BaseModel):
+    """Configuration for Color Fields on a W24AskSheetRebrand
+
+    Tells the algorithms which color cells exist on the
+    template and how to replace them. This can either be
+    a text element or an image.
+    """
+
+    color: Color = Field(
+        description="RGB color of the Color cell.",
+    )
+    text: Optional[str] = Field(
+        description="Text by which the color cell shall be replaced.",
+        examples=["Steel C45"],
+        default=None,
+    )
+    font_map: Optional[Dict[W24Alphabet, W24Font]] = Field(
+        description="Object that maps alphabets to fonts"
+    )
+    icon: Optional[W24Icon] = Field(
+        description="Icon that can be used instead of the text",
+    )
+
+    horizontal_alignment: W24AlignmentHorizontal = W24AlignmentHorizontal.LEFT
+    vertical_alignment: W24AlignmentVertical = W24AlignmentVertical.BOTTOM
+
+    @model_validator(mode="after")
+    def check_text_or_icon(self):
+        if self.text is None and self.icon is None:
+            raise ValueError("`text` or `icon` is required")
+        if self.text is not None and self.icon is not None:
+            raise ValueError("Cannot set `text` or `icon` together")
+        return self
+
+
+class W24SheetRebrandCanvasPartition(BaseModel):
+    """Partition of the Template Canvas.
+
+    Specifies how the canvas in the template
+    shall be partitioned. The rectangle of
+    color `canvas_color` will be used to paste
+    the canvas of the original drawing. The
+
+
+    Args:
+        BaseModel (_type_): _description_
+    """
+
+    canvas_color: Color = Field(
+        description=(
+            "Color of the rectangle on the template that "
+            "can be used to paste the drawing content of "
+            "the input drawing."
+        ),
+        # examples=[Color((58, 7, 26)), Color((97, 12, 43))],
+    )
+    additional_cells_colors: list[Color] = Field(
+        description=(
+            "Rectangle colors that can be used to paste the "
+            "cells of the original drawings that are not "
+            "inserted (in one of the color cells) or suppressed."
+        ),
+        # examples=[Color((37, 26, 0)), Color((64, 45, 0))],
+    )
+
+
+class W24AskSheetRebrand(BaseModel):
+    template_url: str = Field(
+        description=(
+            "Publically available url from which the SVG Template can "
+            "be downloaded. Please be aware that we are caching the "
+            "template with a TTL of 30 min."
+        ),
+    )
+    canvas_partitions: list[W24SheetRebrandCanvasPartition] = Field(
+        description=(
+            "List of different canvas partitions. This allows you "
+            "to specify how the canvas of the template shall be split. "
+            "The algorithm chooses the first option that is able to "
+            "accommodate all `additional` cells into the rectangles "
+            "of color additional_cells_colors."
+        ),
+        default=[
+            W24SheetRebrandCanvasPartition(
+                canvas_color=(58, 7, 26),
+                additional_cells_colors=[(37, 26, 0)],
+            ),
+            W24SheetRebrandCanvasPartition(
+                canvas_color=(97, 12, 43),
+                additional_cells_colors=[(37, 26, 0), (64, 45, 0)],
+            ),
+        ],
+    )
+    color_cell_fonts: W24FontMap = Field(
+        description=(
+            "Font Map that is used by default to the text elements "
+            "that are inserted into the color cells. Note that you "
+            "can overwrite this for each cell."
+        ),
+        default=(
+            W24FontMap(
+                font_map={
+                    W24Alphabet.LATIN: W24Font(font_family="WorkSans", font_size=10),
+                }
+            )
+        ),
+    )
+    additional_cell_fonts: W24FontMap = Field(
+        description=("Font Map that is used when an `additional` cell is regenerated."),
+        default=(
+            W24FontMap(
+                font_map={
+                    W24Alphabet.LATIN: W24Font(font_family="WorkSans", font_size=10),
+                }
+            )
+        ),
+    )
+
+    suppress_cell_types: set[str] = Field(
+        description=(
+            "List of Field Types that shall be suppressed, i.e., not "
+            "ported to the rebranded Sheet. Please get in touch with "
+            "us if you wish to deviate from the default values. "
+        ),
+        default={
+            # General Blocks
+            "approval_block/*",
+            "bom_block/*",
+            "reference_block/*",
+            "revision_block/*",
+            # Identifiers
+            # This includes project name etc.
+            "identifier/name/*",
+            "identifier/number/*",
+            # Telling attributes
+            "address/*",
+            "cage_codes",
+            "copyright",
+            "department",
+            "filename_drawing",
+            "filename_model",
+            "owner",
+            "logo",
+            # Standard info that you would inject into the
+            # color cells.
+            "designation",
+            "drawing_number",
+            "part_number",
+            "material",
+            # Misc.
+            "software",
+            "sheet_number",
+            "scale",
+            "version",
+            "paper_size",
+        },
+    )
