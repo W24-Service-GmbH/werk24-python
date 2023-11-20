@@ -885,6 +885,7 @@ class W24AskDebugResponse(BaseModel):
 #     variant_id: UUID4
 #     thread_elements: List[W24ToleranceElement]
 
+
 class W24SheetRebrandingColorCell(BaseModel):
     """Configuration for Color Fields on a W24AskSheetRebranding
 
@@ -901,7 +902,7 @@ class W24SheetRebrandingColorCell(BaseModel):
         examples=["Steel C45"],
         default=None,
     )
-    font_map: W24FontMap = Field(
+    font_map: Optional[W24FontMap] = Field(
         description="Object that maps alphabets to fonts",
         default=None,
     )
@@ -1089,7 +1090,6 @@ class W24AskSheetRebranding(W24Ask):
 
 
 
-
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
     W24AskNotes,
@@ -1189,4 +1189,3 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         raise ValueError(f"Unknown Ask Type '{ask_type}'")
 
     return class_
-
