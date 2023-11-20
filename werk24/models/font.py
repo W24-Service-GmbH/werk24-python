@@ -42,7 +42,7 @@ class W24FontMap(BaseModel):
     See: https://en.wikipedia.org/wiki/Brahmi_numerals
     """
 
-    font_map: dict[W24Alphabet, W24Font] | None = Field(
+    font_map: dict[W24Alphabet, W24Font] = Field(
         description="Dictionary that maps an alphabet to a font",
         examples={W24Alphabet.LATIN: W24Font(font_family="Work Sans", font_size=10)},
     )
