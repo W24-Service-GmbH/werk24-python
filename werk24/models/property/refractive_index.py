@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from decimal import Decimal
 from typing import Literal, Optional, Any, Union
 
@@ -10,20 +11,20 @@ from werk24.models.typed_model import W24TypedModel
 
 class W24PropertyRefractiveTolerance(W24TypedModel):
     class Config:
-        discriminators = ("abbe_tolerance_type",)
+        discriminators = ("refractive_tolerance_type",)
 
-    abbe_tolerance_type: Any
+    refractive_tolerance_type: Any
 
 
 class W24PropertyRefractiveToleranceValue(W24PropertyRefractiveTolerance):
-    abbe_tolerance_type: Literal["VALUE"] = "VALUE"
+    refractive_tolerance_type: Literal["VALUE"] = "VALUE"
     blurb: str = Field(examples=["±0.0005"])
     deviation_upper: Optional[Decimal] = Field(examples=[Decimal("0.0005")])
     deviation_lower: Optional[Decimal] = Field(examples=[Decimal("-0.0005")])
 
 
 class W24PropertyRefractiveToleranceStep(W24PropertyRefractiveTolerance):
-    abbe_tolerance_type: Literal["STEP"] = "STEP"
+    refractive_tolerance_type: Literal["STEP"] = "STEP"
     blurb: str = Field(examples=["Step 3", "Step 0.5"])
     step: Decimal = Field(examples=[Decimal("3"), Decimal("0.5")])
 
@@ -31,8 +32,6 @@ class W24PropertyRefractiveToleranceStep(W24PropertyRefractiveTolerance):
 W24PropertyRefractiveToleranceType = Union[
     W24PropertyRefractiveToleranceValue, W24PropertyRefractiveToleranceStep
 ]
-
-from pydantic import BaseModel
 
 
 class W24PropertyRefractiveVariation(BaseModel):
@@ -84,7 +83,8 @@ class W24PropertyRefractiveIndexValue(W24PropertyRefractiveIndex):
     value: Decimal = Field(examples=[Decimal("1.72047")])
     tolerance: Optional[W24PropertyRefractiveToleranceType]
     variation: Optional[W24PropertyRefractiveVariationType] = Field(
-        examples=[W24PropertyRefractiveVariationSchottGrade(blurb="NV20", grade="NV20")]
+        examples=[W24PropertyRefractiveVariationSchottGrade(
+            blurb="NV20", grade="NV20")]
     )
 
 

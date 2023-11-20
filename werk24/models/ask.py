@@ -1089,8 +1089,6 @@ class W24AskSheetRebranding(W24Ask):
     )
 
 
-W24AskSheetRebranding.model_rebuild()
-
 
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
