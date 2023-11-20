@@ -885,107 +885,6 @@ class W24AskDebugResponse(BaseModel):
 #     variant_id: UUID4
 #     thread_elements: List[W24ToleranceElement]
 
-
-W24AskUnion = Union[
-    W24AskCanvasThumbnail,
-    W24AskNotes,
-    W24AskPageThumbnail,
-    W24AskPartFamilyCharacterization,
-    W24AskProductPMIExtract,
-    W24AskRevisionTable,
-    W24AskSectionalThumbnail,
-    W24AskSheetAnonymization,
-    W24AskSheetThumbnail,
-    W24AskTitleBlock,
-    W24AskTrain,
-    W24AskVariantExternalDimensions,
-    W24AskVariantCAD,
-    W24AskVariantGDTs,
-    W24AskVariantLeaders,
-    W24AskVariantMaterial,
-    W24AskVariantMeasures,
-    W24AskVariantRadii,
-    W24AskVariantRoughnesses,
-    W24AskVariantThreadElements,
-    W24AskInternalScreening,
-    W24AskVariantProcesses,
-    W24AskDebug
-    # W24AskVariantToleranceElements
-]
-"""Union of all W24Asks to ensure proper de-serialization """
-
-
-def deserialize_ask(
-    raw: Union[Dict[str, Any], W24Ask],
-) -> W24Ask:
-    """Deserialize a specific ask in its raw form
-
-    Args:
-        raw (Dict[str, Any]): Raw Ask as it arrives from the
-            json deserializer
-
-    Returns:
-        W24AskUnion: Corresponding ask type
-    """
-    if isinstance(raw, dict):
-        ask_type = _deserialize_ask_type(raw.get("ask_type", ""))
-        return ask_type.parse_obj(raw)
-
-    if isinstance(raw, W24Ask):
-        return raw
-
-    raise ValueError(f"Unsupported value type '{type(raw)}'")
-
-
-def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
-    """Get the Ask Class from the ask type
-
-    Args:
-
-        ask_type (str): Ask type in question
-
-    Raises:
-
-        ValueError: Raised if ask type is unknown
-
-    Returns:
-
-        str: Name of the AskObject
-    """
-    class_ = {
-        "CANVAS_THUMBNAIL": W24AskCanvasThumbnail,
-        "INTERNAL_SCREENING": W24AskInternalScreening,
-        "NOTES": W24AskNotes,
-        "PAGE_THUMBNAIL": W24AskPageThumbnail,
-        "PART_FAMILY_CHARACTERIZATION": W24AskPartFamilyCharacterization,
-        "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
-        "REVISION_TABLE": W24AskRevisionTable,
-        "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
-        "SHEET_ANONYMIZATION": W24AskSheetAnonymization,
-        "SHEET_THUMBNAIL": W24AskSheetThumbnail,
-        "SHEET_REBRANDING": W24AskSheetRebranding,
-        "TITLE_BLOCK": W24AskTitleBlock,
-        "TRAIN": W24AskTrain,
-        "VARIANT_EXTERNAL_DIMENSIONS": W24AskVariantExternalDimensions,
-        "VARIANT_GDTS": W24AskVariantGDTs,
-        "VARIANT_LEADERS": W24AskVariantLeaders,
-        "VARIANT_MATERIAL": W24AskVariantMaterial,
-        "VARIANT_MEASURES": W24AskVariantMeasures,
-        "VARIANT_RADII": W24AskVariantRadii,
-        "VARIANT_ROUGHNESSES": W24AskVariantRoughnesses,
-        "VARIANT_CAD": W24AskVariantCAD,
-        "VARIANT_THREAD_ELEMENTS": W24AskVariantThreadElements,
-        # "VARIANT_TOLERANCE_ELEMENTS":W24AskVariantToleranceElements,
-        "VARIANT_PROCESSES": W24AskVariantProcesses,
-        "DEBUG": W24AskDebug,
-    }.get(ask_type, None)
-
-    if class_ is None:
-        raise ValueError(f"Unknown Ask Type '{ask_type}'")
-
-    return class_
-
-
 class W24SheetRebrandingColorCell(BaseModel):
     """Configuration for Color Fields on a W24AskSheetRebranding
 
@@ -1187,3 +1086,107 @@ class W24AskSheetRebranding(W24Ask):
         description=("Metadata that you want to set for the resulting pdf file."),
         default=W24RebrandingMetaData(),
     )
+
+
+
+
+W24AskUnion = Union[
+    W24AskCanvasThumbnail,
+    W24AskNotes,
+    W24AskPageThumbnail,
+    W24AskPartFamilyCharacterization,
+    W24AskProductPMIExtract,
+    W24AskRevisionTable,
+    W24AskSectionalThumbnail,
+    W24AskSheetAnonymization,
+    W24AskSheetRebranding,
+    W24AskSheetThumbnail,
+    W24AskTitleBlock,
+    W24AskTrain,
+    W24AskVariantExternalDimensions,
+    W24AskVariantCAD,
+    W24AskVariantGDTs,
+    W24AskVariantLeaders,
+    W24AskVariantMaterial,
+    W24AskVariantMeasures,
+    W24AskVariantRadii,
+    W24AskVariantRoughnesses,
+    W24AskVariantThreadElements,
+    W24AskInternalScreening,
+    W24AskVariantProcesses,
+    W24AskDebug
+    # W24AskVariantToleranceElements
+]
+"""Union of all W24Asks to ensure proper de-serialization """
+
+
+def deserialize_ask(
+    raw: Union[Dict[str, Any], W24Ask],
+) -> W24Ask:
+    """Deserialize a specific ask in its raw form
+
+    Args:
+        raw (Dict[str, Any]): Raw Ask as it arrives from the
+            json deserializer
+
+    Returns:
+        W24AskUnion: Corresponding ask type
+    """
+    if isinstance(raw, dict):
+        ask_type = _deserialize_ask_type(raw.get("ask_type", ""))
+        return ask_type.parse_obj(raw)
+
+    if isinstance(raw, W24Ask):
+        return raw
+
+    raise ValueError(f"Unsupported value type '{type(raw)}'")
+
+
+def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
+    """Get the Ask Class from the ask type
+
+    Args:
+
+        ask_type (str): Ask type in question
+
+    Raises:
+
+        ValueError: Raised if ask type is unknown
+
+    Returns:
+
+        str: Name of the AskObject
+    """
+    class_ = {
+        "CANVAS_THUMBNAIL": W24AskCanvasThumbnail,
+        "INTERNAL_SCREENING": W24AskInternalScreening,
+        "NOTES": W24AskNotes,
+        "PAGE_THUMBNAIL": W24AskPageThumbnail,
+        "PART_FAMILY_CHARACTERIZATION": W24AskPartFamilyCharacterization,
+        "PRODUCT_PMI_EXTRACT": W24AskProductPMIExtract,
+        "REVISION_TABLE": W24AskRevisionTable,
+        "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
+        "SHEET_ANONYMIZATION": W24AskSheetAnonymization,
+        "SHEET_THUMBNAIL": W24AskSheetThumbnail,
+        "SHEET_REBRANDING": W24AskSheetRebranding,
+        "TITLE_BLOCK": W24AskTitleBlock,
+        "TRAIN": W24AskTrain,
+        "VARIANT_EXTERNAL_DIMENSIONS": W24AskVariantExternalDimensions,
+        "VARIANT_GDTS": W24AskVariantGDTs,
+        "VARIANT_LEADERS": W24AskVariantLeaders,
+        "VARIANT_MATERIAL": W24AskVariantMaterial,
+        "VARIANT_MEASURES": W24AskVariantMeasures,
+        "VARIANT_RADII": W24AskVariantRadii,
+        "VARIANT_ROUGHNESSES": W24AskVariantRoughnesses,
+        "VARIANT_CAD": W24AskVariantCAD,
+        "VARIANT_THREAD_ELEMENTS": W24AskVariantThreadElements,
+        # "VARIANT_TOLERANCE_ELEMENTS":W24AskVariantToleranceElements,
+        "VARIANT_PROCESSES": W24AskVariantProcesses,
+        "DEBUG": W24AskDebug,
+    }.get(ask_type, None)
+
+    if class_ is None:
+        raise ValueError(f"Unknown Ask Type '{ask_type}'")
+
+    return class_
+
