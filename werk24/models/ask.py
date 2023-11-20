@@ -1,7 +1,7 @@
 """Definition of all W24Ask types that are understood by the Werk24 API.
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, Set
 
 from pydantic import UUID4, BaseModel, Field, HttpUrl, model_validator
 from pydantic_extra_types.color import Color
@@ -73,6 +73,10 @@ class W24AskType(str, Enum):
     SHEET_ANONYMIZATION = "SHEET_ANONYMIZATION"
     """Thumbnail of the sheet with all references to
     the original author removed.
+    """
+
+    SHEET_REBRANDING = "SHEET_REBRANDING"
+    """Full rebranding of the sheet.
     """
 
     TITLE_BLOCK = "TITLE_BLOCK"
@@ -959,6 +963,7 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
         "SHEET_ANONYMIZATION": W24AskSheetAnonymization,
         "SHEET_THUMBNAIL": W24AskSheetThumbnail,
+        "SHEET_REBRANDING": W24AskSheetRebranding,
         "TITLE_BLOCK": W24AskTitleBlock,
         "TRAIN": W24AskTrain,
         "VARIANT_EXTERNAL_DIMENSIONS": W24AskVariantExternalDimensions,
@@ -981,8 +986,8 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
     return class_
 
 
-class W24SheetRebrandColorField(BaseModel):
-    """Configuration for Color Fields on a W24AskSheetRebrand
+class W24SheetRebrandingColorCell(BaseModel):
+    """Configuration for Color Fields on a W24AskSheetRebranding
 
     Tells the algorithms which color cells exist on the
     template and how to replace them. This can either be
@@ -997,13 +1002,13 @@ class W24SheetRebrandColorField(BaseModel):
         examples=["Steel C45"],
         default=None,
     )
-    font_map: Optional[Dict[W24Alphabet, W24Font]] = Field(
-        description="Object that maps alphabets to fonts"
+    font_map: W24FontMap = Field(
+        description="Object that maps alphabets to fonts",
+        default=None,
     )
     icon: Optional[W24Icon] = Field(
-        description="Icon that can be used instead of the text",
+        description="Icon that can be used instead of the text", default=None
     )
-
     horizontal_alignment: W24AlignmentHorizontal = W24AlignmentHorizontal.LEFT
     vertical_alignment: W24AlignmentVertical = W24AlignmentVertical.BOTTOM
 
@@ -1016,7 +1021,7 @@ class W24SheetRebrandColorField(BaseModel):
         return self
 
 
-class W24SheetRebrandCanvasPartition(BaseModel):
+class W24SheetRebrandingCanvasPartition(BaseModel):
     """Partition of the Template Canvas.
 
     Specifies how the canvas in the template
@@ -1037,7 +1042,7 @@ class W24SheetRebrandCanvasPartition(BaseModel):
         ),
         # examples=[Color((58, 7, 26)), Color((97, 12, 43))],
     )
-    additional_cells_colors: list[Color] = Field(
+    additional_cells_colors: List[Color] = Field(
         description=(
             "Rectangle colors that can be used to paste the "
             "cells of the original drawings that are not "
@@ -1047,15 +1052,42 @@ class W24SheetRebrandCanvasPartition(BaseModel):
     )
 
 
-class W24AskSheetRebrand(BaseModel):
-    template_url: str = Field(
+class W24RebrandingMetaData(BaseModel):
+    """MetaData of the PDF file that is generated during the Rebranding."""
+
+    title: str = Field(
+        description=("Title of the resulting PDF file."),
+        default="",
+    )
+    author: str = Field(
+        description=("Author of the resulting PDF file."),
+        default="",
+    )
+    subject: str = Field(
+        description=("Subject of the resulting PDF file."),
+        default="",
+    )
+    keywords: str = Field(
+        description=("Keywords associated with the resulting PDF file"),
+        default="",
+    )
+    creator: str = Field(
+        description=("Creator of the resulting PDF file."),
+        default="",
+    )
+
+
+class W24AskSheetRebranding(W24Ask):
+    ask_type: W24AskType = W24AskType.SHEET_REBRANDING
+
+    template_url: HttpUrl = Field(
         description=(
             "Publically available url from which the SVG Template can "
             "be downloaded. Please be aware that we are caching the "
             "template with a TTL of 30 min."
         ),
     )
-    canvas_partitions: list[W24SheetRebrandCanvasPartition] = Field(
+    canvas_partitions: List[W24SheetRebrandingCanvasPartition] = Field(
         description=(
             "List of different canvas partitions. This allows you "
             "to specify how the canvas of the template shall be split. "
@@ -1064,14 +1096,26 @@ class W24AskSheetRebrand(BaseModel):
             "of color additional_cells_colors."
         ),
         default=[
-            W24SheetRebrandCanvasPartition(
-                canvas_color=(58, 7, 26),
+            W24SheetRebrandingCanvasPartition(
+                canvas_color=Color((58, 7, 26)),
                 additional_cells_colors=[(37, 26, 0)],
             ),
-            W24SheetRebrandCanvasPartition(
-                canvas_color=(97, 12, 43),
-                additional_cells_colors=[(37, 26, 0), (64, 45, 0)],
+            W24SheetRebrandingCanvasPartition(
+                canvas_color=Color((97, 12, 43)),
+                additional_cells_colors=[Color((37, 26, 0)), Color((64, 45, 0))],
             ),
+        ],
+    )
+    color_cells: List[W24SheetRebrandingColorCell] = Field(
+        description=(
+            "Specifies which colored rectangles exist on the template "
+            "and how they should be replaces."
+        ),
+        examples=[
+            W24SheetRebrandingColorCell(
+                color=Color((1, 30, 45)),
+                text="New text",
+            )
         ],
     )
     color_cell_fonts: W24FontMap = Field(
@@ -1099,7 +1143,7 @@ class W24AskSheetRebrand(BaseModel):
         ),
     )
 
-    suppress_cell_types: set[str] = Field(
+    suppress_cell_types: Set[str] = Field(
         description=(
             "List of Field Types that shall be suppressed, i.e., not "
             "ported to the rebranded Sheet. Please get in touch with "
@@ -1137,4 +1181,9 @@ class W24AskSheetRebrand(BaseModel):
             "version",
             "paper_size",
         },
+    )
+
+    meta_data: W24RebrandingMetaData = Field(
+        description=("Metadata that you want to set for the resulting pdf file."),
+        default=W24RebrandingMetaData(),
     )
