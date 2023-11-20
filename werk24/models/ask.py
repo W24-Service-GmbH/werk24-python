@@ -1,13 +1,18 @@
 """Definition of all W24Ask types that are understood by the Werk24 API.
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, Set
 
-from pydantic import UUID4, BaseModel, HttpUrl
-
+from pydantic import UUID4, BaseModel, Field, HttpUrl, model_validator
+from pydantic_extra_types.color import Color
+from werk24.models.alignment import W24AlignmentHorizontal, W24AlignmentVertical
+from werk24.models.alphabet import W24Alphabet
+from werk24.models.font import W24Font
+from werk24.models.icon import W24Icon
 from werk24.models.note import W24Note
 from werk24.models.part_family import W24PartFamilyCharacterization
 from werk24.models.process import W24Process
+from werk24.models.font import W24FontMap
 
 from .angle import W24Angle
 from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
@@ -70,6 +75,10 @@ class W24AskType(str, Enum):
     the original author removed.
     """
 
+    SHEET_REBRANDING = "SHEET_REBRANDING"
+    """Full rebranding of the sheet.
+    """
+
     TITLE_BLOCK = "TITLE_BLOCK"
     """Ask for all information that is available on the
     title block
@@ -98,7 +107,7 @@ class W24AskType(str, Enum):
     """
 
     VARIANT_MATERIAL = "VARIANT_MATERIAL"
-    """Material that was detected on the data fields of the
+    """Material that was detected on the data cells of the
     drawing or within a variant table
     """
 
@@ -202,7 +211,7 @@ class W24AskPageThumbnail(W24AskThumbnail):
 class W24AskSheetThumbnail(W24AskThumbnail):
     """Requests a thumbnail of each sheet on each page in
     the document. The sheet will only contain the pixels within
-    the main frame that surrounds the canvas and header fields.
+    the main frame that surrounds the canvas and header cells.
 
     !!! note
         We preprocess the sheet so that it is always white-on-black,
@@ -216,7 +225,7 @@ class W24AskSheetThumbnail(W24AskThumbnail):
 class W24AskSheetAnonymization(W24AskThumbnail):
     """Requests an ANONYMIZED thumbnail of each sheet on each page
     in the document. The sheet will only contain the pixels within
-    the main frame that surrounds the canvas and header fields.
+    the main frame that surrounds the canvas and header cells.
 
     !!! note
         We preprocess the sheet so that it is always white-on-black,
@@ -954,6 +963,7 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         "SECTIONAL_THUMBNAIL": W24AskSectionalThumbnail,
         "SHEET_ANONYMIZATION": W24AskSheetAnonymization,
         "SHEET_THUMBNAIL": W24AskSheetThumbnail,
+        "SHEET_REBRANDING": W24AskSheetRebranding,
         "TITLE_BLOCK": W24AskTitleBlock,
         "TRAIN": W24AskTrain,
         "VARIANT_EXTERNAL_DIMENSIONS": W24AskVariantExternalDimensions,
@@ -974,3 +984,206 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         raise ValueError(f"Unknown Ask Type '{ask_type}'")
 
     return class_
+
+
+class W24SheetRebrandingColorCell(BaseModel):
+    """Configuration for Color Fields on a W24AskSheetRebranding
+
+    Tells the algorithms which color cells exist on the
+    template and how to replace them. This can either be
+    a text element or an image.
+    """
+
+    color: Color = Field(
+        description="RGB color of the Color cell.",
+    )
+    text: Optional[str] = Field(
+        description="Text by which the color cell shall be replaced.",
+        examples=["Steel C45"],
+        default=None,
+    )
+    font_map: W24FontMap = Field(
+        description="Object that maps alphabets to fonts",
+        default=None,
+    )
+    icon: Optional[W24Icon] = Field(
+        description="Icon that can be used instead of the text", default=None
+    )
+    horizontal_alignment: W24AlignmentHorizontal = W24AlignmentHorizontal.LEFT
+    vertical_alignment: W24AlignmentVertical = W24AlignmentVertical.BOTTOM
+
+    @model_validator(mode="after")
+    def check_text_or_icon(self):
+        if self.text is None and self.icon is None:
+            raise ValueError("`text` or `icon` is required")
+        if self.text is not None and self.icon is not None:
+            raise ValueError("Cannot set `text` or `icon` together")
+        return self
+
+
+class W24SheetRebrandingCanvasPartition(BaseModel):
+    """Partition of the Template Canvas.
+
+    Specifies how the canvas in the template
+    shall be partitioned. The rectangle of
+    color `canvas_color` will be used to paste
+    the canvas of the original drawing. The
+
+
+    Args:
+        BaseModel (_type_): _description_
+    """
+
+    canvas_color: Color = Field(
+        description=(
+            "Color of the rectangle on the template that "
+            "can be used to paste the drawing content of "
+            "the input drawing."
+        ),
+        # examples=[Color((58, 7, 26)), Color((97, 12, 43))],
+    )
+    additional_cells_colors: List[Color] = Field(
+        description=(
+            "Rectangle colors that can be used to paste the "
+            "cells of the original drawings that are not "
+            "inserted (in one of the color cells) or suppressed."
+        ),
+        # examples=[Color((37, 26, 0)), Color((64, 45, 0))],
+    )
+
+
+class W24RebrandingMetaData(BaseModel):
+    """MetaData of the PDF file that is generated during the Rebranding."""
+
+    title: str = Field(
+        description=("Title of the resulting PDF file."),
+        default="",
+    )
+    author: str = Field(
+        description=("Author of the resulting PDF file."),
+        default="",
+    )
+    subject: str = Field(
+        description=("Subject of the resulting PDF file."),
+        default="",
+    )
+    keywords: str = Field(
+        description=("Keywords associated with the resulting PDF file"),
+        default="",
+    )
+    creator: str = Field(
+        description=("Creator of the resulting PDF file."),
+        default="",
+    )
+
+
+class W24AskSheetRebranding(W24Ask):
+    ask_type: W24AskType = W24AskType.SHEET_REBRANDING
+
+    template_url: HttpUrl = Field(
+        description=(
+            "Publically available url from which the SVG Template can "
+            "be downloaded. Please be aware that we are caching the "
+            "template with a TTL of 30 min."
+        ),
+    )
+    canvas_partitions: List[W24SheetRebrandingCanvasPartition] = Field(
+        description=(
+            "List of different canvas partitions. This allows you "
+            "to specify how the canvas of the template shall be split. "
+            "The algorithm chooses the first option that is able to "
+            "accommodate all `additional` cells into the rectangles "
+            "of color additional_cells_colors."
+        ),
+        default=[
+            W24SheetRebrandingCanvasPartition(
+                canvas_color=Color((58, 7, 26)),
+                additional_cells_colors=[(37, 26, 0)],
+            ),
+            W24SheetRebrandingCanvasPartition(
+                canvas_color=Color((97, 12, 43)),
+                additional_cells_colors=[Color((37, 26, 0)), Color((64, 45, 0))],
+            ),
+        ],
+    )
+    color_cells: List[W24SheetRebrandingColorCell] = Field(
+        description=(
+            "Specifies which colored rectangles exist on the template "
+            "and how they should be replaces."
+        ),
+        examples=[
+            W24SheetRebrandingColorCell(
+                color=Color((1, 30, 45)),
+                text="New text",
+            )
+        ],
+    )
+    color_cell_fonts: W24FontMap = Field(
+        description=(
+            "Font Map that is used by default to the text elements "
+            "that are inserted into the color cells. Note that you "
+            "can overwrite this for each cell."
+        ),
+        default=(
+            W24FontMap(
+                font_map={
+                    W24Alphabet.LATIN: W24Font(font_family="WorkSans", font_size=10),
+                }
+            )
+        ),
+    )
+    additional_cell_fonts: W24FontMap = Field(
+        description=("Font Map that is used when an `additional` cell is regenerated."),
+        default=(
+            W24FontMap(
+                font_map={
+                    W24Alphabet.LATIN: W24Font(font_family="WorkSans", font_size=10),
+                }
+            )
+        ),
+    )
+
+    suppress_cell_types: Set[str] = Field(
+        description=(
+            "List of Field Types that shall be suppressed, i.e., not "
+            "ported to the rebranded Sheet. Please get in touch with "
+            "us if you wish to deviate from the default values. "
+        ),
+        default={
+            # General Blocks
+            "approval_block/*",
+            "bom_block/*",
+            "reference_block/*",
+            "revision_block/*",
+            # Identifiers
+            # This includes project name etc.
+            "identifier/name/*",
+            "identifier/number/*",
+            # Telling attributes
+            "address/*",
+            "cage_codes",
+            "copyright",
+            "department",
+            "filename_drawing",
+            "filename_model",
+            "owner",
+            "logo",
+            # Standard info that you would inject into the
+            # color cells.
+            "designation",
+            "drawing_number",
+            "part_number",
+            "material",
+            # Misc.
+            "software",
+            "sheet_number",
+            "scale",
+            "version",
+            "paper_size",
+        },
+    )
+
+    meta_data: W24RebrandingMetaData = Field(
+        description=("Metadata that you want to set for the resulting pdf file."),
+        default=W24RebrandingMetaData(),
+    )
