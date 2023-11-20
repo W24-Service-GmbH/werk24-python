@@ -47,7 +47,7 @@ class W24PropertyAbbeValueNumberValue(W24PropertyAbbeValue):
         examples=[
             W24FraunhoferLine.D_LINE,
             W24FraunhoferLine.E_LINE,
-        ]
+        ],
     )
     value: Optional[Decimal] = Field(examples=[Decimal("34.70")])
     tolerance: Optional[W24PropertyAbbeToleranceType]
