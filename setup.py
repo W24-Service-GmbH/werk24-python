@@ -51,11 +51,11 @@ setup(
         "aiohttp >= 3.8.3",
         "boto3 >= 1.14.44",
         "devtools>=0.9.0,<1.0",
-        "pydantic>=2.2",
+        "pydantic>=2.5.1",
+        "pydantic-extra-types>=2.1.0",
         "python-dotenv>=0.10.1,<1.0",
         "websockets >= 10.3",
         "pint >= 0.21",
-        "pydantic-extra-types>=2.1.0",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
