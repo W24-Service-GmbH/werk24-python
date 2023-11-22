@@ -71,7 +71,7 @@ class W24IdentifierPair(W24CaptionValuePair):
         identifier_type (W24IdentifierType) Type of identifier.
     """
 
-    identfier_type: W24IdentifierType
+    identifier_type: W24IdentifierType
 
 
 class W24FileExtensionType(str, Enum):
