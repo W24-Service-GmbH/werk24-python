@@ -27,8 +27,12 @@ class W24Iso10110Limits(BaseModel):
         examples=[W24PhysicalQuantity(blurb="15nm", value=15 * ureg.nm)]
     )
 
+
 class W24PropertyGlasHomogeneity(W24Property):
     # WORKAROUND FOR TYPO
+    pass
+
+
 class W24PropertyGlassHomogeneity(W24Property):
     """Parent for all Glass Homogeneity Properties"""
 
