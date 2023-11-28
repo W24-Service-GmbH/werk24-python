@@ -1,8 +1,11 @@
 """ Material Models
 """
 from enum import Enum
-from typing import Tuple, Optional, Any, List
-from werk24.models.base_feature import W24BaseFeatureModel, BaseModel
+from typing import Any, List, Optional, Tuple, Union, Literal
+from pydantic import Field
+from werk24.models.base_feature import BaseModel, W24BaseFeatureModel
+from werk24.models.property.glass_homogeneity import W24PropertyGlasHomogeneity
+from werk24.models.typed_model import W24TypedModel
 
 
 class W24MaterialCategory1(str, Enum):
@@ -15,7 +18,6 @@ class W24MaterialCategory1(str, Enum):
 
 
 class W24MaterialCategory2(str, Enum):
-
     # FERROUS ALLOYS
     STEEL = "STEEL"
     IRON = "IRON"
@@ -75,7 +77,6 @@ class W24MaterialCategory2(str, Enum):
 
 
 class W24MaterialCategory3(str, Enum):
-
     # FERROUS_ALLOY / STEEL
     STRUCTURAL_OR_CONSTRUCTIONAL_STEEL = "STRUCTURAL_OR_CONSTRUCTIONAL_STEEL"
     STAINLESS_STEEL = "STAINLESS_STEEL"
@@ -520,8 +521,62 @@ class W24MaterialCategory3(str, Enum):
     FIBER_CERAMIC = "FIBER_CERAMIC"
 
 
+class W24MaterialConditionBase(W24TypedModel):
+    class Config:
+        discriminators: Tuple[str, ...] = ("condition_type",)
+
+    condition_type: str
+
+
+class W24AluminumTemper(W24MaterialConditionBase):
+    """
+    Aluminium Temper
+
+    Following ISO 2107
+    """
+
+    condition_type: Literal["ALUMINUM_TEMPER"] = "ALUMINUM_TEMPER"
+
+    blurb: str = Field(
+        description="Blurb of the Aluminum Temper",
+        examples=["T6", "H32"],
+    )
+
+
+class W24SteelTreatment(W24MaterialConditionBase):
+    """
+    Steel Treatments
+
+    Following EN 10083
+    """
+
+    condition_type: Literal["STEEL_TREATMENT"] = "STEEL_TREATMENT"
+    blurb: str = Field(
+        description="Blurb of Steel Treatments",
+        examples=["+Q"],
+    )
+
+
+class W24GlassHomogeneityCondition(
+    W24MaterialConditionBase, W24PropertyGlasHomogeneity
+):
+    """
+    Glass Homogeneity Condition
+    """
+
+    condition_type: Literal["GLASS_HOMOGENEITY"] = "GLASS_HOMOGENEITY"
+
+
+""" List of the Material Conditions for the different material types """
+W24MaterialCondition = Union[
+    W24GlassHomogeneityCondition,
+    W24AluminumTemper,
+    W24SteelTreatment,
+]
+
+
 class W24Material(W24BaseFeatureModel):
-    """ W24 Object for Materials.
+    """W24 Object for Materials.
 
     Parsed Material object that can either be
     associated to the TitleBlock or derived from
@@ -564,6 +619,7 @@ class W24Material(W24BaseFeatureModel):
         Optional[W24MaterialCategory2],
         Optional[W24MaterialCategory3],
     ]
+    material_conditions: list[W24MaterialCondition] = []
 
     # ! DEPRECATED in version 1.4.0
     material_family: Optional[Any] = None
@@ -575,17 +631,18 @@ class W24Material(W24BaseFeatureModel):
 
 
 class W24MaterialSet(BaseModel):
-    """ Set of Materials are used when two or more materials are defined 
-        for a part which are applicable together. 
+    """Set of Materials are used when two or more materials are defined
+        for a part which are applicable together.
 
     Args:
     ----
-        material (list[W24material]): List of W24Materials that are 
-            defined together for a part. 
+        material (list[W24material]): List of W24Materials that are
+            defined together for a part.
             For example,
                 Material_A+Material_B+MAterial_C
                 Commonly occurs with polymers like PA+PVC+GF
 
     """
+
     material: List[W24Material]
     blurb: str
