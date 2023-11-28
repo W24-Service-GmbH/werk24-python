@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, List, Optional, Tuple, Union, Literal
 from pydantic import Field
 from werk24.models.base_feature import BaseModel, W24BaseFeatureModel
-from werk24.models.property.glass_homogeneity import W24PropertyGlassHomogeneity
+from werk24.models.property.glass_homogeneity import W24PropertyGlassHomogeneityType
 from werk24.models.typed_model import W24TypedModel
 
 
@@ -564,7 +564,7 @@ class W24GlassHomogeneityCondition(W24MaterialConditionBase):
     """
 
     condition_type: Literal["GLASS_HOMOGENEITY"] = "GLASS_HOMOGENEITY"
-    glass_homogeneity: W24PropertyGlassHomogeneity
+    glass_homogeneity: W24PropertyGlassHomogeneityType
 
 
 """ List of the Material Conditions for the different material types """
