@@ -526,6 +526,7 @@ class W24MaterialConditionBase(W24TypedModel):
         discriminators: Tuple[str, ...] = ("condition_type",)
 
     condition_type: str
+    blurb: str
 
 
 class W24AluminumTemper(W24MaterialConditionBase):
@@ -557,14 +558,13 @@ class W24SteelTreatment(W24MaterialConditionBase):
     )
 
 
-class W24GlassHomogeneityCondition(
-    W24MaterialConditionBase, W24PropertyGlassHomogeneity
-):
+class W24GlassHomogeneityCondition(W24MaterialConditionBase):
     """
     Glass Homogeneity Condition
     """
 
     condition_type: Literal["GLASS_HOMOGENEITY"] = "GLASS_HOMOGENEITY"
+    glass_homogeneity: W24PropertyGlassHomogeneity
 
 
 """ List of the Material Conditions for the different material types """
