@@ -157,6 +157,9 @@ class W24ToleranceClass(BaseModel):
     Attributes:
         blurb: Tolerance class label for human consumption
 
+        raw_ocr_blurb: Tolerance note text as annotated on 
+            the drawing.
+
         property: Property that is being tolerated
 
         table: Rows of the tolerance table that correspond
@@ -164,6 +167,7 @@ class W24ToleranceClass(BaseModel):
     """
 
     blurb: str
+    raw_ocr_blurb: str
     property: W24ToleranceProperty
     table: List[W24ToleranceTableItem]
 
