@@ -50,19 +50,34 @@ class W24CaptionValuePair(BaseModel):
 
 class W24IdentifierType(str, Enum):
     """List of Identifier Types supported by Werk24"""
-
+    ASSEMBLY_NAME  = "ASSEMBLY_NAME "
+    ASSEMBLY_NUMBER = "ASSEMBLY_NUMBER"
+    CAGE_CODE = "CAGE_CODE"
+    CONTRACT_NUMBER = "CONTRACT_NUMBER"
+    CUSTOMER_NAME = "CUSTOMER_NAME"
     CUSTOMER_NUMBER = "CUSTOMER_NUMBER"
-    DRAWING_NUMBER = "DRAWING_NUMBER"
     DOCUMENT_NUMBER = "DOCUMENT_NUMBER"
+    DRAWING_NUMBER = "DRAWING_NUMBER"
     ERP_NUMBER = "ERP_NUMBER"
     IDENTIFICATION_NUMBER = "IDENTIFICATION_NUMBER"
-    ITEM_NUMBER = "ITEM_NUMBER"
+    ITEM_NUMER = "ITEM_NUMER"
+    MANUFACTURER_NAME = "MANUFACTURER_NAME"
     MANUFACTURER_NUMBER = "MANUFACTURER_NUMBER"
+    NUMBER = "NUMBER"
+    ORDER_NAME = "ORDER_NAME"
     ORDER_NUMBER = "ORDER_NUMBER"
-    PART_NUMBER = "PART_NUMBER"
-    PROJECT_NUMBER = "PROJECT_NUMBER"
-    SUPPLIER_NUMBER = "SUPPLIER_NUMBER"
 
+class W24IdentifierStakeholder(str, Enum):
+    """List of Stakeholders that can be identified by Werk24"""
+    SUPPLIER = "SUPPLIER"
+    OWNER = "OWNER"
+    CUSTOMER = "CUSTOMER"
+
+class W24IdentifierTemporary(str, Enum):
+    """List of Temporary Identifiers that can be identified by Werk24"""
+    PREVIOUS = "PREVIOUS"
+    CURRENT = "CURRENT"
+    FUTURE = "FUTURE"
 
 class W24IdentifierPair(W24CaptionValuePair):
     """Caption-Value Pair for Identifies
@@ -72,7 +87,8 @@ class W24IdentifierPair(W24CaptionValuePair):
     """
 
     identifier_type: W24IdentifierType
-
+    stakeholder: Optional[W24IdentifierStakeholder] = None
+    temporary: Optional[W24IdentifierTemporary] = None
 
 class W24FileExtensionType(str, Enum):
     """
