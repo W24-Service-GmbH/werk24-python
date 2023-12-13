@@ -8,7 +8,7 @@ from werk24.models.techread import (
 )
 from werk24.techread_client import Hook, W24TechreadClient
 
-from .base import TestBase
+from test.base import TestBase
 from .utils import CWD, get_drawing
 
 LICENSE_PATH_INVALID_CREDS = CWD / "assets" / "invalid_creds.werk24"

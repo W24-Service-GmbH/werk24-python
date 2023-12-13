@@ -74,7 +74,7 @@ class W24PropertyRefractiveIndexValue(W24PropertyRefractiveIndex):
         ]
     )
 
-    line: W24FraunhoferLine = Field(
+    line: Optional[W24FraunhoferLine] = Field(
         examples=[
             W24FraunhoferLine.D_LINE,
             W24FraunhoferLine.E_LINE,
@@ -83,8 +83,7 @@ class W24PropertyRefractiveIndexValue(W24PropertyRefractiveIndex):
     value: Decimal = Field(examples=[Decimal("1.72047")])
     tolerance: Optional[W24PropertyRefractiveToleranceType]
     variation: Optional[W24PropertyRefractiveVariationType] = Field(
-        examples=[W24PropertyRefractiveVariationSchottGrade(
-            blurb="NV20", grade="NV20")]
+        examples=[W24PropertyRefractiveVariationSchottGrade(blurb="NV20", grade="NV20")]
     )
 
 

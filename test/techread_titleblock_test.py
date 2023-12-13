@@ -6,7 +6,7 @@ from werk24.models.title_block import W24TitleBlock
 from werk24.models.techread import W24AskType, W24TechreadMessageSubtypeProgress
 from werk24.techread_client import W24TechreadClient
 
-from .base import TestBase
+from test.base import TestBase
 from .utils import get_drawing
 
 DRAWING_BYTES = get_drawing()

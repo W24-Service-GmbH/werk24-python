@@ -28,10 +28,15 @@ class W24Iso10110Limits(BaseModel):
     )
 
 
+class W24PropertyGlasHomogeneity(W24Property):
+    # WORKAROUND FOR TYPO
+    pass
+
+
 class W24PropertyGlassHomogeneity(W24Property):
     """Parent for all Glass Homogeneity Properties"""
 
-    property_type: Literal["GLAS_HOMOGENEITY"] = "GLAS_HOMOGENEITY"
+    property_type: Literal["GLASS_HOMOGENEITY"] = "GLASS_HOMOGENEITY"
 
 
 class W24PropertyGlassHomogeneitySchottGrade(W24PropertyGlassHomogeneity):
