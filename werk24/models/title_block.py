@@ -73,8 +73,8 @@ class W24IdentifierStakeholder(str, Enum):
     OWNER = "OWNER"
     CUSTOMER = "CUSTOMER"
 
-class W24IdentifierTemporary(str, Enum):
-    """List of Temporary Identifiers that can be identified by Werk24"""
+class W24IdentifierPeriod(str, Enum):
+    """List of Period Identifiers that can be identified by Werk24"""
     PREVIOUS = "PREVIOUS"
     CURRENT = "CURRENT"
     FUTURE = "FUTURE"
@@ -88,7 +88,7 @@ class W24IdentifierPair(W24CaptionValuePair):
 
     identifier_type: W24IdentifierType
     stakeholder: Optional[W24IdentifierStakeholder] = None
-    temporary: Optional[W24IdentifierTemporary] = None
+    period: Optional[W24IdentifierPeriod] = None
 
 class W24FileExtensionType(str, Enum):
     """
