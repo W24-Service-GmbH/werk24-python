@@ -14,8 +14,8 @@ class W24Iso10110Grade(BaseModel):
     """
 
     blurb: str = Field(examples=["2/3;1"])
-    homogeneity_grade: Optional(str) = Field(examples=["3"])
-    striae_grade: Optional(str) = Field(examples=["1"])
+    homogeneity_grade: Optional[str] = Field(examples=["3"])
+    striae_grade: Optional[str] = Field(examples=["1"])
 
 
 class W24Iso10110Limits(BaseModel):
@@ -23,7 +23,7 @@ class W24Iso10110Limits(BaseModel):
 
     blurb: str = Field(examples=["5* 10^-6; <15nm"])
     tolerance_limit: Decimal = Field(examples=[Decimal(str("50e-6"))])
-    striae_wavefront_deviation_tolerance_limit: Optional(W24PhysicalQuantity) = Field(
+    striae_wavefront_deviation_tolerance_limit: Optional[W24PhysicalQuantity] = Field(
         examples=[W24PhysicalQuantity(blurb="15nm", value=15 * ureg.nm)]
     )
 
