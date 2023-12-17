@@ -3,7 +3,6 @@
 import argparse
 import asyncio
 
-import werk24.cli.auth
 import werk24.cli.health_check
 import werk24.cli.support
 import werk24.cli.techread
@@ -16,16 +15,12 @@ def main() -> None:
     )
     subparsers.required = True
 
-    _add_auth_parser(subparsers)
     _add_support_parser(subparsers)
     _add_techread_parser(subparsers)
 
     args = parser.parse_args()
     if args.service == "techread":
         asyncio.run(werk24.cli.techread.main(args))
-
-    elif args.service == "auth":
-        asyncio.run(werk24.cli.auth.main(args))
 
     elif args.service == "support":
         asyncio.run(werk24.cli.support.main(args))
@@ -48,24 +43,10 @@ def _add_support_parser(subparsers):
     )
 
     create_parser.add_argument("--request-id", action="store", required=True)
-
     create_parser.add_argument("--observed-outcome", action="store", required=True)
-
     create_parser.add_argument("--expected-outcome", action="store", required=True)
-
     create_parser.add_argument("--comment", action="store")
-
     create_parser.add_argument("--importance", action="store", required=True)
-
-
-def _add_auth_parser(subparsers):
-    parser_auth = subparsers.add_parser(
-        "auth", help="Interact with the authentication service"
-    )
-
-    parser_auth.add_argument(
-        "--ask-jwt-token", help="Obtain a valid JWT token", action="store_true"
-    )
 
 
 def _add_techread_parser(subparsers):
