@@ -66,7 +66,6 @@ def get_license_info() -> dict:
 
     return {
         "License Information": "FOUND",
-        "Username": client._auth_client.username,
     }
 
 

@@ -47,15 +47,6 @@ class TestTechreadClient(AsyncTestCase):
             async with client:
                 pass
 
-    async def test_client_usernames(self):
-        """Test access username
-
-        User Story: As API user I want to access my own username,
-        so that I can verify that the login process worked correctly.
-        """
-        client = W24TechreadClient.make_from_env(None)
-        async with client as session:
-            self.assertEqual(type(session.username), str)
 
     async def test_upload_model(self) -> None:
         """Test whether we can upload an associated model.
