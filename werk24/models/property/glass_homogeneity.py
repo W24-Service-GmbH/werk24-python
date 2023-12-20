@@ -72,9 +72,16 @@ class W24PropertyGlassHomogeneityIso10110NhGrade(W24PropertyGlassHomogeneity):
     tolerance_limit: Decimal = Field(examples=[Decimal(str("40e-6"))])
 
 
+class W24PropertyGlassHomogeneityFreeText(W24PropertyGlassHomogeneity):
+    """Homogeneity Free Text"""
+
+    free_text: str
+
+
 W24PropertyGlassHomogeneityType = Union[
     W24PropertyGlassHomogeneitySchottGrade,
     W24PropertyGlassHomogeneityIso10110Grade,
     W24PropertyGlassHomogeneityIso10110ToleranceLimit,
     W24PropertyGlassHomogeneityIso10110NhGrade,
+    W24PropertyGlassHomogeneityFreeText,
 ]
