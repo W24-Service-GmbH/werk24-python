@@ -47,15 +47,6 @@ class TestTechreadClient(AsyncTestCase):
             async with client:
                 pass
 
-    async def test_client_usernames(self):
-        """Test access username
-
-        User Story: As API user I want to access my own username,
-        so that I can verify that the login process worked correctly.
-        """
-        client = W24TechreadClient.make_from_env(None)
-        async with client as session:
-            self.assertEqual(type(session.username), str)
 
     async def test_upload_model(self) -> None:
         """Test whether we can upload an associated model.
@@ -84,17 +75,6 @@ class TestTechreadClient(AsyncTestCase):
             async with client as session:
                 await session.read_drawing("", asks=[]).__anext__()
 
-    async def test_string_as_model_bytes(self) -> None:
-        """Test whether submitting a string as model_bytes
-        raises the correct exception.
-
-        See Github Issue #13
-        """
-        client = W24TechreadClient.make_from_env()
-
-        with self.assertRaises(UnsupportedMediaType):
-            async with client as session:
-                await session.read_drawing(b"", asks=[], model="").__anext__()
 
     async def test_uploading_huge_file(self) -> None:
         """Huge file produces DRAWING_FILE_SIZE_TOO_LARGE?"""

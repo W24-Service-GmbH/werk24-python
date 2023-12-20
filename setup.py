@@ -34,15 +34,12 @@ setup(
     entry_points={
         "console_scripts": [
             "w24cli=werk24.cli.w24cli:main",
-            "w24gui=werk24.gui.w24gui:main",
         ]
     },
-    extras_require={"gui": ["PyQt5", "pillow"]},
     license="commercial",
     packages=[
         "werk24",
         "werk24.cli",
-        "werk24.gui",
         "werk24.models",
     ],
     include_package_data=True,
@@ -50,7 +47,6 @@ setup(
     install_requires=[
         "aiohttp >= 3.8.3",
         "boto3 >= 1.14.44",
-        "devtools>=0.9.0,<1.0",
         "pydantic>=2.5.1",
         "pydantic-extra-types>=2.1.0",
         "python-dotenv>=0.10.1,<1.0",
