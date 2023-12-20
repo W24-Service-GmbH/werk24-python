@@ -10,8 +10,6 @@ from websockets.client import WebSocketClientProtocol
 from werk24.exceptions import ServerException, UnauthorizedException
 from werk24.models.techread import W24TechreadCommand, W24TechreadMessage
 
-from .auth_client import AuthClient
-
 
 class TechreadClientWss:
     """TechreadClient subpart that handles the websocket
@@ -19,44 +17,35 @@ class TechreadClientWss:
     """
 
     def __init__(self, techread_server_wss: str, techread_version: str):
-        self._auth_client: Optional[AuthClient] = None
         self._techread_server_wss = techread_server_wss
         self._techread_version = techread_version
         self._techread_session_wss: Optional[WebSocketClientProtocol] = None
+        self.endpoint = f"wss://{self._techread_server_wss}/{self._techread_version}"
 
     async def __aenter__(self) -> "TechreadClientWss":
-        """Enter the session with the wss server
+        """
+        Enter the session with the wss server
 
         Raises:
-            RuntimeError  -- Raise when the developer enters the session
-                without having called register_auth_client()
+        ------
+        RuntimeError  -- Raise when the developer enters the session
+            without having specified a token
 
         Returns:
-            TechreadClientWss -- instance with activated session
+        -------
+        TechreadClientWss -- instance with activated session
         """
 
         # make sure that we have an AuthClient
-        if self._auth_client is None:
-            raise RuntimeError(
-                "You need to call register_auth_client() before you can start"
-                + " the session"
-            )
+        if self._token is None:
+            raise RuntimeError("You need to call supply a token before entering the session")
 
-        # make the endpoint
-        endpoint = "wss://{}/{}".format(
-            self._techread_server_wss, self._techread_version
-        )
-
-        # make the ehaders
-        headers = [("Authorization", f"Bearer {self._auth_client.token}")]
-
-        # now make the session
+        # make the session
+        headers = [("Authorization", f"Token {self._token}")]
         self._techread_session_wss = await websockets.connect(
-            endpoint,
-            extra_headers=headers,
-        )
+            self.endpoint,
+            extra_headers=headers)
 
-        # return ourselfves
         return self
 
     async def __aexit__(
@@ -69,14 +58,15 @@ class TechreadClientWss:
         if self._techread_session_wss is not None:
             await self._techread_session_wss.close()
 
-    def register_auth_client(self, auth_client: AuthClient) -> None:
-        """Register the reference to the authentication service
-
-        Arguments:
-            auth_client {AuthClient} -- Reference to Authentication
-                client
+    def update_token(self, token:str) -> None:
         """
-        self._auth_client = auth_client
+        Update the authentication token
+
+        Args:
+        ----
+        token (str): New authentication token
+        """
+        self._token = token
 
     async def send_command(self, action: str, message: str = "{}") -> None:
         """Send a command to the websocket.
@@ -109,18 +99,19 @@ class TechreadClientWss:
         command = W24TechreadCommand(action=action, message=message)
 
         # send the the command
-        await self._techread_session_wss.send(command.json())
+        await self._techread_session_wss.send(command.model_dump_json())
 
     async def recv_message(self) -> W24TechreadMessage:
         """Receive a message from the websocket and interpret
         the result as W24TechreadMessage
 
         Raises:
-            RuntimeError  -- Raise when the developer tries to send a command
-                without entering the profile
+        ------
+        RuntimeError: When trying to send a command without having entered the profile.
 
         Returns:
-            W24TechreadMessage -- interpreted message
+        -------
+        W24TechreadMessage: interpreted message
         """
 
         # make sure that we have an AuthClient
@@ -129,13 +120,9 @@ class TechreadClientWss:
                 "You need to call enter the profile before receiving command"
             )
 
-        # wait for the websocket to say something
+        # wait for the websocket to say something and interpret the message
         message_raw = str(await self._techread_session_wss.recv())
-
-        # process the message
         message = await self._process_message(message_raw)
-
-        # and finally return
         return message
 
     @staticmethod
@@ -143,43 +130,41 @@ class TechreadClientWss:
         """Interpret the raw websocket message and
         turn it into a W24TechreadMessage
 
-        Arguments:
-            message_raw {str} -- Raw message
+        Args:
+        message_raw (str): Raw message
 
         Raises:
-            UnauthorizedException: Exception is raised
-                when you requested an action that you
-                have no privileges for (or that does
-                not exist)
+        ------
+        UnauthorizedException: Exception is raised
+            when you requested an action that you
+            have no privileges for (or that does
+            not exist)
 
-            ServerException: Exception is raised when
-                the server did not respond as expected
+        ServerException: Exception is raised when
+            the server did not respond as expected
 
         Returns:
-            W24TeachreadMessage -- interpreted message
+        -------
+        W24TeachreadMessage: interpreted message
         """
-        # interpret and return
         try:
-            message = W24TechreadMessage.parse_raw(message_raw)
+            return W24TechreadMessage.model_validate_json(message_raw)
 
-        # if that fails, we are probably receiving a
-        # message from the gateway directly
-        except ValidationError:
+        except ValidationError as exception:
             # The Gateway responds with the format
             # {"message": str, "connectionId":str, "requestId":str}
             # Obtain the message
             response = json.loads(message_raw)
-            message = response.get("message")
+            error_message = response.get("message")
 
             # raise a specific exception if the
             # requested action was forbidden
-            if message == "Forbidden":
-                raise UnauthorizedException("Requested Action forbidden")
+            if error_message == "Forbidden":
+                raise UnauthorizedException("Requested Action forbidden") from exception
 
             # otherwise fail with an UnknownException
-            raise ServerException(f"Unexpected server response '{message_raw}'.")
+            raise ServerException(f"Unexpected server response '{message_raw}'.") from exception
 
-        return message
 
     async def listen(self) -> AsyncGenerator[W24TechreadMessage, None]:
         """Simple generator that waits for
