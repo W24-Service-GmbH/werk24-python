@@ -32,12 +32,19 @@ class W24PropertyStressBirefringenceIso10110Grade(W24PropertyStressBirefringence
 
 
 class W24PropertyStressBirefringenceSchottGrade(W24PropertyStressBirefringence):
+    """Stress Birefringence Schott Grade"""
     property_subtype: Literal["SCHOTT_GRADE"] = "SCHOTT_GRADE"
     blurb: str = Field(examples=["Fine Annealed"])
     grade: str = Field(examples=["Fine Annealed"])
 
 
+class W24PropertyStressBirefringenceFreeText(W24PropertyStressBirefringence):
+    """Stress Birefringence Free Text"""
+    free_text: str
+
+
 W24PropertyStressBirefringenceType = Union[
     W24PropertyStressBirefringenceIso10110Value,
     W24PropertyStressBirefringenceIso10110Grade,
+    W24PropertyStressBirefringenceFreeText,
 ]
