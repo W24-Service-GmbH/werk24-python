@@ -42,29 +42,39 @@ class W24PropertyRefractiveVariation(BaseModel):
 
 
 class W24PropertyRefractiveVariationSchottGrade(W24PropertyRefractiveVariation):
+    """ Refractive Variation Schott Grade """
     variation_type: Literal["SCHOTT_GRADE"] = "SCHOTT_GRADE"
     blurb: str = Field(examples=("LN", "LH1", "LH2"))
     grade: str = Field(examples=["LN", "LH1", "LH2"])
 
 
 class W24PropertyRefractiveVariationIso12123(W24PropertyRefractiveVariation):
+    """ Refractive Variation ISO 12123 """
     variation_type: Literal["ISO_12123"] = "ISO_12123"
     blurb: str = Field(examples=("NV20", "NV10", "NV05"))
     grade: str = Field(examples=["NV20", "NV10", "NV05"])
+
+
+class W24PropertyRefractiveVariationFreeText(W24PropertyRefractiveVariation):
+    """ Refractive Variation Free Text """
+    free_text: str
 
 
 W24PropertyRefractiveVariationType = Union[
     W24PropertyRefractiveVariationSchottGrade,
     # W24PropertyRefractiveVariationIso12123
     None,
+    W24PropertyRefractiveVariationFreeText,
 ]
 
 
 class W24PropertyRefractiveIndex(W24Property):
+    """ Parent for all Refractive Index """
     property_type: Literal["REFRACTIVE_INDEX"] = "REFRACTIVE_INDEX"
 
 
 class W24PropertyRefractiveIndexValue(W24PropertyRefractiveIndex):
+    """ Refractive Index Value """
     property_subtype: Literal["VALUE"] = "VALUE"
 
     blurb: str = Field(
@@ -83,8 +93,17 @@ class W24PropertyRefractiveIndexValue(W24PropertyRefractiveIndex):
     value: Decimal = Field(examples=[Decimal("1.72047")])
     tolerance: Optional[W24PropertyRefractiveToleranceType]
     variation: Optional[W24PropertyRefractiveVariationType] = Field(
-        examples=[W24PropertyRefractiveVariationSchottGrade(blurb="NV20", grade="NV20")]
+        examples=[W24PropertyRefractiveVariationSchottGrade(
+            blurb="NV20", grade="NV20")]
     )
 
 
-W24PropertyRefractiveIndexType = W24PropertyRefractiveIndexValue
+class W24PropertyRefractiveIndexFreeText(W24PropertyRefractiveIndex):
+    """ Refractive Index Free Text """
+    free_text: str
+
+
+W24PropertyRefractiveIndexType = Union[
+    W24PropertyRefractiveIndexValue,
+    W24PropertyRefractiveIndexFreeText,
+]
