@@ -50,7 +50,8 @@ class W24CaptionValuePair(BaseModel):
 
 class W24IdentifierType(str, Enum):
     """List of Identifier Types supported by Werk24"""
-    ASSEMBLY_NAME  = "ASSEMBLY_NAME "
+
+    ASSEMBLY_NAME = "ASSEMBLY_NAME "
     ASSEMBLY_NUMBER = "ASSEMBLY_NUMBER"
     CAGE_CODE = "CAGE_CODE"
     CONTRACT_NUMBER = "CONTRACT_NUMBER"
@@ -67,17 +68,22 @@ class W24IdentifierType(str, Enum):
     ORDER_NAME = "ORDER_NAME"
     ORDER_NUMBER = "ORDER_NUMBER"
 
+
 class W24IdentifierStakeholder(str, Enum):
     """List of Stakeholders that can be identified by Werk24"""
+
     SUPPLIER = "SUPPLIER"
     OWNER = "OWNER"
     CUSTOMER = "CUSTOMER"
 
+
 class W24IdentifierPeriod(str, Enum):
     """List of Period Identifiers that can be identified by Werk24"""
+
     PREVIOUS = "PREVIOUS"
     CURRENT = "CURRENT"
     FUTURE = "FUTURE"
+
 
 class W24IdentifierPair(W24CaptionValuePair):
     """Caption-Value Pair for Identifies
@@ -89,6 +95,7 @@ class W24IdentifierPair(W24CaptionValuePair):
     identifier_type: W24IdentifierType
     stakeholder: Optional[W24IdentifierStakeholder] = None
     period: Optional[W24IdentifierPeriod] = None
+
 
 class W24FileExtensionType(str, Enum):
     """
@@ -216,104 +223,3 @@ class W24TitleBlock(BaseModel):
     colors: List[W24PropertyColor] = []
 
     bom_table: Optional[W24BomTable] = None
-
-    @validator("designation", pre=True)
-    def designation_validator(
-        cls, raw: Dict[str, Any]
-    ) -> Optional[W24CaptionValuePair]:
-        """
-        Workaround to deal with the transition period
-        while we move from the single-value to the multi-value
-        pairs.
-
-        This code can be removed after we complete the
-        transition.
-
-        Args:
-
-            raw (Dict[str, Any]): Unparsed value returned
-                from the API
-
-        Returns:
-
-            W24CaptionValuePair: Parse value-caption pair
-        """
-        return cls._parse_caption_value_pair(raw)
-
-    @validator("drawing_id", pre=True)
-    def drawing_id_validator(cls, raw: Dict[str, Any]) -> Optional[W24CaptionValuePair]:
-        """
-        Workaround to deal with the transition period
-        while we move from the single-value to the multi-value
-        pairs.
-
-        This code can be removed after we complete the
-        transition.
-
-        Args:
-
-            raw (Dict[str, Any]): Unparsed value returned
-                from the API
-
-        Returns:
-
-            W24CaptionValuePair: Parse value-caption pair
-        """
-        return cls._parse_caption_value_pair(raw)
-
-    @validator("reference_ids", pre=True)
-    def reference_ids_validator(
-        cls, raw: List[Dict[str, Any]]
-    ) -> List[W24CaptionValuePair]:
-        """
-        Workaround to deal with the transition period
-        while we move from the single-value to the multi-value
-        pairs.
-
-        This code can be removed after we complete the
-        transition.
-
-        Args:
-
-            raw (List[Dict[str, Any]]): Unparsed value returned
-                from the API
-
-        Returns:
-
-            List[W24CaptionValuePair]: Parse value-caption pair
-        """
-        result = [cls._parse_caption_value_pair(e) for e in raw]
-        return [r for r in result if r is not None]
-
-    @staticmethod
-    def _parse_caption_value_pair(
-        raw: Optional[Dict[str, Any]]
-    ) -> Optional[W24CaptionValuePair]:
-        """
-        Workaround to deal with the transition period
-        while we move from the single-value to the multi-value
-        pairs.
-
-        This code can be removed after we complete the
-        transition.
-
-        Args:
-
-            raw (Dict[str, Any]): Unparsed value returned
-                from the API
-
-        Returns:
-
-            W24CaptionValuePair: Parse value-caption pair
-        """
-        if isinstance(raw, W24CaptionValuePair):
-            return raw
-
-        if raw is None:
-            return None
-
-        if "value" in raw.keys():
-            raw["values"] = [{"language": None, "text": raw.get("value")}]
-            del raw["value"]
-
-        return W24CaptionValuePair.parse_obj(raw)
