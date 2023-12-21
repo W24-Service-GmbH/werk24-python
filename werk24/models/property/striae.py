@@ -67,6 +67,7 @@ class W24PropertyStriaeFreeText(W24PropertyStriae):
     """Striae Free Text"""
 
     free_text: str
+    variation_type: Literal["FREETEXT"] = "FREETEXT"
 
 # class W24PropertyStriaeMilG174B(W24PropertyStriae):
 #     """
