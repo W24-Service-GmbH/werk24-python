@@ -17,6 +17,7 @@ class W24PropertyAbbeTolerance(W24TypedModel):
 
 
 class W24PropertyAbbeToleranceValue(W24PropertyAbbeTolerance):
+    """ Abbe Tolerance Value """
     abbe_tolerance_type: Literal["VALUE"] = "VALUE"
     blurb: str = Field(examples=["±0.8%"])
     deviation_upper: Optional[Decimal] = Field(examples=[Decimal("0.8")])
@@ -24,13 +25,21 @@ class W24PropertyAbbeToleranceValue(W24PropertyAbbeTolerance):
 
 
 class W24PropertyAbbeToleranceStep(W24PropertyAbbeTolerance):
+    """ Abbe Tolerance Step """
     abbe_tolerance_type: Literal["STEP"] = "STEP"
     blurb: str = Field(examples=["Step 3", "Step 0.5"])
     step: Decimal = Field(examples=[Decimal("3"), Decimal("0.5")])
 
 
+class W24PropertyAbbeToleranceFreeText(W24PropertyAbbeTolerance):
+    """ Abbe Tolerance Free Text """
+    free_text: str
+
+
 W24PropertyAbbeToleranceType = Union[
-    W24PropertyAbbeToleranceValue, W24PropertyAbbeToleranceStep
+    W24PropertyAbbeToleranceValue,
+    W24PropertyAbbeToleranceStep,
+    W24PropertyAbbeToleranceFreeText,
 ]
 
 
@@ -39,6 +48,7 @@ class W24PropertyAbbeValue(W24Property):
 
 
 class W24PropertyAbbeValueNumberValue(W24PropertyAbbeValue):
+    """ Abbe Value Number """
     property_subtype: Literal["VALUE"] = "VALUE"
 
     blurb: str = Field(examples=["vd = 34.70 ±0.8%", "ve = 57.27 ±0.5%"])
@@ -53,4 +63,12 @@ class W24PropertyAbbeValueNumberValue(W24PropertyAbbeValue):
     tolerance: Optional[W24PropertyAbbeToleranceType]
 
 
-W24PropertyAbbeValueType = W24PropertyAbbeValueNumberValue
+class W24PropertyAbbeValueFreeText(W24PropertyAbbeValue):
+    """ Abbe Value Free Text """
+    free_text: str
+
+
+W24PropertyAbbeValueType = Union[
+    W24PropertyAbbeValueNumberValue,
+    W24PropertyAbbeValueFreeText,
+]
