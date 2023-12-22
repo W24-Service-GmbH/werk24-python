@@ -43,4 +43,4 @@ class TestTitleBlock(TestBase):
             )
 
             # check whether the payload can be parsed correctly
-            W24TitleBlock.parse_obj(response.payload_dict)
+            W24TitleBlock.model_validate(response.payload_dict)

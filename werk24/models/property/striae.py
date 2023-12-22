@@ -63,6 +63,12 @@ class W24PropertyStriaeIso12123(W24PropertyStriae):
     grade: str = Field(examples=["SW60", "SW10"])
 
 
+class W24PropertyStriaeFreeText(W24PropertyStriae):
+    """Striae Free Text"""
+
+    free_text: str
+    variation_type: Literal["FREETEXT"] = "FREETEXT"
+
 # class W24PropertyStriaeMilG174B(W24PropertyStriae):
 #     """
 #     Striae Grade following MIL G 174 B.
@@ -75,6 +81,7 @@ class W24PropertyStriaeIso12123(W24PropertyStriae):
 #     (See SCHOTT TIE 25)
 #     """
 
+
 #     property_subtype: Literal["MIL_G_1748_B"] = "MIL_G_1748_B"
 #     grade: str
 W24PropertyStriaeType = Union[
@@ -82,4 +89,5 @@ W24PropertyStriaeType = Union[
     W24PropertyStriaeIso10110Grade,
     W24PropertyStriaeIso10110Limits,
     W24PropertyStriaeIso12123,
+    W24PropertyStriaeFreeText,
 ]

@@ -18,7 +18,8 @@ class W24PropertyStressBirefringenceIso10110Value(W24PropertyStressBirefringence
     property_subtype: Literal["ISO_10110_VALUE"] = "ISO_10110_VALUE"
     blurb: str = Field(examples=["0/8"])
     value: W24PhysicalQuantity = Field(
-        examples=[W24PhysicalQuantity(blurb="8nm/cm", value=8 * ureg.nm / ureg.cm)]
+        examples=[W24PhysicalQuantity(
+            blurb="8nm/cm", value=8 * ureg.nm / ureg.cm)]
     )
 
 
@@ -30,7 +31,14 @@ class W24PropertyStressBirefringenceIso10110Grade(W24PropertyStressBirefringence
     grade: str = Field(examples=["SB20", "SB02"])
 
 
+class W24PropertyStressBirefringenceFreeText(W24PropertyStressBirefringence):
+    """Stress Birefringence Free Text"""
+    free_text: str
+    variation_type: Literal["FREETEXT"] = "FREETEXT"
+
+
 W24PropertyStressBirefringenceType = Union[
     W24PropertyStressBirefringenceIso10110Value,
     W24PropertyStressBirefringenceIso10110Grade,
+    W24PropertyStressBirefringenceFreeText,
 ]
