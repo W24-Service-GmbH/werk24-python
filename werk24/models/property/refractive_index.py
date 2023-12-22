@@ -100,7 +100,8 @@ class W24PropertyRefractiveIndexValue(W24PropertyRefractiveIndex):
     variation: Optional[W24PropertyRefractiveVariationType] = Field(
         examples=[W24PropertyRefractiveVariationSchottGrade(
             blurb="NV20", grade="NV20")],
-        default=None)
+        default=None
+    )
 
 
 class W24PropertyRefractiveIndexFreeText(W24PropertyRefractiveIndex):
