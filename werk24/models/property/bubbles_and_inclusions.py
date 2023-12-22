@@ -35,7 +35,10 @@ class W24PropertyBubblesAndInclusionsIso10110Limits(W24PropertyBubblesAndInclusi
 
     property_subtype: Literal["ISO_10110_LIMITS"] = "ISO_10110_LIMITS"
     blurb: str = Field(examples=["30/100 cm3 & 0.1mm2/100cm3"])
-    number_of_largest_permissible_bubbles: Optional[int] = Field(examples=[30])
+    number_of_largest_permissible_bubbles: Optional[int] = Field(
+        examples=[30],
+        default=None
+    )
     total_cross_section: W24PhysicalQuantity = Field(
         examples=[W24PhysicalQuantity(blurb="0.1mm2", value=0.1 * ureg.mm**2)]
     )
@@ -48,6 +51,7 @@ class W24PropertyBubblesAndInclusionsFreeText(W24PropertyBubblesAndInclusions):
     """Bubbles and Inclusions Free Text"""
 
     free_text: str
+    variation_type: Literal["FREETEXT"] = "FREETEXT"
 
 
 W24PropertyBubblesAndInclusionsType = Union[
