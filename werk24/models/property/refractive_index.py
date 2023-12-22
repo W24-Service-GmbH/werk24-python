@@ -19,8 +19,10 @@ class W24PropertyRefractiveTolerance(W24TypedModel):
 class W24PropertyRefractiveToleranceValue(W24PropertyRefractiveTolerance):
     refractive_tolerance_type: Literal["VALUE"] = "VALUE"
     blurb: str = Field(examples=["±0.0005"])
-    deviation_upper: Optional[Decimal] = Field(default=None)
-    deviation_lower: Optional[Decimal] = Field(default=None)
+    deviation_upper: Optional[Decimal] = Field(
+        examples=[Decimal("0.0005")], default=None)
+    deviation_lower: Optional[Decimal] = Field(
+        examples=[Decimal("-0.0005")], default=None)
 
 
 class W24PropertyRefractiveToleranceStep(W24PropertyRefractiveTolerance):
@@ -85,11 +87,19 @@ class W24PropertyRefractiveIndexValue(W24PropertyRefractiveIndex):
         ]
     )
 
-    line: Optional[W24FraunhoferLine] = Field(default=None)
+    line: Optional[W24FraunhoferLine] = Field(
+        examples=[
+            W24FraunhoferLine.D_LINE,
+            W24FraunhoferLine.E_LINE,
+        ],
+        default=None
+    )
     value: Decimal = Field(examples=[Decimal("1.72047")])
     tolerance: Optional[W24PropertyRefractiveToleranceType] = Field(
         default=None)
     variation: Optional[W24PropertyRefractiveVariationType] = Field(
+        examples=[W24PropertyRefractiveVariationSchottGrade(
+            blurb="NV20", grade="NV20")],
         default=None)
 
 

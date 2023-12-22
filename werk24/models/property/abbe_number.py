@@ -20,8 +20,10 @@ class W24PropertyAbbeToleranceValue(W24PropertyAbbeTolerance):
     """ Abbe Tolerance Value """
     abbe_tolerance_type: Literal["VALUE"] = "VALUE"
     blurb: str = Field(examples=["±0.8%"])
-    deviation_upper: Optional[Decimal] = Field(default=None)
-    deviation_lower: Optional[Decimal] = Field(default=None)
+    deviation_upper: Optional[Decimal] = Field(
+        examples=[Decimal("0.8")], default=None)
+    deviation_lower: Optional[Decimal] = Field(
+        examples=[Decimal("-0.8")], default=None)
 
 
 class W24PropertyAbbeToleranceStep(W24PropertyAbbeTolerance):
@@ -54,7 +56,10 @@ class W24PropertyAbbeValueNumberValue(W24PropertyAbbeValue):
 
     blurb: str = Field(examples=["vd = 34.70 ±0.8%", "ve = 57.27 ±0.5%"])
 
-    line: Optional[W24FraunhoferLine] = Field(default=None)
+    line: Optional[W24FraunhoferLine] = Field(examples=[
+        W24FraunhoferLine.D_LINE,
+        W24FraunhoferLine.E_LINE,
+    ], default=None)
     value: Optional[Decimal] = Field(default=None)
     tolerance: Optional[W24PropertyAbbeToleranceType] = Field(default=None)
 
