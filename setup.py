@@ -49,7 +49,7 @@ setup(
         "boto3 >= 1.14.44",
         "pydantic>=2.5.1",
         "pydantic-extra-types>=2.1.0",
-        "python-dotenv>=0.10.1,<1.0",
+        "python-dotenv>=0.10.1,<2.0",
         "websockets >= 10.3",
         "pint >= 0.21",
     ],
