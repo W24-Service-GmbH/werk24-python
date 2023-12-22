@@ -13,24 +13,26 @@ class W24PropertyBubblesAndInclusions(W24Property):
     property_type: Literal["BUBBLES_AND_INCLUSIONS"] = "BUBBLES_AND_INCLUSIONS"
 
 
-class W24PropertyBubblesAndInclusionSchottGrade(W24PropertyBubblesAndInclusions):
-    """ Bubbles and Inclusions Schott Grade """
+class W24PropertyBubblesAndInclusionsSchottGrade(W24PropertyBubblesAndInclusions):
+    """Bubbles and Inclusions Schott Grade"""
+
     property_subtype: Literal["SCHOTT_GRADE"] = "SCHOTT_GRADE"
     blurb: str = Field(examples=["Standard", "VB", "EVB"])
     grade: str = Field(examples=["Standard", "VB", "EVB"])
 
 
-class W24PropertyBubblesAndInclusionIso10110Grade(W24PropertyBubblesAndInclusions):
-    """ Bubbles and Inclusions ISO 10110 Grade """
+class W24PropertyBubblesAndInclusionsIso10110Grade(W24PropertyBubblesAndInclusions):
+    """Bubbles and Inclusions ISO 10110 Grade"""
+
     property_subtype: Literal["ISO_10110_GRADE"] = "ISO_10110_GRADE"
     blurb: str = Field(examples=["1/3 x 0.5"])
     number_of_largest_permissible_bubbles: int = Field(examples=[3])
-    largest_permissible_bubble_grade: Decimal = Field(
-        examples=[Decimal("0.5")])
+    largest_permissible_bubble_grade: Decimal = Field(examples=[Decimal("0.5")])
 
 
-class W24PropertyBubblesAndInclusionIso10110Limits(W24PropertyBubblesAndInclusions):
-    """ Bubbles and Inclusions ISO 10110 Limits """
+class W24PropertyBubblesAndInclusionsIso10110Limits(W24PropertyBubblesAndInclusions):
+    """Bubbles and Inclusions ISO 10110 Limits"""
+
     property_subtype: Literal["ISO_10110_LIMITS"] = "ISO_10110_LIMITS"
     blurb: str = Field(examples=["30/100 cm3 & 0.1mm2/100cm3"])
     number_of_largest_permissible_bubbles: Optional[int] = Field(examples=[30])
@@ -42,14 +44,15 @@ class W24PropertyBubblesAndInclusionIso10110Limits(W24PropertyBubblesAndInclusio
     )
 
 
-class W24PropertyBubblesAndInclusionFreeText(W24PropertyBubblesAndInclusions):
-    """ Bubbles and Inclusions Free Text """
+class W24PropertyBubblesAndInclusionsFreeText(W24PropertyBubblesAndInclusions):
+    """Bubbles and Inclusions Free Text"""
+
     free_text: str
 
 
 W24PropertyBubblesAndInclusionsType = Union[
-    W24PropertyBubblesAndInclusionFreeText,
-    W24PropertyBubblesAndInclusionIso10110Grade,
-    W24PropertyBubblesAndInclusionIso10110Limits,
-    W24PropertyBubblesAndInclusionSchottGrade,
+    W24PropertyBubblesAndInclusionsFreeText,
+    W24PropertyBubblesAndInclusionsIso10110Grade,
+    W24PropertyBubblesAndInclusionsIso10110Limits,
+    W24PropertyBubblesAndInclusionsSchottGrade,
 ]
