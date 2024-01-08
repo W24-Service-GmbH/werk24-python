@@ -10,6 +10,8 @@ class W24DepthThroughType(str, Enum):
     """
     THRU = "THRU"
     THRU_ALL = "THRU_ALL"
+
+
 class W24Depth(BaseModel):
     """ Depth object that describes the details of the
     depth of a drilling or thread
@@ -22,6 +24,6 @@ class W24Depth(BaseModel):
     """
     blurb: str
 
-    depth: Decimal
+    depth: Optional[Decimal] = None
 
     through_type: Optional[W24DepthThroughType] = None
