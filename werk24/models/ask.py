@@ -179,8 +179,6 @@ class W24Ask(BaseModel):
     is_training: bool = False
 
 
-
-
 class W24AskThumbnail(W24Ask):
     """Base model for features that request a thumbnail.
 
@@ -1079,6 +1077,7 @@ class W24AskSheetRebranding(W24Ask):
             "part_number",
             "material",
             # Misc.
+            "do_not_scale",
             "software",
             "sheet_number",
             "scale",
@@ -1092,8 +1091,10 @@ class W24AskSheetRebranding(W24Ask):
         default=W24RebrandingMetaData(),
     )
 
+
 class W24AskExcelSummary(W24Ask):
     ask_type: W24AskType = W24AskType.EXCEL_SUMMARY
+
 
 W24AskUnion = Union[
     W24AskCanvasThumbnail,

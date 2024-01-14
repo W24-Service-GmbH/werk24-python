@@ -337,3 +337,22 @@ class W24TechreadInitResponse(W24TechreadBaseResponse):
     drawing_presigned_post: W24PresignedPost
 
     model_presigned_post: W24PresignedPost
+
+
+class W24TechreadWithCallbackPayload(BaseModel):
+    """Payload that is sent to the API to trigger a read with callback.
+
+    Attributes:
+    ----------
+    asks: List of asks
+
+    callback_url: Callback URL that will be called once the
+        processing is completed.
+
+    max_pages: Maximum number of pages that shall be processed.
+    """
+
+    asks: List[W24AskUnion] = []
+    callback_url: HttpUrl
+    max_pages: int = 5
+    drawing_filename: Optional[str] = None
