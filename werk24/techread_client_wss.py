@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from websockets.client import WebSocketClientProtocol
 from werk24.exceptions import ServerException, UnauthorizedException
 from werk24.models.techread import W24TechreadCommand, W24TechreadMessage
+from werk24.auth_client import AuthClient
 
 
 class TechreadClientWss:
@@ -21,6 +22,7 @@ class TechreadClientWss:
         self._techread_version = techread_version
         self._techread_session_wss: Optional[WebSocketClientProtocol] = None
         self.endpoint = f"wss://{self._techread_server_wss}/{self._techread_version}"
+        self._auth_client = None
 
     async def __aenter__(self) -> "TechreadClientWss":
         """
@@ -35,17 +37,11 @@ class TechreadClientWss:
         -------
         TechreadClientWss -- instance with activated session
         """
-
-        # make sure that we have an AuthClient
-        if self._token is None:
-            raise RuntimeError("You need to call supply a token before entering the session")
-
-        # make the session
-        headers = [("Authorization", f"Token {self._token}")]
+        headers = self._auth_client.get_auth_headers()
         self._techread_session_wss = await websockets.connect(
             self.endpoint,
-            extra_headers=headers)
-
+            extra_headers=headers,
+        )
         return self
 
     async def __aexit__(
@@ -58,15 +54,14 @@ class TechreadClientWss:
         if self._techread_session_wss is not None:
             await self._techread_session_wss.close()
 
-    def update_token(self, token:str) -> None:
-        """
-        Update the authentication token
+    def register_auth_client(self, auth_client: AuthClient) -> None:
+        """Register the reference to the authentication service
 
-        Args:
-        ----
-        token (str): New authentication token
+        Arguments:
+            auth_client {AuthClient} -- Reference to Authentication
+                client
         """
-        self._token = token
+        self._auth_client = auth_client
 
     async def send_command(self, action: str, message: str = "{}") -> None:
         """Send a command to the websocket.
@@ -163,8 +158,9 @@ class TechreadClientWss:
                 raise UnauthorizedException("Requested Action forbidden") from exception
 
             # otherwise fail with an UnknownException
-            raise ServerException(f"Unexpected server response '{message_raw}'.") from exception
-
+            raise ServerException(
+                f"Unexpected server response '{message_raw}'."
+            ) from exception
 
     async def listen(self) -> AsyncGenerator[W24TechreadMessage, None]:
         """Simple generator that waits for

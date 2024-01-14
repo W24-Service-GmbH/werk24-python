@@ -16,7 +16,7 @@ EXAMPLE
         drawing_bytes,
         [Hook(
                 ask=W24AskPageThumbnail(),
-                callback=lambda msg: print("Received Thumbnail of Page")
+                function=lambda msg: print("Received Thumbnail of Page")
         ]))
 """
 import logging
@@ -24,7 +24,7 @@ from io import BufferedReader
 import hashlib
 import os
 import uuid
-from asyncio import  iscoroutinefunction
+from asyncio import iscoroutinefunction
 from types import TracebackType
 from typing import (
     AsyncGenerator,
@@ -37,6 +37,7 @@ from typing import (
     Union,
     Tuple,
 )
+from werk24.auth_client import AuthClient
 
 import dotenv
 from pydantic import UUID4, BaseModel
@@ -52,7 +53,6 @@ from werk24.models.ask import W24Ask
 from werk24.models.helpdesk import W24HelpdeskTask
 from werk24.models.techread import (
     W24TechreadAction,
-    W24TechreadBaseResponse,
     W24TechreadException,
     W24TechreadExceptionLevel,
     W24TechreadExceptionType,
@@ -78,10 +78,16 @@ W24Exceptions. This allows us to mock consistent responses
 even when the files are rejected before they reach the API
 """
 
+# Default Authentication Region
 DEFAULT_AUTH_REGION = "eu-central-1"
+
+# Default Endpoints
 DEFAULT_SERVER_WSS = "ws-api.w24.co"
+DEFAULT_API_BASE_URL = "api.w24.co"
 DEFAULT_SUPPORT_BASE_URL = "support.w24.co"
 
+# List of the Locations where we are looking for the license file
+# if the user does not specify a path.
 LICENSE_LOCATIONS = (".werk24", "werk24_license.txt")
 
 LICENSE_ERROR_TEXT = """
@@ -136,6 +142,7 @@ class Hook(BaseModel):
     Either a message_type or an ask must be registered. Be careful when registering an ask;
     a complete W24Ask definition is required, not just the ask type.
     """
+
     message_type: Optional[W24TechreadMessageType] = None
     message_subtype: Optional[W24TechreadMessageSubtype] = None
     ask: Optional[W24Ask] = None
@@ -153,6 +160,7 @@ class W24TechreadClient:
         techread_server_wss: str,
         techread_version: str,
         development_key: str = None,
+        api_base_url: str = DEFAULT_API_BASE_URL,
         support_base_url: str = DEFAULT_SUPPORT_BASE_URL,
     ):
         """Initialize a new W24TechreadClient.
@@ -177,13 +185,21 @@ class W24TechreadClient:
         """
         self._development_key = development_key
 
+        # Create an empty reference to the authentication
+        # service necessary for the Cognito Authentication.
+        self._auth_client: Optional[AuthClient] = None
+
         # HTTP Client
         self._techread_client_https = TechreadClientHttps(
-            techread_version, support_base_url)
+            techread_version,
+            api_base_url,
+            support_base_url,
+        )
 
         # WSS Client
         self._techread_client_wss = TechreadClientWss(
-            techread_server_wss, techread_version)
+            techread_server_wss, techread_version
+        )
 
     async def __aenter__(self) -> "W24TechreadClient":
         """Create the HTTPS and WSS sessions
@@ -215,22 +231,57 @@ class W24TechreadClient:
 
     def register(
         self,
-        token:str
+        cognito_region: Optional[str],
+        cognito_identity_pool_id: Optional[str],
+        cognito_user_pool_id: Optional[str],
+        cognito_client_id: Optional[str],
+        cognito_client_secret: Optional[str],
+        username: Optional[str],
+        password: Optional[str],
+        token: Optional[str],
     ) -> None:
         """
-        Register the authentication token with the client.
+        Register with the authentication
+        service (i.e., lazy login)
 
-        Args:
-        ----
-        token (str): Authentication token
+        Arguments:
+            cognito_region {str} -- Physical region
+            cognito_identity_pool_id {str} -- identity pool of W24
+            cognito_client_id {str} -- the client id of your application
+            cognito_client_secret {str} -- the client secret of your
+                application
+            username {str} -- the username with which you want to register
+            password {str} -- the password with which you want to register
         """
-        self._techread_client_https.update_token(token)
-        self._techread_client_wss.update_token(token)
+        # create an client instance to connect
+        # to the authentication service
+        self._auth_client = AuthClient(
+            cognito_region,
+            cognito_identity_pool_id,
+            cognito_user_pool_id,
+            cognito_client_id,
+            cognito_client_secret,
+            username,
+            password,
+            token,
+        )
+        self._auth_client.login()
+        # tell the techread clients about it
+        self._techread_client_https.register_auth_client(self._auth_client)
+        self._techread_client_wss.register_auth_client(self._auth_client)
 
+        # ensure that we have a token
+        try:
+            self._auth_client.login()  # type: ignore
+        except AttributeError as exc:
+            raise RuntimeError(
+                "No connection to the authentication service was "
+                + "established. Please call register()"
+            ) from exc
 
     async def read_drawing(
         self,
-        drawing: Union[BufferedReader,bytes],
+        drawing: Union[BufferedReader, bytes],
         asks: List[W24Ask],
         model: bytes = None,
         max_pages: int = 1,
@@ -295,11 +346,14 @@ class W24TechreadClient:
         # that they submitted the wrong data type.
         # See Github Issue #13
         if not isinstance(drawing, BufferedReader) and not isinstance(drawing, bytes):
-            raise UnsupportedMediaType("Drawing bytes requires 'bytes' or 'BufferedReader' type")
+            raise UnsupportedMediaType(
+                "Drawing bytes requires 'bytes' or 'BufferedReader' type"
+            )
 
         # send the initiation command
         init_message, init_response = await self.init_request(
-            asks, max_pages, drawing_filename, sub_account)
+            asks, max_pages, drawing_filename, sub_account
+        )
 
         yield init_message
 
@@ -343,7 +397,7 @@ class W24TechreadClient:
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
-            await  self._techread_client_https.upload_associated_file(
+            await self._techread_client_https.upload_associated_file(
                 init_response.drawing_presigned_post, drawing
             )
 
@@ -488,7 +542,9 @@ class W24TechreadClient:
         # a new exception type. Let's tell her by rasing
         # a runtime error
         except KeyError as exception:
-            raise RuntimeError("Unknown exception type passed: %s" % type(exception_raw)) from exception
+            raise RuntimeError(
+                "Unknown exception type passed: %s" % type(exception_raw)
+            ) from exception
 
         # translate the exception into an official exception
         exception = W24TechreadException(
@@ -532,10 +588,11 @@ class W24TechreadClient:
         if license_path is None:
             license_path = next(filter(os.path.exists, LICENSE_LOCATIONS), None)
 
-
         # First priority: look for the local license path
         if license_path is not None:
-            environs_raw = {k: v for k,v in dotenv.dotenv_values(license_path).items() if v}
+            environs_raw = {
+                k: v for k, v in dotenv.dotenv_values(license_path).items() if v
+            }
 
         # if the caller defined a license path, but it does not exist, raise the exception
         elif license_path and not os.path.exists(license_path):
@@ -547,11 +604,13 @@ class W24TechreadClient:
 
         # Generate the auth token if it does not exist
         if "W24TECHREAD_AUTH_TOKEN" not in environs_raw:
-            environs_raw["W24TECHREAD_AUTH_TOKEN"] = cls._create_auth_token(environs_raw)
+            environs_raw["W24TECHREAD_AUTH_TOKEN"] = cls._create_auth_token(
+                environs_raw
+            )
         return environs_raw
 
     @staticmethod
-    def _create_auth_token(environs:dict[str,str]) -> str:
+    def _create_auth_token(environs: dict[str, str]) -> str:
         """Create the auth token from the environment variables
 
         Legacy Clients are obtaining a token from cognito.
@@ -576,12 +635,12 @@ class W24TechreadClient:
         str: Authorization token
         """
         try:
-            username=environs["W24TECHREAD_AUTH_USERNAME"]
-            password=environs["W24TECHREAD_AUTH_PASSWORD"]
+            username = environs["W24TECHREAD_AUTH_USERNAME"]
+            password = environs["W24TECHREAD_AUTH_PASSWORD"]
         except KeyError:
             raise LicenseError(LICENSE_ERROR_TEXT)
 
-        auth_token = hashlib.sha256((username+password).encode()).hexdigest()
+        auth_token = hashlib.sha256((username + password).encode()).hexdigest()
         return auth_token
 
     @classmethod
@@ -654,7 +713,16 @@ class W24TechreadClient:
             # register the credentials. This will in effect
             # only set the variabels in the authorizer. It will
             # not trigger a network request
-            client.register(environs["W24TECHREAD_AUTH_TOKEN"])
+            client.register(
+                auth_region,
+                environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
+                environs["W24TECHREAD_AUTH_USER_POOL_ID"],
+                environs["W24TECHREAD_AUTH_CLIENT_ID"],
+                environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
+                environs["W24TECHREAD_AUTH_USERNAME"],
+                environs["W24TECHREAD_AUTH_PASSWORD"],
+                environs["W24TECHREAD_AUTH_TOKEN"],
+            )
 
         except KeyError:
             raise LicenseError(LICENSE_ERROR_TEXT)
@@ -662,11 +730,61 @@ class W24TechreadClient:
         # return the client
         return client
 
+    async def read_drawing_with_callback(
+        self,
+        drawing: Union[BufferedReader, bytes],
+        asks: List[W24Ask],
+        callback_url: str,
+        max_pages: int = 5,
+        drawing_filename: Optional[str] = None,
+    ) -> UUID4:
+        """Read the Drawings and register a callback URL.
+
+        This method is useful if you want to separate the
+        initialization from the upload and read stages.
+
+        You can simply specify the callback URL that shall
+        receive the message responses. This function will
+        return after sending the request to the API. The
+        callback URL will be called asynchronously. Keep
+        in mind that the callback speed depends on your
+        service level.
+
+        Args:
+        ----
+        drawing (Union[BufferedReader, bytes]): Drawing that you want to process
+        asks (List[W24Ask]): List of all the information that you want to obtain
+        callback_url (str): URL that shall receive the callback requests
+        max_pages (int, optional): Maximum number of pages that shall be processed.
+            Defaults to 5.
+        drawing_filename (Optional[str], optional): Filename of the drawing.
+            Defaults to None.
+
+        Raises:
+        ------
+        ServerException: Raised when the server returns an ERROR message
+
+        Returns:
+        -------
+        UUID4: Request ID of the request
+        """
+        # send the request to the API
+        try:
+            return await self._techread_client_https.read_drawing_with_callback(
+                drawing,
+                asks,
+                callback_url,
+                max_pages=max_pages,
+                drawing_filename=drawing_filename,
+            )
+        except ServerException:
+            raise
+
     async def read_drawing_with_hooks(
         self,
-        drawing: Union[BufferedReader,bytes],
+        drawing: Union[BufferedReader, bytes],
         hooks: List[Hook],
-        max_pages: int = 1,
+        max_pages: int = 5,
         drawing_filename: Optional[str] = None,
         sub_account: Optional[UUID4] = None,
     ) -> None:
@@ -744,10 +862,9 @@ class W24TechreadClient:
         # if everything went well, we call the trigger with
         # the message as payload. Be sure to call the
         # function asymmetrically if supported
-        await hook_function(message) \
-            if iscoroutinefunction(hook_function) \
-            else hook_function(message)
-
+        await hook_function(message) if iscoroutinefunction(
+            hook_function
+        ) else hook_function(message)
 
     @staticmethod
     def _get_hook_function_for_message(
@@ -765,6 +882,7 @@ class W24TechreadClient:
         -------
         Optional[Callable] -- Hook function that should be called
         """
+
         def hook_filter(hook: Hook) -> bool:
             if message.message_type == W24TechreadMessageType.ASK:
                 return (
