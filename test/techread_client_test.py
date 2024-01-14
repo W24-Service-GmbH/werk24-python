@@ -40,13 +40,13 @@ class TestTechreadClient(AsyncTestCase):
         """
         environs = os.environ
         client = W24TechreadClient(
-            environs["W24TECHREAD_SERVER_WSS"], environs["W24TECHREAD_VERSION"]
+            environs["W24TECHREAD_SERVER_WSS"],
+            environs["W24TECHREAD_VERSION"],
         )
 
         with self.assertRaises(RuntimeError):
             async with client:
                 pass
-
 
     async def test_upload_model(self) -> None:
         """Test whether we can upload an associated model.
@@ -74,7 +74,6 @@ class TestTechreadClient(AsyncTestCase):
         with self.assertRaises(UnsupportedMediaType):
             async with client as session:
                 await session.read_drawing("", asks=[]).__anext__()
-
 
     async def test_uploading_huge_file(self) -> None:
         """Huge file produces DRAWING_FILE_SIZE_TOO_LARGE?"""
@@ -109,3 +108,15 @@ class TestTechreadClient(AsyncTestCase):
                         message.exceptions[0].exception_type,
                         W24TechreadExceptionType.DRAWING_FILE_FORMAT_UNSUPPORTED,
                     )
+
+    async def test_read_with_callback(self) -> None:
+        """Test whether we can read with callback"""
+        client = W24TechreadClient.make_from_env()
+        asks: List[W24Ask] = [W24AskPageThumbnail()]
+        drawing_bytes = b""
+        await client.read_drawing_with_callback(
+            drawing_bytes,
+            asks,
+            "https://werk24.io",
+            5,
+        )

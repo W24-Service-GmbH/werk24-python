@@ -1,13 +1,19 @@
 """ HTTPS-part of the Werk24 client
 """
+import uuid
+import json
 import urllib.parse
+from pydantic import UUID4
+from werk24.models.techread import W24TechreadWithCallbackPayload
+from werk24.models.ask import W24AskUnion
+from typing import List
 from types import TracebackType
 from typing import Dict, Optional, Type
 from io import BufferedReader
 import aiohttp
 from pydantic import HttpUrl
 from typing import Union
-
+from werk24.auth_client import AuthClient
 from werk24.exceptions import (
     BadRequestException,
     RequestTooLargeException,
@@ -29,8 +35,9 @@ EXCEPTION_CLASSES = {
     range(415, 416): UnsupportedMediaType,
     range(300, 400): ServerException,
     range(500, 600): ServerException,
-    range(416, 500): ServerException
+    range(416, 500): ServerException,
 }
+
 
 class TechreadClientHttps:
 
@@ -49,8 +56,8 @@ class TechreadClientHttps:
         """
         self._techread_version = techread_version
         self._techread_session_https: Optional[aiohttp.ClientSession] = None
-        self._token: Optional[str] = None
-        self._support_base_url = support_base_url
+        self._auth_client: Optional[AuthClient] = None
+        self.support_base_url = support_base_url
 
     async def __aenter__(self) -> "TechreadClientHttps":
         """
@@ -66,10 +73,8 @@ class TechreadClientHttps:
         -------
         TechreadClientHttps: Instance of the class itself with active session.
         """
-
-        # Check if auth client registered
-        if self._token is None:
-            raise RuntimeError("You need to call supply a token before entering the session")
+        if self._auth_client is None:
+            raise RuntimeError("No AuthClient was registered")
 
         self._techread_session_https = aiohttp.ClientSession()
         return self
@@ -99,19 +104,19 @@ class TechreadClientHttps:
             await self._techread_session_https.close()
             self._techread_session_https = None
 
-    def update_token(self, token:str) -> None:
+    def register_auth_client(self, auth_client: AuthClient) -> None:
         """Register the reference to the authentication service
 
-        Args:
-        ----
-        token (str): Token to be used.
+        Arguments:
+            auth_client {AuthClient} -- Reference to Authentication
+                client
         """
-        self._token = token
+        self._auth_client = auth_client
 
     async def upload_associated_file(
         self,
         presigned_post: W24PresignedPost,
-        content: Optional[Union[bytes, BufferedReader]]
+        content: Optional[Union[bytes, BufferedReader]],
     ) -> None:
         """
         Uploads an associated file to the API.
@@ -147,7 +152,7 @@ class TechreadClientHttps:
 
         # create a new fresh session that does not
         # carry the authentication token
-        presigned_post_str=  str(presigned_post.url)
+        presigned_post_str = str(presigned_post.url)
         async with aiohttp.ClientSession() as session:
             async with session.post(presigned_post_str, data=form) as response:
                 self._raise_for_status(presigned_post_str, response.status)
@@ -319,7 +324,6 @@ class TechreadClientHttps:
         # If the resposne code is anything other than unauthorized or 200 (OK), we trigger a ServerException.
         raise ServerException(f"Request failed '{url}' with code {status_code}")
 
-
     async def create_helpdesk_task(self, task: W24HelpdeskTask) -> W24HelpdeskTask:
         """
         Create a Helpdesk ticket.
@@ -378,7 +382,7 @@ class TechreadClientHttps:
         -------
         str: URL to the endpoint
         """
-        return urllib.parse.urljoin(f"https://{self._support_base_url}", path)
+        return urllib.parse.urljoin(f"https://{self.support_base_url}", path)
 
     def _make_helpdesk_headers(self) -> Dict[str, str]:
         """
@@ -390,4 +394,84 @@ class TechreadClientHttps:
         -------
         Dict[str, str]: Help desk headers
         """
-        return {"Authorization": f"Token {self._token}"}
+        return self._auth_client.get_headers()
+
+    async def read_drawing_with_callback(
+        self,
+        drawing: Union[BufferedReader, bytes],
+        asks: List[W24AskUnion],
+        callback_url: str,
+        max_pages: int = 5,
+        drawing_filename: Optional[str] = None,
+    ) -> UUID4:
+        """
+        Read a drawing with a callback.
+
+        Args:
+        ----
+        drawing (Union[BufferedReader, bytes]): Drawing to be read
+        asks (List[W24Ask]): List of asks
+        callback_url (str): Callback URL
+        max_pages (int, optional): Maximum number of pages to be read.
+            Defaults to 5.
+        drawing_filename (Optional[str], optional): Filename of the drawing.
+            Defaults to None.
+
+        Raises:
+        ------
+        BadRequestException: Raised when the request body
+            cannot be interpreted. This normally indicates
+            that the API version has been updated and that
+            we missed a corner case. If you encounter this
+            exception, it is very likely our mistake. Please
+            get in touch!
+
+        UnauthorizedException: Raised when the token
+            or the requested file have expired
+
+        ResourceNotFoundException: Raised when you are requesting
+            an endpoint that does not exist. Again, you should
+            not encounter this, but if you do, let us know.
+
+        RequestTooLargeException: Raised when the status
+            code was 413
+
+        UnsupportedMediaTypException: Raised when the file you
+            submitted cannot be read(because its media type
+            is not supported by the API).
+
+        ServerException: Raised for all other status codes
+            that are not 2xx
+
+        Returns:
+        -------
+        UUID4: Request ID
+        """
+
+        # Set a default drawing filename if none is provided
+        drawing_filename = drawing_filename or "drawing.pdf"
+
+        # create the form data
+        data = aiohttp.FormData()
+        data.add_field("drawing", drawing, filename=drawing_filename)
+        data.add_field(
+            "asks",
+            json.dumps([ask.model_dump(mode="json") for ask in asks]),
+        )
+        data.add_field("callback_url", callback_url)
+        data.add_field("max_pages", str(max_pages))
+        data.add_field("client_version", self._techread_version)
+        data.add_field("drawing_filename", drawing_filename)
+
+        # send the request
+        headers = self._auth_client.get_auth_headers()
+        url = self._make_support_url("techread/read-with-callback")
+        async with aiohttp.ClientSession(headers=headers) as session:
+            response = await session.post(url, data=data)
+            response_json = await response.json(content_type=None)
+            self._raise_for_status(url, response.status)
+
+        try:
+            return uuid.UUID(response_json["request_id"])
+        except (ValueError, KeyError):
+            raise BadRequestException(f"Request failed: {response_json}")
