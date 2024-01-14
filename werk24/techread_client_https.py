@@ -45,7 +45,7 @@ class TechreadClientHttps:
     to the W24TechreadArchitectureStatus enum
     """
 
-    def __init__(self, techread_version: str, api_base_url: str, support_base_url: str):
+    def __init__(self, techread_version: str, support_base_url: str):
         """
         Initialize a new session with the https server.
 
@@ -58,7 +58,6 @@ class TechreadClientHttps:
         self._techread_session_https: Optional[aiohttp.ClientSession] = None
         self._auth_client: Optional[AuthClient] = None
         self.support_base_url = support_base_url
-        self.api_base_url = support_base_url
 
     async def __aenter__(self) -> "TechreadClientHttps":
         """
@@ -385,19 +384,6 @@ class TechreadClientHttps:
         """
         return urllib.parse.urljoin(f"https://{self.support_base_url}", path)
 
-    def _make_api_url(self, path: str) -> str:
-        """Make the api url for the techread requests.
-
-        Args:
-        ----
-        path (str): Path to the endpoint
-
-        Returns:
-        -------
-        str: URL to the endpoint
-        """
-        return urllib.parse.urljoin(f"https://{self.api_base_url}", path)
-
     def _make_helpdesk_headers(self) -> Dict[str, str]:
         """
         Make the headers for the help desk requests.
@@ -479,7 +465,7 @@ class TechreadClientHttps:
 
         # send the request
         headers = self._auth_client.get_auth_headers()
-        url = self._make_api_url("techread/read-with-callback")
+        url = self._make_support_url("techread/read-with-callback")
         async with aiohttp.ClientSession(headers=headers) as session:
             response = await session.post(url, data=data)
             response_json = await response.json(content_type=None)

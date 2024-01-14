@@ -83,7 +83,6 @@ DEFAULT_AUTH_REGION = "eu-central-1"
 
 # Default Endpoints
 DEFAULT_SERVER_WSS = "ws-api.w24.co"
-DEFAULT_API_BASE_URL = "api.w24.co"
 DEFAULT_SUPPORT_BASE_URL = "support.w24.co"
 
 # List of the Locations where we are looking for the license file
@@ -160,7 +159,6 @@ class W24TechreadClient:
         techread_server_wss: str,
         techread_version: str,
         development_key: str = None,
-        api_base_url: str = DEFAULT_API_BASE_URL,
         support_base_url: str = DEFAULT_SUPPORT_BASE_URL,
     ):
         """Initialize a new W24TechreadClient.
@@ -192,7 +190,6 @@ class W24TechreadClient:
         # HTTP Client
         self._techread_client_https = TechreadClientHttps(
             techread_version,
-            api_base_url,
             support_base_url,
         )
 
