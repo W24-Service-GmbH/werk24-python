@@ -83,7 +83,7 @@ DEFAULT_AUTH_REGION = "eu-central-1"
 
 # Default Endpoints
 DEFAULT_SERVER_WSS = "ws-api.w24.co"
-DEFAULT_SUPPORT_BASE_URL = "support.w24.co"
+DEFAULT_SERVER_HTTPS = "support.w24.co"
 
 # List of the Locations where we are looking for the license file
 # if the user does not specify a path.
@@ -159,7 +159,7 @@ class W24TechreadClient:
         techread_server_wss: str,
         techread_version: str,
         development_key: str = None,
-        support_base_url: str = DEFAULT_SUPPORT_BASE_URL,
+        support_base_url: str = DEFAULT_SERVER_HTTPS,
     ):
         """Initialize a new W24TechreadClient.
 
@@ -228,14 +228,14 @@ class W24TechreadClient:
 
     def register(
         self,
-        cognito_region: Optional[str],
-        cognito_identity_pool_id: Optional[str],
-        cognito_user_pool_id: Optional[str],
-        cognito_client_id: Optional[str],
-        cognito_client_secret: Optional[str],
-        username: Optional[str],
-        password: Optional[str],
-        token: Optional[str],
+        cognito_region: Optional[str] = None,
+        cognito_identity_pool_id: Optional[str] = None,
+        cognito_user_pool_id: Optional[str] = None,
+        cognito_client_id: Optional[str] = None,
+        cognito_client_secret: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> None:
         """
         Register with the authentication
@@ -639,6 +639,28 @@ class W24TechreadClient:
 
         auth_token = hashlib.sha256((username + password).encode()).hexdigest()
         return auth_token
+
+    @classmethod
+    def make_from_token(
+        cls,
+        token: str,
+        region: Optional[str] = None,
+        server_https: Optional[str] = None,
+        server_wss: Optional[str] = None,
+        version: str = "v2",
+    ) -> "W24TechreadClient":
+        # create a reference to the client
+        server_https = server_https or DEFAULT_SERVER_HTTPS
+        server_wss = server_wss or DEFAULT_SERVER_WSS
+        client = W24TechreadClient(server_wss, version)
+
+        # register the credentials. This will in effect
+        # only set the variabels in the authorizer. It will
+        # not trigger a network request
+        client.register(region, token=token)
+
+        # return the client
+        return client
 
     @classmethod
     def make_from_env(
