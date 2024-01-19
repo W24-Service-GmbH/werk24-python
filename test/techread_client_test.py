@@ -38,12 +38,7 @@ class TestTechreadClient(AsyncTestCase):
         I make a request to the client without entering a session, so that
         I can change my code swiftly.
         """
-        environs = os.environ
-        client = W24TechreadClient(
-            environs["W24TECHREAD_SERVER_WSS"],
-            environs["W24TECHREAD_VERSION"],
-        )
-
+        client = W24TechreadClient(None, None)
         with self.assertRaises(RuntimeError):
             async with client:
                 pass
