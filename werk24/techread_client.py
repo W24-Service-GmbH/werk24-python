@@ -694,13 +694,13 @@ class W24TechreadClient:
             # not trigger a network request
             client.register(
                 auth_region,
-                environs["W24TECHREAD_AUTH_IDENTITY_POOL_ID"],
-                environs["W24TECHREAD_AUTH_USER_POOL_ID"],
-                environs["W24TECHREAD_AUTH_CLIENT_ID"],
-                environs["W24TECHREAD_AUTH_CLIENT_SECRET"],
-                environs["W24TECHREAD_AUTH_USERNAME"],
-                environs["W24TECHREAD_AUTH_PASSWORD"],
-                environs["W24TECHREAD_AUTH_TOKEN"],
+                environs.get("W24TECHREAD_AUTH_IDENTITY_POOL_ID"),
+                environs.get("W24TECHREAD_AUTH_USER_POOL_ID"),
+                environs.get("W24TECHREAD_AUTH_CLIENT_ID"),
+                environs.get("W24TECHREAD_AUTH_CLIENT_SECRET"),
+                environs.get("W24TECHREAD_AUTH_USERNAME"),
+                environs.get("W24TECHREAD_AUTH_PASSWORD"),
+                environs.get("W24TECHREAD_AUTH_TOKEN"),
             )
 
         except KeyError:
