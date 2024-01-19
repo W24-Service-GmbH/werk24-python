@@ -34,7 +34,7 @@ setup(
     entry_points={
         "console_scripts": [
             "w24cli=werk24.cli.w24cli:main",
-        ]
+        ],
     },
     license="commercial",
     packages=[
