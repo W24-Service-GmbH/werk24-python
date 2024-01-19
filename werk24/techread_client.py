@@ -657,7 +657,7 @@ class W24TechreadClient:
         # register the credentials. This will in effect
         # only set the variabels in the authorizer. It will
         # not trigger a network request
-        client.register(region, token=token)
+        client.register(cognito_region=region, token=token)
 
         # return the client
         return client
