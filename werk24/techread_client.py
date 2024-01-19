@@ -21,7 +21,6 @@ EXAMPLE
 """
 import logging
 from io import BufferedReader
-import hashlib
 import os
 import uuid
 from asyncio import iscoroutinefunction
@@ -599,46 +598,7 @@ class W24TechreadClient:
         else:
             environs_raw = dict(os.environ)
 
-        # Generate the auth token if it does not exist
-        if "W24TECHREAD_AUTH_TOKEN" not in environs_raw:
-            environs_raw["W24TECHREAD_AUTH_TOKEN"] = cls._create_auth_token(
-                environs_raw
-            )
         return environs_raw
-
-    @staticmethod
-    def _create_auth_token(environs: dict[str, str]) -> str:
-        """Create the auth token from the environment variables
-
-        Legacy Clients are obtaining a token from cognito.
-        This takes way too long and is not necessary for the
-        techread client. We are therefore creating a static
-        token from the username and password.
-
-        Check the refresh token functionality to update the
-        token regularly.
-
-        Args:
-        ----
-        environs (dict[str,str]): Dictionary of the Enviroment variables.
-
-        Raises:
-        ------
-        LicenseError: License error is raised when the username or password
-            is not found in the environment variables.
-
-        Returns:
-        -------
-        str: Authorization token
-        """
-        try:
-            username = environs["W24TECHREAD_AUTH_USERNAME"]
-            password = environs["W24TECHREAD_AUTH_PASSWORD"]
-        except KeyError:
-            raise LicenseError(LICENSE_ERROR_TEXT)
-
-        auth_token = hashlib.sha256((username + password).encode()).hexdigest()
-        return auth_token
 
     @classmethod
     def make_from_token(
