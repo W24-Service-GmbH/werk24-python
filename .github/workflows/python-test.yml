@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
@@ -26,18 +26,5 @@ jobs:
       - name: Test
         env:
           W24TECHREAD_AUTH_REGION: ${{ secrets.W24TECHREAD_AUTH_REGION }}
-          W24TECHREAD_AUTH_IDENTITY_POOL_ID: ${{ secrets.W24TECHREAD_AUTH_IDENTITY_POOL_ID }}
-          W24TECHREAD_AUTH_USER_POOL_ID: ${{ secrets.W24TECHREAD_AUTH_USER_POOL_ID }}
-          W24TECHREAD_AUTH_CLIENT_ID: ${{ secrets.W24TECHREAD_AUTH_CLIENT_ID }}
-          W24TECHREAD_AUTH_CLIENT_SECRET: ${{ secrets.W24TECHREAD_AUTH_CLIENT_SECRET }}
-          W24TECHREAD_AUTH_USERNAME: ${{ secrets.W24TECHREAD_AUTH_USERNAME }}
-          W24TECHREAD_AUTH_PASSWORD: ${{ secrets.W24TECHREAD_AUTH_PASSWORD }}
-          W24TECHREAD_SERVER_HTTPS: ${{ secrets.W24TECHREAD_SERVER_HTTPS }}
-          W24TECHREAD_SERVER_WSS: ${{ secrets.W24TECHREAD_SERVER_WSS }}
-          W24TECHREAD_VERSION: ${{ secrets.W24TECHREAD_VERSION }}
+          W24TECHREAD_AUTH_TOKEN: ${{ secrets.W24TECHREAD_AUTH_TOKEN }}
         run: nose2
-      - name: Upload coverage
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
