@@ -26,6 +26,7 @@ from .radius import W24Radius
 from .revision_table import W24RevisionTable
 from .roughness import W24Roughness
 from .thread_element import W24ThreadElement
+from .general_roughness import W24GeneralRoughness, W24GeneralRoughnessReference
 
 
 class W24AskType(str, Enum):
@@ -776,6 +777,12 @@ class W24AskProductPMIExtractResponse(BaseModel):
         roughnesses (List[W24Roughness]): List of the detected
             roughnesses. Note: in the PMIExtract, the position will not
             be returned.
+        general_roughnesses (List[W24GeneralRoughness]): List of the detected
+            general roughnesses. Note: in the PMIExtract, the position will not
+            be returned.
+        reference_roughnesses (List[W24GeneralRoughnessReference]): List of the 
+            detected reference roughnesses. Note: in the PMIExtract, the position will not
+            be returned.
     """
 
     variant_id: UUID4
@@ -785,6 +792,8 @@ class W24AskProductPMIExtractResponse(BaseModel):
     gdts: List[W24GDT]
     radii: List[W24Radius]
     roughnesses: List[W24Roughness]
+    general_roughnesses: List[W24GeneralRoughness]
+    reference_roughnesses: List[W24GeneralRoughnessReference]
 
 
 class W24AskVariantThreadElements(W24Ask):
@@ -1004,7 +1013,8 @@ class W24AskSheetRebranding(W24Ask):
             ),
             W24SheetRebrandingCanvasPartition(
                 canvas_color=Color((97, 12, 43)),
-                additional_cells_colors=[Color((37, 26, 0)), Color((64, 45, 0))],
+                additional_cells_colors=[
+                    Color((37, 26, 0)), Color((64, 45, 0))],
             ),
         ],
     )
@@ -1035,7 +1045,8 @@ class W24AskSheetRebranding(W24Ask):
         ),
     )
     additional_cell_fonts: W24FontMap = Field(
-        description=("Font Map that is used when an `additional` cell is regenerated."),
+        description=(
+            "Font Map that is used when an `additional` cell is regenerated."),
         default=(
             W24FontMap(
                 font_map={
@@ -1087,7 +1098,8 @@ class W24AskSheetRebranding(W24Ask):
     )
 
     meta_data: W24RebrandingMetaData = Field(
-        description=("Metadata that you want to set for the resulting pdf file."),
+        description=(
+            "Metadata that you want to set for the resulting pdf file."),
         default=W24RebrandingMetaData(),
     )
 
