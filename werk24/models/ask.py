@@ -26,7 +26,7 @@ from .radius import W24Radius
 from .revision_table import W24RevisionTable
 from .roughness import W24Roughness
 from .thread_element import W24ThreadElement
-from .general_roughness import W24GeneralRoughness
+from .general_roughness import W24GeneralRoughness, W24GeneralRoughnessReference
 
 
 class W24AskType(str, Enum):
@@ -780,6 +780,9 @@ class W24AskProductPMIExtractResponse(BaseModel):
         general_roughnesses (List[W24GeneralRoughness]): List of the detected
             general roughnesses. Note: in the PMIExtract, the position will not
             be returned.
+        reference_roughnesses (List[W24GeneralRoughnessReference]): List of the 
+            detected reference roughnesses. Note: in the PMIExtract, the position will not
+            be returned.
     """
 
     variant_id: UUID4
@@ -790,6 +793,7 @@ class W24AskProductPMIExtractResponse(BaseModel):
     radii: List[W24Radius]
     roughnesses: List[W24Roughness]
     general_roughnesses: List[W24GeneralRoughness]
+    reference_roughnesses: List[W24GeneralRoughnessReference]
 
 
 class W24AskVariantThreadElements(W24Ask):
