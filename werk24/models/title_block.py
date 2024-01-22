@@ -11,7 +11,7 @@ from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 from .weight import W24Weight
-from .general_roughness import W24GeneralRoughness, W24GeneralRoughnessReference
+from .general_roughnesses import W24GeneralRoughness, W24GeneralRoughnessReference
 
 
 class W24TitleBlockItem(W24BaseFeatureModel):
