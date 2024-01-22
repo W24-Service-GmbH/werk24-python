@@ -27,7 +27,7 @@ class W24GeneralRoughness(W24BaseFeatureModel):
 
     Attributes:
     ----------
-        general_roughness: Surface Roughness Specification 
+        general_roughnesses: Surface Roughness Specification 
             required for all surfaces of a workpiece. Unless 
             any deviation is specified. 
 
@@ -40,5 +40,5 @@ class W24GeneralRoughness(W24BaseFeatureModel):
             is specified somewhere on the drawing.  
     """
 
-    general_roughness: List[W24RoughnessLabel]
+    general_roughnesses: List[W24RoughnessLabel]
     deviating_roughnesses: List[W24RoughnessLabel]
