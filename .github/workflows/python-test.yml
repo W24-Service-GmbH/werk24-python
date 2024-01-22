@@ -2,7 +2,6 @@ name: Tests | cpython 3.9, 3.10, 3.11, 3.12
 
 on:
   push:
-  pull_request:
     types: [opened, synchronize]
 
 jobs:
