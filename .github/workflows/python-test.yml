@@ -1,16 +1,13 @@
-name: Tests | cpython 3.9, 3.10, 3.11
+name: Tests | cpython 3.9, 3.10, 3.11, 3.12
 
-on:
-  push:
-  pull_request:
-    types: [opened, synchronize]
+on: push
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.10.x, 3.11.x]
+        python-version: [3.9, 3.10.x, 3.11.x, 3.12.x]
       fail-fast: false
 
     steps:
