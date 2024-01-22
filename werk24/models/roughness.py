@@ -10,7 +10,7 @@ from .unit import W24UnitSystem
 
 
 class W24RoughnessStandard(str, Enum):
-    """ Most standards that define the surface roughness use
+    """Most standards that define the surface roughness use
     very similar symbols. However, the position of the fields
     varies.
 
@@ -25,7 +25,11 @@ class W24RoughnessStandard(str, Enum):
     their own standards over the years. Do not hesitate to reach
     out if you wish us to implement another standard.
 
+    NOTE: REFERENCE is a special value that is used when the
+    drawing specified a reference roughness. For example: w√.
+
     """
+
     ISO_1302_1978 = "ISO 1302:1978"
     ISO_1302_1992 = "ISO 1302:1992"
     ISO_1302_2002 = "ISO 1302:2002"
@@ -33,24 +37,27 @@ class W24RoughnessStandard(str, Enum):
     ASME_Y14_36_1978 = "ASME Y14.36-1978"
     ASME_Y14_36M_1996 = "ASME Y14.36M-1996"
     ASME_Y14_36_2018 = "ASME Y14.36-2018"
+    REFERENCE = "REFERENCE"
 
 
 class W24RoughnessMaterialRemovalType(str, Enum):
-    """ Most standard allow the designer to specify
+    """Most standard allow the designer to specify
     whether material removal is required or prohibited.
 
     By default both options are allowed.
     """
+
     UNSPECIFIED = "UNSPECIFIED"
     PROHIBITED = "PROHIBITED"
     REQUIRED = "REQUIRED"
 
 
 class W24RoughnessDirectionOfLay(str, Enum):
-    """ The lay of the roughness limits the
+    """The lay of the roughness limits the
     manufacturing process and is sometimes
     required for the application.
     """
+
     PARALLEL = "="
     PERPENDICULAR = "⟂"
     CROSS = "X"
@@ -61,28 +68,30 @@ class W24RoughnessDirectionOfLay(str, Enum):
 
 
 class W24RoughnessAcceptanceCriterion(str, Enum):
-    """ The designer can specify whether to apply
+    """The designer can specify whether to apply
     the 16%-rule, the maximum- or medium- rule
     when deciding whether a surface complies with
     the specifications.
     """
+
     SIXTEEN_PERCENT = "16%"
     MAXIMUM = "max"
     MEAN = "mean"
 
 
 class W24RoughnessConditionType(str, Enum):
-    """ Roughnesses can specify, the
+    """Roughnesses can specify, the
     upper limit, the lower limit and the
     average.
     """
+
     UPPER = "U"
     LOWER = "L"
     AVERAGE = "A"
 
 
 class W24RoughnessFilterType(str, Enum):
-    """ When measuring the roughness, different
+    """When measuring the roughness, different
     filter types will result in different results.
     To reduce this source of ambiguity, the
     designer can specify the filter to be used.
@@ -91,14 +100,15 @@ class W24RoughnessFilterType(str, Enum):
     need us to support another filter method,
     please reach out.
     """
+
     GAUSSIAN = "G"
     ROBUST_GAUSSIAN = "RG"
     SPLINE = "S"
-    TWO_RC = "\"2RC\""
+    TWO_RC = '"2RC"'
 
 
 class W24RoughnessGrade(BaseModel):
-    """ ISO Roughness Grade
+    """ISO Roughness Grade
 
     Attributes:
         blurb: String representation for human consumption
@@ -108,13 +118,14 @@ class W24RoughnessGrade(BaseModel):
             N6, N7, N8, N9, N10, N11, N12, N13, N14
 
     """
+
     blurb: str
 
     grade: str
 
 
 class W24RoughnessParameter(str, Enum):
-    """ Roughness Parameter that is specified.
+    """Roughness Parameter that is specified.
 
     NOTE: this list is not exhaustive, but
     covers the most frequently used parameters.
@@ -173,7 +184,7 @@ class W24RoughnessEvaluationLengthType(str, Enum):
 
 
 class W24RoughnessEvaluationLength(BaseModel):
-    """ For sophisticated application, the sample needs
+    """For sophisticated application, the sample needs
     to be taken over a longer distances. This is specified the
     either the sampling length in millimeter (ISO 3012:1974,
     ISO 3012:1978, ISO 3012:1992) or as multiple of the main lambda
@@ -191,6 +202,7 @@ class W24RoughnessEvaluationLength(BaseModel):
         lambda_c_multiple: multiple of the main cutoff lambda_c
 
     """
+
     evaluation_length_type: W24RoughnessEvaluationLengthType
 
     length: Optional[Decimal]
@@ -200,7 +212,7 @@ class W24RoughnessEvaluationLength(BaseModel):
 
 
 class W24RoughnessCondition(BaseModel):
-    """ Roughness Label
+    """Roughness Label
 
     Attributes:
         blurb: String representation of the Roughness for human
@@ -245,6 +257,7 @@ class W24RoughnessCondition(BaseModel):
             all the standards in a simple way.
 
     """
+
     blurb: str
 
     condition_type: Optional[W24RoughnessConditionType]
@@ -267,29 +280,31 @@ class W24RoughnessCondition(BaseModel):
 
 
 class W24ManufacturingMethod(BaseModel):
-    """ Manufacturing method specified on the drawing.
+    """Manufacturing method specified on the drawing.
     Currently only the blurb is available.
 
     Attributes:
         blurb: Manufacturing method as specified on the
             drawing
     """
+
     blurb: str
 
 
 class W24RoughnessWaviness(BaseModel):
-    """ Roughness Waviness as defined in the ASME-Y14-36
+    """Roughness Waviness as defined in the ASME-Y14-36
 
     Attributes:
         waviness_height: Waviness height in inch
         waviness_width: Waviness width in inch
     """
+
     waviness_height: Decimal
     waviness_width: Decimal
 
 
 class W24RoughnessLabel(BaseModel):
-    """ Roughness Label
+    """Roughness Label
 
     Attributes:
         blurb: String for human consumption
@@ -323,6 +338,7 @@ class W24RoughnessLabel(BaseModel):
         waviness: Waviness defined in ASME standards
 
     """
+
     blurb: str
 
     blurb_html: str
@@ -347,13 +363,14 @@ class W24RoughnessLabel(BaseModel):
 
 
 class W24Roughness(W24BaseFeatureModel):
-    """ Roughness object
+    """Roughness object
 
     Attributes:
         roughness_id: Unique UUID4 identifier
 
         label: RoughnessLabel
     """
+
     roughness_id: UUID4
 
     label: W24RoughnessLabel
