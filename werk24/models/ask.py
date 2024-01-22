@@ -792,8 +792,8 @@ class W24AskProductPMIExtractResponse(BaseModel):
     gdts: List[W24GDT]
     radii: List[W24Radius]
     roughnesses: List[W24Roughness]
-    general_roughnesses: List[W24GeneralRoughness]
-    reference_roughnesses: List[W24GeneralRoughnessReference]
+    general_roughnesses: List[W24GeneralRoughness] = []
+    reference_roughnesses: List[W24GeneralRoughnessReference] = []
 
 
 class W24AskVariantThreadElements(W24Ask):
