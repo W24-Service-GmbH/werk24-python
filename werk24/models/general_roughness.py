@@ -42,4 +42,3 @@ class W24GeneralRoughness(W24BaseFeatureModel):
 
     general_roughness: List[W24RoughnessLabel]
     deviating_roughnesses: List[W24RoughnessLabel]
-    roughness_references: List[W24GeneralRoughnessReference]
