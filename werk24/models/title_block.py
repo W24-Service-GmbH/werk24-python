@@ -11,6 +11,7 @@ from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 from .weight import W24Weight
+from .general_roughness import W24GeneralRoughness, W24GeneralRoughnessReference
 
 
 class W24TitleBlockItem(W24BaseFeatureModel):
@@ -203,6 +204,12 @@ class W24TitleBlock(BaseModel):
         bom_table: Reference to the Bill of Material Table. None
             if you are running on an old client or when no BOM
             table was found.
+
+        general_roughnesses (List[W24GeneralRoughness]): List of the detected
+            general roughnesses.
+
+        reference_roughnesses (List[W24GeneralRoughnessReference]): List of the 
+            detected reference roughnesses.
     """
 
     designation: Optional[W24CaptionValuePair]
@@ -223,3 +230,7 @@ class W24TitleBlock(BaseModel):
     colors: List[W24PropertyColor] = []
 
     bom_table: Optional[W24BomTable] = None
+
+    general_roughnesses: List[W24GeneralRoughness] = []
+
+    reference_roughnesses: List[W24GeneralRoughnessReference] = []
