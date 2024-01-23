@@ -372,5 +372,48 @@ class W24Roughness(W24BaseFeatureModel):
     """
 
     roughness_id: UUID4
-
     label: W24RoughnessLabel
+
+
+class W24RoughnessReference(W24BaseFeatureModel):
+    """Roughness Reference
+
+    Attributes:
+    ----------
+    reference_label: Placeholder for the roughness.
+        We are using a reference label here to allow
+        the full scope of the roughness to be specified.
+        Sometimes we see a pure "material removal not
+        permitted" symbol as placeholder.
+
+    reference_value: Meaning of the roughness_label,
+        explaining what surface roughness is applicable
+        when the roughness_label is specified on a
+        workpiece.
+
+    """
+
+    reference_label: W24RoughnessLabel
+    reference_value: W24RoughnessLabel
+
+
+class W24GeneralRoughness(W24BaseFeatureModel):
+    """General Roughness object
+
+    Attributes:
+    ----------
+    general_roughnesses: Surface Roughness Specification
+        required for all surfaces of a workpiece. Unless
+        any deviation is specified.
+
+    deviating_roughnesses: Indicates deviations from
+        the general surface roughness requirements.
+
+    roughness_references: A Simplified reference indication
+        used to save space or for simplification purpose,
+        provided the meaning of this reference symbol
+        is specified somewhere on the drawing.
+    """
+
+    general_roughnesses: List[W24RoughnessLabel]
+    deviating_roughnesses: List[W24RoughnessLabel]
