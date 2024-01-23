@@ -337,6 +337,8 @@ class W24RoughnessLabel(BaseModel):
 
         waviness: Waviness defined in ASME standards
 
+        variable: Roughness variable that is used in roughness references.
+
     """
 
     blurb: str
@@ -360,6 +362,8 @@ class W24RoughnessLabel(BaseModel):
     unit_system: W24UnitSystem
 
     waviness: Optional[W24RoughnessWaviness]
+
+    variable: Optional[str] = None
 
 
 class W24Roughness(W24BaseFeatureModel):
