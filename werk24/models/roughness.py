@@ -384,6 +384,8 @@ class W24RoughnessReference(W24BaseFeatureModel):
 
     Attributes:
     ----------
+    blurb: String for human consumption
+
     reference_label: Placeholder for the roughness.
         We are using a reference label here to allow
         the full scope of the roughness to be specified.
@@ -397,6 +399,7 @@ class W24RoughnessReference(W24BaseFeatureModel):
 
     """
 
+    blurb: str
     reference_label: W24RoughnessLabel
     reference_value: W24RoughnessLabel
 
@@ -406,18 +409,16 @@ class W24GeneralRoughness(W24BaseFeatureModel):
 
     Attributes:
     ----------
+    blurb: String for human consumption
+
     general_roughnesses: Surface Roughness Specification
         required for all surfaces of a workpiece. Unless
         any deviation is specified.
 
     deviating_roughnesses: Indicates deviations from
         the general surface roughness requirements.
-
-    roughness_references: A Simplified reference indication
-        used to save space or for simplification purpose,
-        provided the meaning of this reference symbol
-        is specified somewhere on the drawing.
     """
 
+    blurb: str
     general_roughnesses: List[W24RoughnessLabel]
     deviating_roughnesses: List[W24RoughnessLabel]
