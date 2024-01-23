@@ -1,6 +1,7 @@
 import sys
 from werk24.techread_client import LicenseError, W24TechreadClient
 
+
 def make_client() -> W24TechreadClient:
     """
     Make the client.
@@ -12,7 +13,8 @@ def make_client() -> W24TechreadClient:
     the development and production environments
 
     Returns:
-        W24TechreadClient: Client instance
+    -------
+    W24TechreadClient: Client instance
     """
 
     try:
