@@ -15,7 +15,10 @@ class W24SizeType(str, Enum):
     ----------
     NOMINAL (str): Nominal size type.
     DIAMETER (str): Diameter size type.
+    SPHERICAL_DIAMETER (str): Spherical Diameter size type.
     WIDTH_ACROSS_FLATS (str): Width across flats size type.
+    SQUARE (str): Square size type.
+    ELLIPTICAL (str): Elliptical size type.
     """
 
     NOMINAL = "NOMINAL"
@@ -23,6 +26,7 @@ class W24SizeType(str, Enum):
     SPHERICAL_DIAMETER = "SPHERICAL_DIAMETER"
     WIDTH_ACROSS_FLATS = "WIDTHS_ACROSS_FLATS"
     SQUARE = "SQUARE"
+    ELLIPTICAL = "ELLIPTICAL"
 
 
 class W24Size(BaseModel, abc.ABC):
