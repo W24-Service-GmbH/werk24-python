@@ -27,7 +27,7 @@ from .revision_table import W24RevisionTable
 from .roughness import W24Roughness
 from .thread_element import W24ThreadElement
 from .roughness import W24GeneralRoughness, W24RoughnessReference
-from .unit import W24UnitSystem
+from .unit import W24UnitSpecification
 
 
 class W24AskType(str, Enum):
@@ -787,7 +787,7 @@ class W24AskProductPMIExtractResponse(BaseModel):
             detected reference roughnesses. Note: in the PMIExtract, the position will not
             be returned.
 
-        unit_systems (List[W24UnitSystem]): List of the detected 
+        unit_systems (List[W24UnitSpecification]): List of the detected 
             unit systems. 
     """
 
@@ -800,7 +800,7 @@ class W24AskProductPMIExtractResponse(BaseModel):
     roughnesses: List[W24Roughness]
     general_roughnesses: List[W24GeneralRoughness] = []
     reference_roughnesses: List[W24RoughnessReference] = []
-    unit_systems: List[W24UnitSystem] = []
+    unit_systems: List[W24UnitSpecification] = []
 
 
 class W24AskVariantThreadElements(W24Ask):

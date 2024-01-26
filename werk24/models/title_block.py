@@ -11,7 +11,7 @@ from .general_tolerances import W24GeneralTolerances
 from .language import W24Language
 from .material import W24Material
 from .roughness import W24GeneralRoughness, W24RoughnessReference
-from .unit import W24UnitSystem
+from .unit import W24UnitSpecification
 from .weight import W24Weight
 
 
@@ -212,7 +212,7 @@ class W24TitleBlock(BaseModel):
         reference_roughnesses (List[W24RoughnessReference]): List of the
             detected reference roughnesses.
 
-        unit_systems (List[W24UnitSystem]): List of the detected 
+        unit_systems (List[W24UnitSpecification]): List of the detected 
             unit systems. 
     """
 
@@ -239,4 +239,4 @@ class W24TitleBlock(BaseModel):
 
     reference_roughnesses: List[W24RoughnessReference] = []
 
-    unit_systems: List[W24UnitSystem] = []
+    unit_systems: List[W24UnitSpecification] = []
