@@ -127,6 +127,12 @@ def _add_techread_parser(subparsers):
     )
 
     parser_techread.add_argument(
+        "--ask-variant-processes",
+        help="ask for the Proceses of each variant",  # noqa
+        action="store_true",
+    )
+
+    parser_techread.add_argument(
         "--ask-variant-roughnesses",
         help="ask for the Surface Roughnesses of each variant",  # noqa
         action="store_true",
