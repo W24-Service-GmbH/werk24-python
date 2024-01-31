@@ -28,6 +28,7 @@ from werk24.models.ask import (
     W24AskDebug,
     W24AskVariantRoughnesses,
     W24AskVariantThreadElements,
+    W24AskVariantProcesses,
 )
 from werk24.exceptions import ServerException
 from werk24.models.techread import (
@@ -119,6 +120,11 @@ hook_config = [
         "ask_variant_roughnesses",
         W24AskVariantRoughnesses,
         lambda m: _print_payload("Ask Variant Roughnesses", m.payload_dict),
+    ),
+    HookConfig(
+        "ask_variant_processes",
+        W24AskVariantProcesses,
+        lambda m: _print_payload("Ask Variant Processes", m.payload_dict),
     ),
     HookConfig(
         "ask_variant_cad",
