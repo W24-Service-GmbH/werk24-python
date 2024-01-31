@@ -212,8 +212,8 @@ class W24TitleBlock(BaseModel):
         reference_roughnesses (List[W24RoughnessReference]): List of the
             detected reference roughnesses.
 
-        unit_systems (List[W24UnitSpecification]): List of the detected 
-            unit systems. 
+        unit_specifications (List[W24UnitSpecification]): List of the detected 
+            unit specifications. 
     """
 
     designation: Optional[W24CaptionValuePair]
@@ -239,4 +239,4 @@ class W24TitleBlock(BaseModel):
 
     reference_roughnesses: List[W24RoughnessReference] = []
 
-    unit_systems: List[W24UnitSpecification] = []
+    unit_specifications: List[W24UnitSpecification] = []

@@ -787,8 +787,8 @@ class W24AskProductPMIExtractResponse(BaseModel):
             detected reference roughnesses. Note: in the PMIExtract, the position will not
             be returned.
 
-        unit_systems (List[W24UnitSpecification]): List of the detected 
-            unit systems. 
+        unit_specifications (List[W24UnitSpecification]): List of the detected 
+            unit specifications. 
     """
 
     variant_id: UUID4
@@ -800,7 +800,7 @@ class W24AskProductPMIExtractResponse(BaseModel):
     roughnesses: List[W24Roughness]
     general_roughnesses: List[W24GeneralRoughness] = []
     reference_roughnesses: List[W24RoughnessReference] = []
-    unit_systems: List[W24UnitSpecification] = []
+    unit_specifications: List[W24UnitSpecification] = []
 
 
 class W24AskVariantThreadElements(W24Ask):
