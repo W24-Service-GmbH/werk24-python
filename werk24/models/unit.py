@@ -3,8 +3,8 @@ from pydantic import BaseModel
 
 
 class W24UnitLength(str, Enum):
-    """ Enum of the supported length units
-    """
+    """Enum of the supported length units"""
+
     METER = "METER"
     DECIMETER = "DECIMETER"
     CENTIMETER = "CENTIMETER"
@@ -15,17 +15,18 @@ class W24UnitLength(str, Enum):
 
 
 class W24UnitAngle(str, Enum):
-    """ Enum of all the supported angle units
+    """Enum of all the supported angle units
 
     NOTE: currently we are only supporting degrees.
     If you come across a drawing that uses GON, let
     us know, we love the concept!
     """
+
     DEGREE = "DEGREE"
 
 
 class W24UnitWeight(str, Enum):
-    """ Enum of all the supported weights
+    """Enum of all the supported weights
 
     NOTE: This also includes relative weights
     such as kilogram per meter
@@ -40,8 +41,8 @@ class W24UnitWeight(str, Enum):
 
 
 class W24UnitSystem(str, Enum):
-    """ Unit System that is used for a certain feature
-    """
+    """Unit System that is used for a certain feature"""
+
     METRIC = "METRIC"
     IMPERIAL = "IMPERIAL"
 
