@@ -159,7 +159,7 @@ class TechreadClientHttps:
                     self._raise_for_status(presigned_post_str, response.status)
 
         # Raise SSLCertificateError if the certificate is not trusted
-        except aiohttp.ClientconnectorCertificateError as exception:
+        except aiohttp.ClientConnectorCertificateError as exception:
             raise SSLCertificateError() from exception
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
