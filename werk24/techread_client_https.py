@@ -1,10 +1,10 @@
 """ HTTPS-part of the Werk24 client
 """
 import uuid
+from werk24.exceptions import SSLCertificateError
 import json
 import urllib.parse
 from pydantic import UUID4
-from werk24.models.techread import W24TechreadWithCallbackPayload
 from werk24.models.ask import W24AskUnion
 from typing import List
 from types import TracebackType
@@ -153,9 +153,14 @@ class TechreadClientHttps:
         # create a new fresh session that does not
         # carry the authentication token
         presigned_post_str = str(presigned_post.url)
-        async with aiohttp.ClientSession() as session:
-            async with session.post(presigned_post_str, data=form) as response:
-                self._raise_for_status(presigned_post_str, response.status)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(presigned_post_str, data=form) as response:
+                    self._raise_for_status(presigned_post_str, response.status)
+
+        # Raise SSLCertificateError if the certificate is not trusted
+        except aiohttp.client_exceptions.ClientconnectorCertificateError as exception:
+            raise SSLCertificateError() from exception
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
         """Return the payload from the server

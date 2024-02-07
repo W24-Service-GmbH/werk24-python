@@ -52,6 +52,7 @@ setup(
         "python-dotenv>=0.10.1,<1.0",
         "websockets >= 10.3",
         "pint >= 0.21",
+        "termcolor>=2.0.0",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
