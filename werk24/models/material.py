@@ -626,6 +626,10 @@ class W24Material(W24BaseFeatureModel):
     ]
     material_conditions: list[W24MaterialCondition] = []
 
+    # Deprecated since 1.4.0. Set to default=None to avoid breaking changes
+    material_standard: Any = None
+    material_code: Any = None
+
 
 class W24MaterialSet(BaseModel):
     """Set of Materials are used when two or more materials are defined
