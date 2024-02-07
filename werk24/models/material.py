@@ -1,5 +1,6 @@
 """ Material Models
 """
+
 from enum import Enum
 from typing import Any, List, Optional, Tuple, Union, Literal
 from pydantic import Field
@@ -585,29 +586,33 @@ class W24Material(W24BaseFeatureModel):
 
     Attributes:
     ----------
-        blurb: Material Name for human consumption.
-            This will typically include the designation
-            and the standard.
+    blurb: Material Name for human consumption.
+        This will typically include the designation
+        and the standard.
 
-        raw_ocr_blurb: Material Name as it was indicated
-            on the drawing. This contains more information
-            than the blurb and is also present when the
-            material was not found in the internal
-            material database.
+    raw_ocr_blurb: Material Name as it was indicated
+        on the drawing. This contains more information
+        than the blurb and is also present when the
+        material was not found in the internal
+        material database.
 
-        standard: Material Standard indicated
-            on the technical drawing. This used to be
-            an enum - but we now have over 100 supported
-            material standards and the number is increasing
-            weekly. So a string seems to be more appropriate.
+    standard: Material Standard indicated
+        on the technical drawing. This used to be
+        an enum - but we now have over 100 supported
+        material standards and the number is increasing
+        weekly. So a string seems to be more appropriate.
 
-        designation: Name of the material in accordance
-            with the material standard. An alternative name
-            would be material_designation.
+    designation: Name of the material in accordance
+        with the material standard. An alternative name
+        would be material_designation.
 
-        material_category: Categorization of the material
-            following W24MaterialCategoryX Tree.
+    material_category: Categorization of the material
+        following W24MaterialCategoryX Tree.
 
+    material_conditions: list of the material conditions.
+        The conditions are specific to the material category
+        and can be used to further specify the material
+        properties.
     """
 
     blurb: str
@@ -620,14 +625,6 @@ class W24Material(W24BaseFeatureModel):
         Optional[W24MaterialCategory3],
     ]
     material_conditions: list[W24MaterialCondition] = []
-
-    # ! DEPRECATED in version 1.4.0
-    material_family: Optional[Any] = None
-    material_class: Optional[Any] = None
-    material_type: Optional[Any] = None
-    material_group: Optional[Any] = None
-    material_standard: Any
-    material_code: str
 
 
 class W24MaterialSet(BaseModel):
