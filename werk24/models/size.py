@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer, field_validator
 from werk24.models.unit import W24UnitLength
 
 
@@ -44,6 +44,16 @@ class W24Size(BaseModel, abc.ABC):
         In some cases it might be possible that
         the units are unknown.
     """
+
+    @field_validator("nominal_size", mode="plain")
+    def deserialize_nominal_size(cls, v):
+        """Deserialize nomimal size to support inifinity values for pydantic  < 2.7.0"""
+        return Decimal(v)
+
+    @field_serializer("nominal_size")
+    def serialize_nominal_size(self, nominal_size: Decimal, _info):
+        """Serialize nomimal size to support inifinity values for pydantic  < 2.7.0"""
+        return str(nominal_size)
 
     blurb: str
     size_type: W24SizeType
