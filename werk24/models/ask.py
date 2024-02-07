@@ -1095,7 +1095,7 @@ class W24AskSheetRebranding(W24Ask):
             "part_number",
             "material",
             # Misc.
-            "do_not_scale",
+            "do_not_scale_drawing",
             "software",
             "sheet_number",
             "scale",
