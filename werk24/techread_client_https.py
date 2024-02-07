@@ -1,5 +1,6 @@
 """ HTTPS-part of the Werk24 client
 """
+
 import uuid
 from werk24.exceptions import SSLCertificateError
 import json
@@ -40,7 +41,6 @@ EXCEPTION_CLASSES = {
 
 
 class TechreadClientHttps:
-
     """Translation map from the server response
     to the W24TechreadArchitectureStatus enum
     """
@@ -159,7 +159,7 @@ class TechreadClientHttps:
                     self._raise_for_status(presigned_post_str, response.status)
 
         # Raise SSLCertificateError if the certificate is not trusted
-        except aiohttp.client_exceptions.ClientconnectorCertificateError as exception:
+        except aiohttp.ClientconnectorCertificateError as exception:
             raise SSLCertificateError() from exception
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
