@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Literal, Optional
+from pydantic import Field
 
 from werk24.models.property.base import W24Property
 from werk24.models.value import W24PhysicalQuantity, W24Value
@@ -159,3 +160,37 @@ class W24PropertyHardnessKnoop(W24PropertyHardness):
     hardness_number: W24Value
     test_duration: Optional[W24PhysicalQuantity]
     test_force: Optional[W24PhysicalQuantity]
+
+class W24PropertyHardnessShoreScale(str, Enum):
+    """List of Durometer/Shore Types for Measurement"""
+
+    A = "A"
+    AM = "AM"
+    AO = "AO"
+    B = "B"
+    C = "C"
+    D = "D"
+    DO = "DO"
+    E = "E"
+    M = "M"
+    O = "O"
+    OO = "OO"
+    OOO = "OOO"
+    OOOS = "OOO-S"
+    R = "R"
+    
+    
+class W24PropertyHardnessShore(W24PropertyHardness):
+    """ASTM D 2240-15 Shore Hardness
+
+    Attributes:
+        hardness_number (W24Value): Specified hardness
+             number. This might be a range.
+
+        hardness_scale (W24PropertyHardnessShoreScale):
+            Shore hardness scale.
+
+    """
+    property_subtype: Literal["SHORE"] = "SHORE"
+    hardness_number: Optional[W24Value] = Field(default=None)
+    hardness_scale: Optional[W24PropertyHardnessShoreScale] = Field(default=None)
