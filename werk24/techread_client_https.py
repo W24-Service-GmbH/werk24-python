@@ -1,5 +1,6 @@
 """ HTTPS-part of the Werk24 client
 """
+
 import uuid
 import json
 import urllib.parse
@@ -24,7 +25,7 @@ from werk24.exceptions import (
 )
 from werk24.models.helpdesk import W24HelpdeskTask
 from werk24.models.techread import W24PresignedPost
-
+from werk24._version import __version__
 
 EXCEPTION_CLASSES = {
     range(200, 300): None,
@@ -40,7 +41,6 @@ EXCEPTION_CLASSES = {
 
 
 class TechreadClientHttps:
-
     """Translation map from the server response
     to the W24TechreadArchitectureStatus enum
     """
@@ -460,7 +460,7 @@ class TechreadClientHttps:
         )
         data.add_field("callback_url", callback_url)
         data.add_field("max_pages", str(max_pages))
-        data.add_field("client_version", self._techread_version)
+        data.add_field("client_version", __version__)
         data.add_field("drawing_filename", drawing_filename)
 
         # send the request
