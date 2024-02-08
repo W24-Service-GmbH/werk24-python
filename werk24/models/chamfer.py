@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
+from .size import W24Size
 from .unit import W24UnitAngle
 
 
@@ -10,6 +11,8 @@ class W24Chamfer(BaseModel):
 
     Attributes:
         blurb: String representation for human consumption
+
+        size: Size of chamfer as referred to in the drawing.
 
         angle: Chamfer angle in degrees
 
@@ -25,5 +28,7 @@ class W24Chamfer(BaseModel):
     blurb: str
 
     angle: Decimal
+
+    size: W24Size
 
     unit: W24UnitAngle = W24UnitAngle.DEGREE
