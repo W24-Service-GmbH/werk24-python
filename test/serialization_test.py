@@ -10,9 +10,10 @@ class TestSerialization(AsyncTestCase):
 
     def test_infinity_serialization(self):
         obj = W24RadiusLabel(
+            blurb="R1 PLANE",
             curvature_type=W24CurvatureType.PLANE,
             size=W24Size(
-                blurb="R1 PLANE",
+                blurb="Infinity",
                 size_type=W24SizeType.NOMINAL,
                 nominal_size=Decimal("Infinity"),
             ),
