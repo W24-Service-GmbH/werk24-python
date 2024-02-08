@@ -48,4 +48,5 @@ class W24UnitSystem(str, Enum):
 
 
 class W24UnitSpecification(BaseModel):
+    blurb: str
     unit_system: W24UnitSystem
