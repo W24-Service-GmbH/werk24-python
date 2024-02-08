@@ -12,7 +12,7 @@ class TestSerialization(AsyncTestCase):
         obj = W24RadiusLabel(
             curvature_type=W24CurvatureType.PLANE,
             size=W24Size(
-                blurb="",
+                blurb="R1 PLANE",
                 size_type=W24SizeType.NOMINAL,
                 nominal_size=Decimal("Infinity"),
             ),
