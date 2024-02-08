@@ -27,6 +27,7 @@ class W24CurvatureType(str, Enum):
     """
     CONCAVE = "CONCAVE"
     CONVEX = "CONVEX"
+    PLANE = "PLANE"
 
 
 class W24RadiusLabel(BaseModel):
