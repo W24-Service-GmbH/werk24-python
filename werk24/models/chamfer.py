@@ -13,7 +13,7 @@ class W24Chamfer(BaseModel):
     Attributes:
         blurb: String representation for human consumption
 
-        size: Size of chamfer as referred to in the drawing.
+        size[Optional]: Size of chamfer as referred to in the drawing.
 
         angle: Chamfer angle in degrees
 
