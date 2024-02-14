@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Literal, Union
 
 
 class W24Coordinate(BaseModel):
@@ -6,7 +7,7 @@ class W24Coordinate(BaseModel):
     y: int
 
 
-class W24Ellipse(BaseModel):
+class W24GeometryEllipse(BaseModel):
     """
     Representation of an Ellipse with center coordinates,
     major and minor radius, and an initial angle of rotation.
@@ -19,23 +20,40 @@ class W24Ellipse(BaseModel):
     angle (float): Angle of Rotation for the Ellipse (default is 0.0)
     """
 
+    geometry_type: Literal["ELLIPSE"] = "ELLIPSE"
+
     center: W24Coordinate
     major_radius: float
     minor_radius: float
     angle: float = 0.0
 
 
-class W24PlacementEllipse(BaseModel):
+class W24GeometryLine(BaseModel):
+    """
+    Representation of a Line with start and end coordinates.
+
+    Attributes
+    ----------
+    start (W24Coordinate): Start coordinates of the Line (x, y)
+    end (W24Coordinate): End coordinates of the Line (x, y)
+    """
+
+    geometry_type: Literal["LINE"] = "LINE"
+
+    start: W24Coordinate
+    end: W24Coordinate
+
+
+W24GeometryFeature = Union[W24GeometryEllipse, W24GeometryLine]
+
+
+class W24PositionedFeature(BaseModel):
     """
     Representation of the Ellipse placement on the different thumbnails.
 
     Attributes:
     ----------
-    sheet (W24Ellipse): Placement of the Ellipse on the Sheet thumbnail
-    canvas (W24Ellipse): Placement of the Ellipse on the Canvas thumbnail
-    sectional (W24Ellipse): Placement of the Ellipse on the Sectional thumbnail
+    sheet (W24Ellipse): Position of the Geometrz Feature on he Sheet Thumbnail
     """
 
-    sheet: W24Ellipse
-    canvas: W24Ellipse
-    sectional: W24Ellipse
+    sheet: W24GeometryFeature
