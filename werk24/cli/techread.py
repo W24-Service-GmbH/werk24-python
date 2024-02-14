@@ -1,5 +1,6 @@
 """ Command Line Interface for W24 Techread
 """
+
 import argparse
 import io
 import json

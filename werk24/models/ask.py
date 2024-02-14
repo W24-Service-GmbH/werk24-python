@@ -1,5 +1,6 @@
 """Definition of all W24Ask types that are understood by the Werk24 API.
 """
+
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, Set
 
@@ -15,6 +16,7 @@ from werk24.models.process import W24Process
 from werk24.models.font import W24FontMap
 
 from .angle import W24Angle
+from .balloon import W24Balloon
 from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
 from .gdt import W24GDT
 from .general_tolerances import W24GeneralTolerances
@@ -189,6 +191,9 @@ class W24AskThumbnail(W24Ask):
         file_format: File format in which you wish to obtain
             the result. Currently only JPEG is supported.
 
+        balloons: List of the balloons to add to the thumbnail.
+            By default that's an empty list.
+
     !!! note
         At this stage, the API will return a high-resolution
         gray-level image. Future releases might allow you to
@@ -197,6 +202,7 @@ class W24AskThumbnail(W24Ask):
     """
 
     file_format: W24FileFormatThumbnail = W24FileFormatThumbnail.JPEG
+    balloons: List[W24Balloon] = []
 
 
 class W24AskPageThumbnail(W24AskThumbnail):
@@ -787,8 +793,8 @@ class W24AskProductPMIExtractResponse(BaseModel):
             detected reference roughnesses. Note: in the PMIExtract, the position will not
             be returned.
 
-        unit_specifications (List[W24UnitSpecification]): List of the detected 
-            unit specifications. 
+        unit_specifications (List[W24UnitSpecification]): List of the detected
+            unit specifications.
     """
 
     variant_id: UUID4
@@ -1020,8 +1026,7 @@ class W24AskSheetRebranding(W24Ask):
             ),
             W24SheetRebrandingCanvasPartition(
                 canvas_color=Color((97, 12, 43)),
-                additional_cells_colors=[
-                    Color((37, 26, 0)), Color((64, 45, 0))],
+                additional_cells_colors=[Color((37, 26, 0)), Color((64, 45, 0))],
             ),
         ],
     )
@@ -1052,8 +1057,7 @@ class W24AskSheetRebranding(W24Ask):
         ),
     )
     additional_cell_fonts: W24FontMap = Field(
-        description=(
-            "Font Map that is used when an `additional` cell is regenerated."),
+        description=("Font Map that is used when an `additional` cell is regenerated."),
         default=(
             W24FontMap(
                 font_map={
@@ -1105,8 +1109,7 @@ class W24AskSheetRebranding(W24Ask):
     )
 
     meta_data: W24RebrandingMetaData = Field(
-        description=(
-            "Metadata that you want to set for the resulting pdf file."),
+        description=("Metadata that you want to set for the resulting pdf file."),
         default=W24RebrandingMetaData(),
     )
 
@@ -1140,7 +1143,7 @@ W24AskUnion = Union[
     W24AskInternalScreening,
     W24AskVariantProcesses,
     W24AskDebug,
-    W24AskExcelSummary
+    W24AskExcelSummary,
     # W24AskVariantToleranceElements
 ]
 """Union of all W24Asks to ensure proper de-serialization """
