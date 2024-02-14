@@ -1,4 +1,4 @@
-from .placement import W24PlacementEllipse
+from .position import W24PositionedFeature
 from pydantic import BaseModel
 
 
@@ -11,5 +11,5 @@ class W24Balloon(BaseModel):
     label (str): Label of the Balloon. Typically an ascending number.
     """
 
-    placement: W24PlacementEllipse
+    position: W24PositionedFeature
     label: str
