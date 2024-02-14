@@ -1,22 +1,24 @@
 from typing import List, Optional
 
 from pydantic import BaseModel
+from werk24.models.balloon import W24Balloon
 
 
 class W24BaseFeatureCoordinate(BaseModel):
-    """ Coordinate point
+    """Coordinate point
 
     Attributes:
         x: x position normalized by the thumbnail's width
 
         y: y position normalized by the thumbnail's height
     """
+
     x: float
     y: float
 
 
 class W24BaseFeaturePosition(BaseModel):
-    """ Position of the Feature on the individual thumbnails normalized
+    """Position of the Feature on the individual thumbnails normalized
     by the width and height of each thumbnail.
 
     Each features position is indicated as a list of coordinates. If the
@@ -31,13 +33,14 @@ class W24BaseFeaturePosition(BaseModel):
         sectional: Position of the Feature on the Sectional thumbnail
 
     """
+
     sheet: List[W24BaseFeatureCoordinate]
     canvas: List[W24BaseFeatureCoordinate]
     sectional: List[W24BaseFeatureCoordinate]
 
 
 class W24BaseFeatureModel(BaseModel):
-    """ Base Model for all the features that we might
+    """Base Model for all the features that we might
     extract from the Drawing
 
     Attributes:
@@ -47,3 +50,4 @@ class W24BaseFeatureModel(BaseModel):
 
     # NOTE: position is optional for the transition period
     position: Optional[W24BaseFeaturePosition] = None
+    balloon: Optional[W24Balloon] = None
