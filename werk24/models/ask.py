@@ -1133,7 +1133,7 @@ class W24AskCanvasTables(W24Ask):
 
     ask_type: W24AskType = W24AskType.CANVAS_TABLES
 
-    split_min_max_columns = Field(
+    split_min_max_columns: bool = Field(
         description=("Split range columns into min and max columns."),
         default=False,
     )
