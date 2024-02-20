@@ -1170,6 +1170,7 @@ W24AskUnion = Union[
     W24AskVariantProcesses,
     W24AskDebug,
     W24AskExcelSummary,
+    W24AskCanvasTables,
     # W24AskVariantToleranceElements
 ]
 """Union of all W24Asks to ensure proper de-serialization """
@@ -1239,6 +1240,7 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         "VARIANT_PROCESSES": W24AskVariantProcesses,
         "EXCEL_SUMMARY": W24AskExcelSummary,
         "DEBUG": W24AskDebug,
+        "CANVAS_TABLES": W24AskCanvasTables,
     }.get(ask_type, None)
 
     if class_ is None:
