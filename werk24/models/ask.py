@@ -17,7 +17,11 @@ from werk24.models.font import W24FontMap
 
 from .angle import W24Angle
 from .balloon import W24Balloon
-from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
+from .file_format import (
+    W24FileFormatThumbnail,
+    W24FileFormatVariantCAD,
+    W24FileFormatTable,
+)
 from .gdt import W24GDT
 from .general_tolerances import W24GeneralTolerances
 from .geometric_shape import W24GeometricShapeCuboid, W24GeometricShapeCylinder
@@ -155,6 +159,12 @@ class W24AskType(str, Enum):
     """
 
     EXCEL_SUMMARY = "EXCEL_SUMMARY"
+    """ Ask to obtain an excel summary of the document.
+    """
+
+    CANVAS_TABLES = "CANVAS_TABLES"
+    """ Ask to obtain the tables from the canvas.
+    """
 
 
 class W24Ask(BaseModel):
@@ -1116,6 +1126,22 @@ class W24AskSheetRebranding(W24Ask):
 
 class W24AskExcelSummary(W24Ask):
     ask_type: W24AskType = W24AskType.EXCEL_SUMMARY
+
+
+class W24AskCanvasTables(W24Ask):
+    """Ask to obtain all the canvas tables from the drawing."""
+
+    ask_type: W24AskType = W24AskType.CANVAS_TABLES
+
+    split_min_max_columns = Field(
+        description=("Split range columns into min and max columns."),
+        default=False,
+    )
+
+    output_format: W24FileFormatTable = Field(
+        description=("Output format in which to generate the tables."),
+        default=W24FileFormatTable.CSV,
+    )
 
 
 W24AskUnion = Union[

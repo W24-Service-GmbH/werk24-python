@@ -22,3 +22,12 @@ class W24FileFormatThumbnail(str, Enum):
 
     JPEG = "JPEG"
     PDF = "PDF"
+
+
+class W24FileFormatTable(str, Enum):
+    """List of supported file formats for
+    the table export.
+    """
+
+    CSV = "CSV"
+    EXCEL = "EXCEL"
