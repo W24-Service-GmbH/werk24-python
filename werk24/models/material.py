@@ -627,8 +627,8 @@ class W24Material(W24BaseFeatureModel):
     material_conditions: list[W24MaterialCondition] = []
 
     # Deprecated since 1.4.0. Set to default=None to avoid breaking changes
-    material_standard: Any = None
-    material_code: Any = ""
+    material_standard: Optional[Any] = None
+    material_code: Optional[Any] = ""
 
 
 class W24MaterialSet(BaseModel):
