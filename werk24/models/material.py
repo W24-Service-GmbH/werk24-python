@@ -628,7 +628,7 @@ class W24Material(W24BaseFeatureModel):
 
     # Deprecated since 1.4.0. Set to default=None to avoid breaking changes
     material_standard: Any = None
-    material_code: Any = None
+    material_code: Any = ""
 
 
 class W24MaterialSet(BaseModel):
