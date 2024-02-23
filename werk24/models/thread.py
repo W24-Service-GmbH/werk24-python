@@ -8,11 +8,11 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type
 
-from fraction import W24Fraction
 from pydantic import BaseModel, validator
 
 from werk24.models.base_feature import W24BaseFeatureModel
 
+from .fraction import W24Fraction
 from .gender import W24Gender
 from .tolerance import W24ToleranceType
 from .unit import W24UnitLength
