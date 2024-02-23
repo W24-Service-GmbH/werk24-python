@@ -354,6 +354,8 @@ class W24ThreadKnuckle(W24Thread):
 
     thread_type: W24ThreadType = W24ThreadType.KNUCKLE
 
+    knuckle_size: str
+    knuckle_series: str
     knuckle_profile: Optional[W24Fraction] = None
 
 
