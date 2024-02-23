@@ -1,6 +1,7 @@
 """ Defintions of all objects required to communicate with
 the W24 Techread API.
 """
+
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
@@ -352,7 +353,58 @@ class W24TechreadWithCallbackPayload(BaseModel):
     max_pages: Maximum number of pages that shall be processed.
     """
 
+    @validator("callback_headers", pre=True, each_item=False)
+    def validate_callback_headers(
+        cls,
+        v: Optional[Dict[str, str]],
+        max_name_length: int = 128,
+        max_value_length: int = 4096,
+    ) -> Dict[str, str]:
+        """Validate the callback headers.
+
+        NOTE: Removing the validator in the client will not affect
+        the server-side validation. The server will still enforce
+        the same rules.
+
+        Args:
+        -----
+        v (Dict[str, str]): The callback headers
+        max_name_length (int): Maximum length of the header name
+        max_value_length (int): Maximum length of the header value
+
+        Returns:
+        --------
+        Dict[str, str]: The validated callback headers
+        """
+        if v is None:
+            return None
+
+        # Check whether the header is white-listed
+        # Check the length of the header name
+        for header_name in v.keys():
+
+            if not header_name.upper().startswith("X-"):
+                raise ValueError(
+                    f'Header name "{header_name}" does not start with "X-"'
+                )
+
+            if len(header_name) > max_name_length:
+                raise ValueError(
+                    f'Header name "{header_name}" exceeds maximum length of {max_name_length} characters'
+                )
+
+        # Check the length of the header value
+        for header_value in v.values():
+            if len(header_value) > max_value_length:
+                raise ValueError(
+                    f'Header value "{header_value}" exceeds maximum length of {max_value_length} characters'
+                )
+
+        return v
+
     asks: List[W24AskUnion] = []
     callback_url: HttpUrl
+    callback_headers: Optional[Dict[str, str]] = None
     max_pages: int = 5
     drawing_filename: Optional[str] = None
+    client_version: str = __version__
