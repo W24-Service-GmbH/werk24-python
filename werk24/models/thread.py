@@ -2,18 +2,20 @@
 
 Author: Jochen Mattes - Werk24
 """
+
 import abc
 from decimal import Decimal
 from enum import Enum
-from typing import List, Dict, Any, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel, validator
 
 from werk24.models.base_feature import W24BaseFeatureModel
 
-from .unit import W24UnitLength
-from .tolerance import W24ToleranceType
+from .fraction import W24Fraction
 from .gender import W24Gender
+from .tolerance import W24ToleranceType
+from .unit import W24UnitLength
 
 
 class W24ThreadType(str, Enum):
@@ -31,6 +33,7 @@ class W24ThreadType(str, Enum):
     SM = "SM"
     NPT = "NPT"
     ACME = "ACME"
+    KNUCKLE = "KNUCKLE"
 
     # !!! DEPRECATED
     UTS_COARSE = "UTS_COARSE"
@@ -186,7 +189,6 @@ class W24ThreadISOMetric(W24Thread):
 
 
 class W24ThreadSM(W24Thread):
-
     """Sewing Machine Threads (SM)
         SM thread is used in sewing machine,
         recently it is also being used in Optical Industry.
@@ -205,7 +207,6 @@ class W24ThreadSM(W24Thread):
 
 
 class W24ThreadUTS(W24Thread):
-
     """Unified Thread Standard (UTS) base class for
     * UNC - Unified National Coarse Thread
     * UNF - Unified National Fine Thread
@@ -238,7 +239,6 @@ class W24ThreadUTS(W24Thread):
 
 
 class W24ThreadACME(W24Thread):
-
     """American Corps of Mechanical Engineering (ACME)  defines
     * ACME - American Corps of Mechanical Engineering Thread
     * STUB ACME - STUB American Corps of Mechanical Engineering Thread
@@ -263,7 +263,6 @@ class W24ThreadACME(W24Thread):
 
 
 class W24ThreadNPT(W24Thread):
-
     """American National Standard Pipe Thread standards,
         often called National Pipe Thread (NPT) standards.
     * NPT - National pipe taper
@@ -342,6 +341,24 @@ class W24ThreadWhitworth(W24Thread):
     tolerance_class: Optional[str] = None
 
 
+class W24ThreadKnuckle(W24Thread):
+    """Knuckle Thread following DIN 405 or DIN 20400
+
+    Attributes:
+        knuckle_profile: Profile of the Knuckle Threads
+            is a fraction that defines the pitch for
+            the thread. Applicable to knuckle threads
+            following DIN 405.
+
+    """
+
+    thread_type: W24ThreadType = W24ThreadType.KNUCKLE
+
+    knuckle_size: str
+    knuckle_series: str
+    knuckle_profile: Optional[W24Fraction] = None
+
+
 class W24ThreadFeature(W24BaseFeatureModel):
     """Characterization of a Thread Feature
 
@@ -405,10 +422,11 @@ def _deserialize_thread_type(thread_type: str) -> Type[W24Thread]:
     class_ = {
         "ACME": W24ThreadACME,
         "ISO_METRIC": W24ThreadISOMetric,
+        "KNUCKLE": W24ThreadKnuckle,
         "NPT": W24ThreadNPT,
         "SM": W24ThreadSM,
-        "WHITWORTH": W24ThreadWhitworth,
         "UTS": W24ThreadUTS,
+        "WHITWORTH": W24ThreadWhitworth,
     }.get(thread_type, None)
 
     if class_ is None:
