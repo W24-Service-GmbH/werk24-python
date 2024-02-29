@@ -403,6 +403,7 @@ class TechreadClientHttps:
         callback_url: str,
         max_pages: int = 5,
         drawing_filename: Optional[str] = None,
+        callback_headers: Optional[Dict[str, str]] = None,
     ) -> UUID4:
         """
         Read a drawing with a callback.
@@ -416,6 +417,8 @@ class TechreadClientHttps:
             Defaults to 5.
         drawing_filename (Optional[str], optional): Filename of the drawing.
             Defaults to None.
+        callback_headers (Optional[Dict[str, str]], optional): Headers for the
+            callback. Defaults to None.
 
         Raises:
         ------
@@ -451,17 +454,22 @@ class TechreadClientHttps:
         # Set a default drawing filename if none is provided
         drawing_filename = drawing_filename or "drawing.pdf"
 
+        # validate the payload locally. This is not strictly necessary
+        # but it is a good way to catch errors early.
+        payload = W24TechreadWithCallbackPayload(
+            asks=asks,
+            callback_url=callback_url,
+            callback_headers=callback_headers,
+            max_pages=max_pages,
+            client_version=__version__,
+            drawing_filename=drawing_filename,
+        )
+
         # create the form data
         data = aiohttp.FormData()
         data.add_field("drawing", drawing, filename=drawing_filename)
-        data.add_field(
-            "asks",
-            json.dumps([ask.model_dump(mode="json") for ask in asks]),
-        )
-        data.add_field("callback_url", callback_url)
-        data.add_field("max_pages", str(max_pages))
-        data.add_field("client_version", __version__)
-        data.add_field("drawing_filename", drawing_filename)
+        for key, value in payload.model_dump(mode="json").items():
+            data.add_field(key, json.dumps(value))
 
         # send the request
         headers = self._auth_client.get_auth_headers()

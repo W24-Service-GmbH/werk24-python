@@ -19,6 +19,7 @@ EXAMPLE
                 function=lambda msg: print("Received Thumbnail of Page")
         ]))
 """
+
 import logging
 from io import BufferedReader
 import os
@@ -716,6 +717,7 @@ class W24TechreadClient:
         callback_url: str,
         max_pages: int = 5,
         drawing_filename: Optional[str] = None,
+        callback_headers: Optional[Dict[str, str]] = None,
     ) -> UUID4:
         """Read the Drawings and register a callback URL.
 
@@ -738,6 +740,8 @@ class W24TechreadClient:
             Defaults to 5.
         drawing_filename (Optional[str], optional): Filename of the drawing.
             Defaults to None.
+        callback_headers (Optional[Dict[str, str]], optional): Headers that shall
+            be sent with the callback request. Defaults to None.
 
         Raises:
         ------
@@ -755,6 +759,7 @@ class W24TechreadClient:
                 callback_url,
                 max_pages=max_pages,
                 drawing_filename=drawing_filename,
+                callback_headers=callback_headers,
             )
         except ServerException:
             raise
@@ -841,9 +846,11 @@ class W24TechreadClient:
         # if everything went well, we call the trigger with
         # the message as payload. Be sure to call the
         # function asymmetrically if supported
-        await hook_function(message) if iscoroutinefunction(
-            hook_function
-        ) else hook_function(message)
+        (
+            await hook_function(message)
+            if iscoroutinefunction(hook_function)
+            else hook_function(message)
+        )
 
     @staticmethod
     def _get_hook_function_for_message(
