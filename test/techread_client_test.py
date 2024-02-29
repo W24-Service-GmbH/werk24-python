@@ -115,3 +115,17 @@ class TestTechreadClient(AsyncTestCase):
             "https://werk24.io",
             5,
         )
+
+    async def test_read_with_callback_invalid_headers(self) -> None:
+        """Test whether invalid headers raise an error."""
+        client = W24TechreadClient.make_from_env()
+        asks: List[W24Ask] = [W24AskPageThumbnail()]
+        drawing_bytes = b""
+        with self.assertRaises(ValueError):
+            await client.read_drawing_with_callback(
+                drawing_bytes,
+                asks,
+                "https://werk24.io",
+                5,
+                callback_headers={"Authorization": "Bearer token"},
+            )
