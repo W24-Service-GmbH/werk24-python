@@ -476,8 +476,8 @@ class TechreadClientHttps:
         url = self._make_support_url("techread/read-with-callback")
         async with aiohttp.ClientSession(headers=headers) as session:
             response = await session.post(url, data=data)
-            response_json = await response.json(content_type=None)
             self._raise_for_status(url, response.status)
+            response_json = await response.json(content_type=None)
 
         try:
             return uuid.UUID(response_json["request_id"])
