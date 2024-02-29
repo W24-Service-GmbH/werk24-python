@@ -402,6 +402,20 @@ class W24TechreadWithCallbackPayload(BaseModel):
 
         return v
 
+    @validator("asks", pre=True)
+    def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24AskUnion]:
+        """Validator to de-serialize the asks. The de-serialization
+        is based on the ask_type attribute of the object. Pydantic
+        does not support this out-of-the box
+
+        Args:
+            raw (Dict[str, Any]): Raw json of the asks list
+
+        Returns:
+            List[W24AskUnion]: List of deserialized Asks
+        """
+        return [deserialize_ask(a) for a in raw]
+
     asks: List[W24AskUnion] = []
     callback_url: HttpUrl
     callback_headers: Optional[Dict[str, str]] = None
