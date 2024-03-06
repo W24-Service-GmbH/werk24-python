@@ -1,5 +1,6 @@
 """Definition of all W24Ask types that are understood by the Werk24 API.
 """
+
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, Set
 
@@ -15,7 +16,12 @@ from werk24.models.process import W24Process
 from werk24.models.font import W24FontMap
 
 from .angle import W24Angle
-from .file_format import W24FileFormatThumbnail, W24FileFormatVariantCAD
+from .balloon import W24Balloon
+from .file_format import (
+    W24FileFormatThumbnail,
+    W24FileFormatVariantCAD,
+    W24FileFormatTable,
+)
 from .gdt import W24GDT
 from .general_tolerances import W24GeneralTolerances
 from .geometric_shape import W24GeometricShapeCuboid, W24GeometricShapeCylinder
@@ -27,6 +33,7 @@ from .revision_table import W24RevisionTable
 from .roughness import W24Roughness
 from .thread_element import W24ThreadElement
 from .roughness import W24GeneralRoughness, W24RoughnessReference
+from .unit import W24UnitSpecification
 
 
 class W24AskType(str, Enum):
@@ -152,6 +159,12 @@ class W24AskType(str, Enum):
     """
 
     EXCEL_SUMMARY = "EXCEL_SUMMARY"
+    """ Ask to obtain an excel summary of the document.
+    """
+
+    CANVAS_TABLES = "CANVAS_TABLES"
+    """ Ask to obtain the tables from the canvas.
+    """
 
 
 class W24Ask(BaseModel):
@@ -188,6 +201,9 @@ class W24AskThumbnail(W24Ask):
         file_format: File format in which you wish to obtain
             the result. Currently only JPEG is supported.
 
+        balloons: List of the balloons to add to the thumbnail.
+            By default that's an empty list.
+
     !!! note
         At this stage, the API will return a high-resolution
         gray-level image. Future releases might allow you to
@@ -196,6 +212,7 @@ class W24AskThumbnail(W24Ask):
     """
 
     file_format: W24FileFormatThumbnail = W24FileFormatThumbnail.JPEG
+    balloons: List[W24Balloon] = []
 
 
 class W24AskPageThumbnail(W24AskThumbnail):
@@ -777,12 +794,17 @@ class W24AskProductPMIExtractResponse(BaseModel):
         roughnesses (List[W24Roughness]): List of the detected
             roughnesses. Note: in the PMIExtract, the position will not
             be returned.
+
         general_roughnesses (List[W24GeneralRoughness]): List of the detected
             general roughnesses. Note: in the PMIExtract, the position will not
             be returned.
+
         reference_roughnesses (List[W24RoughnessReference]): List of the
             detected reference roughnesses. Note: in the PMIExtract, the position will not
             be returned.
+
+        unit_specifications (List[W24UnitSpecification]): List of the detected
+            unit specifications.
     """
 
     variant_id: UUID4
@@ -794,6 +816,7 @@ class W24AskProductPMIExtractResponse(BaseModel):
     roughnesses: List[W24Roughness]
     general_roughnesses: List[W24GeneralRoughness] = []
     reference_roughnesses: List[W24RoughnessReference] = []
+    unit_specifications: List[W24UnitSpecification] = []
 
 
 class W24AskVariantThreadElements(W24Ask):
@@ -1086,7 +1109,7 @@ class W24AskSheetRebranding(W24Ask):
             "part_number",
             "material",
             # Misc.
-            "do_not_scale",
+            "do_not_scale_drawing",
             "software",
             "sheet_number",
             "scale",
@@ -1103,6 +1126,22 @@ class W24AskSheetRebranding(W24Ask):
 
 class W24AskExcelSummary(W24Ask):
     ask_type: W24AskType = W24AskType.EXCEL_SUMMARY
+
+
+class W24AskCanvasTables(W24Ask):
+    """Ask to obtain all the canvas tables from the drawing."""
+
+    ask_type: W24AskType = W24AskType.CANVAS_TABLES
+
+    split_min_max_columns: bool = Field(
+        description=("Split range columns into min and max columns."),
+        default=False,
+    )
+
+    output_format: W24FileFormatTable = Field(
+        description=("Output format in which to generate the tables."),
+        default=W24FileFormatTable.CSV,
+    )
 
 
 W24AskUnion = Union[
@@ -1130,7 +1169,8 @@ W24AskUnion = Union[
     W24AskInternalScreening,
     W24AskVariantProcesses,
     W24AskDebug,
-    W24AskExcelSummary
+    W24AskExcelSummary,
+    W24AskCanvasTables,
     # W24AskVariantToleranceElements
 ]
 """Union of all W24Asks to ensure proper de-serialization """
@@ -1200,6 +1240,7 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         "VARIANT_PROCESSES": W24AskVariantProcesses,
         "EXCEL_SUMMARY": W24AskExcelSummary,
         "DEBUG": W24AskDebug,
+        "CANVAS_TABLES": W24AskCanvasTables,
     }.get(ask_type, None)
 
     if class_ is None:

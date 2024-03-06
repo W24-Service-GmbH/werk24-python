@@ -1,4 +1,5 @@
 from enum import Enum
+from pydantic import BaseModel
 
 
 class W24UnitLength(str, Enum):
@@ -44,3 +45,8 @@ class W24UnitSystem(str, Enum):
 
     METRIC = "METRIC"
     IMPERIAL = "IMPERIAL"
+
+
+class W24UnitSpecification(BaseModel):
+    blurb: str
+    unit_system: W24UnitSystem

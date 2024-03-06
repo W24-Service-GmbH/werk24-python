@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from werk24.models.unit import W24UnitLength
 
 
@@ -47,7 +47,7 @@ class W24Size(BaseModel, abc.ABC):
 
     blurb: str
     size_type: W24SizeType
-    nominal_size: Decimal
+    nominal_size: Decimal = Field(allow_inf_nan=True)
     unit: Optional[W24UnitLength] = None
 
 

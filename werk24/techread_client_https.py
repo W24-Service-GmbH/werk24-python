@@ -25,7 +25,7 @@ from werk24.exceptions import (
 )
 from werk24.models.helpdesk import W24HelpdeskTask
 from werk24.models.techread import W24PresignedPost
-
+from werk24._version import __version__
 
 EXCEPTION_CLASSES = {
     range(200, 300): None,
@@ -408,6 +408,7 @@ class TechreadClientHttps:
         callback_url: str,
         max_pages: int = 5,
         drawing_filename: Optional[str] = None,
+        callback_headers: Optional[Dict[str, str]] = None,
     ) -> UUID4:
         """
         Read a drawing with a callback.
@@ -421,6 +422,8 @@ class TechreadClientHttps:
             Defaults to 5.
         drawing_filename (Optional[str], optional): Filename of the drawing.
             Defaults to None.
+        callback_headers (Optional[Dict[str, str]], optional): Headers for the
+            callback. Defaults to None.
 
         Raises:
         ------
@@ -456,25 +459,30 @@ class TechreadClientHttps:
         # Set a default drawing filename if none is provided
         drawing_filename = drawing_filename or "drawing.pdf"
 
+        # validate the payload locally. This is not strictly necessary
+        # but it is a good way to catch errors early.
+        payload = W24TechreadWithCallbackPayload(
+            asks=asks,
+            callback_url=callback_url,
+            callback_headers=callback_headers,
+            max_pages=max_pages,
+            client_version=__version__,
+            drawing_filename=drawing_filename,
+        )
+
         # create the form data
         data = aiohttp.FormData()
         data.add_field("drawing", drawing, filename=drawing_filename)
-        data.add_field(
-            "asks",
-            json.dumps([ask.model_dump(mode="json") for ask in asks]),
-        )
-        data.add_field("callback_url", callback_url)
-        data.add_field("max_pages", str(max_pages))
-        data.add_field("client_version", self._techread_version)
-        data.add_field("drawing_filename", drawing_filename)
+        for key, value in payload.model_dump(mode="json").items():
+            data.add_field(key, json.dumps(value))
 
         # send the request
         headers = self._auth_client.get_auth_headers()
         url = self._make_support_url("techread/read-with-callback")
         async with aiohttp.ClientSession(headers=headers) as session:
             response = await session.post(url, data=data)
-            response_json = await response.json(content_type=None)
             self._raise_for_status(url, response.status)
+            response_json = await response.json(content_type=None)
 
         try:
             return uuid.UUID(response_json["request_id"])

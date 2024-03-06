@@ -89,7 +89,7 @@ async def get_network_info() -> dict:
             return {"ws-api.w24.co Connection": "Successful"}
     except InvalidStatusCode as e:
         if e.status_code == 401:
-            return {"Websocket Connection": "Successful, Unauthorized"}
+            return {"Websocket Connection": "Successful, Connected"}
         else:
             return {"Websocket Connection": f"Unsuccessful: {str(e.status_code)}"}
     except Exception as e:
