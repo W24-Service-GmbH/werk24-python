@@ -23,6 +23,7 @@ from werk24.exceptions import (
     UnauthorizedException,
     UnsupportedMediaType,
 )
+from werk24.models.techread import W24TechreadWithCallbackPayload
 from werk24.models.helpdesk import W24HelpdeskTask
 from werk24.models.techread import W24PresignedPost
 from werk24._version import __version__
