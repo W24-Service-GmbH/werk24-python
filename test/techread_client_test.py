@@ -127,5 +127,5 @@ class TestTechreadClient(AsyncTestCase):
                 asks,
                 "https://werk24.io",
                 5,
-                callback_headers={"Authorization": "Bearer token"},
+                callback_headers={"Evil Header": "Bearer token"},
             )
