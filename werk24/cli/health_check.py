@@ -8,6 +8,7 @@ from websockets.exceptions import InvalidStatusCode
 from werk24.cli import utils
 import werk24
 from werk24.techread_client import LicenseError
+from werk24.exceptions import UnauthorizedException
 
 LINE_LENGTH = 80
 URI = "wss://ws-api.w24.co/v2"
@@ -59,10 +60,13 @@ def get_license_info() -> dict:
     dict: A dictionary containing the license information.
     """
     try:
-        client = utils.make_client()
+        utils.make_client()
 
     except LicenseError:
         return {"License Information": "NOT FOUND"}
+
+    except UnauthorizedException:
+        return {"License Information": "UNAUTHORIZED"}
 
     return {
         "License Information": "FOUND",
