@@ -376,6 +376,7 @@ class W24TechreadWithCallbackPayload(BaseModel):
         --------
         Dict[str, str]: The validated callback headers
         """
+        WHITELIST = {"authorization"}       
         if v is None:
             return None
 
@@ -383,7 +384,7 @@ class W24TechreadWithCallbackPayload(BaseModel):
         # Check the length of the header name
         for header_name in v.keys():
 
-            if not header_name.upper().startswith("X-"):
+            if header_name.lower() not in WHITELIST and not header_name.lower().startswith("x-"):
                 raise ValueError(
                     f'Header name "{header_name}" does not start with "X-"'
                 )
