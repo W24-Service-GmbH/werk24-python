@@ -34,6 +34,12 @@ from .roughness import W24Roughness
 from .thread_element import W24ThreadElement
 from .roughness import W24GeneralRoughness, W24RoughnessReference
 from .unit import W24UnitSpecification
+import logging
+# configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+
 
 
 class W24AskType(str, Enum):
@@ -275,6 +281,7 @@ class W24AskSheetAnonymization(W24AskThumbnail):
             only grayscale is supported.
 
     """
+    logger.warning("W24AskSheetAnonymization is deprecated and no longer supported.")
 
     ask_type: W24AskType = W24AskType.SHEET_ANONYMIZATION
 
