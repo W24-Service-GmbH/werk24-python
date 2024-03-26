@@ -5,6 +5,10 @@ from pydantic import BaseModel
 
 from .size import W24Size
 from .depth import W24Depth
+from .tolerance import (
+    W24ToleranceType,
+    W24ToleranceGeneral,
+)
 
 
 class W24CounterBore(BaseModel):
@@ -19,6 +23,7 @@ class W24CounterBore(BaseModel):
     blurb: str
     size: W24Size
     depth: W24Depth
+    size_tolerance: W24ToleranceType = W24ToleranceGeneral()
 
 
 class W24CounterDrill(BaseModel):
@@ -37,6 +42,7 @@ class W24CounterDrill(BaseModel):
     size: W24Size
     depth: W24Depth
     angle: Optional[Decimal] = None
+    size_tolerance: W24ToleranceType = W24ToleranceGeneral()
 
 
 class W24CounterSink(BaseModel):
@@ -51,3 +57,4 @@ class W24CounterSink(BaseModel):
     blurb: str
     size: W24Size
     angle: Decimal
+    size_tolerance: W24ToleranceType = W24ToleranceGeneral()
