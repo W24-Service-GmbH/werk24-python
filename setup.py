@@ -53,6 +53,7 @@ setup(
         "websockets >= 10.3",
         "pint >= 0.21",
         "termcolor>=2.0.0",
+        "certifi>=2020.12.5",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

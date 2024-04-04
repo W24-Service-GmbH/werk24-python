@@ -23,6 +23,8 @@ from werk24.exceptions import (
     UnauthorizedException,
     UnsupportedMediaType,
 )
+import ssl
+import certifi
 from werk24.models.techread import W24TechreadWithCallbackPayload
 from werk24.models.helpdesk import W24HelpdeskTask
 from werk24.models.techread import W24PresignedPost
@@ -55,6 +57,7 @@ class TechreadClientHttps:
             techread_version {str} -- Techread Version
             support_base_url {str} -- Base URL for support requests
         """
+
         self._techread_version = techread_version
         self._techread_session_https: Optional[aiohttp.ClientSession] = None
         self._auth_client: Optional[AuthClient] = None
@@ -77,7 +80,9 @@ class TechreadClientHttps:
         if self._auth_client is None:
             raise RuntimeError("No AuthClient was registered")
 
-        self._techread_session_https = aiohttp.ClientSession()
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        conn = aiohttp.TCPConnector(ssl=ssl_context)
+        self._techread_session_https = aiohttp.ClientSession(connector=conn)
         return self
 
     async def __aexit__(
