@@ -63,6 +63,10 @@ class TechreadClientHttps:
         self._auth_client: Optional[AuthClient] = None
         self.support_base_url = support_base_url
 
+        # make the connector
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        self.connector = aiohttp.TCPConnector(ssl=ssl_context)
+
     async def __aenter__(self) -> "TechreadClientHttps":
         """
         Create a new HTTP session that is being used for the whole connection.
@@ -80,9 +84,7 @@ class TechreadClientHttps:
         if self._auth_client is None:
             raise RuntimeError("No AuthClient was registered")
 
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
-        conn = aiohttp.TCPConnector(ssl=ssl_context)
-        self._techread_session_https = aiohttp.ClientSession(connector=conn)
+        self._techread_session_https = aiohttp.ClientSession(connector=self.connector)
         return self
 
     async def __aexit__(
@@ -160,7 +162,7 @@ class TechreadClientHttps:
         # carry the authentication token
         presigned_post_str = str(presigned_post.url)
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(connector=self.connector) as session:
                 async with session.post(presigned_post_str, data=form) as response:
                     self._raise_for_status(presigned_post_str, response.status)
 
@@ -376,7 +378,10 @@ class TechreadClientHttps:
         """
         headers = self._make_helpdesk_headers()
         url = self._make_support_url("helpdesk/create-task")
-        async with aiohttp.ClientSession(headers=headers) as session:
+        async with aiohttp.ClientSession(
+            headers=headers,
+            connector=self.connector,
+        ) as session:
             response = await session.post(url, json=task.json())
             self._raise_for_status(url, response.status)
 
@@ -462,6 +467,9 @@ class TechreadClientHttps:
         -------
         UUID4: Request ID
         """
+        # ensure that the session was started
+        if self._techread_session_https is None:
+            raise RuntimeError("You executed a command without opening a session")
 
         # Set a default drawing filename if none is provided
         drawing_filename = drawing_filename or "drawing.pdf"
@@ -486,10 +494,11 @@ class TechreadClientHttps:
         # send the request
         headers = self._auth_client.get_auth_headers()
         url = self._make_support_url("techread/read-with-callback")
-        async with aiohttp.ClientSession(headers=headers) as session:
-            response = await session.post(url, data=data)
-            self._raise_for_status(url, response.status)
-            response_json = await response.json(content_type=None)
+        response = await self._techread_session_https.post(
+            url, data=data, headers=headers
+        )
+        self._raise_for_status(url, response.status)
+        response_json = await response.json(content_type=None)
 
         try:
             return uuid.UUID(response_json["request_id"])
