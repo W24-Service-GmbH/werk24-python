@@ -158,8 +158,6 @@ class TechreadClientHttps:
             form.add_field(key, value)
         form.add_field("file", content)
 
-        raise Exception("This method is not implemented yet.")
-
         # create a new fresh session that does not
         # carry the authentication token
         presigned_post_str = str(presigned_post.url)
