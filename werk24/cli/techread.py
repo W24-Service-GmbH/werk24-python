@@ -5,6 +5,7 @@ import traceback
 from datetime import datetime
 import argparse
 from termcolor import colored
+from colorama import just_fix_windows_console
 import io
 import json
 import logging
@@ -43,6 +44,9 @@ from werk24.models.techread import (
     W24TechreadMessageType,
 )
 from werk24.techread_client import LICENSE_LOCATIONS, Hook
+
+# fix the windows console color issue
+just_fix_windows_console()
 
 # load the environment variables
 for c_location in LICENSE_LOCATIONS:
@@ -343,7 +347,7 @@ def write_crash_log() -> str:
     filename (str): The name of the log file where the error details are written.
     """
 
-    timestamp = datetime.now().isoformat()
+    timestamp = str(datetime.now().isoformat()).replace(":", "-")
     filename = f"werk24-crash-{timestamp}.log"
     content = f"=== [Internal Error] ===\n\nCALLSTACK:\n{traceback.format_exc()}"
 
