@@ -158,6 +158,8 @@ class TechreadClientHttps:
             form.add_field(key, value)
         form.add_field("file", content)
 
+        raise Exception("This method is not implemented yet.")
+
         # create a new fresh session that does not
         # carry the authentication token
         presigned_post_str = str(presigned_post.url)
@@ -168,8 +170,7 @@ class TechreadClientHttps:
 
         # Raise SSLCertificateError if the certificate is not trusted
         except aiohttp.ClientConnectorCertificateError as exception:
-            raise exception
-            # raise SSLCertificateError() from exception
+            raise SSLCertificateError() from exception
 
     async def download_payload(self, payload_url: HttpUrl) -> bytes:
         """Return the payload from the server
@@ -494,11 +495,12 @@ class TechreadClientHttps:
         # send the request
         headers = self._auth_client.get_auth_headers()
         url = self._make_support_url("techread/read-with-callback")
-        response = await self._techread_session_https.post(
-            url, data=data, headers=headers
-        )
-        self._raise_for_status(url, response.status)
-        response_json = await response.json(content_type=None)
+        async with aiohttp.ClientSession(
+            headers=headers, connector=self.connector
+        ) as session:
+            response = await session.post(url, data=data)
+            self._raise_for_status(url, response.status)
+            response_json = await response.json(content_type=None)
 
         try:
             return uuid.UUID(response_json["request_id"])
