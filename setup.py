@@ -53,6 +53,7 @@ setup(
         "websockets >= 10.3",
         "pint >= 0.21",
         "termcolor>=2.0.0",
+        "colorama>=0.4.4",
         "certifi>=2020.12.5",
     ],
     classifiers=[
