@@ -5,6 +5,7 @@ import traceback
 from datetime import datetime
 import argparse
 from termcolor import colored
+from colorama import just_fix_windows_console
 import io
 import json
 import logging
@@ -43,6 +44,9 @@ from werk24.models.techread import (
     W24TechreadMessageType,
 )
 from werk24.techread_client import LICENSE_LOCATIONS, Hook
+
+# fix the windows console color issue
+just_fix_windows_console()
 
 # load the environment variables
 for c_location in LICENSE_LOCATIONS:
