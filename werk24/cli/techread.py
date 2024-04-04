@@ -343,7 +343,7 @@ def write_crash_log() -> str:
     filename (str): The name of the log file where the error details are written.
     """
 
-    timestamp = datetime.now().isoformat()
+    timestamp = str(datetime.now().isoformat()).replace(":", "-")
     filename = f"werk24-crash-{timestamp}.log"
     content = f"=== [Internal Error] ===\n\nCALLSTACK:\n{traceback.format_exc()}"
 
