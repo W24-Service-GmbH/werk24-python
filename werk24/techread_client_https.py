@@ -59,13 +59,27 @@ class TechreadClientHttps:
         """
 
         self._techread_version = techread_version
-        self._techread_session_https: Optional[aiohttp.ClientSession] = None
         self._auth_client: Optional[AuthClient] = None
         self.support_base_url = support_base_url
 
-        # make the connector
+    def _make_session(self, timeout_seconds=30) -> aiohttp.TCPConnector:
+        """Make the connector for the session.
+
+        Returns:
+        --------
+        aiohttp.TCPConnector: Connector for the session
+        """
         ssl_context = ssl.create_default_context(cafile=certifi.where())
-        self.connector = aiohttp.TCPConnector(ssl=ssl_context)
+        connector = aiohttp.TCPConnector(ssl=ssl_context)
+        timeout = aiohttp.ClientTimeout(
+            total=None,
+            sock_connect=timeout_seconds,
+            sock_read=timeout_seconds,
+        )
+        return aiohttp.ClientSession(
+            timeout=timeout,
+            connector=connector,
+        )
 
     async def __aenter__(self) -> "TechreadClientHttps":
         """
@@ -84,7 +98,6 @@ class TechreadClientHttps:
         if self._auth_client is None:
             raise RuntimeError("No AuthClient was registered")
 
-        self._techread_session_https = aiohttp.ClientSession(connector=self.connector)
         return self
 
     async def __aexit__(
@@ -108,9 +121,7 @@ class TechreadClientHttps:
         --------
         None
         """
-        if self._techread_session_https:
-            await self._techread_session_https.close()
-            self._techread_session_https = None
+        pass
 
     def register_auth_client(self, auth_client: AuthClient) -> None:
         """Register the reference to the authentication service
@@ -162,7 +173,7 @@ class TechreadClientHttps:
         # carry the authentication token
         presigned_post_str = str(presigned_post.url)
         try:
-            async with aiohttp.ClientSession(connector=self.connector) as session:
+            async with self._make_session() as session:
                 async with session.post(presigned_post_str, data=form) as response:
                     self._raise_for_status(presigned_post_str, response.status)
 
@@ -221,7 +232,10 @@ class TechreadClientHttps:
         """
         # send the get request to the endpoint
         try:
-            response = await self._get(payload_url)
+            async with self._make_session() as session:
+                response = await session.get(str(payload_url))
+                self._raise_for_status(payload_url, response.status)
+                return await response.content.read()
 
         # reraise the exceptions
         except (
@@ -232,64 +246,6 @@ class TechreadClientHttps:
             ResourceNotFoundException,
         ):
             raise
-
-        # otherwise return the response text
-        return await response.content.read()
-
-    async def _get(self, url: str) -> aiohttp.ClientResponse:
-        """Send a GET request request and return the
-        response object. The method automatically
-        injects the authentication token into the
-        request.
-
-        Arguments:
-            url {str} -- URL that is to be requested
-
-        Raises:
-            BadRequestException: Raised when the request body
-                cannot be interpreted. This normally indicates
-                that the API version has been updated and that
-                we missed a corner case. If you encounter this
-                exception, it is very likely our mistake. Please
-                get in touch!
-
-            UnauthorizedException: Raised when the token
-                or the requested file have expired
-
-            ResourceNotFoundException: Raised when you are requesting
-                an endpoint that does not exist. Again, you should
-                not encounter this, but if you do, let us know.
-
-            RequestTooLargeException: Raised when the status
-                code was 413
-
-            UnsupportedMediaTypException: Raised when the file you
-                submitted cannot be read (because its media type
-                is not supported by the API).
-
-            ServerException: Raised for all other status codes
-                that are not 2xx
-
-        Returns:
-            aiohttp.ClientResponse -- Client response for the get request
-        """
-
-        # ensure that the session was started
-        if self._techread_session_https is None:
-            raise RuntimeError("You executed a command without opening a session")
-
-        # send the request
-        response = await self._techread_session_https.get(str(url))
-
-        # check the status code of the response and
-        # raise the appropriate exception
-        try:
-            self._raise_for_status(url, response.status)
-        except (UnauthorizedException, ServerException) as exception:
-            raise exception
-
-        # if the call was successful, return
-        return response
 
     @staticmethod
     def _raise_for_status(url: str, status_code: int) -> None:
@@ -377,11 +333,8 @@ class TechreadClientHttps:
         """
         headers = self._make_helpdesk_headers()
         url = self._make_support_url("helpdesk/create-task")
-        async with aiohttp.ClientSession(
-            headers=headers,
-            connector=self.connector,
-        ) as session:
-            response = await session.post(url, json=task.json())
+        async with self._make_session() as session:
+            response = await session.post(url, json=task.json(), headers=headers)
             self._raise_for_status(url, response.status)
 
         # return the updated task
@@ -490,10 +443,8 @@ class TechreadClientHttps:
         # send the request
         headers = self._auth_client.get_auth_headers()
         url = self._make_support_url("techread/read-with-callback")
-        async with aiohttp.ClientSession(
-            headers=headers, connector=self.connector
-        ) as session:
-            response = await session.post(url, data=data)
+        async with self._make_session() as session:
+            response = await session.post(url, data=data, headers=headers)
             self._raise_for_status(url, response.status)
             response_json = await response.json(content_type=None)
 
