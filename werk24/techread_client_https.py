@@ -466,9 +466,6 @@ class TechreadClientHttps:
         -------
         UUID4: Request ID
         """
-        # ensure that the session was started
-        if self._techread_session_https is None:
-            raise RuntimeError("You executed a command without opening a session")
 
         # Set a default drawing filename if none is provided
         drawing_filename = drawing_filename or "drawing.pdf"
