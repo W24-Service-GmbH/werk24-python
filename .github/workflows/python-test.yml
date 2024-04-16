@@ -47,11 +47,11 @@ jobs:
             git push
 
       - name: Create release in the second repository
-        uses: ncipollo/release-action@v1.14.0
+        uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.JSON_SCHEMA_GITHUB_PAT }}
-          repo: W24-Service-GmbH/werk24-json-schema
-          tag: 0.0.1
+          repository: W24-Service-GmbH/werk24-json-schema
+          tag_name: 0.0.1
           # skipIfReleaseExists: true
           # body: Read the Release Notes of the werk24-python for details.
           # draft: true
