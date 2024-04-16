@@ -5,7 +5,7 @@ name: Upload Python Package
 
 on:
   workflow_dispatch:
-  
+
   release:
     types: [created]
 
@@ -24,6 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
+
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
@@ -31,4 +32,22 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
-        
+
+      - name: Create the json schema
+        run: python -m  utils.create_json_schema ./werk24-json-schema/werk24-json-schema.json
+
+      - name: Push the json schema to main
+        run : |
+            cd werk24-json-schema
+            git config --local user.email "info@werk24.io"
+            git config --local user.name "Werk24 Service GmbH"
+            git add .
+            git commit -m "Updates the json schema based on the new werk24-python release."
+            git push
+
+      - name: Create release in the second repository
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.JSON_SCHEMA_GITHUB_PAT }}
+          repository: W24-Service-GmbH/werk24-json-schema
+          tag_name: ${{ github.event.release.tag_name }}
