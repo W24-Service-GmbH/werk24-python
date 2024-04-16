@@ -28,6 +28,12 @@ jobs:
           path: werk24-json-schema
           token: ${{ secrets.JSON_SCHEMA_GITHUB_PAT }}
 
+      - name: Install nose2
+        run: pip install nose2
+
+      - name: Install Dependencies
+        run: python -m pip install -r ./requirements.txt && python -m pip install -r ./test/requirements.txt
+
       - name: Create the json schema
         run: python -m  utils.create_json_schema ./werk24-json-schema/werk24-json-schema.json
 
@@ -53,13 +59,6 @@ jobs:
           body: Read the Release Notes of the werk24-python for details.
           draft: true
           prerelease: true
-
-
-      - name: Install nose2
-        run: pip install nose2
-
-      - name: Install Dependencies
-        run: python -m pip install -r ./requirements.txt && python -m pip install -r ./test/requirements.txt
 
       - name: Test
         env:
