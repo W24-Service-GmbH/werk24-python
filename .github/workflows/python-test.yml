@@ -33,12 +33,11 @@ jobs:
 
       - name: Checkout the json schema
         uses: actions/checkout@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPO_ACCESJSON_SCHEMA_GITHUB_PATS_TOKEN }}
         with:
           repository: W24-Service-GmbH/werk24-json-schema
           ref: main
           path: werk24-json-schema
+          token: ${{ secrets.JSON_SCHEMA_GITHUB_PATS_TOKEN }}
 
       - name: Create the json schema
         run: python -m  utils.create_json_schema ./werk24-json-schema/werk24-json-schema.json
@@ -55,7 +54,7 @@ jobs:
       - name: Create release in the second repository
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.REPO_ACCESJSON_SCHEMA_GITHUB_PATS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.JSON_SCHEMA_GITHUB_PATS_TOKEN }}
         with:
           # tag_name: ${{ github.event.release.tag_name }}
           # release_name: Release ${{ github.event.release.tag_name }}
