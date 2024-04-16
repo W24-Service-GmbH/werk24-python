@@ -19,17 +19,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install nose2
-        run: pip install nose2
-
-      - name: Install Dependencies
-        run: python -m pip install -r ./requirements.txt && python -m pip install -r ./test/requirements.txt
-
-      - name: Test
-        env:
-          W24TECHREAD_AUTH_REGION: ${{ secrets.W24TECHREAD_AUTH_REGION }}
-          W24TECHREAD_AUTH_TOKEN: ${{ secrets.W24TECHREAD_AUTH_TOKEN }}
-        run: nose2
 
       - name: Checkout the json schema
         uses: actions/checkout@v4
@@ -58,8 +47,22 @@ jobs:
         with:
           # tag_name: ${{ github.event.release.tag_name }}
           # release_name: Release ${{ github.event.release.tag_name }}
+          repo: W24-Service-GmbH/werk24-json-schema
           tag_name: v0.0.0
           release_name: Release v0.0.0
           body: Read the Release Notes of the werk24-python for details.
           draft: true
           prerelease: true
+
+
+      - name: Install nose2
+        run: pip install nose2
+
+      - name: Install Dependencies
+        run: python -m pip install -r ./requirements.txt && python -m pip install -r ./test/requirements.txt
+
+      - name: Test
+        env:
+          W24TECHREAD_AUTH_REGION: ${{ secrets.W24TECHREAD_AUTH_REGION }}
+          W24TECHREAD_AUTH_TOKEN: ${{ secrets.W24TECHREAD_AUTH_TOKEN }}
+        run: nose2
