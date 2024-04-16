@@ -7,8 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # python-version: [3.9, 3.10.x, 3.11.x, 3.12.x]
-        python-version: [3.12.x]
+        python-version: [3.9, 3.10.x, 3.11.x, 3.12.x]
       fail-fast: false
 
     steps:
@@ -18,7 +17,6 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-
 
       - name: Checkout the json schema
         uses: actions/checkout@v4
@@ -33,35 +31,6 @@ jobs:
 
       - name: Install Dependencies
         run: python -m pip install -r ./requirements.txt && python -m pip install -r ./test/requirements.txt
-
-      - name: Create the json schema
-        run: python -m  utils.create_json_schema ./werk24-json-schema/werk24-json-schema.json
-
-      - name: Push the json schema to main
-        run : |
-            cd werk24-json-schema
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add .
-            git commit -m "Updates the json schema based on the new werk24-python release."
-            git push
-
-      - name: Create release in the second repository
-        uses: softprops/action-gh-release@v2
-        with:
-          token: ${{ secrets.JSON_SCHEMA_GITHUB_PAT }}
-          repository: W24-Service-GmbH/werk24-json-schema
-          tag_name: 0.0.1
-          # skipIfReleaseExists: true
-          # body: Read the Release Notes of the werk24-python for details.
-          # draft: true
-          # makeLatest: true
-          # tag_name: ${{ github.event.release.tag_name }}
-          # release_name: Release ${{ github.event.release.tag_name }}
-          # release_name: Release v0.0.0
-          # body: Read the Release Notes of the werk24-python for details.
-          # draft: true
-          # prerelease: true
 
       - name: Test
         env:
