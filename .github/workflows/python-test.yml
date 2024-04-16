@@ -47,7 +47,7 @@ jobs:
             git push
 
       - name: Create release in the second repository
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.14.0
         with:
           token: ${{ secrets.JSON_SCHEMA_GITHUB_PAT }}
           repo: W24-Service-GmbH/werk24-json-schema
