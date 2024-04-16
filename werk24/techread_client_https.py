@@ -33,7 +33,7 @@ from werk24._version import __version__
 EXCEPTION_CLASSES = {
     range(200, 300): None,
     range(400, 401): BadRequestException,
-    range(401, 403): UnauthorizedException,
+    range(401, 404): UnauthorizedException,
     range(404, 405): ResourceNotFoundException,
     range(413, 414): RequestTooLargeException,
     range(415, 416): UnsupportedMediaType,
