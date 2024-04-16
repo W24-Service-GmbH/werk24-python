@@ -262,11 +262,6 @@ class W24TechreadClient:
             password,
             token,
         )
-        self._auth_client.login()
-        # tell the techread clients about it
-        self._techread_client_https.register_auth_client(self._auth_client)
-        self._techread_client_wss.register_auth_client(self._auth_client)
-
         # ensure that we have a token
         try:
             self._auth_client.login()  # type: ignore
@@ -275,6 +270,10 @@ class W24TechreadClient:
                 "No connection to the authentication service was "
                 + "established. Please call register()"
             ) from exc
+
+        # tell the techread clients about it
+        self._techread_client_https.register_auth_client(self._auth_client)
+        self._techread_client_wss.register_auth_client(self._auth_client)
 
     async def read_drawing(
         self,
@@ -342,7 +341,7 @@ class W24TechreadClient:
         # without additional information. We want to inform the caller
         # that they submitted the wrong data type.
         # See Github Issue #13
-        if not isinstance(drawing, BufferedReader) and not isinstance(drawing, bytes):
+        if not isinstance(drawing, (BufferedReader, bytes)):
             raise UnsupportedMediaType(
                 "Drawing bytes requires 'bytes' or 'BufferedReader' type"
             )
