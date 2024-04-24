@@ -363,7 +363,7 @@ class TechreadClientHttps:
         -------
         Dict[str, str]: Help desk headers
         """
-        return self._auth_client.get_headers()
+        return self._auth_client.get_auth_headers()
 
     async def read_drawing_with_callback(
         self,

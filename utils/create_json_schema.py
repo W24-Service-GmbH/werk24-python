@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from enum import EnumMeta
 from typing import Dict, Any
 import werk24.models
+import werk24
 
 
 def get_pydantic_schemata(module) -> Dict[str, Any]:
@@ -17,18 +18,17 @@ def get_pydantic_schemata(module) -> Dict[str, Any]:
             and model is not BaseModel
         ):
             schema_key = f"{module.__name__}.{model.__name__}"
-            schemata[schema_key] = model.schema_json()
+            schemata[schema_key] = model.model_json_schema()
         elif isinstance(model, EnumMeta):
             schema_key = f"{module.__name__}.{model.__name__}"
-            schemata[schema_key] = json.dumps(
-                {
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                        "enum": [e.value for e in model],
-                    },
-                }
-            )
+            schemata[schema_key] = {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "enum": [e.value for e in model],
+                },
+            }
+
     return schemata
 
 
@@ -44,8 +44,10 @@ def create_json_schema_dump(path: str):
         except ModuleNotFoundError:
             print(f"Warning: Module {full_module_name} not found.", file=sys.stderr)
 
+    content = {"schemata": schemata, "version": werk24.__version__}
+
     with open(path, "w") as file:
-        json.dump(schemata, file, indent=4)
+        json.dump(content, file)
 
 
 if __name__ == "__main__":

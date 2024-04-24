@@ -1,5 +1,6 @@
 """ Command Line Interface for W24
 """
+
 import argparse
 import asyncio
 
@@ -45,7 +46,7 @@ def _add_support_parser(subparsers):
     create_parser.add_argument("--request-id", action="store", required=True)
     create_parser.add_argument("--observed-outcome", action="store", required=True)
     create_parser.add_argument("--expected-outcome", action="store", required=True)
-    create_parser.add_argument("--comment", action="store")
+    create_parser.add_argument("--comment", action="store", default="")
     create_parser.add_argument("--importance", action="store", required=True)
 
 
