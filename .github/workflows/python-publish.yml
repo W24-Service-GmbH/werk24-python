@@ -34,7 +34,9 @@ jobs:
         twine upload dist/*
 
     - name: Create the json schema
-      run: python -m  utils.create_json_schema ./werk24-json-schema/werk24-json-schema.json
+      run: |
+        pip install -r requirements.txt
+        python -m utils.create_json_schema ./werk24-json-schema/werk24-json-schema.json
 
     - name: Push the json schema to main
       run : |
