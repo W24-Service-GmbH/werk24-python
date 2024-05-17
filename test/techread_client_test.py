@@ -129,3 +129,19 @@ class TestTechreadClient(AsyncTestCase):
                 5,
                 callback_headers={"Evil Header": "Bearer token"},
             )
+
+    async def test_read_with_callback_encypted(self) -> None:
+        """Test whether we can read with callback and encryption."""
+        client = W24TechreadClient.make_from_env()
+        asks: List[W24Ask] = [W24AskPageThumbnail()]
+        drawing_bytes = b""
+        passphrase = os.urandom(32)
+        _, public_key = client.generate_encryption_keys(passphrase)
+
+        await client.read_drawing_with_callback(
+            drawing_bytes,
+            asks,
+            "https://werk24.io",
+            5,
+            public_key=public_key,
+        )

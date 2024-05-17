@@ -20,9 +20,11 @@ EXAMPLE
         ]))
 """
 
+from werk24.crypt_utils import generate_new_key_pair
 import logging
 from io import BufferedReader
 import os
+from typing import Any
 import uuid
 from asyncio import iscoroutinefunction
 from types import TracebackType
@@ -275,6 +277,20 @@ class W24TechreadClient:
         self._techread_client_https.register_auth_client(self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
 
+    def generate_encryption_keys(self, passphrase: bytes) -> Tuple[bytes, bytes]:
+        """
+        Generate a new RSA key pair and return the private and public key as PEM encoded bytes.
+
+        Args:
+        ----
+        passphrase (bytes): The passphrase to encrypt the private key with.
+
+        Returns:
+        -------
+        Tuple[bytes, bytes]: The private key and public key as PEM encoded bytes.
+        """
+        return generate_new_key_pair(passphrase=passphrase)
+
     async def read_drawing(
         self,
         drawing: Union[BufferedReader, bytes],
@@ -283,6 +299,7 @@ class W24TechreadClient:
         max_pages: int = 1,
         drawing_filename: Optional[str] = None,
         sub_account: Optional[UUID4] = None,
+        public_key: Optional[bytes] = None,
     ) -> AsyncIterator[W24TechreadMessage]:
         """
         Send a Technical Drawing to the W24 API to read it.
@@ -367,7 +384,7 @@ class W24TechreadClient:
         asks: List[W24Ask],
         drawing: Union[bytes, BufferedReader],
         model: Optional[bytes] = None,
-    ) -> None:
+    ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
         Read the request after obtaining the init_response.
 
@@ -389,16 +406,20 @@ class W24TechreadClient:
         W24TechreadMessage: Messages that are received after the
             request was submitted
         """
+        # If the server wants us to encrypt the file, we will do so
+        public_server_key = init_response.public_key
+
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
             await self._techread_client_https.upload_associated_file(
-                init_response.drawing_presigned_post, drawing
+                init_response.drawing_presigned_post,
+                drawing,
+                public_server_key=public_server_key,
             )
 
-        # explicitly reraise the exception if the payload is too
-        # large
+        # explicitly reraise the exception if the payload is too large
         except (BadRequestException, RequestTooLargeException) as exception:
             async for message in self._trigger_asks_exception(asks, exception):
                 yield message
@@ -717,6 +738,7 @@ class W24TechreadClient:
         max_pages: int = 5,
         drawing_filename: Optional[str] = None,
         callback_headers: Optional[Dict[str, str]] = None,
+        public_key: Optional[bytes] = None,
     ) -> UUID4:
         """Read the Drawings and register a callback URL.
 
@@ -732,15 +754,28 @@ class W24TechreadClient:
 
         Args:
         ----
-        drawing (Union[BufferedReader, bytes]): Drawing that you want to process
-        asks (List[W24Ask]): List of all the information that you want to obtain
-        callback_url (str): URL that shall receive the callback requests
-        max_pages (int, optional): Maximum number of pages that shall be processed.
+        drawing (Union[BufferedReader, bytes]):
+            Drawing that you want to process
+
+        asks (List[W24Ask]):
+            List of all the information that you want to obtain
+
+        callback_url (str):
+            URL that shall receive the callback requests
+
+        max_pages (int, optional):
+            Maximum number of pages that shall be processed.
             Defaults to 5.
-        drawing_filename (Optional[str], optional): Filename of the drawing.
-            Defaults to None.
-        callback_headers (Optional[Dict[str, str]], optional): Headers that shall
-            be sent with the callback request. Defaults to None.
+
+        drawing_filename (Optional[str], optional):
+            Filename of the drawing. Defaults to None.
+
+        callback_headers (Optional[Dict[str, str]], optional):
+            Headers that shall be sent with the callback request. Defaults to None.
+
+        public_key (Optional[bytes], optional):
+            Public key that the server shall use to encrypt the callback request. Defaults to None.
+            Note: availability of this feature may depend on your service level.
 
         Raises:
         ------
@@ -759,6 +794,7 @@ class W24TechreadClient:
                 max_pages=max_pages,
                 drawing_filename=drawing_filename,
                 callback_headers=callback_headers,
+                public_key=public_key,
             )
         except ServerException:
             raise
