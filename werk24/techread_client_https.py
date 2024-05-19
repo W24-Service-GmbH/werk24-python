@@ -15,7 +15,7 @@ import aiohttp
 from pydantic import HttpUrl
 from typing import Union
 from werk24.auth_client import AuthClient
-from werk24.crypt_utils import encrypt_with_public_key
+from werk24.crypt import encrypt_with_public_key
 from werk24.exceptions import (
     BadRequestException,
     RequestTooLargeException,
