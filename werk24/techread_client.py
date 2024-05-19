@@ -448,7 +448,10 @@ class W24TechreadClient:
             request was submitted
         """
         # If the server wants us to encrypt the file, we will do so
-        server_public_key = init_response.public_key.encode("utf-8")
+        if init_response.public_key is None:
+            server_public_key = None
+        else:
+            server_public_key = init_response.public_key.encode("utf-8")
 
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
