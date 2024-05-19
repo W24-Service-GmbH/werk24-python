@@ -254,7 +254,7 @@ class TechreadClientHttps:
             async with self._make_session() as session:
                 response = await session.get(str(payload_url))
                 self._raise_for_status(payload_url, response.status)
-                raw = response.content.read()
+                raw = await response.content.read()
 
         # reraise the exceptions
         except (
