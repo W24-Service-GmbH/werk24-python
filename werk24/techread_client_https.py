@@ -174,7 +174,7 @@ class TechreadClientHttps:
             return
 
         # encrypt the content if we have the public key of the server
-        if public_server_key is not None:
+        if public_server_key is not None and len(content) > 0:
             content = encrypt_with_public_key(public_server_key, content)
 
         # generate the form data by merging the presigned
