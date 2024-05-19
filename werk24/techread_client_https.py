@@ -187,7 +187,6 @@ class TechreadClientHttps:
         # create a new fresh session that does not
         # carry the authentication token
         presigned_post_str = str(presigned_post.url)
-        print(presigned_post)
         try:
             async with self._make_session() as session:
                 async with session.post(presigned_post_str, data=form) as response:

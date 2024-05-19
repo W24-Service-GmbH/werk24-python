@@ -406,6 +406,7 @@ class W24TechreadClient:
         W24TechreadMessage: Messages that are received after the
             request was submitted
         """
+        print(init_response)
         # If the server wants us to encrypt the file, we will do so
         public_server_key = init_response.public_key
 
