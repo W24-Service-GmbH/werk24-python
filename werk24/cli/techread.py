@@ -143,8 +143,7 @@ hook_config = [
     HookConfig(
         "ask_titleblock",
         W24AskTitleBlock,
-        # lambda m: _print_payload("Ask TitleBlock", m.model_dump(mode="python")),
-        lambda m: print(m),
+        lambda m: _print_payload("Ask TitleBlock", m.payload_dict),
     ),
     HookConfig(
         "ask_variant_thread_elements",

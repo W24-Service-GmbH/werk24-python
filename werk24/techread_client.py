@@ -434,6 +434,7 @@ class W24TechreadClient:
         model: Optional[bytes] = None,
         client_private_key_pem: Optional[bytes] = None,
         client_public_key_pem: Optional[bytes] = None,
+        client_encryption_passphrase: Optional[bytes] = None,
     ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
         Read the request after obtaining the init_response.
@@ -453,6 +454,8 @@ class W24TechreadClient:
         client_public_key_pem (Optional[bytes], optional): Public
             key that the server shall use to encrypt the callback
             request. Defaults to None.
+        client_encryption_passphrase (Optional[bytes], optional):
+            Passphrase to encrypt the private key. Defaults to None.
 
         Yields:
         ------
@@ -495,6 +498,7 @@ class W24TechreadClient:
         async for message in self._send_command_read(
             client_private_key_pem,
             client_public_key_pem,
+            client_encryption_passphrase,
         ):
             yield message
 
@@ -558,6 +562,7 @@ class W24TechreadClient:
         self,
         client_private_key_pem: Optional[bytes] = None,
         client_public_key_pem: Optional[bytes] = None,
+        client_encryption_passphrase: Optional[bytes] = None,
     ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
         Send the request request to the backend
@@ -588,7 +593,9 @@ class W24TechreadClient:
             if message.payload_url is not None:
                 message.payload_bytes = (
                     await self._techread_client_https.download_payload(
-                        message.payload_url, client_private_key_pem
+                        message.payload_url,
+                        client_private_key_pem,
+                        client_encryption_passphrase,
                     )
                 )
 
