@@ -1,5 +1,6 @@
 import os
-from typing import Optional
+import io
+from typing import Optional, Union
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
@@ -58,7 +59,10 @@ def generate_new_key_pair(
     return private_key_pem, public_key_pem
 
 
-def encrypt_with_public_key(public_key_pem: bytes, data: bytes) -> bytes:
+def encrypt_with_public_key(
+    public_key_pem: bytes,
+    data: Union[bytes, io.BufferedReader],
+) -> bytes:
     """
     Encrypt the data with the given public key.
 
@@ -86,12 +90,18 @@ def encrypt_with_public_key(public_key_pem: bytes, data: bytes) -> bytes:
         backend=default_backend(),
     )
 
+    # ensure that the data is in bytes
+    if hasattr(data, "read"):
+        raw_data = data.read()
+    else:
+        raw_data = data
+
     # Encrypt the file content with AES key in GCM mode
     aes_key = os.urandom(32)  # 256-bit AES key
     iv = os.urandom(12)  # GCM standard IV size is 96 bits (12 bytes)
     cipher = Cipher(algorithms.AES(aes_key), modes.GCM(iv), backend=default_backend())
     encryptor = cipher.encryptor()
-    encrypted_data = encryptor.update(data) + encryptor.finalize()
+    encrypted_data = encryptor.update(raw_data) + encryptor.finalize()
 
     # Encrypt the AES key with the recipient's RSA public key
     encrypted_aes_key = public_key.encrypt(
@@ -110,7 +120,7 @@ def encrypt_with_public_key(public_key_pem: bytes, data: bytes) -> bytes:
 
 def decrypt_with_private_key(
     private_key_pem: bytes,
-    passphrase: Optional[str],
+    password: Optional[str],
     encrypted_package: bytes,
 ) -> bytes:
     """
@@ -133,10 +143,16 @@ def decrypt_with_private_key(
         The decrypted data.
     """
 
+    if isinstance(private_key_pem, str):
+        private_key_pem = private_key_pem.encode("utf-8")
+
+    if isinstance(password, str):
+        password = password.encode("utf-8")
+
     # Load the recipient's private key
     private_key = serialization.load_pem_private_key(
         private_key_pem,
-        password=passphrase,
+        password=password,
         backend=default_backend(),
     )
 
@@ -160,7 +176,9 @@ def decrypt_with_private_key(
 
     # Decrypt the file content with the decrypted AES key in GCM mode
     cipher = Cipher(
-        algorithms.AES(aes_key), modes.GCM(iv, tag), backend=default_backend()
+        algorithms.AES(aes_key),
+        modes.GCM(iv, tag),
+        backend=default_backend(),
     )
     decryptor = cipher.decryptor()
     decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()

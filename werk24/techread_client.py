@@ -282,7 +282,8 @@ class W24TechreadClient:
         self._techread_client_https.register_auth_client(self._auth_client)
         self._techread_client_wss.register_auth_client(self._auth_client)
 
-    def generate_encryption_keys(self, passphrase: bytes) -> Tuple[bytes, bytes]:
+    @staticmethod
+    def generate_encryption_keys(passphrase: bytes) -> Tuple[bytes, bytes]:
         """
         Generate a new RSA key pair and return the private and public key as PEM encoded bytes.
 
@@ -296,7 +297,8 @@ class W24TechreadClient:
         """
         return generate_new_key_pair(passphrase=passphrase)
 
-    def encrypt_with_public_key(self, public_key_pem: bytes, data: bytes) -> bytes:
+    @staticmethod
+    def encrypt_with_public_key(public_key_pem: bytes, data: bytes) -> bytes:
         """
         Encrypt the data with the given public key.
 
@@ -311,7 +313,10 @@ class W24TechreadClient:
         """
         return encrypt_with_public_key(public_key_pem, data)
 
-    def decrypt_with_private_key(self, private_key_pem: bytes, data: bytes) -> bytes:
+    @staticmethod
+    def decrypt_with_private_key(
+        private_key_pem: bytes, password: bytes, data: bytes
+    ) -> bytes:
         """
         Decrypt the data with the given private key.
 
@@ -324,7 +329,7 @@ class W24TechreadClient:
         -------
         bytes: The decrypted data.
         """
-        return decrypt_with_private_key(private_key_pem, data)
+        return decrypt_with_private_key(private_key_pem, password, data)
 
     async def read_drawing(
         self,
@@ -334,6 +339,7 @@ class W24TechreadClient:
         max_pages: int = 1,
         drawing_filename: Optional[str] = None,
         sub_account: Optional[UUID4] = None,
+        private_key_pem: Optional[bytes] = None,
         public_key_pem: Optional[bytes] = None,
     ) -> AsyncIterator[W24TechreadMessage]:
         """
@@ -411,7 +417,12 @@ class W24TechreadClient:
 
         # Start reading the file
         async for message in self.read_request(
-            init_response, asks, drawing, model, public_key_pem
+            init_response,
+            asks,
+            drawing,
+            model,
+            private_key_pem,
+            public_key_pem,
         ):
             yield message
 
@@ -421,6 +432,7 @@ class W24TechreadClient:
         asks: List[W24Ask],
         drawing: Union[bytes, BufferedReader],
         model: Optional[bytes] = None,
+        client_private_key_pem: Optional[bytes] = None,
         client_public_key_pem: Optional[bytes] = None,
     ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
@@ -480,7 +492,10 @@ class W24TechreadClient:
         # find a way of handing over the tcp connection :)
         # PS: The AWS API Gateway for websockets might help you
         # here.
-        async for message in self._send_command_read(client_public_key_pem):
+        async for message in self._send_command_read(
+            client_private_key_pem,
+            client_public_key_pem,
+        ):
             yield message
 
     async def init_request(
@@ -541,6 +556,7 @@ class W24TechreadClient:
 
     async def _send_command_read(
         self,
+        client_private_key_pem: Optional[bytes] = None,
         client_public_key_pem: Optional[bytes] = None,
     ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
@@ -572,7 +588,7 @@ class W24TechreadClient:
             if message.payload_url is not None:
                 message.payload_bytes = (
                     await self._techread_client_https.download_payload(
-                        message.payload_url
+                        message.payload_url, client_private_key_pem
                     )
                 )
 

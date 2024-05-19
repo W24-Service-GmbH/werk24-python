@@ -1,19 +1,18 @@
 """ HTTPS-part of the Werk24 client
 """
 
+import io
 import uuid
 from werk24.exceptions import SSLCertificateError
 import json
 import urllib.parse
 from pydantic import UUID4
 from werk24.models.ask import W24AskUnion
-from typing import List
 from types import TracebackType
-from typing import Dict, Optional, Type
+from typing import Dict, Optional, Type, Union, List
 from io import BufferedReader
 import aiohttp
 from pydantic import HttpUrl
-from typing import Union
 from werk24.auth_client import AuthClient
 from werk24.crypt import encrypt_with_public_key
 from werk24.exceptions import (
@@ -144,7 +143,7 @@ class TechreadClientHttps:
     async def upload_associated_file(
         self,
         presigned_post: W24PresignedPost,
-        content: bytes,
+        content: Union[bytes, io.BufferedReader],
         public_server_key: Optional[bytes] = None,
     ) -> None:
         """
@@ -174,7 +173,7 @@ class TechreadClientHttps:
             return
 
         # encrypt the content if we have the public key of the server
-        if public_server_key is not None and len(content) > 0:
+        if public_server_key is not None:
             content = encrypt_with_public_key(public_server_key, content)
 
         # generate the form data by merging the presigned
