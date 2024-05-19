@@ -14,7 +14,7 @@ from io import BufferedReader
 import aiohttp
 from pydantic import HttpUrl
 from werk24.auth_client import AuthClient
-from werk24.crypt import encrypt_with_public_key
+from werk24.crypt import encrypt_with_public_key, decrypt_with_private_key
 from werk24.exceptions import (
     BadRequestException,
     RequestTooLargeException,
@@ -195,7 +195,12 @@ class TechreadClientHttps:
         except aiohttp.ClientConnectorCertificateError as exception:
             raise SSLCertificateError() from exception
 
-    async def download_payload(self, payload_url: HttpUrl) -> bytes:
+    async def download_payload(
+        self,
+        payload_url: HttpUrl,
+        client_private_key_pem: Optional[bytes],
+        client_encryption_passphrase: Optional[bytes] = None,
+    ) -> bytes:
         """Return the payload from the server
 
         Args:
@@ -249,7 +254,7 @@ class TechreadClientHttps:
             async with self._make_session() as session:
                 response = await session.get(str(payload_url))
                 self._raise_for_status(payload_url, response.status)
-                return await response.content.read()
+                raw = response.content.read()
 
         # reraise the exceptions
         except (
@@ -260,6 +265,14 @@ class TechreadClientHttps:
             ResourceNotFoundException,
         ):
             raise
+
+        if client_private_key_pem is not None:
+            return decrypt_with_private_key(
+                client_private_key_pem,
+                client_encryption_passphrase,
+                raw,
+            )
+        return raw
 
     @staticmethod
     def _raise_for_status(url: str, status_code: int) -> None:
