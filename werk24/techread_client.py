@@ -21,7 +21,7 @@ EXAMPLE
 """
 
 import json
-from werk24.crypt_utils import (
+from werk24.crypt import (
     generate_new_key_pair,
     decrypt_with_private_key,
     encrypt_with_public_key,
