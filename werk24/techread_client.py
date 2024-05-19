@@ -20,7 +20,12 @@ EXAMPLE
         ]))
 """
 
-from werk24.crypt_utils import generate_new_key_pair
+import json
+from werk24.crypt_utils import (
+    generate_new_key_pair,
+    decrypt_with_private_key,
+    encrypt_with_public_key,
+)
 import logging
 from io import BufferedReader
 import os
@@ -291,6 +296,36 @@ class W24TechreadClient:
         """
         return generate_new_key_pair(passphrase=passphrase)
 
+    def encrypt_with_public_key(self, public_key_pem: bytes, data: bytes) -> bytes:
+        """
+        Encrypt the data with the given public key.
+
+        Args:
+        ----
+        public_key_pem (bytes): The public key to use for encryption.
+        data (bytes): The data to encrypt.
+
+        Returns:
+        -------
+        bytes: The encrypted data.
+        """
+        return encrypt_with_public_key(public_key_pem, data)
+
+    def decrypt_with_private_key(self, private_key_pem: bytes, data: bytes) -> bytes:
+        """
+        Decrypt the data with the given private key.
+
+        Args:
+        ----
+        private_key_pem (bytes): The private key to use for decryption.
+        data (bytes): The data to decrypt.
+
+        Returns:
+        -------
+        bytes: The decrypted data.
+        """
+        return decrypt_with_private_key(private_key_pem, data)
+
     async def read_drawing(
         self,
         drawing: Union[BufferedReader, bytes],
@@ -299,7 +334,7 @@ class W24TechreadClient:
         max_pages: int = 1,
         drawing_filename: Optional[str] = None,
         sub_account: Optional[UUID4] = None,
-        public_key: Optional[bytes] = None,
+        public_key_pem: Optional[bytes] = None,
     ) -> AsyncIterator[W24TechreadMessage]:
         """
         Send a Technical Drawing to the W24 API to read it.
@@ -375,7 +410,9 @@ class W24TechreadClient:
             return
 
         # Start reading the file
-        async for message in self.read_request(init_response, asks, drawing, model):
+        async for message in self.read_request(
+            init_response, asks, drawing, model, public_key_pem
+        ):
             yield message
 
     async def read_request(
@@ -384,6 +421,7 @@ class W24TechreadClient:
         asks: List[W24Ask],
         drawing: Union[bytes, BufferedReader],
         model: Optional[bytes] = None,
+        client_public_key_pem: Optional[bytes] = None,
     ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
         Read the request after obtaining the init_response.
@@ -400,15 +438,17 @@ class W24TechreadClient:
         drawing (bytes): Drawing bytes that shall be uploaded
         model (Optional[bytes], optional): Optional model bytes.
             Defaults to None.
+        client_public_key_pem (Optional[bytes], optional): Public
+            key that the server shall use to encrypt the callback
+            request. Defaults to None.
 
         Yields:
         ------
         W24TechreadMessage: Messages that are received after the
             request was submitted
         """
-        print(init_response)
         # If the server wants us to encrypt the file, we will do so
-        public_server_key = init_response.public_key
+        server_public_key = init_response.public_key.encode("utf-8")
 
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
@@ -417,7 +457,7 @@ class W24TechreadClient:
             await self._techread_client_https.upload_associated_file(
                 init_response.drawing_presigned_post,
                 drawing,
-                public_server_key=public_server_key,
+                public_server_key=server_public_key,
             )
 
         # explicitly reraise the exception if the payload is too large
@@ -437,7 +477,7 @@ class W24TechreadClient:
         # find a way of handing over the tcp connection :)
         # PS: The AWS API Gateway for websockets might help you
         # here.
-        async for message in self._send_command_read():
+        async for message in self._send_command_read(client_public_key_pem):
             yield message
 
     async def init_request(
@@ -496,7 +536,10 @@ class W24TechreadClient:
 
         return message, response
 
-    async def _send_command_read(self) -> AsyncGenerator[W24TechreadMessage, None]:
+    async def _send_command_read(
+        self,
+        client_public_key_pem: Optional[bytes] = None,
+    ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
         Send the request request to the backend
         and yield the resulting messages.
@@ -505,9 +548,15 @@ class W24TechreadClient:
         ------
         W24TechreadMessage: Receiving messages
         """
+        if client_public_key_pem is not None:
+            message = {"public_key": client_public_key_pem.decode("utf-8")}
+        else:
+            message = {}
 
         # submit the request the to the API
-        await self._techread_client_wss.send_command(W24TechreadAction.READ.value, "{}")
+        await self._techread_client_wss.send_command(
+            W24TechreadAction.READ.value, json.dumps(message)
+        )
         logger.info("Techread request submitted")
 
         # Wait for incoming messages from the server.
