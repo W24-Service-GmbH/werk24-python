@@ -1,20 +1,20 @@
 """ HTTPS-part of the Werk24 client
 """
 
+import io
 import uuid
 from werk24.exceptions import SSLCertificateError
 import json
 import urllib.parse
 from pydantic import UUID4
 from werk24.models.ask import W24AskUnion
-from typing import List
 from types import TracebackType
-from typing import Dict, Optional, Type
+from typing import Dict, Optional, Type, Union, List
 from io import BufferedReader
 import aiohttp
 from pydantic import HttpUrl
-from typing import Union
 from werk24.auth_client import AuthClient
+from werk24.crypt import encrypt_with_public_key, decrypt_with_private_key
 from werk24.exceptions import (
     BadRequestException,
     RequestTooLargeException,
@@ -48,19 +48,27 @@ class TechreadClientHttps:
     to the W24TechreadArchitectureStatus enum
     """
 
-    def __init__(self, techread_version: str, support_base_url: str):
+    def __init__(
+        self,
+        techread_version: str,
+        support_base_url: str,
+        local_public_key: Optional[bytes] = None,
+    ):
         """
         Initialize a new session with the https server.
 
-        Arguments:
-            techread_server_https {str} -- Domain of the Techread https server
-            techread_version {str} -- Techread Version
-            support_base_url {str} -- Base URL for support requests
+        Args:
+        ----
+        techread_server_https {str} -- Domain of the Techread https server
+        techread_version {str} -- Techread Version
+        support_base_url {str} -- Base URL for support requests
+        local_public_key {Optional[bytes]} -- Local public key that allows the
+            server to encrypt the result of the techread request.
         """
-
         self._techread_version = techread_version
         self._auth_client: Optional[AuthClient] = None
         self.support_base_url = support_base_url
+        self.local_public_key = local_public_key
 
     def _make_session(self, timeout_seconds=30) -> aiohttp.TCPConnector:
         """Make the connector for the session.
@@ -135,7 +143,8 @@ class TechreadClientHttps:
     async def upload_associated_file(
         self,
         presigned_post: W24PresignedPost,
-        content: Optional[Union[bytes, BufferedReader]],
+        content: Union[bytes, io.BufferedReader],
+        public_server_key: Optional[bytes] = None,
     ) -> None:
         """
         Uploads an associated file to the API.
@@ -148,6 +157,7 @@ class TechreadClientHttps:
         presigned_post (W24PresignedPost): Presigned post object for
             file upload.
         content (Optional[bytes]): Content of the file as bytes.
+        public_server_key (Optional[bytes], optional): Public key of the server.
 
         Raises:
         -------
@@ -161,6 +171,10 @@ class TechreadClientHttps:
         # ignore if payload is empty
         if content is None:
             return
+
+        # encrypt the content if we have the public key of the server
+        if public_server_key is not None:
+            content = encrypt_with_public_key(public_server_key, content)
 
         # generate the form data by merging the presigned
         # fields with the file
@@ -181,7 +195,12 @@ class TechreadClientHttps:
         except aiohttp.ClientConnectorCertificateError as exception:
             raise SSLCertificateError() from exception
 
-    async def download_payload(self, payload_url: HttpUrl) -> bytes:
+    async def download_payload(
+        self,
+        payload_url: HttpUrl,
+        client_private_key_pem: Optional[bytes],
+        client_encryption_passphrase: Optional[bytes] = None,
+    ) -> bytes:
         """Return the payload from the server
 
         Args:
@@ -235,7 +254,7 @@ class TechreadClientHttps:
             async with self._make_session() as session:
                 response = await session.get(str(payload_url))
                 self._raise_for_status(payload_url, response.status)
-                return await response.content.read()
+                raw = await response.content.read()
 
         # reraise the exceptions
         except (
@@ -246,6 +265,14 @@ class TechreadClientHttps:
             ResourceNotFoundException,
         ):
             raise
+
+        if client_private_key_pem is not None:
+            return decrypt_with_private_key(
+                client_private_key_pem,
+                client_encryption_passphrase,
+                raw,
+            )
+        return raw
 
     @staticmethod
     def _raise_for_status(url: str, status_code: int) -> None:
@@ -373,6 +400,7 @@ class TechreadClientHttps:
         max_pages: int = 5,
         drawing_filename: Optional[str] = None,
         callback_headers: Optional[Dict[str, str]] = None,
+        public_key: Optional[bytes] = None,
     ) -> UUID4:
         """
         Read a drawing with a callback.
@@ -388,6 +416,7 @@ class TechreadClientHttps:
             Defaults to None.
         callback_headers (Optional[Dict[str, str]], optional): Headers for the
             callback. Defaults to None.
+        public_key (Optional[bytes], optional): Public key for the client.
 
         Raises:
         ------
@@ -432,6 +461,7 @@ class TechreadClientHttps:
             max_pages=max_pages,
             client_version=__version__,
             drawing_filename=drawing_filename,
+            public_key=public_key,
         )
 
         # create the form data

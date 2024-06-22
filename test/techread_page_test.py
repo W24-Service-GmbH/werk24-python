@@ -42,6 +42,7 @@ class TestPage(TestBase):
             message_second = await request.__anext__()
             self.assertEqual(message_second.message_type, W24TechreadMessageType.ASK)
             self.assertEqual(message_second.message_subtype, W24AskType.PAGE_THUMBNAIL)
+            print(message_second)
             self.assertGreater(len(message_second.payload_bytes), 0)
 
             # check whether we close the iteration correctly
