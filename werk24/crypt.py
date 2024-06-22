@@ -56,7 +56,7 @@ def generate_new_key_pair(
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
 
-    return private_key_pem, public_key_pem
+    return public_key_pem, private_key_pem
 
 
 def encrypt_with_public_key(
@@ -142,7 +142,6 @@ def decrypt_with_private_key(
     bytes
         The decrypted data.
     """
-
     if isinstance(private_key_pem, str):
         private_key_pem = private_key_pem.encode("utf-8")
 

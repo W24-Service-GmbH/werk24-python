@@ -23,7 +23,7 @@ class TestCrypt(AsyncTestCase):
         User Story: As API user, I want to generate a new key pair,
         so that I can encrypt and decrypt data.
         """
-        private_key, public_key = W24TechreadClient.generate_encryption_keys(
+        public_key, private_key = W24TechreadClient.generate_encryption_keys(
             b"passphrase"
         )
         self.assertIsNotNone(private_key)
@@ -35,7 +35,7 @@ class TestCrypt(AsyncTestCase):
         User Story: As API user, I want to encrypt and decrypt data,
         so that I can securely transmit data.
         """
-        private_key_pem, public_key_pem = W24TechreadClient.generate_encryption_keys(
+        public_key_pem, private_key_pem = W24TechreadClient.generate_encryption_keys(
             b"passphrase"
         )
         data = b"Hello, World!"

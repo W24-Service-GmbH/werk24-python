@@ -339,8 +339,9 @@ class W24TechreadClient:
         max_pages: int = 1,
         drawing_filename: Optional[str] = None,
         sub_account: Optional[UUID4] = None,
-        private_key_pem: Optional[bytes] = None,
-        public_key_pem: Optional[bytes] = None,
+        client_public_key_pem: Optional[bytes] = None,
+        client_private_key_pem: Optional[bytes] = None,
+        client_private_key_passphrase: Optional[bytes] = None,
     ) -> AsyncIterator[W24TechreadMessage]:
         """
         Send a Technical Drawing to the W24 API to read it.
@@ -374,6 +375,21 @@ class W24TechreadClient:
             that the request should be attributed to. Sub-accounts allow
             you to manage several customers at the same time and receiving
             separate positions on the monthly invoice.
+
+        client_public_key_pem (bytes|None): Public key that the server shall
+            use to encrypt the callback request. This is only necessary if
+            you want to receive the callback in an encrypted form. The
+            availability of this feature may depend on your service level.
+
+        client_private_key_pem (bytes|None): Private key that the server shall
+            use to encrypt the callback request. This is only necessary if
+            you want to receive the callback in an encrypted form. The
+            availability of this feature may depend on your service level.
+
+        client_private_key_passphrase (bytes|None): Passphrase to decrypt the
+            private key. This is only necessary if you want to receive the
+            callback in an encrypted form. The availability of this feature
+            may depend on your service level.
 
         Yields:
         ------
@@ -421,8 +437,9 @@ class W24TechreadClient:
             asks,
             drawing,
             model,
-            private_key_pem,
-            public_key_pem,
+            client_public_key_pem,
+            client_private_key_pem,
+            client_private_key_passphrase,
         ):
             yield message
 
@@ -432,9 +449,9 @@ class W24TechreadClient:
         asks: List[W24Ask],
         drawing: Union[bytes, BufferedReader],
         model: Optional[bytes] = None,
-        client_private_key_pem: Optional[bytes] = None,
         client_public_key_pem: Optional[bytes] = None,
-        client_encryption_passphrase: Optional[bytes] = None,
+        client_private_key_pem: Optional[bytes] = None,
+        client_private_key_passphrase: Optional[bytes] = None,
     ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
         Read the request after obtaining the init_response.
@@ -496,9 +513,9 @@ class W24TechreadClient:
         # PS: The AWS API Gateway for websockets might help you
         # here.
         async for message in self._send_command_read(
-            client_private_key_pem,
             client_public_key_pem,
-            client_encryption_passphrase,
+            client_private_key_pem,
+            client_private_key_passphrase,
         ):
             yield message
 
@@ -560,9 +577,9 @@ class W24TechreadClient:
 
     async def _send_command_read(
         self,
-        client_private_key_pem: Optional[bytes] = None,
         client_public_key_pem: Optional[bytes] = None,
-        client_encryption_passphrase: Optional[bytes] = None,
+        client_private_key_pem: Optional[bytes] = None,
+        client_private_key_passphrase: Optional[bytes] = None,
     ) -> AsyncGenerator[W24TechreadMessage, None]:
         """
         Send the request request to the backend
@@ -595,7 +612,7 @@ class W24TechreadClient:
                     await self._techread_client_https.download_payload(
                         message.payload_url,
                         client_private_key_pem,
-                        client_encryption_passphrase,
+                        client_private_key_passphrase,
                     )
                 )
 
@@ -882,6 +899,9 @@ class W24TechreadClient:
         max_pages: int = 5,
         drawing_filename: Optional[str] = None,
         sub_account: Optional[UUID4] = None,
+        client_public_key_pem: Optional[bytes] = None,
+        client_private_key_pem: Optional[bytes] = None,
+        client_private_key_passphrase: Optional[bytes] = None,
     ) -> None:
         """
         Send the drawing to the API (can be PDF or image)
@@ -912,6 +932,9 @@ class W24TechreadClient:
                 max_pages=max_pages,
                 drawing_filename=drawing_filename,
                 sub_account=sub_account,
+                client_public_key_pem=client_public_key_pem,
+                client_private_key_pem=client_private_key_pem,
+                client_private_key_passphrase=client_private_key_passphrase,
             ):
                 await self.call_hooks_for_message(message, hooks)
 

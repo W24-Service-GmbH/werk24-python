@@ -304,8 +304,21 @@ async def main(args: argparse.Namespace) -> None:
         if drawing is None:
             return
 
+        # make a key pair
+        passphrase = b"my_passphrase"
+        public_key_pem, private_key_pem = client.generate_encryption_keys(
+            passphrase=passphrase
+        )
+
         async with client as session:
-            await session.read_drawing_with_hooks(drawing, hooks, sub_account=None)
+            await session.read_drawing_with_hooks(
+                drawing,
+                hooks,
+                sub_account=None,
+                client_public_key_pem=public_key_pem,
+                client_private_key_pem=private_key_pem,
+                client_private_key_passphrase=passphrase,
+            )
             drawing.close()
 
     except TechreadException as exception:

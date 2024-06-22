@@ -136,7 +136,7 @@ class TestTechreadClient(AsyncTestCase):
         asks: List[W24Ask] = [W24AskPageThumbnail()]
         drawing_bytes = b""
         passphrase = os.urandom(32)
-        _, public_key = client.generate_encryption_keys(passphrase)
+        public_key, _ = client.generate_encryption_keys(passphrase)
 
         await client.read_drawing_with_callback(
             drawing_bytes,
