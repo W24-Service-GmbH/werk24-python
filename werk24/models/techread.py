@@ -339,6 +339,8 @@ class W24TechreadInitResponse(W24TechreadBaseResponse):
 
     model_presigned_post: W24PresignedPost
 
+    public_key: Optional[str] = None
+
 
 class W24TechreadWithCallbackPayload(BaseModel):
     """Payload that is sent to the API to trigger a read with callback.
@@ -376,7 +378,7 @@ class W24TechreadWithCallbackPayload(BaseModel):
         --------
         Dict[str, str]: The validated callback headers
         """
-        WHITELIST = {"authorization"}       
+        WHITELIST = {"authorization"}
         if v is None:
             return None
 
@@ -384,7 +386,10 @@ class W24TechreadWithCallbackPayload(BaseModel):
         # Check the length of the header name
         for header_name in v.keys():
 
-            if header_name.lower() not in WHITELIST and not header_name.lower().startswith("x-"):
+            if (
+                header_name.lower() not in WHITELIST
+                and not header_name.lower().startswith("x-")
+            ):
                 raise ValueError(
                     f'Header name "{header_name}" does not start with "X-"'
                 )
@@ -423,3 +428,4 @@ class W24TechreadWithCallbackPayload(BaseModel):
     max_pages: int = 5
     drawing_filename: Optional[str] = None
     client_version: str = __version__
+    public_key: Optional[str] = None
