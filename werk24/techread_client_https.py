@@ -199,7 +199,7 @@ class TechreadClientHttps:
         self,
         payload_url: HttpUrl,
         client_private_key_pem: Optional[bytes],
-        client_encryption_passphrase: Optional[bytes] = None,
+        client_private_key_passphrase: Optional[bytes] = None,
     ) -> bytes:
         """Return the payload from the server
 
@@ -269,7 +269,7 @@ class TechreadClientHttps:
         if client_private_key_pem is not None:
             return decrypt_with_private_key(
                 client_private_key_pem,
-                client_encryption_passphrase,
+                client_private_key_passphrase,
                 raw,
             )
         return raw
@@ -317,7 +317,7 @@ class TechreadClientHttps:
                     )
                 return None
 
-        # If the resposne code is anything other than unauthorized or 200 (OK), we trigger a ServerException.
+        # If the response code is anything other than unauthorized or 200 (OK), we trigger a ServerException.
         raise ServerException(f"Request failed '{url}' with code {status_code}")
 
     async def create_helpdesk_task(self, task: W24HelpdeskTask) -> W24HelpdeskTask:
