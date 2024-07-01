@@ -330,6 +330,7 @@ async def main(args: argparse.Namespace) -> None:
 
         print(colored(exception.cli_message_body, "yellow"))
         print(colored("=" * 80, "red"))
+        raise
 
     except BaseException as exception:
         catch_crash(exception)
