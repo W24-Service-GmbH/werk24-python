@@ -89,7 +89,7 @@ even when the files are rejected before they reach the API
 DEFAULT_AUTH_REGION = "eu-central-1"
 
 # Default Endpoints
-DEFAULT_SERVER_WSS = "ws-api.w24-eu-central-1-test.click"
+DEFAULT_SERVER_WSS = "ws-api.w24.co"
 DEFAULT_SERVER_HTTPS = "support.w24.co"
 
 # List of the Locations where we are looking for the license file
