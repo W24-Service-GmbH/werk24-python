@@ -17,7 +17,6 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 from werk24.cli import utils
-from werk24.exceptions import RequestTooLargeException
 from werk24.models.ask import (
     W24AskCanvasThumbnail,
     W24AskPageThumbnail,
@@ -36,12 +35,13 @@ from werk24.models.ask import (
     W24AskVariantThreadElements,
     W24AskVariantProcesses,
 )
-from werk24.exceptions import ServerException
+
 from werk24.models.techread import (
     W24TechreadException,
     W24TechreadMessageSubtypeError,
     W24TechreadMessageSubtypeProgress,
     W24TechreadMessageType,
+    W24TechreadMessage,
 )
 from werk24.techread_client import LICENSE_LOCATIONS, Hook
 
@@ -101,39 +101,35 @@ hook_config = [
         W24AskSectionalThumbnail,
         lambda m: _show_image("Sectional Thumbnail", m.payload_bytes),
     ),
-    # HookConfig(
-    #     'ask_variant_angles',
-    #     W24AskVariantAngles,
-    #     lambda m: _print_payload("Ask Variant Angles", m.payload_dict)),
     HookConfig(
         "ask_variant_external_dimensions",
         W24AskVariantExternalDimensions,
-        lambda m: _print_payload("Ask Variant Ext. Dimensions", m.payload_dict),
+        lambda m: _print_payload("Ask Variant Ext. Dimensions", m),
     ),
     HookConfig(
         "ask_variant_gdts",
         W24AskVariantGDTs,
-        lambda m: _print_payload("Ask Variant GDTs", m.payload_dict),
+        lambda m: _print_payload("Ask Variant GDTs", m),
     ),
     HookConfig(
         "ask_variant_measures",
         W24AskVariantMeasures,
-        lambda m: _print_payload("Ask Variant Measures", m.payload_dict),
+        lambda m: _print_payload("Ask Variant Measures", m),
     ),
     HookConfig(
         "ask_variant_radii",
         W24AskVariantRadii,
-        lambda m: _print_payload("Ask Variant Radii", m.payload_dict),
+        lambda m: _print_payload("Ask Variant Radii", m),
     ),
     HookConfig(
         "ask_variant_roughnesses",
         W24AskVariantRoughnesses,
-        lambda m: _print_payload("Ask Variant Roughnesses", m.payload_dict),
+        lambda m: _print_payload("Ask Variant Roughnesses", m),
     ),
     HookConfig(
         "ask_variant_processes",
         W24AskVariantProcesses,
-        lambda m: _print_payload("Ask Variant Processes", m.payload_dict),
+        lambda m: _print_payload("Ask Variant Processes", m),
     ),
     HookConfig(
         "ask_variant_cad",
@@ -143,12 +139,12 @@ hook_config = [
     HookConfig(
         "ask_titleblock",
         W24AskTitleBlock,
-        lambda m: _print_payload("Ask TitleBlock", m.payload_dict),
+        lambda m: _print_payload("Ask TitleBlock", m),
     ),
     HookConfig(
         "ask_variant_thread_elements",
         W24AskVariantThreadElements,
-        lambda m: _print_payload("Ask Variant Thread Elements", m.payload_dict),
+        lambda m: _print_payload("Ask Variant Thread Elements", m),
     ),
 ]
 
@@ -184,8 +180,12 @@ def _log_exceptions(exceptions: List[W24TechreadException]) -> None:
     exceptions (List[W24TechreadException]): List of
         encountered exceptions. Can be an empty list.
     """
+
     for cur_exception in exceptions:
-        logger.warn(cur_exception)
+        level = str(cur_exception.exception_level.value)
+        exception_type = cur_exception.exception_type.value
+        message = f"{level}: {exception_type}"
+        logger.warn(message)
 
 
 def _store_variant_cad_payload(
@@ -229,7 +229,7 @@ def _get_drawing(file_path: str) -> Optional[io.BufferedReader]:
         return None
 
 
-def _print_payload(log_text: str, payload_dict: Dict[str, Any]) -> None:
+def _print_payload(log_text: str, message: W24TechreadMessage) -> None:
     """Display the payload dictionary in a format that
     is easy for humans to read
 
@@ -239,7 +239,9 @@ def _print_payload(log_text: str, payload_dict: Dict[str, Any]) -> None:
     payload_dict (Dict[str, Any]): Payload dictionary
     """
     print(log_text)
-    payload_json = json.dumps(payload_dict, indent=4)
+    if message.exceptions:
+        _log_exceptions(message.exceptions)
+    payload_json = json.dumps(message.payload_dict, indent=4)
     print(payload_json)
 
 
