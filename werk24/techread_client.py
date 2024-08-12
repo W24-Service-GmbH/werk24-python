@@ -108,16 +108,17 @@ LICENSE_ERROR_TEXT = """
    ####   #####    ########### ####    ####  ####   #####  ###################
 
 --------------------------------------------------------------------------------
-Dear Valued Client, We appreciate your interest in Werk24.
 
-_General Information_
+General Information
+-------------------
 Werk24 is a specialized commercial company dedicated to extracting information
 from technical documents. The python client you are currently using is designed
 to facilitate seamless interaction with our advanced server infrastructure.
 
-_License File_
+License File
+------------
 We were unable to locate a license file, please schedule a first meeting with
-us to learn about the possibilities of our Technology:
+us to learn about the possibilities of our technology:
 
 
         >>> https://werk24.io/schedule-a-call?w24cli_license_error <<<
