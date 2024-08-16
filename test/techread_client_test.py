@@ -49,7 +49,7 @@ class TestTechreadClient(AsyncTestCase):
         User Story: As API user, want to be able to upload an associated
         model file, so that I can support Werk24's training effort
         """
-        asks: List[W24Ask] = [W24AskVariantCAD(is_training=True)]
+        asks: List[W24Ask] = [W24AskPageThumbnail(is_training=True)]
         drawing = get_drawing()
         model = get_model()
 

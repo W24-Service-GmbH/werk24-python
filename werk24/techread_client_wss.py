@@ -3,6 +3,7 @@
 import json
 from types import TracebackType
 from typing import Optional, Type, AsyncGenerator
+from werk24.models.techread import W24TechreadMessageType, W24TechreadMessageSubtypeProgress
 
 import websockets
 from pydantic import ValidationError
@@ -64,37 +65,39 @@ class TechreadClientWss:
         self._auth_client = auth_client
 
     async def send_command(self, action: str, message: str = "{}") -> None:
-        """Send a command to the websocket.
+        """                 
+        Sends a command to the websocket.
 
-        The function wrapps your action and message into
-        a W24TechreadCommand object, translates it to
-        json and sends it to the server.
+        This method wraps the given action and message into a 
+        W24TechreadCommand object, serializes it to JSON, and sends it to the 
+        server via the websocket.
 
-        Be sure to collect the server response from the
-        socket using recv_message()
-
-        Arguments:
-            action {str} -- Action that is requested
-            message {str} -- Auxilliary data that you wnat to send along
-                with the message. To keep it easily expandable, we use
-                a json encoded string.
+        Args:
+        ----
+        action (str): The action requested by the client.
+        message (str, optional): Additional data to send along with the action. 
+            Defaults to "{}". It should be a JSON-encoded string for easy 
+            expansion.
 
         Raises:
-            RuntimeError  -- Raise when the developer tries to send a command
-                without entering the profile
+        ------
+        RuntimeError: Raised if the method is called before initializing the 
+            profile (i.e., if the websocket session is not established).
         """
 
-        # make sure that we have an AuthClient
-        if self._techread_session_wss is None:
+        # Ensure the websocket session is active
+        if not self._techread_session_wss:
             raise RuntimeError(
-                "You need to call enter the profile before sending a command"
+                "Profile entry is required before sending commands. "
+                "Please call the appropriate method to enter the profile."
             )
 
-        # make the command
+        # Create the command object
         command = W24TechreadCommand(action=action, message=message)
 
-        # send the the command
+        # Send the serialized command to the websocket server
         await self._techread_session_wss.send(command.model_dump_json())
+
 
     async def recv_message(self) -> W24TechreadMessage:
         """Receive a message from the websocket and interpret
@@ -174,12 +177,18 @@ class TechreadClientWss:
             RuntimeError  -- Raise when the developer tries to send a command
                 without entering the profile
         """
-
         # make sure that we have an AuthClient
         if self._techread_session_wss is None:
             raise RuntimeError("You need to call enter the profile before listening")
-
+    
         # wait for incoming messages
-        async for message_raw in self._techread_session_wss:
-            # process the message and return them to the caller
-            yield await self._process_message(str(message_raw))
+        stop = False
+        try:
+            while not stop:
+                message_raw = str(await self._techread_session_wss.recv())
+                message = await self._process_message(message_raw)
+                if message.message_type == W24TechreadMessageType.PROGRESS and message.message_subtype == W24TechreadMessageSubtypeProgress.COMPLETED:
+                    stop = True
+                yield message
+        except (websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK) as exception:
+            return
