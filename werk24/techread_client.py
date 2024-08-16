@@ -597,7 +597,8 @@ class W24TechreadClient:
 
         # submit the request the to the API
         await self._techread_client_wss.send_command(
-            W24TechreadAction.READ.value, json.dumps(message)
+            W24TechreadAction.READ.value, 
+            json.dumps(message),
         )
         logger.info("Techread request submitted")
 
