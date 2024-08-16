@@ -1,4 +1,4 @@
-aiohttp>=3.8.3
+aiohttp>=3.10.3
 boto3>=1.14.44
 certifi>=2020.12.5
 colorama>=0.4.4
