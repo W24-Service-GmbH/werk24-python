@@ -265,6 +265,7 @@ class TechreadClientHttps:
             ResourceNotFoundException,
         ):
             raise
+        
 
         if client_private_key_pem is not None:
             return decrypt_with_private_key(
