@@ -1,8 +1,8 @@
-import sys
+from typing import Optional
 from werk24.techread_client import LicenseError, W24TechreadClient
 
 
-def make_client() -> W24TechreadClient:
+def make_client(server:Optional[str] = None) -> W24TechreadClient:
     """
     Make the client.
 
@@ -17,9 +17,12 @@ def make_client() -> W24TechreadClient:
     W24TechreadClient: Client instance
     """
 
-    try:
-        return W24TechreadClient.make_from_env()
+    server_wss = None if server is None else f"ws-api.{server}"
 
+    try:
+        return W24TechreadClient.make_from_env(
+            server_wss=server_wss
+        )
     except LicenseError as exception:
         print(f"LICENSE ERROR: {exception}")
         raise SystemExit from exception

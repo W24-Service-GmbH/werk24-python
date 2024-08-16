@@ -1,6 +1,6 @@
 """ Command Line Interface for W24 Techread
 """
-
+import os, tempfile
 import traceback
 from datetime import datetime
 import argparse
@@ -15,7 +15,8 @@ from collections import namedtuple
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-
+import random
+import string
 from werk24.cli import utils
 from werk24.models.ask import (
     W24AskCanvasThumbnail,
@@ -48,6 +49,19 @@ from werk24.techread_client import LICENSE_LOCATIONS, Hook
 # fix the windows console color issue
 just_fix_windows_console()
 
+def random_string(length: int) -> str:
+    """Generate a random string of a given length
+
+    Args:
+    ----
+    length (int): Length of the random string
+
+    Returns:
+    -------
+    str: Random string of the given length
+    """
+    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+
 # load the environment variables
 for c_location in LICENSE_LOCATIONS:
     if os.path.exists(c_location):
@@ -66,11 +80,26 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)  # pylint:disable = invalid-name
 
 
-def _open_in_webbrowser(url: str) -> None:
-    """Open a URL in the Webbrowser"""
-    import webbrowser
+def _save_and_open_debug(payload_bytes) -> None:
+    """
+    Save the debug payload to a temporary file and open it
+    with the default application for the file type
 
-    webbrowser.open(str(url), new=2)
+    This function is required because we need to support
+    E2E encryption. So opening the file directly is not
+    possible.
+    
+    Args:
+    ----
+    payload_bytes (bytes): The payload
+    """
+    tmp = tempfile.NamedTemporaryFile(delete=True)
+    try:
+        tmp.write(payload_bytes)
+    finally:
+        tmp.close()
+    os.system(f"open {tmp.name}")
+
 
 
 # make the configuration of what hooks we want to handle and how
@@ -299,7 +328,7 @@ async def main(args: argparse.Namespace) -> None:
 
         # get the client instance and handle
         # potential errors
-        client = utils.make_client()
+        client = utils.make_client(args.server)
 
         # get the drawing
         drawing = _get_drawing(args.input_file)
@@ -307,7 +336,7 @@ async def main(args: argparse.Namespace) -> None:
             return
 
         # make a key pair
-        passphrase = b"my_passphrase"
+        passphrase = random_string(16)
         public_key_pem, private_key_pem = client.generate_encryption_keys(
             passphrase=passphrase
         )
@@ -440,7 +469,7 @@ def _make_hooks_from_args(args: argparse.Namespace) -> List[Hook]:
     if args.debug_key is not None:
         c_hook = Hook(
             ask=W24AskDebug(debug_key=args.debug_key),
-            function=lambda m: _open_in_webbrowser(m.payload_url),
+            function=lambda m: _save_and_open_debug(m.payload_bytes),
         )
         hooks.append(c_hook)
 

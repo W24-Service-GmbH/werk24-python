@@ -54,6 +54,12 @@ def _add_techread_parser(subparsers):
     parser_techread = subparsers.add_parser(
         "techread", help="Submit a Technical Drawing to Werk24 for analysis"
     )
+    parser_techread.add_argument(
+        "--server",
+        action="store",
+        dest="server",
+        default=None,
+    )
 
     parser_techread.add_argument(
         "input_file", help="path to the file that is to be analyzed"
