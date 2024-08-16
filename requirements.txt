@@ -6,6 +6,6 @@ cryptography>=42.0.7
 pint>=0.21
 pydantic-extra-types>=2.1.0
 pydantic>=2.5.1
-python-dotenv>=0.10.1,<1.0
+python-dotenv>=1.0.1
 termcolor>=2.0.0
 websockets>=10.3
