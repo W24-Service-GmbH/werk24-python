@@ -1,6 +1,8 @@
 """ Command Line Interface for W24 Techread
 """
 import os, tempfile
+import subprocess
+import platform
 import traceback
 from datetime import datetime
 import argparse
@@ -93,12 +95,29 @@ def _save_and_open_debug(payload_bytes) -> None:
     ----
     payload_bytes (bytes): The payload
     """
-    tmp = tempfile.NamedTemporaryFile(delete=True)
-    try:
+    # Create a temporary file that will be deleted after the block exits
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
         tmp.write(payload_bytes)
-    finally:
-        tmp.close()
-    os.system(f"open {tmp.name}")
+        tmp.flush()  # Ensure all data is written to disk
+        tmp_name = tmp.name
+
+    # Determine the command based on the operating system
+    system_name = platform.system()
+    if system_name == "Windows":
+        os.startfile(tmp_name)
+    elif system_name == "Darwin":  # macOS
+        subprocess.run(["open", tmp_name], check=True)
+    elif system_name == "Linux":
+        subprocess.run(["xdg-open", tmp_name], check=True)
+    else:
+        raise OSError(f"Unsupported OS: {system_name}")
+
+    # Ensure the temporary file is deleted
+    if os.path.exists(tmp_name):
+        try:
+            os.remove(tmp_name)
+        except Exception as cleanup_error:
+            print(f"Failed to delete temporary file: {cleanup_error}")
 
 
 
