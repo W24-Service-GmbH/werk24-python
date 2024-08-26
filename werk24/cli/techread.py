@@ -1,6 +1,8 @@
 """ Command Line Interface for W24 Techread
 """
 import os, tempfile
+import subprocess
+import platform
 import traceback
 from datetime import datetime
 import argparse
@@ -80,7 +82,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)  # pylint:disable = invalid-name
 
 
-def _save_and_open_debug(payload_bytes) -> None:
+def _save_and_open_debug(payload_bytes:bytes, extension:str) -> None:
     """
     Save the debug payload to a temporary file and open it
     with the default application for the file type
@@ -93,12 +95,30 @@ def _save_and_open_debug(payload_bytes) -> None:
     ----
     payload_bytes (bytes): The payload
     """
-    tmp = tempfile.NamedTemporaryFile(delete=True)
-    try:
+    # Create a temporary file that will be deleted after the block exits
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{extension}") as tmp:
         tmp.write(payload_bytes)
-    finally:
-        tmp.close()
-    os.system(f"open {tmp.name}")
+        tmp.flush()  # Ensure all data is written to disk
+        tmp_name = tmp.name
+
+    # Determine the command based on the operating system
+    system_name = platform.system()
+    if system_name == "Windows":
+        os.startfile(tmp_name)
+    elif system_name == "Darwin":  # macOS
+        subprocess.run(["open", tmp_name], check=True)
+    elif system_name == "Linux":
+        subprocess.run(["xdg-open", tmp_name], check=True)
+    else:
+        raise OSError(f"Unsupported OS: {system_name}")
+    input("Press Enter to delete temporary file...")
+
+    # Ensure the temporary file is deleted
+    if os.path.exists(tmp_name):
+        try:
+            os.remove(tmp_name)
+        except Exception as cleanup_error:
+            print(f"Failed to delete temporary file: {cleanup_error}")
 
 
 
@@ -469,7 +489,7 @@ def _make_hooks_from_args(args: argparse.Namespace) -> List[Hook]:
     if args.debug_key is not None:
         c_hook = Hook(
             ask=W24AskDebug(debug_key=args.debug_key),
-            function=lambda m: _save_and_open_debug(m.payload_bytes),
+            function=lambda m: _save_and_open_debug(m.payload_bytes, "zip"),
         )
         hooks.append(c_hook)
 
