@@ -82,7 +82,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)  # pylint:disable = invalid-name
 
 
-def _save_and_open_debug(payload_bytes) -> None:
+def _save_and_open_debug(payload_bytes:bytes, extension:str) -> None:
     """
     Save the debug payload to a temporary file and open it
     with the default application for the file type
@@ -96,7 +96,7 @@ def _save_and_open_debug(payload_bytes) -> None:
     payload_bytes (bytes): The payload
     """
     # Create a temporary file that will be deleted after the block exits
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(delete=False, delete_on_close=False, suffix=f".{extension}") as tmp:
         tmp.write(payload_bytes)
         tmp.flush()  # Ensure all data is written to disk
         tmp_name = tmp.name
@@ -488,7 +488,7 @@ def _make_hooks_from_args(args: argparse.Namespace) -> List[Hook]:
     if args.debug_key is not None:
         c_hook = Hook(
             ask=W24AskDebug(debug_key=args.debug_key),
-            function=lambda m: _save_and_open_debug(m.payload_bytes),
+            function=lambda m: _save_and_open_debug(m.payload_bytes, "zip"),
         )
         hooks.append(c_hook)
 
