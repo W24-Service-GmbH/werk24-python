@@ -111,6 +111,7 @@ def _save_and_open_debug(payload_bytes:bytes, extension:str) -> None:
             subprocess.run(["xdg-open", tmp_name], check=True)
         else:
             raise OSError(f"Unsupported OS: {system_name}")
+        input("Press Enter to delete temporary file...")
 
     # Ensure the temporary file is deleted
     if os.path.exists(tmp_name):
