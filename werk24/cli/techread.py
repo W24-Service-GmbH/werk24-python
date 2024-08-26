@@ -101,17 +101,17 @@ def _save_and_open_debug(payload_bytes:bytes, extension:str) -> None:
         tmp.flush()  # Ensure all data is written to disk
         tmp_name = tmp.name
 
-        # Determine the command based on the operating system
-        system_name = platform.system()
-        if system_name == "Windows":
-            os.startfile(tmp_name)
-        elif system_name == "Darwin":  # macOS
-            subprocess.run(["open", tmp_name], check=True)
-        elif system_name == "Linux":
-            subprocess.run(["xdg-open", tmp_name], check=True)
-        else:
-            raise OSError(f"Unsupported OS: {system_name}")
-        input("Press Enter to delete temporary file...")
+    # Determine the command based on the operating system
+    system_name = platform.system()
+    if system_name == "Windows":
+        os.startfile(tmp_name)
+    elif system_name == "Darwin":  # macOS
+        subprocess.run(["open", tmp_name], check=True)
+    elif system_name == "Linux":
+        subprocess.run(["xdg-open", tmp_name], check=True)
+    else:
+        raise OSError(f"Unsupported OS: {system_name}")
+    input("Press Enter to delete temporary file...")
 
     # Ensure the temporary file is deleted
     if os.path.exists(tmp_name):
