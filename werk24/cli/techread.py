@@ -96,7 +96,7 @@ def _save_and_open_debug(payload_bytes:bytes, extension:str) -> None:
     payload_bytes (bytes): The payload
     """
     # Create a temporary file that will be deleted after the block exits
-    with tempfile.NamedTemporaryFile(delete=False, delete_on_close=False, suffix=f".{extension}") as tmp:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{extension}") as tmp:
         tmp.write(payload_bytes)
         tmp.flush()  # Ensure all data is written to disk
         tmp_name = tmp.name
