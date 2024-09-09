@@ -55,6 +55,7 @@ from werk24.exceptions import (
     RequestTooLargeException,
     ServerException,
     UnsupportedMediaType,
+    InsufficientCreditsException
 )
 from werk24.models.ask import W24Ask
 from werk24.models.helpdesk import W24HelpdeskTask
@@ -835,46 +836,37 @@ class W24TechreadClient:
         callback_headers: Optional[Dict[str, str]] = None,
         public_key: Optional[bytes] = None,
     ) -> UUID4:
-        """Read the Drawings and register a callback URL.
+        """
+        Read the Drawings and register a callback URL.
 
-        This method is useful if you want to separate the
-        initialization from the upload and read stages.
+        This method is useful if you want to separate the initialization from the 
+        upload and read stages.
 
-        You can simply specify the callback URL that shall
-        receive the message responses. This function will
-        return after sending the request to the API. The
-        callback URL will be called asynchronously. Keep
-        in mind that the callback speed depends on your
+        You can simply specify the callback URL that shall receive the message responses. 
+        This function will return after sending the request to the API. The callback URL 
+        will be called asynchronously. Keep in mind that the callback speed depends on your
         service level.
 
         Args:
         ----
-        drawing (Union[BufferedReader, bytes]):
-            Drawing that you want to process
-
-        asks (List[W24Ask]):
-            List of all the information that you want to obtain
-
-        callback_url (str):
-            URL that shall receive the callback requests
-
-        max_pages (int, optional):
-            Maximum number of pages that shall be processed.
+        - drawing (Union[BufferedReader, bytes]): Drawing that you want to process
+        - asks (List[W24Ask]): List of all the information that you want to obtain
+        - callback_url (str): URL that shall receive the callback requests
+        - max_pages (int, optional): Maximum number of pages that shall be processed.
             Defaults to 5.
-
-        drawing_filename (Optional[str], optional):
-            Filename of the drawing. Defaults to None.
-
-        callback_headers (Optional[Dict[str, str]], optional):
+        - drawing_filename (Optional[str], optional): Filename of the drawing. 
+            Defaults to None.
+        - callback_headers (Optional[Dict[str, str]], optional):
             Headers that shall be sent with the callback request. Defaults to None.
-
-        public_key (Optional[bytes], optional):
-            Public key that the server shall use to encrypt the callback request. Defaults to None.
-            Note: availability of this feature may depend on your service level.
+        - public_key (Optional[bytes], optional): Public key that the server shall 
+            use to encrypt the callback request. Defaults to None. Note: availability 
+            of this feature may depend on your service level.
 
         Raises:
         ------
-        ServerException: Raised when the server returns an ERROR message
+        - ServerException: Raised when the server returns an ERROR message
+        - InsufficentCreditsException: Raised when the user does not have enough credits 
+            to perform the request
 
         Returns:
         -------
@@ -892,6 +884,8 @@ class W24TechreadClient:
                 public_key=public_key,
             )
         except ServerException:
+            raise
+        except InsufficientCreditsException:
             raise
 
     async def read_drawing_with_hooks(

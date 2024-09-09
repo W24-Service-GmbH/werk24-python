@@ -22,6 +22,7 @@ from werk24.exceptions import (
     ServerException,
     UnauthorizedException,
     UnsupportedMediaType,
+    InsufficientCreditsException,
 )
 import ssl
 import certifi
@@ -37,6 +38,7 @@ EXCEPTION_CLASSES = {
     range(404, 405): ResourceNotFoundException,
     range(413, 414): RequestTooLargeException,
     range(415, 416): UnsupportedMediaType,
+    range(429, 430): InsufficientCreditsException,
     range(300, 400): ServerException,
     range(500, 600): ServerException,
     range(416, 500): ServerException,
@@ -277,7 +279,8 @@ class TechreadClientHttps:
 
     @staticmethod
     def _raise_for_status(url: str, status_code: int) -> None:
-        """Raise the correct exception depending on the status code.
+        """
+        Raise the correct exception depending on the status code.
 
         Args:
         ----
@@ -286,29 +289,18 @@ class TechreadClientHttps:
 
         Raises:
         ------
-        BadRequestException: Raised when the request body
-            cannot be interpreted. This normally indicates
-            that the API version has been updated and that
-            we missed a corner case. If you encounter this
-            exception, it is very likely our mistake. Please
-            get in touch!
-
-        UnauthorizedException: Raised when the token
-            or the requested file have expired
-
-        ResourceNotFoundException: Raised when you are requesting
-            an endpoint that does not exist. Again, you should
-            not encounter this, but if you do, let us know.
-
-        RequestTooLargeException: Raised when the status
-            code was 413
-
-        UnsupportedMediaTypException: Raised when the file you
-            submitted cannot be read(because its media type
-            is not supported by the API).
-
-        ServerException: Raised for all other status codes
-            that are not 2xx
+        - BadRequestException: Raised when the request body cannot be interpreted. 
+            This normally indicates that the API version has been updated and that
+            we missed a corner case. If you encounter this exception, it is very 
+            likely our mistake. Please get in touch!
+        - UnauthorizedException: Raised when the token or the requested file have expired
+        - ResourceNotFoundException: Raised when you are requesting an endpoint that does 
+            not exist. Again, you should not encounter this, but if you do, let us know.
+        - RequestTooLargeException: Raised when the status code was 413
+        - UnsupportedMediaTypException: Raised when the file you submitted cannot be read
+            (because its media type is not supported by the API).
+        - ServerException: Raised for all other status codes that are not 2xx
+        - InsufficentCreditsException: Raised when the user does not have enough credits
         """
         for key, exception_class in EXCEPTION_CLASSES.items():
             if status_code in key:
@@ -408,42 +400,33 @@ class TechreadClientHttps:
 
         Args:
         ----
-        drawing (Union[BufferedReader, bytes]): Drawing to be read
-        asks (List[W24Ask]): List of asks
-        callback_url (str): Callback URL
-        max_pages (int, optional): Maximum number of pages to be read.
+        - drawing (Union[BufferedReader, bytes]): Drawing to be read
+        - asks (List[W24Ask]): List of asks
+        - callback_url (str): Callback URL
+        - max_pages (int, optional): Maximum number of pages to be read.
             Defaults to 5.
-        drawing_filename (Optional[str], optional): Filename of the drawing.
+        - drawing_filename (Optional[str], optional): Filename of the drawing.
             Defaults to None.
-        callback_headers (Optional[Dict[str, str]], optional): Headers for the
+        - callback_headers (Optional[Dict[str, str]], optional): Headers for the
             callback. Defaults to None.
-        public_key (Optional[bytes], optional): Public key for the client.
+        - public_key (Optional[bytes], optional): Public key for the client.
 
         Raises:
         ------
-        BadRequestException: Raised when the request body
-            cannot be interpreted. This normally indicates
-            that the API version has been updated and that
-            we missed a corner case. If you encounter this
-            exception, it is very likely our mistake. Please
-            get in touch!
-
-        UnauthorizedException: Raised when the token
-            or the requested file have expired
-
-        ResourceNotFoundException: Raised when you are requesting
-            an endpoint that does not exist. Again, you should
-            not encounter this, but if you do, let us know.
-
-        RequestTooLargeException: Raised when the status
-            code was 413
-
-        UnsupportedMediaTypException: Raised when the file you
-            submitted cannot be read(because its media type
-            is not supported by the API).
-
-        ServerException: Raised for all other status codes
-            that are not 2xx
+        - BadRequestException: Raised when the request body cannot be interpreted. 
+            This normally indicates that the API version has been updated and that
+            we missed a corner case. If you encounter this exception, it is very 
+            likely our mistake. Please get in touch!
+        - UnauthorizedException: Raised when the token or the requested file have 
+            expired
+        - ResourceNotFoundException: Raised when you are requesting an endpoint that 
+            does not exist. Again, you should not encounter this, but if you do, let us know.
+        - RequestTooLargeException: Raised when the status code was 413
+        - UnsupportedMediaTypException: Raised when the file you submitted cannot be read
+            (because its media type is not supported by the API).
+        - ServerException: Raised for all other status codes that are not 2xx
+        - InsufficentCreditsException: Raised when the user does not have enough credits
+            to perform the operation.
 
         Returns:
         -------
@@ -483,3 +466,4 @@ class TechreadClientHttps:
             return uuid.UUID(response_json["request_id"])
         except (ValueError, KeyError):
             raise BadRequestException(f"Request failed: {response_json}")
+
