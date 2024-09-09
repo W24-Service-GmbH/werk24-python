@@ -40,15 +40,25 @@ class ServerException(TechreadException):
     """Exception that is raised, when the server responded in an unexpected
     way.
     """
-
     cli_message_header: str = "Server Error"
     cli_message_body: str = """A Server Error occurred while processing your request.
 
 This indicates a problem with the server. The Werk24 service team has been notified and
 will investigate the issue. Please try again later. If the problem persists, please
 contact us at info@werk24.io.
+"""
+
+class InsufficientCreditsException(ServerException):
+    """Raised when the user has insufficient credits to perform the requested action
+
+    NOTE: It inherits from ServerException to backwards compatibility.
     """
 
+    cli_message_header: str = "Insufficient Credits"
+    cli_message_body: str = """You do not have enough credits to perform the requested action.
+
+Please check your account balance and top up your account if necessary.
+"""
 
 class BadRequestException(TechreadException):
     """Raised when the request body cannot be interpreted by the server.
