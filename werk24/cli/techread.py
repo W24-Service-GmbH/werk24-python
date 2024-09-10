@@ -52,15 +52,16 @@ from werk24.techread_client import LICENSE_LOCATIONS, Hook
 just_fix_windows_console()
 
 def random_string(length: int) -> str:
-    """Generate a random string of a given length
+    """
+    Generate a random string of a given length
 
     Args:
     ----
-    length (int): Length of the random string
+    - length (int): Length of the random string
 
     Returns:
     -------
-    str: Random string of the given length
+    - str: Random string of the given length
     """
     return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
