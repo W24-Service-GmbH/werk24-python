@@ -24,6 +24,7 @@ from werk24.exceptions import (
     UnsupportedMediaType,
     InsufficientCreditsException,
 )
+import logging
 import ssl
 import certifi
 from werk24.models.techread import W24TechreadWithCallbackPayload
@@ -44,6 +45,8 @@ EXCEPTION_CLASSES = {
     range(416, 500): ServerException,
 }
 
+# make the logger
+logger = logging.getLogger("w24_techread_client")
 
 class TechreadClientHttps:
     """Translation map from the server response
@@ -61,23 +64,25 @@ class TechreadClientHttps:
 
         Args:
         ----
-        techread_server_https {str} -- Domain of the Techread https server
-        techread_version {str} -- Techread Version
-        support_base_url {str} -- Base URL for support requests
-        local_public_key {Optional[bytes]} -- Local public key that allows the
+        techread_server_https (str): Domain of the Techread https server
+        techread_version (str): Techread Version
+        support_base_url (str): Base URL for support requests
+        local_public_key (Optional[bytes]): Local public key that allows the
             server to encrypt the result of the techread request.
         """
+        logger.debug(f"Creating TechreadClientHttps with version {techread_version}")
         self._techread_version = techread_version
         self._auth_client: Optional[AuthClient] = None
         self.support_base_url = support_base_url
         self.local_public_key = local_public_key
 
     def _make_session(self, timeout_seconds=30) -> aiohttp.TCPConnector:
-        """Make the connector for the session.
+        """
+        Make the connector for the session.
 
         Returns:
         --------
-        aiohttp.TCPConnector: Connector for the session
+        - aiohttp.TCPConnector: Connector for the session
         """
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         connector = aiohttp.TCPConnector(ssl=ssl_context)
@@ -98,13 +103,14 @@ class TechreadClientHttps:
 
         Raises:
         ------
-        RuntimeError: Exception raised when the developer tries to start the
+        - RuntimeError: Exception raised when the developer tries to start the
             session without a token.
 
         Returns:
         -------
-        TechreadClientHttps: Instance of the class itself with active session.
+        - TechreadClientHttps: Instance of the class itself with active session.
         """
+        logger.debug("Entered the session with the server %s", self.support_base_url)
         if self._auth_client is None:
             raise RuntimeError("No AuthClient was registered")
 
@@ -121,11 +127,11 @@ class TechreadClientHttps:
 
         Args:
         ----
-        exc_type (Optional[Type[BaseException]]): The type of exception that
+        - exc_type (Optional[Type[BaseException]]): The type of exception that
             caused the context manager to be exited.
-        exc_value (Optional[BaseException]): The instance of the exception that
+        - exc_value (Optional[BaseException]): The instance of the exception that
             caused the exit.
-        traceback (Optional[TracebackType]): A traceback from the exception.
+        - traceback (Optional[TracebackType]): A traceback from the exception.
 
         Returns:
         --------
@@ -136,46 +142,48 @@ class TechreadClientHttps:
     def register_auth_client(self, auth_client: AuthClient) -> None:
         """Register the reference to the authentication service
 
-        Arguments:
-            auth_client {AuthClient} -- Reference to Authentication
-                client
+        Args:
+        ----
+        - auth_client (AuthClient): Reference to Authenticatio client
         """
         self._auth_client = auth_client
 
     async def upload_associated_file(
         self,
         presigned_post: W24PresignedPost,
-        content: Union[bytes, io.BufferedReader],
+        content: Union[bytes, io.BufferedReader, None],
         public_server_key: Optional[bytes] = None,
     ) -> None:
         """
         Uploads an associated file to the API.
 
         This can either be a technical drawing or a 3D model.
-        NOTE: The complete message size must not be larger than 10 MB.
+
+        NOTE:
+        ----- 
+        The complete message size must not be larger than 10 MB.
 
         Args:
         ----
-        presigned_post (W24PresignedPost): Presigned post object for
-            file upload.
-        content (Optional[bytes]): Content of the file as bytes.
-        public_server_key (Optional[bytes], optional): Public key of the server.
+        - presigned_post (W24PresignedPost): Presigned post object for file upload.
+        - content (Optional[bytes]): Content of the file as bytes.
+        - public_server_key (Optional[bytes], optional): Public key of the server.
 
         Raises:
         -------
-        Various exceptions based on the issues with API, authentication
+        - Various exceptions based on the issues with API, authentication
             or the requested file.
-
-        Returns:
-        --------
-        None
         """
+        logger.debug("Uploading associated file to the server")
+
         # ignore if payload is empty
         if content is None:
+            logger.debug("No content to upload")
             return
 
         # encrypt the content if we have the public key of the server
         if public_server_key is not None:
+            logger.debug("Encrypting the content with the public key of the server")
             content = encrypt_with_public_key(public_server_key, content)
 
         # generate the form data by merging the presigned
@@ -187,6 +195,7 @@ class TechreadClientHttps:
 
         # create a new fresh session that does not
         # carry the authentication token
+        logger.debug("Uploading the file to the server with the presigned post")
         presigned_post_str = str(presigned_post.url)
         try:
             async with self._make_session() as session:
@@ -203,15 +212,16 @@ class TechreadClientHttps:
         client_private_key_pem: Optional[bytes],
         client_private_key_passphrase: Optional[bytes] = None,
     ) -> bytes:
-        """Return the payload from the server
+        """
+        Return the payload from the server
 
         Args:
         ----
-        payload_url {HttpUrl} -- Url of the payload
+        - payload_url {HttpUrl} -- Url of the payload
 
         Raises:
         ------
-        RuntimeError: Hard Error that is raised when
+        - RuntimeError: Hard Error that is raised when
             the function is asked to download a payload
             from an untrusted source.
             This provides some sort of protection against
@@ -222,35 +232,31 @@ class TechreadClientHttps:
             Call all our numbers on a Sunday morning
             at 3am if it must be. Even if its Christmas
             and Easter on the same day.
-
-        BadRequestException: Raised when the request body
+        - BadRequestException: Raised when the request body
             cannot be interpreted. This normally indicates
             that the API version has been updated and that
             we missed a corner case. If you encounter this
             exception, it is very likely our mistake. Please
             get in touch!
-
-        UnauthorizedException: Raised when the token
+        - UnauthorizedException: Raised when the token
             or the requested file have expired
-
-        ResourceNotFoundException: Raised when you are requesting
+        - ResourceNotFoundException: Raised when you are requesting
             an endpoint that does not exist. Again, you should
             not encounter this, but if you do, let us know.
-
-        RequestTooLargeException: Raised when the status
+        - RequestTooLargeException: Raised when the status
             code was 413
-
-        UnsupportedMediaTypException: Raised when the file you
+        - UnsupportedMediaTypException: Raised when the file you
             submitted cannot be read (because its media type
             is not supported by the API).
-
-        ServerException: Raised for all other status codes
+        - ServerException: Raised for all other status codes
             that are not 2xx
 
         Returns:
         -------
-        bytes -- Payload
+        - bytes: Payload
         """
+        logger.debug(f"Downloading payload")
+
         # send the get request to the endpoint
         try:
             async with self._make_session() as session:
@@ -270,11 +276,15 @@ class TechreadClientHttps:
         
 
         if client_private_key_pem is not None:
+            logger.debug("Decrypting the payload with the private key")
             return decrypt_with_private_key(
                 client_private_key_pem,
                 client_private_key_passphrase,
                 raw,
             )
+        else:
+            logger.debug("Returning the raw payload. Not encrypted")
+
         return raw
 
     @staticmethod
@@ -284,8 +294,8 @@ class TechreadClientHttps:
 
         Args:
         ----
-        url (str): The requested URL
-        status_code (int): The received response status code
+        - url (str): The requested URL
+        - status_code (int): The received response status code
 
         Raises:
         ------
@@ -303,7 +313,10 @@ class TechreadClientHttps:
         - InsufficentCreditsException: Raised when the user does not have enough credits
         """
         for key, exception_class in EXCEPTION_CLASSES.items():
+            logger.debug("Request to '%s' returned status code %s", url, status_code)
             if status_code in key:
+                if not (200 <= status_code < 300):
+                    logger.warning("Request failed with status code %s", status_code)
                 if exception_class is not None:
                     raise exception_class(
                         f"Request failed '{url}' with code {status_code}"
@@ -323,34 +336,31 @@ class TechreadClientHttps:
 
         Raises:
         ------
-        BadRequestException: Raised when the request body
+        - BadRequestException: Raised when the request body
             cannot be interpreted. This normally indicates
             that the API version has been updated and that
             we missed a corner case. If you encounter this
             exception, it is very likely our mistake. Please
             get in touch!
-
-        UnauthorizedException: Raised when the token
+        - UnauthorizedException: Raised when the token
             or the requested file have expired
-
-        ResourceNotFoundException: Raised when you are requesting
+        - ResourceNotFoundException: Raised when you are requesting
             an endpoint that does not exist. Again, you should
             not encounter this, but if you do, let us know.
-
-        RequestTooLargeException: Raised when the status
+        - RequestTooLargeException: Raised when the status
             code was 413
-
-        UnsupportedMediaTypException: Raised when the file you
+        - UnsupportedMediaTypException: Raised when the file you
             submitted cannot be read(because its media type
             is not supported by the API).
-
-        ServerException: Raised for all other status codes
+        - ServerException: Raised for all other status codes
             that are not 2xx
 
         Returns:
         -------
-        W24HelpdeskTask: Created helpdesk task with an updated task_id.
+        - W24HelpdeskTask: Created helpdesk task with an updated task_id.
         """
+        logger.debug("Creating a helpdesk task")
+
         headers = self._make_helpdesk_headers()
         url = self._make_support_url("helpdesk/create-task")
         async with self._make_session() as session:
@@ -361,15 +371,16 @@ class TechreadClientHttps:
         return W24HelpdeskTask.parse_raw(await response.text())
 
     def _make_support_url(self, path: str) -> str:
-        """Make the support url for the help desk requests.
+        """
+        Make the support url for the help desk requests.
 
         Args:
         ----
-        path (str): Path to the endpoint
+        - path (str): Path to the endpoint
 
         Returns:
         -------
-        str: URL to the endpoint
+        - str: URL to the endpoint
         """
         return urllib.parse.urljoin(f"https://{self.support_base_url}", path)
 
@@ -430,11 +441,13 @@ class TechreadClientHttps:
 
         Returns:
         -------
-        UUID4: Request ID
+        - UUID4: Request ID
         """
+        logger.debug("Reading drawing with callback")
 
         # Set a default drawing filename if none is provided
         drawing_filename = drawing_filename or "drawing.pdf"
+        logger.debug("Drawing filename: %s", drawing_filename)
 
         # validate the payload locally. This is not strictly necessary
         # but it is a good way to catch errors early.

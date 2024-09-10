@@ -7,6 +7,10 @@ import asyncio
 import werk24.cli.health_check
 import werk24.cli.support
 import werk24.cli.techread
+import logging
+
+logger = logging.getLogger("w24_techread_client")
+logger.setLevel(logging.INFO)
 
 
 def main() -> None:
