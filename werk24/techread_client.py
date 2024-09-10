@@ -19,7 +19,7 @@ EXAMPLE
                 function=lambda msg: print("Received Thumbnail of Page")
         ]))
 """
-
+import asyncio
 import json
 from werk24.crypt import (
     generate_new_key_pair,
@@ -89,7 +89,7 @@ even when the files are rejected before they reach the API
 DEFAULT_AUTH_REGION = "eu-central-1"
 
 # Default Endpoints
-DEFAULT_SERVER_WSS = "ws-api.w24.co"
+DEFAULT_SERVER_WSS = "ws-api.w24-eu-central-1-test.click"
 DEFAULT_SERVER_HTTPS = "support.w24.co"
 
 # List of the Locations where we are looking for the license file
@@ -169,7 +169,8 @@ class W24TechreadClient:
         development_key: str = None,
         support_base_url: str = DEFAULT_SERVER_HTTPS,
     ):
-        """Initialize a new W24TechreadClient.
+        """
+        Initialize a new W24TechreadClient.
 
         If you wonder about any of the attributes, have a
         look at the .env file that we provided to you.
@@ -177,13 +178,11 @@ class W24TechreadClient:
 
         Args:
         ----
-        techread_server_wss {str} -- domain name that
+        - techread_server_wss (str): domain name that
             is being used by the websocket client
-
-        techread_version {str} -- version that you want to
+        - techread_version (str): version that you want to
             connect to
-
-        development_key {str} -- key that allows you to submit
+        - development_key (str): key that allows you to submit
             your request to one of the internal architectures.
             You can try guessing or bruteforcing this key;
             we'll just charge you for every request you submit and
@@ -211,17 +210,18 @@ class W24TechreadClient:
 
         Raises:
         ------
-        RuntimeError: Exception is raised if
-            you tried to enter a session before
-            calling the register() method
+        - RuntimeError: Exception is raised if you tried to enter 
+            a session before calling the register() method
 
         Returns:
         -------
-        W24TechreadClient -- Version of self with
-            active sessions
+        - W24TechreadClient: Version of self with active sessions
         """
-        await self._techread_client_https.__aenter__()
-        await self._techread_client_wss.__aenter__()
+        logging.debug("Entering the session")
+        await asyncio.gather(
+            self._techread_client_https.__aenter__(),
+            self._techread_client_wss.__aenter__()
+        )
         return self
 
     async def __aexit__(
@@ -230,9 +230,14 @@ class W24TechreadClient:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        """Ensure that the sessions are closed"""
-        await self._techread_client_https.__aexit__(exc_type, exc_value, traceback)
-        await self._techread_client_wss.__aexit__(exc_type, exc_value, traceback)
+        """
+        Ensure that the sessions are closed
+        """
+        logging.debug("Exiting the session")
+        await asyncio.gather(
+            self._techread_client_https.__aexit__(exc_type, exc_value, traceback),
+            self._techread_client_wss.__aexit__(exc_type, exc_value, traceback)
+        )
 
     def register(
         self,
@@ -246,17 +251,22 @@ class W24TechreadClient:
         token: Optional[str] = None,
     ) -> None:
         """
-        Register with the authentication
-        service (i.e., lazy login)
+        Register with the authentication service (i.e., lazy login)
 
-        Arguments:
-            cognito_region {str} -- Physical region
-            cognito_identity_pool_id {str} -- identity pool of W24
-            cognito_client_id {str} -- the client id of your application
-            cognito_client_secret {str} -- the client secret of your
-                application
-            username {str} -- the username with which you want to register
-            password {str} -- the password with which you want to register
+        Note:
+        ----
+        The Cognito Authentication is only present for backwards
+        compatibility. We have moved to a token-based system.
+        
+        Args:
+        ----
+        - cognito_region (str): Physical region
+        - cognito_identity_pool_id (str): identity pool of W24
+        - cognito_client_id (str): the client id of your application
+        - cognito_client_secret (str): the client secret of your
+            application
+        - username (str): the username with which you want to register
+        - password (str): the password with which you want to register
         """
         # create an client instance to connect
         # to the authentication service
@@ -272,6 +282,7 @@ class W24TechreadClient:
         )
         # ensure that we have a token
         try:
+            logging.debug("Authenticating with the authentication service")
             self._auth_client.login()  # type: ignore
         except AttributeError as exc:
             raise RuntimeError(
@@ -286,16 +297,18 @@ class W24TechreadClient:
     @staticmethod
     def generate_encryption_keys(passphrase: bytes) -> Tuple[bytes, bytes]:
         """
-        Generate a new RSA key pair and return the private and public key as PEM encoded bytes.
+        Generate a new RSA key pair and return the private and public key 
+        as PEM encoded bytes.
 
         Args:
         ----
-        passphrase (bytes): The passphrase to encrypt the private key with.
+        - passphrase (bytes): The passphrase to encrypt the private key with.
 
         Returns:
         -------
-        Tuple[bytes, bytes]: The private key and public key as PEM encoded bytes.
+        - Tuple[bytes, bytes]: The private key and public key as PEM encoded bytes.
         """
+        logger.debug("Generating new RSA key pair")
         return generate_new_key_pair(passphrase=passphrase)
 
     @staticmethod
@@ -305,13 +318,14 @@ class W24TechreadClient:
 
         Args:
         ----
-        public_key_pem (bytes): The public key to use for encryption.
-        data (bytes): The data to encrypt.
+        - public_key_pem (bytes): The public key to use for encryption.
+        - data (bytes): The data to encrypt.
 
         Returns:
         -------
         bytes: The encrypted data.
         """
+        logger.debug("Encrypting data with public key")
         return encrypt_with_public_key(public_key_pem, data)
 
     @staticmethod
@@ -330,6 +344,7 @@ class W24TechreadClient:
         -------
         bytes: The decrypted data.
         """
+        logger.debug("Decrypting data with private key")
         return decrypt_with_private_key(private_key_pem, password, data)
 
     async def read_drawing(
@@ -349,67 +364,58 @@ class W24TechreadClient:
 
         Args:
         ----
-        drawing (bytes): binary representation of a technical drawing.
+        - drawing (bytes): binary representation of a technical drawing.
             Please refer to the API - documentation to learn which mime
             types are supported.
-
-        model (bytes): binary representation of the 3d model (typically
+        - model (bytes): binary representation of the 3d model (typically
             step). This is currently not being used and may come back
             later again.
-
-        asks (List[W24Ask]): List of Asks that are requested from the API.
+        - asks (List[W24Ask]): List of Asks that are requested from the API.
             They must derive from the W24Ask object. Refer to the API
             documentation for a full list of supported W24AskTypes
-
-        max_pages (int): Maximum number of pages that are being processed
+        - max_pages (int): Maximum number of pages that are being processed
             of the submitted file. This protects platform users from
             costly requests caused by a user uploading a single file with
             many pages.
-
-        drawing_filename (str|None): Optional information about the
+        - drawing_filename (str|None): Optional information about the
             filename of the drawing. Frequently this contains information
             about the drawing id and you can make that information
             available to us through this parameter. If you don't know the
             filename, don't worry, it will still work.
-
-        sub_account (UUID4|None): Optional specification of the sub-account
+        - sub_account (UUID4|None): Optional specification of the sub-account
             that the request should be attributed to. Sub-accounts allow
             you to manage several customers at the same time and receiving
             separate positions on the monthly invoice.
-
-        client_public_key_pem (bytes|None): Public key that the server shall
+        - client_public_key_pem (bytes|None): Public key that the server shall
             use to encrypt the callback request. This is only necessary if
             you want to receive the callback in an encrypted form. The
             availability of this feature may depend on your service level.
-
-        client_private_key_pem (bytes|None): Private key that the server shall
+        - client_private_key_pem (bytes|None): Private key that the server shall
             use to encrypt the callback request. This is only necessary if
             you want to receive the callback in an encrypted form. The
             availability of this feature may depend on your service level.
-
-        client_private_key_passphrase (bytes|None): Passphrase to decrypt the
+        - client_private_key_passphrase (bytes|None): Passphrase to decrypt the
             private key. This is only necessary if you want to receive the
             callback in an encrypted form. The availability of this feature
             may depend on your service level.
 
         Yields:
         ------
-        W24TechreadMessage -- Response object obtained from the API
+        - W24TechreadMessage: Response object obtained from the API
             that indicates the state of your request. Be sure to pass this
             to the read_drawing_listen method
 
         Raises:
         ------
-        DrawingTooLarge -- Exception is raised when the drawing was too
+        - DrawingTooLarge: Exception is raised when the drawing was too
             large to be processed. At the time of writing. The upload
             limit lies at 6 MB (including overhead).
-
-        UnsupportedMediaType -- Exception is raised when the drawing or
+        - UnsupportedMediaType: Exception is raised when the drawing or
             model is submitted in any data type other than bytes.
 
         """
         # give us some debug information
-        logger.info("API method read_drawing() called")
+        logger.debug("API method read_drawing() called")
 
         # quickly check whether the input type is bytes. If it is string,
         # the presigned-AWS post interestingly returns a 403 error_code
@@ -417,6 +423,7 @@ class W24TechreadClient:
         # that they submitted the wrong data type.
         # See Github Issue #13
         if not isinstance(drawing, (BufferedReader, bytes)):
+            logger.warning("Unsupported media type for drawing")
             raise UnsupportedMediaType(
                 "Drawing bytes requires 'bytes' or 'BufferedReader' type"
             )
@@ -425,11 +432,13 @@ class W24TechreadClient:
         init_message, init_response = await self.init_request(
             asks, max_pages, drawing_filename, sub_account
         )
+        logger.debug("Init request sent and response received.")
 
         yield init_message
 
         # stop if the response is unsuccessful.
         if not init_response.is_successful:
+            logger.warning("Init request was not successful.")
             return
 
         # Start reading the file
@@ -462,39 +471,47 @@ class W24TechreadClient:
 
         Args:
         ----
-        init_response (W24TechreadInitResponse): InitResponse that
+        - init_response (W24TechreadInitResponse): InitResponse that
             was obtained from the init_request method
-        asks (List[W24Ask]): List of asks that we are asking for.
+        - asks (List[W24Ask]): List of asks that we are asking for.
             This is only used for error handling here.
-        drawing (bytes): Drawing bytes that shall be uploaded
-        model (Optional[bytes], optional): Optional model bytes.
+        - drawing (bytes): Drawing bytes that shall be uploaded
+        - model (Optional[bytes], optional): Optional model bytes.
             Defaults to None.
-        client_public_key_pem (Optional[bytes], optional): Public
+        - client_public_key_pem (Optional[bytes], optional): Public
             key that the server shall use to encrypt the callback
             request. Defaults to None.
-        client_encryption_passphrase (Optional[bytes], optional):
+        - client_encryption_passphrase (Optional[bytes], optional):
             Passphrase to encrypt the private key. Defaults to None.
 
         Yields:
         ------
-        W24TechreadMessage: Messages that are received after the
+        - W24TechreadMessage: Messages that are received after the
             request was submitted
         """
+        logger.debug("API method read_request() called")
         # If the server wants us to encrypt the file, we will do so
         if init_response.public_key is None:
+            logger.info(
+                "No public key was provided by the server. "
+                "Consider upgrading to a higher service level if you need end2end encryption."
+            )
             server_public_key = None
         else:
+            logger.info("Public key was provided by the server")
             server_public_key = init_response.public_key.encode("utf-8")
 
         # upload drawing and model. We can do that in parallel.
         # If your user uploads them separately, you could also
         # upload them separately to Werk24.
         try:
+            logger.debug("Uploading drawing")
             await self._techread_client_https.upload_associated_file(
                 init_response.drawing_presigned_post,
                 drawing,
                 public_server_key=server_public_key,
             )
+            logger.debug("Drawing uploaded")
 
         # explicitly reraise the exception if the payload is too large
         except (BadRequestException, RequestTooLargeException) as exception:
@@ -542,16 +559,17 @@ class W24TechreadClient:
 
         Args:
         ----
-        asks (List[W24Ask]): Asks for this request.
-        max_pages (int): Maximum pages to be read.
-        drawing_filename (Optional[str]): Filename of the drawing, if any.
-        sub_account (Optional[UUID4]): Sub-account ID, if any.
+        - asks (List[W24Ask]): Asks for this request.
+        - max_pages (int): Maximum pages to be read.
+        - drawing_filename (Optional[str]): Filename of the drawing, if any.
+        - sub_account (Optional[UUID4]): Sub-account ID, if any.
 
         Returns:
         -------
-        Tuple[W24TechreadMessage, W24TechreadInitResponse]: Received
+        - Tuple[W24TechreadMessage, W24TechreadInitResponse]: Received
             message and init response.
         """
+        logger.debug("API method init_request() called")
         request = W24TechreadRequest(
             asks=asks,
             development_key=self._development_key,
@@ -564,6 +582,8 @@ class W24TechreadClient:
             W24TechreadAction.INITIALIZE.value,
             request.model_dump_json(),
         )
+        logger.debug("Techread request submitted")
+
         message = await self._techread_client_wss.recv_message()
         logger.info("Received request_id %s", message.request_id)
 
@@ -588,19 +608,21 @@ class W24TechreadClient:
 
         Yields:
         ------
-        W24TechreadMessage: Receiving messages
+        - W24TechreadMessage: Receiving messages
         """
+        logger.debug("API method _send_command_read() called")
         if client_public_key_pem is not None:
             message = {"public_key": client_public_key_pem.decode("utf-8")}
         else:
             message = {}
 
         # submit the request the to the API
+        logger.debug("Sending techread request")
         await self._techread_client_wss.send_command(
             W24TechreadAction.READ.value, 
             json.dumps(message),
         )
-        logger.info("Techread request submitted")
+        logger.debug("Techread request submitted")
 
         # Wait for incoming messages from the server.
         # They will tell you when the individual
@@ -609,6 +631,7 @@ class W24TechreadClient:
         #
         # The loop will stop when the websocket is closed
         async for message in self._techread_client_wss.listen():
+            logger.debug("Received message %s:%s", message.message_type, message.message_subtype)
             if message.payload_url is not None:
                 message.payload_bytes = (
                     await self._techread_client_https.download_payload(
@@ -636,14 +659,15 @@ class W24TechreadClient:
 
         Args:
         ----
-        asks (List[W24Ask]): List of all submitted asks
-        exception (RequestTooLargeException): Exception
+        - asks (List[W24Ask]): List of all submitted asks
+        - exception (RequestTooLargeException): Exception
             that shall be pushed
 
         Yields:
         ------
-        W24TechreadMessage: Exception message
+        - W24TechreadMessage: Exception message
         """
+        logger.debug("API method _trigger_asks_exception() called")
 
         # get the exception type from the MAP
         try:
@@ -684,30 +708,33 @@ class W24TechreadClient:
 
         Args:
         ----
-        license_path (Optional[str]): Path of the license files
+        - license_path (Optional[str]): Path of the license files
 
         Returns:
         -------
-        Dict[str,str]: Key, Value pairs for the environment variables
+        - Dict[str,str]: Key, Value pairs for the environment variables
 
         Raises:
         ------
-        LicenseError: If the defined license path doesn't exist or if
+        - LicenseError: If the defined license path doesn't exist or if
             relevant environment variable isn't found
         """
+        logger.debug("API method _get_license_environs() called")
 
         # Mimick the old default value of .werk24
         if license_path is None:
             license_path = next(filter(os.path.exists, LICENSE_LOCATIONS), None)
+            logger.debug("License path set to %s", license_path)
 
         # First priority: look for the local license path
-        if license_path is not None:
+        if license_path is not None and os.path.exists(license_path):
             environs_raw = {
                 k: v for k, v in dotenv.dotenv_values(license_path).items() if v
             }
-
+        
         # if the caller defined a license path, but it does not exist, raise the exception
-        elif license_path and not os.path.exists(license_path):
+        elif license_path is not None:
+            logger.warn("License path specified but not valid: %s", license_path)
             raise LicenseError(LICENSE_ERROR_TEXT)
 
         # Second priority: use the environment variables
@@ -725,6 +752,8 @@ class W24TechreadClient:
         server_wss: Optional[str] = None,
         version: str = "v2",
     ) -> "W24TechreadClient":
+        logger.debug("API method make_from_token() called")
+
         # create a reference to the client
         server_https = server_https or DEFAULT_SERVER_HTTPS
         server_wss = server_wss or DEFAULT_SERVER_WSS
@@ -747,40 +776,40 @@ class W24TechreadClient:
         server_wss: Optional[str] = None,
         version: str = "v2",
     ) -> "W24TechreadClient":
-        """Small helper function that creates a new
+        """
+        Small helper function that creates a new
         W24TechreadClient from the environment info.
 
         Args:
         ----
-        license_path:{Optional[str]} -- path to the License file.
+        - license_path (Optional[str]: path to the License file.
             By default we are looking for a .werk24 or werk24_license.txt
             file in the current cwd. If argument is set to None, we are
             not loading any file and relying on the ENVIRONMENT variables only
-
-        auth_region: {Optional[str]} -- AWS Region of the Authentication
+        - auth_region (Optional[str]): AWS Region of the Authentication
             Service.
             Takes priority over environ W24TECHREAD_AUTH_REGION and
             DEFAULT_AUTH_REGION
-
-        server_https: {Optional[str]} -- HTTPS endpoint of the Werk24 API.
+        - server_https (Optional[str]): HTTPS endpoint of the Werk24 API.
             Takes priority over environ W24TECHREAD_SERVER_HTTPS and
             DEFAULT_SEVER_HTTPS
-
-        version: {Optional[str]} -- Version of the Werk24 API.
+        - version (Optional[str]): Version of the Werk24 API.
             Takes priority over environ W24TECHREAD_VERSION and
             DEfAULT_VERSION
 
         Raises:
         ------
-        FileNotFoundError -- Raised when you pass a path to a license file
+        - FileNotFoundError: Raised when you pass a path to a license file
             that does not exist
-        UnauthorizedException -- Raised when the credentials were not
+        - UnauthorizedException: Raised when the credentials were not
             accepted by the API
 
         Returns:
         -------
-        W24TechreadClient -- The techread Client
+        - W24TechreadClient: The techread Client
         """
+        logger.debug("API method make_from_env() called")
+
         # get the license variables from the environment variables and
         # the license file.
         environs = cls._get_license_environs(license_path)
@@ -794,10 +823,12 @@ class W24TechreadClient:
         auth_region = pick_env(
             auth_region, "W24TECHREAD_AUTH_REGION", DEFAULT_AUTH_REGION
         )
+        logger.debug("Auth region set to %s", auth_region)
 
         server_wss = pick_env(
             server_wss, "W24TECHREAD_SERVER_WSS_V2", DEFAULT_SERVER_WSS
         )
+        logger.debug("Server WSS set to %s", server_wss)
 
         # get the variables from the environment and ensure that they
         # are set. If not, raise an exception
@@ -835,7 +866,8 @@ class W24TechreadClient:
         callback_headers: Optional[Dict[str, str]] = None,
         public_key: Optional[bytes] = None,
     ) -> UUID4:
-        """Read the Drawings and register a callback URL.
+        """
+        Read the Drawings and register a callback URL.
 
         This method is useful if you want to separate the
         initialization from the upload and read stages.
@@ -849,37 +881,33 @@ class W24TechreadClient:
 
         Args:
         ----
-        drawing (Union[BufferedReader, bytes]):
+        - drawing (Union[BufferedReader, bytes]):
             Drawing that you want to process
-
-        asks (List[W24Ask]):
+        - asks (List[W24Ask]):
             List of all the information that you want to obtain
-
-        callback_url (str):
+        - callback_url (str):
             URL that shall receive the callback requests
-
-        max_pages (int, optional):
+        - max_pages (int, optional):
             Maximum number of pages that shall be processed.
             Defaults to 5.
-
-        drawing_filename (Optional[str], optional):
+        - drawing_filename (Optional[str], optional):
             Filename of the drawing. Defaults to None.
-
-        callback_headers (Optional[Dict[str, str]], optional):
+        - callback_headers (Optional[Dict[str, str]], optional):
             Headers that shall be sent with the callback request. Defaults to None.
-
-        public_key (Optional[bytes], optional):
+        - public_key (Optional[bytes], optional):
             Public key that the server shall use to encrypt the callback request. Defaults to None.
             Note: availability of this feature may depend on your service level.
 
         Raises:
         ------
-        ServerException: Raised when the server returns an ERROR message
+        - ServerException: Raised when the server returns an ERROR message
 
         Returns:
         -------
-        UUID4: Request ID of the request
+        - UUID4: Request ID of the request
         """
+        logger.debug("API method read_drawing_with_callback() called")
+
         # send the request to the API
         try:
             return await self._techread_client_https.read_drawing_with_callback(
@@ -912,17 +940,19 @@ class W24TechreadClient:
 
         Args:
         ----
-        drawing_bytes {bytes} -- Technical Drawing as Image or PDF
-        hooks {List[Hook]} -- List of Callback you want to obtain
+        - drawing_bytes (bytes): Technical Drawing as Image or PDF
+        - hooks (List[Hook]): List of Callback you want to obtain
 
         Raises:
         ------
-        ServerException -- Raised when the server returns an ERROR message
+        - ServerException: Raised when the server returns an ERROR message
         """
+        logger.debug("API method read_drawing_with_hooks() called")
 
         # filter the callback requests to only contain
         # the ask types
         asks_list = [cur_ask.ask for cur_ask in hooks if cur_ask.ask is not None]
+        logger.debug("Filtered asks: %s", asks_list)
 
         try:
             # send out the request and make a generator
@@ -952,17 +982,17 @@ class W24TechreadClient:
 
         Args:
         ----
-        message (W24TechreadMessage): Message returned from the
+        - message (W24TechreadMessage): Message returned from the
             read_drawing method
-
-        hooks (List[Hook]): List of hooks from which we need to
+        - hooks (List[Hook]): List of hooks from which we need to
             pick the suited one
 
         Raises:
         ------
-        ServerException: raised when the server returns an ERROR
+        - ServerException: raised when the server returns an ERROR
             message
         """
+        logger.debug("API method call_hooks_for_message() called")
         hook_function = self._get_hook_function_for_message(message, hooks)
         if hook_function is None:
             return
@@ -997,13 +1027,14 @@ class W24TechreadClient:
 
         Args:
         ----
-        message {W24TechreadMessage} -- Message returned from the read_drawing method
-        hooks {List[Hook]} -- List of hooks from which we need to pick the suited one
+        - message (W24TechreadMessage): Message returned from the read_drawing method
+        - hooks (List[Hook]): List of hooks from which we need to pick the suited one
 
         Returns:
         -------
-        Optional[Callable] -- Hook function that should be called
+        - Optional[Callable]: Hook function that should be called
         """
+        logger.debug("API method _get_hook_function_for_message() called")
 
         def hook_filter(hook: Hook) -> bool:
             if message.message_type == W24TechreadMessageType.ASK:
@@ -1027,7 +1058,7 @@ class W24TechreadClient:
         # probably is being caused by an API update. We want to ensure
         # that the user is being informed, but we do not want to break
         # the existing functionality -> warning
-        logger.warning(
+        logger.debug(
             "Ignoring message of type %s:%s - no hook registered",  # noqa
             message.message_type,
             message.message_subtype,
@@ -1040,36 +1071,32 @@ class W24TechreadClient:
 
         Args:
         ----
-        task (W24HelpdeskTask): Helpdesk task to be created
+        - task (W24HelpdeskTask): Helpdesk task to be created
 
         Raises:
         ------
-        BadRequestException: Raised when the request body
+        - BadRequestException: Raised when the request body
             cannot be interpreted. This normally indicates
             that the API version has been updated and that
             we missed a corner case. If you encounter this
             exception, it is very likely our mistake. Please
             get in touch!
-
-        UnauthorizedException: Raised when the token
+        - UnauthorizedException: Raised when the token
             or the requested file have expired
-
-        ResourceNotFoundException: Raised when you are requesting
+        - ResourceNotFoundException: Raised when you are requesting
             an endpoint that does not exist. Again, you should
             not encounter this, but if you do, let us know.
-
-        RequestTooLargeException: Raised when the status
+        - RequestTooLargeException: Raised when the status
             code was 413
-
-        UnsupportedMediaTypException: Raised when the file you
+        - UnsupportedMediaTypException: Raised when the file you
             submitted cannot be read(because its media type
             is not supported by the API).
-
-        ServerException: Raised for all other status codes
+        - ServerException: Raised for all other status codes
             that are not 2xx
 
         Returns:
         -------
-        W24HelpdeskTask: Created helpdesk task with an updated task_id.
+        - W24HelpdeskTask: Created helpdesk task with an updated task_id.
         """
+        logger.debug("API method create_helpdesk_task() called")
         return await self._techread_client_https.create_helpdesk_task(task)
