@@ -55,6 +55,7 @@ from werk24.exceptions import (
     RequestTooLargeException,
     ServerException,
     UnsupportedMediaType,
+    InsufficientCreditsException
 )
 from werk24.models.ask import W24Ask
 from werk24.models.helpdesk import W24HelpdeskTask
@@ -874,14 +875,12 @@ class W24TechreadClient:
         """
         Read the Drawings and register a callback URL.
 
-        This method is useful if you want to separate the
-        initialization from the upload and read stages.
+        This method is useful if you want to separate the initialization from the 
+        upload and read stages.
 
-        You can simply specify the callback URL that shall
-        receive the message responses. This function will
-        return after sending the request to the API. The
-        callback URL will be called asynchronously. Keep
-        in mind that the callback speed depends on your
+        You can simply specify the callback URL that shall receive the message responses. 
+        This function will return after sending the request to the API. The callback URL 
+        will be called asynchronously. Keep in mind that the callback speed depends on your
         service level.
 
         Args:
@@ -906,6 +905,8 @@ class W24TechreadClient:
         Raises:
         ------
         - ServerException: Raised when the server returns an ERROR message
+        - InsufficentCreditsException: Raised when the user does not have enough credits 
+            to perform the request
 
         Returns:
         -------
@@ -925,6 +926,8 @@ class W24TechreadClient:
                 public_key=public_key,
             )
         except ServerException:
+            raise
+        except InsufficientCreditsException:
             raise
 
     async def read_drawing_with_hooks(
