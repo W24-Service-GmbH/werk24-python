@@ -116,6 +116,7 @@ class TestTechreadClient(AsyncTestCase):
             5,
         )
 
+
     async def test_read_with_callback_invalid_headers(self) -> None:
         """Test whether invalid headers raise an error."""
         client = W24TechreadClient.make_from_env()
@@ -145,3 +146,12 @@ class TestTechreadClient(AsyncTestCase):
             5,
             public_key=public_key,
         )
+
+    async def test_read_with_callback_insufficient_credit(self) -> None:
+        """Test whether invalid headers raise an error."""
+        from werk24.exceptions import InsufficientCreditsException
+        from werk24.techread_client import TechreadClientHttps
+        
+        # Using assertRaises as a context manager
+        with self.assertRaises(InsufficientCreditsException):
+            TechreadClientHttps._raise_for_status("", 429)
