@@ -22,6 +22,7 @@ from werk24.exceptions import (
     ServerException,
     UnauthorizedException,
     UnsupportedMediaType,
+    InsufficientCreditsException,
 )
 import logging
 import ssl
@@ -38,6 +39,7 @@ EXCEPTION_CLASSES = {
     range(404, 405): ResourceNotFoundException,
     range(413, 414): RequestTooLargeException,
     range(415, 416): UnsupportedMediaType,
+    range(429, 430): InsufficientCreditsException,
     range(300, 400): ServerException,
     range(500, 600): ServerException,
     range(416, 500): ServerException,
@@ -297,24 +299,18 @@ class TechreadClientHttps:
 
         Raises:
         ------
-        - BadRequestException: Raised when the request body
-            cannot be interpreted. This normally indicates
-            that the API version has been updated and that
-            we missed a corner case. If you encounter this
-            exception, it is very likely our mistake. Please
-            get in touch!
-        - UnauthorizedException: Raised when the token
-            or the requested file have expired
-        - ResourceNotFoundException: Raised when you are requesting
-            an endpoint that does not exist. Again, you should
-            not encounter this, but if you do, let us know.
-        - RequestTooLargeException: Raised when the status
-            code was 413
-        - UnsupportedMediaTypException: Raised when the file you
-            submitted cannot be read(because its media type
-            is not supported by the API).
-        - ServerException: Raised for all other status codes
-            that are not 2xx
+        - BadRequestException: Raised when the request body cannot be interpreted. 
+            This normally indicates that the API version has been updated and that
+            we missed a corner case. If you encounter this exception, it is very 
+            likely our mistake. Please get in touch!
+        - UnauthorizedException: Raised when the token or the requested file have expired
+        - ResourceNotFoundException: Raised when you are requesting an endpoint that does 
+            not exist. Again, you should not encounter this, but if you do, let us know.
+        - RequestTooLargeException: Raised when the status code was 413
+        - UnsupportedMediaTypException: Raised when the file you submitted cannot be read
+            (because its media type is not supported by the API).
+        - ServerException: Raised for all other status codes that are not 2xx
+        - InsufficentCreditsException: Raised when the user does not have enough credits
         """
         for key, exception_class in EXCEPTION_CLASSES.items():
             logger.debug("Request to '%s' returned status code %s", url, status_code)
@@ -428,24 +424,20 @@ class TechreadClientHttps:
 
         Raises:
         ------
-        - BadRequestException: Raised when the request body
-            cannot be interpreted. This normally indicates
-            that the API version has been updated and that
-            we missed a corner case. If you encounter this
-            exception, it is very likely our mistake. Please
-            get in touch!
-        - UnauthorizedException: Raised when the token
-            or the requested file have expired
-        - ResourceNotFoundException: Raised when you are requesting
-            an endpoint that does not exist. Again, you should
-            not encounter this, but if you do, let us know.
-        - RequestTooLargeException: Raised when the status
-            code was 413
-        - UnsupportedMediaTypException: Raised when the file you
-            submitted cannot be read(because its media type
-            is not supported by the API).
-        - ServerException: Raised for all other status codes
-            that are not 2xx
+        - BadRequestException: Raised when the request body cannot be interpreted. 
+            This normally indicates that the API version has been updated and that
+            we missed a corner case. If you encounter this exception, it is very 
+            likely our mistake. Please get in touch!
+        - UnauthorizedException: Raised when the token or the requested file have 
+            expired
+        - ResourceNotFoundException: Raised when you are requesting an endpoint that 
+            does not exist. Again, you should not encounter this, but if you do, let us know.
+        - RequestTooLargeException: Raised when the status code was 413
+        - UnsupportedMediaTypException: Raised when the file you submitted cannot be read
+            (because its media type is not supported by the API).
+        - ServerException: Raised for all other status codes that are not 2xx
+        - InsufficentCreditsException: Raised when the user does not have enough credits
+            to perform the operation.
 
         Returns:
         -------
@@ -487,3 +479,4 @@ class TechreadClientHttps:
             return uuid.UUID(response_json["request_id"])
         except (ValueError, KeyError):
             raise BadRequestException(f"Request failed: {response_json}")
+
