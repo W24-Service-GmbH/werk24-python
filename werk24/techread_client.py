@@ -89,7 +89,7 @@ even when the files are rejected before they reach the API
 DEFAULT_AUTH_REGION = "eu-central-1"
 
 # Default Endpoints
-DEFAULT_SERVER_WSS = "ws-api.w24-eu-central-1-test.click"
+DEFAULT_SERVER_WSS = "ws-api.w24.co"
 DEFAULT_SERVER_HTTPS = "support.w24.co"
 
 # List of the Locations where we are looking for the license file
@@ -168,6 +168,7 @@ class W24TechreadClient:
         techread_version: str,
         development_key: str = None,
         support_base_url: str = DEFAULT_SERVER_HTTPS,
+        wss_close_timeout: int = 600,
     ):
         """
         Initialize a new W24TechreadClient.
@@ -202,7 +203,7 @@ class W24TechreadClient:
 
         # WSS Client
         self._techread_client_wss = TechreadClientWss(
-            techread_server_wss, techread_version
+            techread_server_wss, techread_version, wss_close_timeout
         )
 
     async def __aenter__(self) -> "W24TechreadClient":
@@ -751,13 +752,14 @@ class W24TechreadClient:
         server_https: Optional[str] = None,
         server_wss: Optional[str] = None,
         version: str = "v2",
+        wss_close_timeout: int = 600,
     ) -> "W24TechreadClient":
         logger.debug("API method make_from_token() called")
 
         # create a reference to the client
         server_https = server_https or DEFAULT_SERVER_HTTPS
         server_wss = server_wss or DEFAULT_SERVER_WSS
-        client = W24TechreadClient(server_wss, version)
+        client = W24TechreadClient(server_wss, version, wss_close_timeout=wss_close_timeout)
 
         # register the credentials. This will in effect
         # only set the variabels in the authorizer. It will
@@ -775,6 +777,7 @@ class W24TechreadClient:
         server_https: Optional[str] = None,
         server_wss: Optional[str] = None,
         version: str = "v2",
+        wss_close_timeout: int = 600,
     ) -> "W24TechreadClient":
         """
         Small helper function that creates a new
@@ -796,6 +799,8 @@ class W24TechreadClient:
         - version (Optional[str]): Version of the Werk24 API.
             Takes priority over environ W24TECHREAD_VERSION and
             DEfAULT_VERSION
+        - wss_close_timeout (int): Timeout for the WSS connection.
+            Defaults to 600 seconds.
 
         Raises:
         ------
@@ -834,7 +839,7 @@ class W24TechreadClient:
         # are set. If not, raise an exception
         try:
             # create a reference to the client
-            client = W24TechreadClient(server_wss, version)
+            client = W24TechreadClient(server_wss, version, wss_close_timeout=wss_close_timeout)
 
             # register the credentials. This will in effect
             # only set the variabels in the authorizer. It will

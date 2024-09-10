@@ -16,7 +16,8 @@ import logging
 logger = logging.getLogger("w24_techread_client")
 
 class TechreadClientWss:
-    """TechreadClient subpart that handles the websocket
+    """
+    TechreadClient subpart that handles the websocket
     communication with the server.
     """
 
@@ -79,13 +80,16 @@ class TechreadClientWss:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        """Close the session"""
+        """
+        Close the session
+        """
         logger.debug(f"Exiting the session with the server {self._techread_server_wss}")
         if self._techread_session_wss is not None:
             await self._techread_session_wss.close()
 
     def register_auth_client(self, auth_client: AuthClient) -> None:
-        """Register the reference to the authentication service
+        """
+        Register the reference to the authentication service
 
         Args:
         ----
