@@ -274,6 +274,8 @@ class W24AskSheetAnonymization(W24AskThumbnail):
             to fill the pixels that are to be redacted. Currently
             only grayscale is supported.
 
+        output_format (W24FileFormatThumbnail): Output format in
+            which to generate the thumbnail. 
     """
 
     ask_type: W24AskType = W24AskType.SHEET_ANONYMIZATION
@@ -287,6 +289,8 @@ class W24AskSheetAnonymization(W24AskThumbnail):
     redact_cage_code: bool = False
 
     fill_color: Tuple[int, int, int] = (255, 255, 255)
+
+    output_format: W24FileFormatThumbnail = W24FileFormatThumbnail.PNG
 
 
 class W24AskPartFamilyCharacterization(W24Ask):
