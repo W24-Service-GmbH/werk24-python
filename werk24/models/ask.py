@@ -275,7 +275,7 @@ class W24AskSheetAnonymization(W24AskThumbnail):
             only grayscale is supported.
 
         output_format (W24FileFormatThumbnail): Output format in
-            which to generate the thumbnail. 
+            which to generate the anonymized sheet. 
     """
 
     ask_type: W24AskType = W24AskType.SHEET_ANONYMIZATION
@@ -290,7 +290,11 @@ class W24AskSheetAnonymization(W24AskThumbnail):
 
     fill_color: Tuple[int, int, int] = (255, 255, 255)
 
-    output_format: W24FileFormatThumbnail = W24FileFormatThumbnail.PNG
+    output_format: W24FileFormatThumbnail = Field(
+        description="Output format in which to generate the anonymized sheet.",
+        examples=[W24FileFormatThumbnail.PNG, W24FileFormatThumbnail.PDF],
+        default=W24FileFormatThumbnail.PNG,
+    )
 
 
 class W24AskPartFamilyCharacterization(W24Ask):
