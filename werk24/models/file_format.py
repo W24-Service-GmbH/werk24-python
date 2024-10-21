@@ -19,7 +19,7 @@ class W24FileFormatThumbnail(str, Enum):
 
     This can either be a JPEG or a PDF.
     """
-
+    PNG = "PNG"
     JPEG = "JPEG"
     PDF = "PDF"
 
