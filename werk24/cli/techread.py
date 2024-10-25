@@ -482,7 +482,7 @@ def _make_hooks_from_args(args: argparse.Namespace) -> List[Hook]:
         c_hook = Hook(
             ask=W24AskPartFamilyCharacterization(part_family_id=args.part_family_id),
             function=lambda m: _print_payload(
-                "Part Family Characterization", m.payload_dict
+                "Part Family Characterization", m
             ),
         )
         hooks.append(c_hook)
