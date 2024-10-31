@@ -13,6 +13,8 @@ class W24BendDirection(str, Enum):
     """
     UP = "UP"
     DOWN = "DOWN"
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
 
 class W24BendType(str, Enum):
     CENTER_LINE_BEND = "CLB"
