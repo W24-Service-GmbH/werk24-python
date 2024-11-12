@@ -276,6 +276,11 @@ class W24AskSheetAnonymization(W24AskThumbnail):
 
         output_format (W24FileFormatThumbnail): Output format in
             which to generate the anonymized sheet. 
+
+        pagewise_response (bool): If set to True, the response will be pagewise.
+            If set to False, the response will correspond to the complete document.
+            This option is only available for output formats that support document responses.
+        
     """
 
     ask_type: W24AskType = W24AskType.SHEET_ANONYMIZATION
@@ -294,6 +299,15 @@ class W24AskSheetAnonymization(W24AskThumbnail):
         description="Output format in which to generate the anonymized sheet.",
         examples=[W24FileFormatThumbnail.PNG, W24FileFormatThumbnail.PDF],
         default=W24FileFormatThumbnail.PNG,
+    )
+
+    pagewise_response: bool = Field(
+        description=(
+            "If set to True, the response will be pagewise. "
+            "If set to False, the response will correspond to the complete document. "
+            " This option is only available for output formats that support document responses."
+        ),
+        default=True,
     )
 
 

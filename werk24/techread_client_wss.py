@@ -1,6 +1,7 @@
 """ Websocket-part of the Werk24 client
 """
 import json
+from packaging.version import Version
 from types import TracebackType
 from typing import Optional, Type, AsyncGenerator
 
@@ -14,6 +15,12 @@ import logging
 
 # make the logger
 logger = logging.getLogger("w24_techread_client")
+
+try:
+    version = Version(websockets.__version__)
+    USE_EXTRA_HEADERS = version < Version("14.0")
+except:
+    USE_EXTRA_HEADERS = False
 
 class TechreadClientWss:
     """
@@ -67,11 +74,20 @@ class TechreadClientWss:
         """
         logger.debug(f"Entered the session with the server {self._techread_server_wss}")
         headers = self._auth_client.get_auth_headers()
-        self._techread_session_wss = await websockets.connect(
-            self.endpoint,
-            extra_headers=headers,
-            close_timeout=self.wss_close_timeout,
-        )
+
+        if USE_EXTRA_HEADERS:
+            self._techread_session_wss = await websockets.connect(
+                self.endpoint,
+                extra_headers=headers,
+                close_timeout=self.wss_close_timeout,
+            )
+        else:
+            self._techread_session_wss = await websockets.connect(
+                self.endpoint,
+                additional_headers=headers,
+                close_timeout=self.wss_close_timeout,
+            )
+            
         return self
 
     async def __aexit__(
