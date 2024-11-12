@@ -173,11 +173,11 @@ class TechreadClientWss:
         # wait for the websocket to say something and interpret the message
         message_raw = str(await self._techread_session_wss.recv())
         logger.debug(f"Received message: {message_raw}")
-        message = await self._process_message(message_raw)
+        message = self._parse_message(message_raw)
         return message
 
     @staticmethod
-    async def _process_message(message_raw: str) -> W24TechreadMessage:
+    def _parse_message(message_raw: str) -> W24TechreadMessage:
         """
         Interpret the raw websocket message and
         turn it into a W24TechreadMessage
@@ -221,7 +221,7 @@ class TechreadClientWss:
                 f"Unexpected server response '{message_raw}'."
             ) from exception
 
-    async def listen(self) -> AsyncGenerator[W24TechreadMessage, None]:
+    async def listen(self, max_messages_per_session: int = 100) -> AsyncGenerator[W24TechreadMessage, None]:
         """
         Simple generator that waits for messages on the websocket, interprets
         them and yields them
@@ -242,11 +242,13 @@ class TechreadClientWss:
             raise RuntimeError("You need to call enter the profile before listening")
     
         # wait for incoming messages
-        stop = False
         try:
-            while not stop:
+            for _ in range(max_messages_per_session):
                 message_raw = str(await self._techread_session_wss.recv())
-                message = await self._process_message(message_raw)
+                message = self._parse_message(message_raw)
                 yield message
-        except (websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK) as exception:
+        except (
+            websockets.exceptions.ConnectionClosedError, 
+            websockets.exceptions.ConnectionClosedOK,
+        ) as exception:
             return
