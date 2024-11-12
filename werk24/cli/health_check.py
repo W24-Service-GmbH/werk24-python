@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 import os.path
 import websockets
-from websockets.exceptions import InvalidStatusCode
+from websockets.exceptions import InvalidStatusCode, InvalidStatus
 from werk24.cli import utils
 import werk24
 from werk24.techread_client import LicenseError
@@ -91,11 +91,21 @@ async def get_network_info() -> dict:
     try:
         async with websockets.connect(URI):
             return {"ws-api.w24.co Connection": "Successful"}
+        
+    # Websocket 14.0 and above
+    except InvalidStatus as e:
+        if e.response.status_code == 401:
+            return {"Websocket Connection": "Successful, Connected"}
+        else:
+            return {"Websocket Connection": f"Unsuccessful: {str(e.status_code)}"}
+
+    # Websocket 13.0 and below
     except InvalidStatusCode as e:
         if e.status_code == 401:
             return {"Websocket Connection": "Successful, Connected"}
         else:
             return {"Websocket Connection": f"Unsuccessful: {str(e.status_code)}"}
+        
     except Exception as e:
         return {"Websocket Connection": f"Unsuccessful: {type(e)}, {e}"}
 
