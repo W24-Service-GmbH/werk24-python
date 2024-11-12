@@ -646,6 +646,7 @@ class W24TechreadClient:
             # return the message to the caller for immediate
             # consumption
             yield message
+    
 
     @staticmethod
     async def _trigger_asks_exception(
