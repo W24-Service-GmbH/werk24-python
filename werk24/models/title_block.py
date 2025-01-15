@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field
 
 from werk24.models.bom_table import W24BomTable
 from werk24.models.property.color import W24PropertyColor
@@ -13,6 +13,7 @@ from .material import W24Material
 from .roughness import W24GeneralRoughness, W24RoughnessReference
 from .unit import W24UnitSpecification
 from .weight import W24Weight
+from .projection_method import W24ProjectionMethod
 
 
 class W24TitleBlockItem(W24BaseFeatureModel):
@@ -214,6 +215,9 @@ class W24TitleBlock(BaseModel):
 
         unit_specifications (List[W24UnitSpecification]): List of the detected 
             unit specifications. 
+
+        projection_method (W24ProjectionMethod): Projection method indicated on the drawing.
+            None if no projection method was detected.
     """
 
     designation: Optional[W24CaptionValuePair]
@@ -240,3 +244,9 @@ class W24TitleBlock(BaseModel):
     reference_roughnesses: List[W24RoughnessReference] = []
 
     unit_specifications: List[W24UnitSpecification] = []
+
+    projection_method: Optional[W24ProjectionMethod] = Field(
+        None,
+        description="Projection method indicated on the drawing. None if no projection method was detected.",
+        examples=[W24ProjectionMethod.FIRST_ANGLE, W24ProjectionMethod.THIRD_ANGLE],
+    )
