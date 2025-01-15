@@ -34,6 +34,7 @@ from .roughness import W24Roughness
 from .thread_element import W24ThreadElement
 from .roughness import W24GeneralRoughness, W24RoughnessReference
 from .unit import W24UnitSpecification
+from .projection_method import W24ProjectionMethod
 
 
 class W24AskType(str, Enum):
@@ -827,6 +828,9 @@ class W24AskProductPMIExtractResponse(BaseModel):
 
         unit_specifications (List[W24UnitSpecification]): List of the detected
             unit specifications.
+
+        projection_method (Optional[W24ProjectionMethod]): Projection method
+            indicated on the drawing. None if no projection method was detected.
     """
 
     variant_id: UUID4
@@ -839,6 +843,11 @@ class W24AskProductPMIExtractResponse(BaseModel):
     general_roughnesses: List[W24GeneralRoughness] = []
     reference_roughnesses: List[W24RoughnessReference] = []
     unit_specifications: List[W24UnitSpecification] = []
+    projection_method: Optional[W24ProjectionMethod] = Field(
+        None,
+        description="Projection method indicated on the drawing. None if no projection method was detected.",
+        examples=[W24ProjectionMethod.FIRST_ANGLE, W24ProjectionMethod.THIRD_ANGLE],
+    )
 
 
 class W24AskVariantThreadElements(W24Ask):
