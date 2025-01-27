@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+
 from setuptools import setup
 
 VERSIONFILE = "werk24/_version.py"
@@ -14,10 +15,9 @@ def _get_version(version_file: str) -> str:
             match = re.search(version_pattern, file_handle.read(), re.M)
             if match:
                 return match.group(1)
-    except FileNotFoundError:
-        raise RuntimeError(f"Version file '{version_file}' not found.")
+    except FileNotFoundError as exec:
+        raise RuntimeError(f"Version file '{version_file}' not found.") from exec
     raise RuntimeError(f"Unable to find version string in '{version_file}'.")
-
 
 
 def _get_description() -> str:
