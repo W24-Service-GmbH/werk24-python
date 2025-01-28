@@ -76,8 +76,7 @@ class Werk24Client:
         self._wss_server = wss_server
         self._wss_session = None
 
-    @staticmethod
-    def _get_auth_headers():
+    def _get_auth_headers(self):
         """
         Get the authentication headers for the request.
 
@@ -85,8 +84,7 @@ class Werk24Client:
         -------
         - dict: The authentication headers.
         """
-        license = find_license()
-        return {"Authorization": f"Token {license.token}"}
+        return {"Authorization": f"Token {self.license.token}"}
 
     def _create_websocket_session(
         self,

@@ -14,7 +14,7 @@ def extract_version() -> str:
                 .split("=")[1]
                 .strip("'\"\n ")
             )
-            return f"{version}-dev (at {root_dir})"
+            return f"{version}"
     return importlib.metadata.version(__package__ or __name__.split(".", maxsplit=1)[0])
 
 

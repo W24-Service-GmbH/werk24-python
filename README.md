@@ -109,7 +109,7 @@ from werk24 import Hook, AskMetaData, Werk24Client
 
 async def read(drawing):
   hooks = [Hook(ask=AskMetaData(), function=print)]
-  async with Werk24Client(server) as client:
+  async with Werk24Client() as client:
       await client.read_drawing_with_hooks(drawing, hooks, max_pages)
 
 asyncio.run(drawing(open("<path>","rb")))
