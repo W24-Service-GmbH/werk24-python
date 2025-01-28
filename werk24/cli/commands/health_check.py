@@ -3,7 +3,6 @@ import platform
 import sys
 
 import typer
-import websockets
 from packaging.version import Version
 from rich.console import Console
 from rich.panel import Panel
@@ -13,7 +12,6 @@ from websockets.exceptions import InvalidStatus, InvalidStatusCode
 from werk24._version import __version__
 from werk24.defaults import Settings
 from werk24.license import LicenseInvalid, find_license
-from werk24.logger import get_logger
 from werk24.techread import Werk24Client
 
 # Initialize Typer app and Rich console
@@ -81,7 +79,7 @@ async def network_information():
     network_info = []
 
     try:
-        async with Werk24Client() as client:
+        async with Werk24Client() as _:
             network_info.append(
                 (f"WebSocket Connection ({server_uri})", "[green]Successful[/green]")
             )

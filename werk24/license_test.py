@@ -24,7 +24,7 @@ INVALID_LICENSE_TEXT = "INVALID_KEY=missing_token\n"
 @pytest.fixture
 def valid_license():
     """Returns a valid License object."""
-    return License(token="valid_token", region="valid_region")
+    return License(token="valid_token", region="valid_region")  # nosec
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def mock_search_paths():
 def test_parse_license_text(valid_license):
     """Test parsing valid license text."""
     license = parse_license_text(VALID_LICENSE_TEXT)
-    assert license == valid_license
+    assert license == valid_license  # nosec
 
 
 def test_parse_license_text_invalid():
@@ -64,7 +64,7 @@ def test_parse_license_file(valid_license, mock_search_paths):
     """Test parsing a valid license file."""
     with patch("builtins.open", mock_open(read_data=VALID_LICENSE_TEXT)):
         license = parse_license_file("./mock_license.txt")
-        assert license == valid_license
+        assert license == valid_license  # nosec
 
 
 def test_parse_license_file_invalid(mock_search_paths):
@@ -78,27 +78,27 @@ def test_find_license_in_paths(mock_search_paths, valid_license):
     """Test finding a license in search paths."""
     with patch("builtins.open", mock_open(read_data=VALID_LICENSE_TEXT)):
         license = find_license_in_paths()
-        assert license == valid_license
+        assert license == valid_license  # nosec
 
 
 def test_find_license_in_paths_not_found(mock_search_paths):
     """Test finding a license in paths when no file exists."""
     with patch("builtins.open", side_effect=FileNotFoundError):
         license = find_license_in_paths()
-        assert license is None
+        assert license is None  # nosec
 
 
 def test_find_license_in_envs(mock_env_vars, valid_license):
     """Test finding a license in environment variables."""
     license = find_license_in_envs()
-    assert license == valid_license
+    assert license == valid_license  # nosec
 
 
 def test_find_license_in_envs_missing():
     """Test finding a license in envs with missing variables."""
     with patch.dict(os.environ, {}, clear=True):
         license = find_license_in_envs()
-        assert license is None
+        assert license is None  # nosec
 
 
 def test_find_license_in_paths_and_envs(
@@ -107,7 +107,7 @@ def test_find_license_in_paths_and_envs(
     """Test finding a license from paths or environment variables."""
     with patch("builtins.open", mock_open(read_data=VALID_LICENSE_TEXT)):
         license = find_license()
-        assert license == valid_license
+        assert license == valid_license  # nosec
 
 
 def test_save_license_file(valid_license, mock_search_paths):

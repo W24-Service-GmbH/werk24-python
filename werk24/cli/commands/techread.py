@@ -2,10 +2,8 @@ import asyncio
 import io
 
 import typer
-from pydantic import UUID4
 from rich.console import Console
 
-from werk24._version import __version__
 from werk24.defaults import Settings
 from werk24.exceptions import UserInputError
 from werk24.logger import get_logger
@@ -40,6 +38,7 @@ def techread(
     ask_custom: str | None = typer.Option(None, help="Ask for custom output"),
 ):
     """Read a drawing file and extract information."""
+    pass
 
     # Register the hooks
     hooks = [
@@ -96,11 +95,11 @@ def recv_thumbnail(message: TechreadMessage):
     # to install Pillow
     try:
         from PIL import Image  # pylint: disable=import-outside-toplevel
-    except ImportError:
+    except ImportError as e:
         raise UserInputError(
             "Viewing image-like responses requires the installation"
             " of the PIL package: pip install pillow. Image skipped."
-        )
+        ) from e
 
     # and show the image
     image = Image.open(io.BytesIO(message.payload_bytes))

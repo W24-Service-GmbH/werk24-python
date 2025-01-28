@@ -180,7 +180,7 @@ class W24PropertyHardnessShoreScale(str, Enum):
     DO = "DO"
     E = "E"
     M = "M"
-    O = "O"
+    O = "O"  # noqa: E741
     OO = "OO"
     OOO = "OOO"
     OOOS = "OOO-S"

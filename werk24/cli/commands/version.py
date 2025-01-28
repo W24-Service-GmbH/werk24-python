@@ -1,7 +1,8 @@
 import typer
 
-app = typer.Typer()
 from werk24._version import __version__
+
+app = typer.Typer()
 
 
 @app.command()

@@ -59,10 +59,13 @@ HTTP_EXCEPTION_CLASSES = {
 settings = Settings()
 logger = get_logger(settings.log_level)
 
+
+# Determine if the websockets library supports the `extra_headers` parameter.
+# There was a breaking change in version 14.0 that changed the parameter name.
 try:
     version = Version(websockets.__version__)
     USE_EXTRA_HEADERS = version < Version("14.0")
-except:
+except Exception:
     USE_EXTRA_HEADERS = False
 
 
@@ -664,8 +667,8 @@ class Werk24Client:
 
         try:
             return uuid.UUID(response_json["request_id"])
-        except (ValueError, KeyError):
-            raise BadRequestException(f"Request failed: {response_json}")
+        except (ValueError, KeyError) as e:
+            raise BadRequestException(f"Request failed: {response_json}") from e
 
     def _make_https_session(
         self, timeout_seconds: int = 30, cafile: str = None
