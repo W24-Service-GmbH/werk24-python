@@ -75,7 +75,7 @@ class W24GeometricShapeCuboid(BaseModel):
 
         return False
 
-    def _encloses__parallel(self, other: "W24GeometricShapeCuboidShape") -> bool:
+    def _encloses__parallel(self, other: "W24GeometricShapeCuboid") -> bool:
         """Check whether the other cuboid fits into this
         cuboid without rotating the other cuboid on any
         axis. The `other` cuboid can only be rotated by
@@ -95,9 +95,7 @@ class W24GeometricShapeCuboid(BaseModel):
         part = sorted(other.to_tuple())
         return all(m >= p for m, p in zip(machine, part))
 
-    def _encloses__width_depth_rotation(
-        self, other: "W24GeometricShapeCuboidShape"
-    ) -> bool:
+    def _encloses__width_depth_rotation(self, other: "W24GeometricShapeCuboid") -> bool:
 
         # without loss of generality: consider the machine width
         # to be the larger of the width/depth dimensions

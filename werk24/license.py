@@ -86,7 +86,7 @@ def find_license_in_envs() -> License | None:
         region = os.environ["W24TECHREAD_AUTH_REGION"]
         logger.debug("License found in environment variables.")
         return License(token=token, region=region)
-    except KeyError as e:
+    except KeyError:
         logger.debug("Required environment variables not set.")
         return None
 
@@ -112,12 +112,12 @@ def parse_license_file(path: str) -> License:
         with open(path, "r") as file:
             content = file.read()
         return parse_license_text(content)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         logger.error(f"License file not found at {path}")
-        raise LicenseInvalid("License file not found.")
+        raise LicenseInvalid("License file not found.") from e
     except Exception as e:
         logger.error(f"Error parsing license file at {path}: {e}")
-        raise LicenseInvalid("Invalid license file.")
+        raise LicenseInvalid("Invalid license file.") from e
 
 
 def parse_license_text(text: str) -> License:
@@ -147,7 +147,7 @@ def parse_license_text(text: str) -> License:
         return License(token=token, region=region)
     except KeyError as e:
         logger.error(f"Missing key in license text: {e}")
-        raise LicenseInvalid("Invalid license text format.")
+        raise LicenseInvalid("Invalid license text format.") from e
 
 
 def save_license_file(license: License):
@@ -166,4 +166,4 @@ def save_license_file(license: License):
         logger.info(f"License saved successfully at {license_path}")
     except Exception as e:
         logger.error(f"Error saving license file: {e}")
-        raise LicenseInvalid("Could not save the license file.")
+        raise LicenseInvalid("Could not save the license file.") from e

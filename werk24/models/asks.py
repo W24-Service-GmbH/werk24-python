@@ -3,8 +3,6 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from werk24._version import __version__
-
 from .enums import PageType, ProjectionMethod, ThumbnailType
 from .models import (
     BillOfMaterial,

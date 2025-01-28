@@ -60,7 +60,7 @@ def generate_new_key_pair(
 
     except Exception as e:
         # Provide a generic error message for unexpected issues
-        raise RuntimeError(f"Failed to generate RSA key pair: {e}")
+        raise RuntimeError(f"Failed to generate RSA key pair: {e}") from e
 
 
 def encrypt_with_public_key(

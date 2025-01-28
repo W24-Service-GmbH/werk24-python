@@ -77,7 +77,7 @@ def accept_license_from_terminal():
             license_text += line + "\n"
         except KeyboardInterrupt:
             console.print("[red]Input cancelled. Exiting...[/red]")
-            raise typer.Exit()
+            raise typer.Exit()  # noqa: B904
 
     try:
         license = parse_license_text(license_text)
