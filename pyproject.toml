@@ -1,5 +1,5 @@
 [build-system]
-requires = ["wheel"]
+requires = ["wheel", "setuptools"]
 
 [project]
 name = "werk24"
