@@ -2,8 +2,8 @@ from typing import Literal, Union
 
 from pydantic import Field
 
-from werk24.models.property.base import W24Property
-from werk24.models.property.glass_homogeneity import W24Iso10110Grade, W24Iso10110Limits
+from .base import W24Property
+from .glass_homogeneity import W24Iso10110Grade, W24Iso10110Limits
 
 
 class W24PropertyStriae(W24Property):
