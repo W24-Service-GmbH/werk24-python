@@ -3,9 +3,9 @@ from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from werk24.models.property.base import W24Property
-from werk24.models.property.fraunhofer import W24FraunhoferLine
-from werk24.models.typed_model import W24TypedModel
+from ..property.base import W24Property
+from ..property.fraunhofer import W24FraunhoferLine
+from ..typed_model import W24TypedModel
 
 
 class W24PropertyRefractiveTolerance(W24TypedModel):

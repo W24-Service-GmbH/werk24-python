@@ -3,8 +3,8 @@ from typing import Literal, Optional
 
 from pydantic import Field
 
-from werk24.models.property.base import W24Property
-from werk24.models.value import W24PhysicalQuantity, W24Value
+from ..property.base import W24Property
+from ..value import W24PhysicalQuantity, W24Value
 
 
 class W24PropertyHardnessRockwellScale(str, Enum):

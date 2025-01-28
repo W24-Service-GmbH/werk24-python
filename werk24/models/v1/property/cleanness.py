@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Literal
 
-from werk24.models.property.base import W24Property
+from ..property.base import W24Property
 
 
 class W24PropertyCleanness(W24Property):

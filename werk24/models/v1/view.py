@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from werk24.models.fraction import W24Fraction
+from .fraction import W24Fraction
 
 
 class W24ViewType(str, Enum):

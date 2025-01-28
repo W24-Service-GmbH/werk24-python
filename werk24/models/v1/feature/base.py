@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
-from werk24.models.standard import W24Standard
+from .standard import W24Standard
 
 
 class W24Feature(BaseModel):

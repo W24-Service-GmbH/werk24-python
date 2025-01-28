@@ -1,7 +1,7 @@
 from typing import List, Literal
 
-from werk24.models.material import W24Material
-from werk24.models.property.base import W24Property
+from ..material import W24Material
+from ..property.base import W24Property
 
 
 class W24PropertyMaterial(W24Property):

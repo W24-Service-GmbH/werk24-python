@@ -2,8 +2,8 @@ from typing import Literal, Union
 
 from pydantic import Field
 
-from werk24.models.property.base import W24Property
-from werk24.models.value import W24PhysicalQuantity, ureg
+from ..property.base import W24Property
+from ..value import W24PhysicalQuantity, ureg
 
 
 class W24PropertyStressBirefringence(W24Property):

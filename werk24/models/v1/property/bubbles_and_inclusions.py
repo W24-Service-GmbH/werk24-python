@@ -3,8 +3,8 @@ from typing import Literal, Optional, Union
 
 from pydantic import Field
 
-from werk24.models.property.base import W24Property
-from werk24.models.value import W24PhysicalQuantity, ureg
+from ..value import W24PhysicalQuantity, ureg
+from .base import W24Property
 
 
 class W24PropertyBubblesAndInclusions(W24Property):

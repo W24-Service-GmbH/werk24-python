@@ -4,10 +4,10 @@ from typing import List
 
 from pydantic import BaseModel
 
-from werk24.models.gdt import W24GDTCharacteristic
-from werk24.models.material import W24Material
-from werk24.models.roughness import W24RoughnessGrade
-from werk24.models.tolerance import W24ToleranceGrade
+from .gdt import W24GDTCharacteristic
+from .material import W24Material
+from .roughness import W24RoughnessGrade
+from .tolerance import W24ToleranceGrade
 
 
 class W24BaseGeometry(str, Enum):
