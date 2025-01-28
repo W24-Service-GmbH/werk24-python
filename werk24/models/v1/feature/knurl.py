@@ -4,7 +4,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from werk24.models.feature.base import W24Feature
+from .base import W24Feature
 
 
 class W24FeatureKnurlPattern(BaseModel):

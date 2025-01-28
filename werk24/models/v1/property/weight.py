@@ -1,7 +1,7 @@
 from typing import Literal
 
-from werk24.models.property.base import W24Property
-from werk24.models.value import W24PhysicalQuantity
+from ..property.base import W24Property
+from ..value import W24PhysicalQuantity
 
 
 class W24PropertyWeight(W24Property):

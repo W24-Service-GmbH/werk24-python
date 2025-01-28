@@ -105,6 +105,7 @@ $> werk24 --help
 ## Example
 
 ```python
+import asyncio
 from werk24 import Hook, AskMetaData, Werk24Client
 
 async def read(drawing):

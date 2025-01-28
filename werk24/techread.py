@@ -270,10 +270,10 @@ class Werk24Client:
         # Wait for the server response
         message = await self._recv_message()
         logger.info("Received request_id %s", message.request_id)
-        response = message.payload_dict
-        response = TechreadInitResponse.model_validate(message)
+        payload = message.payload_dict
+        payload = TechreadInitResponse.model_validate(payload)
 
-        return message, response
+        return message, payload
 
     async def _recv_message(self) -> TechreadMessage:
         """
@@ -375,7 +375,6 @@ class Werk24Client:
 
             # Extract the error message from the parsed response
             error_message = response.get("message", "Unknown error")
-            logger.debug("Parsed error message: %s", error_message)
 
             # Raise specific exceptions for known error messages
             if error_message == "Forbidden":
@@ -384,7 +383,6 @@ class Werk24Client:
                 ) from exception
 
             # Raise a generic exception for unexpected server responses
-            logger.error("Unexpected server response: %s", message_raw)
             raise ServerException(
                 f"Unexpected server response: {message_raw}"
             ) from exception
@@ -432,10 +430,10 @@ class Werk24Client:
         form = aiohttp.FormData({**presigned_post.fields, "file": content})
 
         try:
-            logger.debug("Uploading file to the server: %s", presigned_post.url)
+            logger.debug("Uploading file to the server: %s", str(presigned_post.url))
             async with self._make_https_session() as session:
-                response = await session.post(presigned_post.url, data=form)
-                self._raise_for_status(presigned_post.url, response.status)
+                response = await session.post(str(presigned_post.url), data=form)
+                self._raise_for_status(str(presigned_post.url), response.status)
             logger.info("File uploaded successfully.")
         except aiohttp.ClientConnectorCertificateError as exc:
             raise SSLCertificateError("SSL certificate error occurred.") from exc

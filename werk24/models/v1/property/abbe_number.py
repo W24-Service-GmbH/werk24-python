@@ -3,9 +3,9 @@ from typing import Any, Literal, Optional, Union
 
 from pydantic import Field
 
-from werk24.models.property.base import W24Property
-from werk24.models.property.fraunhofer import W24FraunhoferLine
-from werk24.models.typed_model import W24TypedModel
+from ..typed_model import W24TypedModel
+from .base import W24Property
+from .fraunhofer import W24FraunhoferLine
 
 
 class W24PropertyAbbeTolerance(W24TypedModel):
