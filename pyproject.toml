@@ -76,4 +76,4 @@ documentation = "https://werk24.io/docs"
 
 
 [project.scripts]
-werk24 = "werk24.cli.werk24:main"
+werk24 = "werk24.cli.werk24:app"
