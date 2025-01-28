@@ -1,4 +1,5 @@
-# Werk24 Client
+# Werk24 Python Client
+
 <p align="center">
   <p align="center">
     <a href="https://werk24.io/?utm_source=github&utm_medium=logo" target="_blank">
@@ -7,27 +8,24 @@
   </p>
 </p>
 
-[![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
-[![Tests | cpython 3.8, 3.9, 3.10](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
+[![PyPI version](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
+[![Tests](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
 
+## Introduction
 
+Werk24 enables instant processing of technical drawings (PDF, PNG, JPEG) via its API.
+With advanced features like automatic extraction of the MetaData, Features and Insights from Mechanical Component Drawings, Werk24 simplifies engineering workflows.
 
-# Features
-When submitting a PDF, PNG, JPEG of a Technical Drawing to Werk24's API, you receive within seconds
-the following features:
+## Features
 
-- Measures and Tolerances
-- Threads and Chamfers
-- Geometric Dimensioning and Tolerancing frames
-- External Dimensions
-- Surface Roughnesses
-- the Title Block information (Material, Drawing ID, Designation, General Tolerances)
+Upload a technical drawing, and within seconds, obtain:
 
-And finally you can obtain a CAD Approximation of the part's Geometry.
-Currently this features is focused on flat parts, such as sheet metal parts, but more is in the pipeline.
+- **Meta Data**: Drawing ID, Part ID, Designation, General Tolerances, General Roughness, Material, Weight, Bill of Material, Revision Table, Languages and Notes.
+- **Features**: Dimensions incl. Tolerances, Threads, Bores, Chamfers, Roughnesses, GDnTs, Radii
+- **Insights**: Manufacturing Method, Postprocesses, Input Geometry, Output Geometry
+- **Redaction**: Redact information from Technical Drawings.
 
 Check our website at [https://werk24.io](https://werk24.io/?utm_source=github&utm_medium=feature_link).
-
 
 <table style="width:100%">
 <tr>
@@ -57,24 +55,25 @@ Output
 </tr>
 </table>
 
-
-
 # Applications
-Typical applications of our Technology include
 
-- Instant Pricing on 2D Engineering Drawings
-- Feasibility Checks on incoming RFQs
-- Auto-Fill of Online Configurators
-- Automated Anonymiziation of Technical Drawings
-- Automated Supplier Scouting
-- Automated Registration of incoming RFQs into your ERP system
-- Structured Archiving
+Harness Werk24 for:
+
+- **Instant Pricing**: Automate 2D drawing-based quoting.
+- **Feasibility Checks**: Evaluate RFQs efficiently.
+- **Configurator Auto-Fill**: Populate online configurators with minimal input.
+- **Drawing Anonymization**: Protect sensitive data in technical drawings.
+- **Supplier Scouting**: Automate vendor selection for specific requirements.
+- **ERP Registration**: Streamline incoming RFQ registrations.
+- **Structured Archiving**: Organize drawings with metadata extraction.
 
 ## Installation
 
 Pip installation
 
-    pip install werk24
+```bash
+pip install werk24
+```
 
 ## Documentation
 
@@ -84,22 +83,34 @@ See [https://werk24.io/docs/index.html](https://werk24.io/docs/index.html)
 
 To get a first impression, you can run the CLI:
 
-    usage: w24cli techread [-h] [--ask-techread-started] [--ask-page-thumbnail]
-                       [--ask-sheet-thumbnail] [--ask-sectional-thumbnail]
-                       [--ask-variant-measures]
-                       input_files
+```bash
+$> werk24 --help
+ Usage: python -m werk24.cli.werk24 [OPTIONS] COMMAND [ARGS]...
+
+╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --log-level                 TEXT  Set the log level [default: INFO]                                                                                                                                        │
+│ --install-completion              Install completion for the current shell.                                                                                                                                │
+│ --show-completion                 Show completion for the current shell, to copy it or customize the installation.                                                                                         │
+│ --help                            Show this message and exit.                                                                                                                                              │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ init           Initialize Werk24 by providing or creating a license.                                                                                                                                       │
+│ health-check   Run a comprehensive health check for the CLI.                                                                                                                                               │
+│ techread       Read a drawing file and extract information.                                                                                                                                                │
+│ version        Print the version of the Client.                                                                                                                                                            │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+```
 
 ## Example
 
-    from werk24 import Hook, W24TechreadClient, W24AskVariantMeasures
+```python
+from werk24 import Hook, AskMetaData, Werk24Client
 
-    async def read_measures_from_drawing(document_bytes:bytes) -> None:
+async def read(drawing):
+  hooks = [Hook(ask=AskMetaData(), function=print)]
+  async with Werk24Client(server) as client:
+      await client.read_drawing_with_hooks(drawing, hooks, max_pages)
 
-        # define what you want to learn about the drawing, and what function
-        # should be called when a response arrives
-        hooks = [Hook(ask=W24AskVariantMeasures(), function=print)]
-
-        # make the call
-        client = W24TechreadClient.make_from_env()
-        async with client as session:
-            await session.read_drawing_with_hooks(document_bytes,hooks)
+asyncio.run(drawing(open("<path>","rb")))
+```
