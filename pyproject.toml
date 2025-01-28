@@ -71,3 +71,7 @@ keywords = [
 homepage = "https://werk24.io"
 repository = "https://github.com/W24-Service-GmbH/werk24-python"
 documentation = "https://werk24.io/docs"
+
+
+[tool.setuptools]
+include = ["LICENSE.txt", "README.md", "werk24/**"]
