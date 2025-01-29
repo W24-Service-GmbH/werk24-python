@@ -13,7 +13,7 @@ from pydantic import (
 
 from werk24._version import __version__
 
-from .asks import ASK_SUBCLASSES, AskType, AskUnion, Response
+from .asks import ASK_SUBCLASSES, Answer, AskType, AskUnion
 from .v1.ask import W24AskResponse, W24AskType, deserialize_ask_response_v1
 
 ALLOWED_CALLBACK_HEADERS = {"authorization"}
@@ -218,7 +218,7 @@ class TechreadMessage(TechreadBaseResponse):
     message_type: TechreadMessageType
     message_subtype: TechreadMessageSubtype | AskType | W24AskType
     page_number: int = 0
-    payload_dict: Optional[Response | TechreadInitResponse | W24AskResponse] = None
+    payload_dict: Optional[Answer | TechreadInitResponse | W24AskResponse] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
 
@@ -227,7 +227,7 @@ class TechreadMessage(TechreadBaseResponse):
         cls,
         v: Any,
         info: ValidationInfo,
-    ) -> Optional[Response | TechreadInitResponse]:
+    ) -> Optional[Answer | TechreadInitResponse]:
 
         if v is None:
             return None
@@ -241,7 +241,7 @@ class TechreadMessage(TechreadBaseResponse):
 
         # V2 Asks
         if info.data["message_subtype"] in ASK_SUBCLASSES.values():
-            return Response.model_validate(v)
+            return Answer.model_validate(v)
 
         # V1 Asks
         return deserialize_ask_response_v1(v, info)
