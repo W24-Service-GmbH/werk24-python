@@ -1,6 +1,12 @@
 from enum import Enum
 
 
+class RedactionZoneType(str, Enum):
+    COMPANY_DATA = "COMPANY_DATA"
+    PERSONAL_DATA = "PERSONAL_DATA"
+    KEYWORD = "KEYWORD"
+
+
 class CurvatureType(str, Enum):
     """Curvature types of Radius"""
 
