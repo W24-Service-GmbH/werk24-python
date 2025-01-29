@@ -31,12 +31,13 @@ from .v1.ask import W24Ask
 class AskType(str, Enum):
     """The type of request to be sent to the server."""
 
-    META_DATA = "META_DATA"
+    CUSTOM = "CUSTOM"
     FEATURES = "FEATURES"
     INSIGHTS = "INSIGHTS"
-    THUMBNAIL = "THUMBNAIL"
+    META_DATA = "META_DATA"
     REDACTION = "REDACTION"
-    CUSTOM = "CUSTOM"
+    SHEET_IMAGE = "SHEET_IMAGE"
+    VIEW_IMAGE = "VIEW_IMAGE"
 
 
 class AskV2(BaseModel):
@@ -308,13 +309,16 @@ class AskRedactionResponse(AskResponse):
     )
 
 
-class AskThumbnail(AskV2):
-    """A class that represents a request for thumbnails
-    from the server.
-    """
+class AskSheetImage(AskV2):
+    """Represents a request for a sheet image from the server."""
 
-    ask_type: Literal[AskType.THUMBNAIL] = AskType.THUMBNAIL
-    thumbnail_type: ThumbnailType
+    ask_type: Literal[AskType.SHEET_IMAGE] = AskType.SHEET_IMAGE
+
+
+class AskViewImage(AskV2):
+    """Represents a request for a view image from the server."""
+
+    ask_type: Literal[AskType.VIEW_IMAGE] = AskType.VIEW_IMAGE
 
 
 def get_ask_subclasses() -> List:
