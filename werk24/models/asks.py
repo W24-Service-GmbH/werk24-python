@@ -17,11 +17,9 @@ from .models import (
     Identifier,
     Language,
     MaterialCombination,
-    Note,
     Process,
     Quantity,
     Radius,
-    RevisionTable,
     Roughness,
     Thread,
 )
@@ -51,7 +49,7 @@ class AskV2(BaseModel):
 Ask = Union[W24Ask, "AskV2"]
 
 
-class AskResponse(BaseModel):
+class Response(BaseModel):
     """
     A class that represents a response to a request from the server.
 
@@ -71,11 +69,11 @@ class AskMetaData(AskV2):
     ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
 
 
-class AskMetaDataResponse(AskResponse):
+class AskMetaDataResponse(Response):
     ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
 
 
-class AskMetaDataResponseMiscellaneous(AskResponse):
+class AskMetaDataResponseMiscellaneous(Response):
     """
     A class that represents a response to for a page that is NOT a component drawing.
     """
@@ -83,7 +81,7 @@ class AskMetaDataResponseMiscellaneous(AskResponse):
     page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
 
 
-class AskMetaDataResponseMechanicalComponent(AskResponse):
+class AskMetaDataResponseMechanicalComponent(Response):
     """A class that represents a response to a request for metadata of a mechanical component drawing from the server.
 
     Attributes:
@@ -141,7 +139,7 @@ class AskMetaDataResponseMechanicalComponent(AskResponse):
     )
 
 
-class AskInsightsResponse(AskResponse):
+class AskInsightsResponse(Response):
     input_geometry: Optional[Geometry] = Field(
         ...,
         description="The input geometry or shape of the material prior to processing.",
@@ -166,15 +164,15 @@ class AskFeatures(AskV2):
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
 
 
-class AskFeaturesResponse(AskResponse):
+class AskFeaturesResponse(Response):
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
 
 
-class AskFeaturesResponseMiscallaneous(AskResponse):
+class AskFeaturesResponseMiscallaneous(Response):
     page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
 
 
-class AskFeaturesResponseMechanicalComponent(AskResponse):
+class AskFeaturesResponseMechanicalComponent(Response):
     """
     Represents a response to a request for features of a mechanical component drawing from the server.
 
@@ -291,7 +289,7 @@ class RedactionZone(BaseModel):
     )
 
 
-class AskRedactionResponse(AskResponse):
+class AskRedactionResponse(Response):
     """
     A class that represents a response to a redaction request from the server.
 
