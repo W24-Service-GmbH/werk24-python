@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import PageType, ProjectionMethod
+from .enums import PageType, ProjectionMethod, RedactionZoneType
 from .models import (
     BillOfMaterial,
     Bore,
@@ -97,7 +97,6 @@ class AskMetaDataResponseMechanicalComponent(AskResponse):
     - weight (Quantity): The weight of the component.
     - bill_of_material (List[BillOfMaterialRow]): Bill of materials for the component.
     - revision_table (List[RevisionTableRow]): Revision history of the drawing.
-    - notes (List[Note]): Notes associated with the component or drawing.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -136,17 +135,9 @@ class AskMetaDataResponseMechanicalComponent(AskResponse):
         None,
         description="Projection method used in the drawing (e.g., first angle or third angle).",
     )
-    revision_table: Optional[RevisionTable] = Field(
-        None,
-        description="Revision history of the drawing.",
-    )
     bill_of_material: Optional[BillOfMaterial] = Field(
         None,
         description="Bill of materials for the component, listing parts and quantities.",
-    )
-    notes: List[Note] = Field(
-        default_factory=list,
-        description="Notes associated with the drawing or component.",
     )
 
 
@@ -168,7 +159,7 @@ class AskInsightsResponse(AskResponse):
 
 
 class AskFeatures(AskV2):
-    """A class that represents a request for features
+    """A class that represents a request for vallouts
     from the server.
     """
 
@@ -179,7 +170,7 @@ class AskFeaturesResponse(AskResponse):
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
 
 
-class AskFeatureResponseMiscallaneous(AskResponse):
+class AskFeaturesResponseMiscallaneous(AskResponse):
     page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
 
 
@@ -258,17 +249,23 @@ class ThumbnailFileFormat(str, Enum):
     PNG = "PNG"
 
 
+class RedactionKeyword(BaseModel):
+    keyword: str = Field(..., description="The keyword to redact from the drawing.")
+
+
 class AskRedaction(AskV2):
     """
     A class that represents a request for redaction from the server.
     """
 
     ask_type: Literal[AskType.REDACTION] = AskType.REDACTION
-    redact_individual_names: bool = Field(
-        True, description="Redact the names of Individuals"
+    redact_logos: bool = Field(True, description="Redact the logos")
+    redact_company_data: bool = Field(True, description="Redact company data")
+    redact_personal_data: bool = Field(True, description="Redact personal data")
+    redact_keywords: list[RedactionKeyword] = Field(
+        [],
+        description="List of Keywords to redact. Keywords are strings that should be redacted from the drawing.",
     )
-    readct_company_names: bool = Field(True, description="Redact the company names")
-    redact_cage_code: bool = Field(True, description="Redact the CAGE codes")
     output_format: ThumbnailFileFormat = Field(
         ThumbnailFileFormat.PDF, description="Output format of the redacted drawing"
     )
@@ -287,6 +284,7 @@ class RedactionZone(BaseModel):
     - polygon(list[tuple[int,int]]): A list of x,y tuples representing the vertices of the redacted area.
     """
 
+    redaction_zone_type: RedactionZoneType
     polygon: list[tuple[int, int]] = Field(
         ...,
         description="A list of x,y tuples representing the vertices of the redacted area.",
