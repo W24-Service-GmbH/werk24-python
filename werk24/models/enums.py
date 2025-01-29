@@ -1,13 +1,6 @@
 from enum import Enum
 
 
-class ThumbnailType(str, Enum):
-    """The type of thumbnail to be requested from the server."""
-
-    SHEET = "SHEET"
-    VIEW = "VIEW"
-
-
 class CurvatureType(str, Enum):
     """Curvature types of Radius"""
 
