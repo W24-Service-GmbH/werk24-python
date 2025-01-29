@@ -182,7 +182,7 @@ class Balloon(BaseModel):
     )
 
 
-class Callout(BaseModel):
+class Feature(BaseModel):
     """
     Represents a design or manufacturing cue with descriptive information and metadata.
 
@@ -300,18 +300,18 @@ class Size(BaseModel):
     )
 
 
-class Dimension(Callout):
+class Dimension(Feature):
     """
     Represents a measurement cue in an engineering or technical drawing.
 
     Attributes:
     ----------
-    - callout_type (Literal[CueType.MEASURE]): The type of cue, fixed to "MEASURE" for this class.
+    - feature_type (Literal[CueType.MEASURE]): The type of cue, fixed to "MEASURE" for this class.
     - quantity (Decimal): The quantity or value associated with the measurement (e.g., length, diameter).
     - size (Size): The size details including size type, nominal size, tolerance, and unit.
     """
 
-    callout_type: Literal[CueType.DIMENSION] = CueType.DIMENSION
+    feature_type: Literal[CueType.DIMENSION] = CueType.DIMENSION
     """ The type of cue, always set to 'MEASURE' for measurement cues. """
 
     quantity: int = Field(
@@ -327,7 +327,7 @@ class Dimension(Callout):
     )
 
 
-class Thread(Callout):
+class Thread(Feature):
     """
     Represents a generic threaded feature in an engineering or technical drawing.
 
@@ -478,7 +478,7 @@ class ThreadKnuckle(Thread):
     knuckle_profile: Fraction
 
 
-class Chamfer(Callout):
+class Chamfer(Feature):
     """
     Represents a chamfer feature in an engineering or technical drawing.
 
@@ -857,7 +857,7 @@ class Roughness(BaseModel):
     )
 
 
-class Process(Callout):
+class Process(Feature):
     """
     Represents a manufacturing process with its type, category, and source.
 
@@ -866,7 +866,7 @@ class Process(Callout):
     - process_category (List[ProcessCategoryDIN8580]): One or more categories of processes based on DIN 8580.
     """
 
-    callout_type: Literal[CueType.PROCESS] = CueType.PROCESS
+    feature_type: Literal[CueType.PROCESS] = CueType.PROCESS
     process_category: List[str] = Field(
         ...,
         description="The category of the process based on DIN 8580, e.g., forming or coating.",
@@ -893,7 +893,7 @@ class GDnTDatum(BaseModel):
     )
 
 
-class GDnT(Callout):
+class GDnT(Feature):
     """
     Represents a GD&T (Geometric Dimensioning and Tolerancing) cue in a technical drawing.
 
@@ -1055,7 +1055,7 @@ class Material(BaseModel):
     ]
 
 
-class MaterialCombination(Callout):
+class MaterialCombination(Feature):
     materials: list[Material]
 
 
@@ -1147,53 +1147,53 @@ class RevisionTable(BaseModel):
     )
 
 
-class Callout(BaseModel):
+class Feature(BaseModel):
     """
-    Base class for callout objects in technical drawings.
+    Base class for feature objects in technical drawings.
     """
 
     blurb: Optional[str] = Field(
         None,
-        description="Optional human-readable text providing additional details about the callout.",
+        description="Optional human-readable text providing additional details about the feature.",
     )
 
 
-class Note(Callout):
+class Note(Feature):
     """
     Represents a note in a technical drawing.
 
     Attributes:
     ----------
     - note_type (NoteType): The type of note, differentiating between canvas,
-        sectional, or sectional callouts.
+        sectional, or sectional features.
     """
 
     note_type: NoteType = Field(
         ...,
         description=(
             "The type of the note, specifying whether it is a canvas note, sectional note, "
-            "or a sectional callout."
+            "or a sectional feature."
         ),
     )
 
 
-class Doubt(Callout):
+class Doubt(Feature):
     """
     Represents a doubt or ambiguity identified by the system in the technical drawing.
 
-    This class inherits the structure of a `Callout` but is specifically used
+    This class inherits the structure of a `feature` but is specifically used
     to highlight potential issues or uncertainties detected by Werk24 during the
     interpretation of the drawing.
 
     Note:
         The `Doubt` class does not introduce additional attributes beyond those
-        defined in the `Callout` base class.
+        defined in the `feature` base class.
     """
 
     pass
 
 
-class Radius(Callout):
+class Radius(Feature):
     quantity: Decimal
     curvature_type: Optional[CurvatureType] = None
     size: Size
