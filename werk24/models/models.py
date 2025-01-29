@@ -763,6 +763,8 @@ class RoughnessCondition(BaseModel):
       associated with the condition.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     condition_type: RoughnessConditionType = Field(
         ...,
         description="Specifies whether the condition applies to the upper limit, lower limit, or average of the roughness.",
