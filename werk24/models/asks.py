@@ -49,16 +49,14 @@ class AskV2(BaseModel):
 Ask = Union[W24Ask, "AskV2"]
 
 
-class Response(BaseModel):
+class Answer(BaseModel):
     """
-    A class that represents a response to a request from the server.
+    A class that represents an answer to a request from the server.
 
     """
 
     version: Literal["v2"] = "v2"
-    page: int = Field(
-        ..., description="The page number of the response starting from 1."
-    )
+    page: int = Field(..., description="The page number of the answer starting from 1.")
 
 
 class AskMetaData(AskV2):
@@ -69,20 +67,20 @@ class AskMetaData(AskV2):
     ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
 
 
-class AskMetaDataResponse(Response):
+class AnswerMetaData(Answer):
     ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
 
 
-class AskMetaDataResponseMiscellaneous(Response):
+class AnswerMetaDataMiscellaneous(AnswerMetaData):
     """
-    A class that represents a response to for a page that is NOT a component drawing.
+    A class that represents an answer to for a page that is NOT a component drawing.
     """
 
     page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
 
 
-class AskMetaDataResponseMechanicalComponent(Response):
-    """A class that represents a response to a request for metadata of a mechanical component drawing from the server.
+class AnswerAskMetaDataMechanicalComponent(AnswerMetaData):
+    """A class that represents an answer to a request for metadata of a mechanical component drawing from the server.
 
     Attributes:
     ----------
@@ -139,7 +137,13 @@ class AskMetaDataResponseMechanicalComponent(Response):
     )
 
 
-class AskInsightsResponse(Response):
+class AnswerInsights(Answer):
+    ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
+
+
+class AnswerInsightsMechanicalComponent(AnswerInsights):
+    page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
+
     input_geometry: Optional[Geometry] = Field(
         ...,
         description="The input geometry or shape of the material prior to processing.",
@@ -164,17 +168,17 @@ class AskFeatures(AskV2):
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
 
 
-class AskFeaturesResponse(Response):
+class AnswerFeatures(Answer):
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
 
 
-class AskFeaturesResponseMiscallaneous(Response):
+class AnswerFeaturesMiscallaneous(Answer):
     page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
 
 
-class AskFeaturesResponseMechanicalComponent(Response):
+class AnswerFeaturesMechanicalComponent(Answer):
     """
-    Represents a response to a request for features of a mechanical component drawing from the server.
+    Represents an answer to a request for features of a mechanical component drawing from the server.
 
     Attributes:
     ----------
@@ -289,9 +293,9 @@ class RedactionZone(BaseModel):
     )
 
 
-class AskRedactionResponse(Response):
+class AnswerRedaction(Answer):
     """
-    A class that represents a response to a redaction request from the server.
+    A class that represents an answer to a redaction request from the server.
 
     Attributes:
     ----------

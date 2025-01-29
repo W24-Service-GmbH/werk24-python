@@ -893,7 +893,7 @@ class GeneralTolerancesPrinciple(str, Enum):
     ENVELOPE = "ENVELOPE"  # Tolerances on size and form are combined.
 
 
-class CueType(str, Enum):
+class FeatureType(str, Enum):
     """
     Enumeration of possible types of cues that can be associated with a design or manufacturing process.
     Each type represents a specific aspect of the design or process.

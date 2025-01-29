@@ -15,8 +15,8 @@ from pydantic import (
 )
 
 from .enums import (
-    CueType,
     CurvatureType,
+    FeatureType,
     GDnTAssociatedFeature,
     GDnTAssociatedReference,
     GDnTCharacteristic,
@@ -194,7 +194,7 @@ class Feature(BaseModel):
     """
 
     blurb: str  # Description or explanation of the cue
-    cue_type: CueType  # The type of cue, constrained to values in CueType
+    cue_type: FeatureType  # The type of cue, constrained to values in CueType
     balloon: Optional[Balloon] = None  # Additional related information, optional
 
 
@@ -311,7 +311,7 @@ class Dimension(Feature):
     - size (Size): The size details including size type, nominal size, tolerance, and unit.
     """
 
-    feature_type: Literal[CueType.DIMENSION] = CueType.DIMENSION
+    feature_type: Literal[FeatureType.DIMENSION] = FeatureType.DIMENSION
     """ The type of cue, always set to 'MEASURE' for measurement cues. """
 
     quantity: int = Field(
@@ -341,7 +341,7 @@ class Thread(Feature):
     - length (Size): The length of the threaded feature.
     """
 
-    cue_type: Literal[CueType.THREAD] = CueType.THREAD
+    cue_type: Literal[FeatureType.THREAD] = FeatureType.THREAD
     quantity: Decimal = Field(
         ...,
         ge=0,
@@ -489,7 +489,7 @@ class Chamfer(Feature):
     - angle (Size): The angle of the chamfer, typically in degrees (e.g., 45°).
     """
 
-    cue_type: Literal[CueType.CHAMFER] = CueType.CHAMFER
+    cue_type: Literal[FeatureType.CHAMFER] = FeatureType.CHAMFER
     size: Size = Field(
         ...,
         description="The linear size of the chamfer, such as the width or depth.",
@@ -663,7 +663,7 @@ class Bore(BaseModel):
     - thread (Optional[Thread]): The threaded feature within the bore, if applicable.
     """
 
-    cue_type: Literal[CueType.BORE] = CueType.BORE
+    cue_type: Literal[FeatureType.BORE] = FeatureType.BORE
     quantity: Decimal = Field(
         ...,
         ge=1,
@@ -868,7 +868,7 @@ class Process(Feature):
     - process_category (List[ProcessCategoryDIN8580]): One or more categories of processes based on DIN 8580.
     """
 
-    feature_type: Literal[CueType.PROCESS] = CueType.PROCESS
+    feature_type: Literal[FeatureType.PROCESS] = FeatureType.PROCESS
     process_category: List[str] = Field(
         ...,
         description="The category of the process based on DIN 8580, e.g., forming or coating.",
@@ -1146,17 +1146,6 @@ class RevisionTable(BaseModel):
     rows: list[RevisionTableRow] = Field(
         ...,
         description="List of rows in the revision table.",
-    )
-
-
-class Feature(BaseModel):
-    """
-    Base class for feature objects in technical drawings.
-    """
-
-    blurb: Optional[str] = Field(
-        None,
-        description="Optional human-readable text providing additional details about the feature.",
     )
 
 
