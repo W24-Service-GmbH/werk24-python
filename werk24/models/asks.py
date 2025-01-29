@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import PageType, ProjectionMethod, RedactionZoneType
+from .enums import PageType, RedactionZoneType
 from .models import (
     BillOfMaterial,
     Bore,
@@ -18,11 +18,12 @@ from .models import (
     Language,
     MaterialCombination,
     Process,
-    Quantity,
+    ProjectionMethod,
     Radius,
     Roughness,
     Thread,
     UnitSystem,
+    Weight,
 )
 from .v1.ask import W24Ask
 
@@ -125,7 +126,7 @@ class AnswerMetaDataMechanicalComponent(AnswerMetaData):
         default_factory=list,
         description="Material options available for the component.",
     )
-    weight: Optional[Quantity] = Field(
+    weight: Optional[Weight] = Field(
         None,
         description="Weight of the component.",
     )
