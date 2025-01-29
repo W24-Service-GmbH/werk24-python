@@ -1,17 +1,12 @@
 from datetime import date
 from decimal import Decimal
 from fractions import Fraction
-from typing import Annotated, List, Literal, Optional, Tuple
+from typing import List, Literal, Optional, Tuple
 
-from pint import Quantity as PintQuantity
-from pint import UnitRegistry
 from pydantic import (
     BaseModel,
-    BeforeValidator,
     ConfigDict,
     Field,
-    PlainSerializer,
-    WithJsonSchema,
 )
 
 from .enums import (
@@ -38,6 +33,7 @@ from .enums import (
     MaterialCategory2,
     MaterialCategory3,
     NoteType,
+    ProjectionMethodType,
     RoughnessAcceptanceCriterion,
     RoughnessConditionType,
     RoughnessDirectionOfLay,
@@ -48,21 +44,33 @@ from .enums import (
     SizeType,
     ThreadHandedness,
     ThreadType,
-    Unit,
+    UnitSystemType,
 )
 
-ureg = UnitRegistry()
 
-Quantity = Annotated[
-    PintQuantity,
-    BeforeValidator(lambda x: x if isinstance(x, PintQuantity) else ureg(str(x))),
-    PlainSerializer(lambda x: str(x), return_type=str),
-    WithJsonSchema({"type": "string"}, mode="serialization"),
-    WithJsonSchema({"type": "string"}, mode="validation"),
-]
+class Quantity(BaseModel):
+    value: Decimal
+    unit: str
 
 
-class Entry(BaseModel):
+class Callout(BaseModel):
+    """
+    Represents a general information entry.
+
+    Attributes:
+    ----------
+    - language (Optional[Language]): The language of the information, if known.
+    - value (str): The text value of the information.
+    """
+
+    callout_id: Optional[str] = None
+
+
+class Weight(Quantity, Callout):
+    pass
+
+
+class Entry(Callout):
 
     language: Optional[Language] = Field(
         None,
@@ -107,7 +115,7 @@ class Identifier(Entry):
     )
 
 
-class GeneralTolerances(BaseModel):
+class GeneralTolerances(Callout):
     """
     Model representing general tolerances for a part or drawing.
 
@@ -182,19 +190,19 @@ class Balloon(BaseModel):
     )
 
 
-class Feature(BaseModel):
+class Feature(Callout):
     """
     Represents a design or manufacturing cue with descriptive information and metadata.
 
     Attributes:
     ----------
     - blurb (str): A short description or note associated with the cue.
-    - cue_type (CueType): The type of cue, as defined in the CueType enumeration.
+    - feature_type (CueType): The type of cue, as defined in the CueType enumeration.
     - balloon (Optional[Balloon]): Optional balloon indicating the location of the cue on the drawing.
     """
 
     blurb: str  # Description or explanation of the cue
-    cue_type: FeatureType  # The type of cue, constrained to values in CueType
+    feature_type: FeatureType  # The type of cue, constrained to values in CueType
     balloon: Optional[Balloon] = None  # Additional related information, optional
 
 
@@ -266,7 +274,7 @@ class Size(BaseModel):
     - nominal_size (Decimal): The nominal size value without tolerances applied.
     - tolerance (Tolerance): The tolerance specifications associated with this size.
         If no tolerance is set, the general tolerance applies.
-    - unit (Unit): The unit of measurement for the size (e.g., mm, inch).
+    - unit (str): The unit of measurement for the size (e.g., mm, inch).
     """
 
     size_type: SizeType = Field(
@@ -293,10 +301,10 @@ class Size(BaseModel):
         ),
     )
 
-    unit: Unit = Field(
+    unit: str = Field(
         ...,
         description="The unit of measurement for the size (e.g., mm, inch).",
-        example=Unit.MILLIMETER,
+        example="millimeter",
     )
 
 
@@ -341,7 +349,7 @@ class Thread(Feature):
     - length (Size): The length of the threaded feature.
     """
 
-    cue_type: Literal[FeatureType.THREAD] = FeatureType.THREAD
+    feature_type: Literal[FeatureType.THREAD] = FeatureType.THREAD
     quantity: Decimal = Field(
         ...,
         ge=0,
@@ -484,12 +492,12 @@ class Chamfer(Feature):
 
     Attributes:
     ----------
-    - cue_type (Literal[CueType.CHAMFER]): The type of cue, fixed to "CHAMFER" for this class.
+    - feature_type (Literal[CueType.CHAMFER]): The type of cue, fixed to "CHAMFER" for this class.
     - size (Size): The linear size of the chamfer (e.g., the width or depth of the chamfer).
     - angle (Size): The angle of the chamfer, typically in degrees (e.g., 45°).
     """
 
-    cue_type: Literal[FeatureType.CHAMFER] = FeatureType.CHAMFER
+    feature_type: Literal[FeatureType.CHAMFER] = FeatureType.CHAMFER
     size: Size = Field(
         ...,
         description="The linear size of the chamfer, such as the width or depth.",
@@ -504,7 +512,7 @@ class Chamfer(Feature):
                 is_theoretically_exact=False,
                 is_reference=False,
             ),
-            unit=Unit.MILLIMETER,
+            unit="millimeter",
         ),
     )
     angle: Size = Field(
@@ -521,7 +529,7 @@ class Chamfer(Feature):
                 is_theoretically_exact=False,
                 is_reference=False,
             ),
-            unit=Unit.DEGREE,
+            unit="degree",
         ),
     )
 
@@ -550,7 +558,7 @@ class Counterbore(BaseModel):
                 is_theoretically_exact=False,
                 is_reference=False,
             ),
-            unit=Unit.MILLIMETER,
+            unit="millimeter",
         ),
     )
     depth: Size = Field(
@@ -567,7 +575,7 @@ class Counterbore(BaseModel):
                 is_theoretically_exact=False,
                 is_reference=False,
             ),
-            unit=Unit.MILLIMETER,
+            unit="millimeter",
         ),
     )
 
@@ -589,7 +597,7 @@ class Countersink(BaseModel):
             size_type=SizeType.DIAMETER,
             nominal_size=Decimal("15"),
             tolerance=None,
-            unit=Unit.MILLIMETER,
+            unit="millimeter",
         ),
     )
     angle: Size = Field(
@@ -599,7 +607,7 @@ class Countersink(BaseModel):
             size_type=SizeType.ANGULAR,
             nominal_size=Decimal("90"),
             tolerance=None,
-            unit=Unit.DEGREE,
+            unit="degree",
         ),
     )
 
@@ -622,7 +630,7 @@ class Counterdrill(BaseModel):
             size_type=SizeType.DIAMETER,
             nominal_size=Decimal("8"),
             tolerance=None,
-            unit=Unit.MILLIMETER,
+            unit="millimeter",
         ),
     )
     depth: Size = Field(
@@ -632,7 +640,7 @@ class Counterdrill(BaseModel):
             size_type=SizeType.LINEAR,
             nominal_size=Decimal("20"),
             tolerance=None,
-            unit=Unit.MILLIMETER,
+            unit="millimeter",
         ),
     )
     angle: Size = Field(
@@ -642,18 +650,18 @@ class Counterdrill(BaseModel):
             size_type=SizeType.ANGULAR,
             nominal_size=Decimal("118"),
             tolerance=None,
-            unit=Unit.DEGREE,
+            unit="degree",
         ),
     )
 
 
-class Bore(BaseModel):
+class Bore(Feature):
     """
     Represents a bore feature in an engineering or technical drawing.
 
     Attributes:
     ----------
-    - cue_type (Literal[CueType.BORE]): The type of cue, fixed to "BORE" for this class.
+    - feature_type (Literal[CueType.BORE]): The type of cue, fixed to "BORE" for this class.
     - quantity (Decimal): The number of bores or instances.
     - counterbore (Optional[Counterbore]): The counterbore feature, if present.
     - countersink (Optional[Countersink]): The countersink feature, if present.
@@ -663,7 +671,7 @@ class Bore(BaseModel):
     - thread (Optional[Thread]): The threaded feature within the bore, if applicable.
     """
 
-    cue_type: Literal[FeatureType.BORE] = FeatureType.BORE
+    feature_type: Literal[FeatureType.BORE] = FeatureType.BORE
     quantity: Decimal = Field(
         ...,
         ge=1,
@@ -686,7 +694,7 @@ class Bore(BaseModel):
             size_type=SizeType.DIAMETER,
             nominal_size=Decimal("10"),
             tolerance=None,
-            unit=Unit.MILLIMETER,
+            unit="millimeter",
         ),
     )
     depth: Size = Field(
@@ -696,7 +704,7 @@ class Bore(BaseModel):
             size_type=SizeType.LINEAR,
             nominal_size=Decimal("50"),
             tolerance=None,
-            unit=Unit.MILLIMETER,
+            unit="millimeter",
         ),
     )
     thread: Optional[Thread] = Field(
@@ -765,11 +773,11 @@ class RoughnessCondition(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    condition_type: RoughnessConditionType = Field(
+    condition_type: Optional[RoughnessConditionType] = Field(
         ...,
         description="Specifies whether the condition applies to the upper limit, lower limit, or average of the roughness.",
     )
-    filter_type: RoughnessFilterType = Field(
+    filter_type: Optional[RoughnessFilterType] = Field(
         ...,
         description="The filter used during roughness measurement (e.g., Gaussian, Spline).",
     )
@@ -781,7 +789,7 @@ class RoughnessCondition(BaseModel):
         None,
         description="The long wavelength cutoff for filtering, if specified.",
     )
-    parameter: RoughnessParameter = Field(
+    parameter: Optional[RoughnessParameter] = Field(
         ...,
         description="The roughness parameter being evaluated (e.g., Ra, Rz, Rt).",
     )
@@ -789,11 +797,11 @@ class RoughnessCondition(BaseModel):
         ...,
         description="Details of the evaluation length used for roughness measurement.",
     )
-    acceptance_criterion: RoughnessAcceptanceCriterion = Field(
+    acceptance_criterion: Optional[RoughnessAcceptanceCriterion] = Field(
         ...,
         description="Specifies the acceptance rule for the roughness condition (e.g., 16%-rule, maximum, mean).",
     )
-    value: Size = Field(
+    value: Optional[Size] = Field(
         ...,
         description="The target roughness value specified in the condition.",
     )
@@ -804,7 +812,7 @@ class RoughnessCondition(BaseModel):
     )
 
 
-class Roughness(BaseModel):
+class Roughness(Feature):
     """
     Represents the roughness specifications on a technical drawing.
 
@@ -824,6 +832,8 @@ class Roughness(BaseModel):
       or average limits for different parameters.
     - waviness (Optional[RoughnessWaviness]): Waviness specifications for the surface, if applicable.
     """
+
+    feature_type: Literal[FeatureType.ROUGHNESS] = FeatureType.ROUGHNESS
 
     standard: RoughnessStandard = Field(
         ...,
@@ -1048,7 +1058,7 @@ class BaseGeometryRod(Geometry):
 
 class Material(BaseModel):
     raw_ocr: str
-    standard: str
+    standard: Optional[str]
     designation: str
     material_category: tuple[
         Optional[MaterialCategory1],
@@ -1057,7 +1067,7 @@ class Material(BaseModel):
     ]
 
 
-class MaterialCombination(Feature):
+class MaterialCombination(Callout):
     materials: list[Material]
 
 
@@ -1099,7 +1109,7 @@ class BillOfMaterialRow(BaseModel):
     unit_weight: Optional[Quantity] = None
 
 
-class BillOfMaterial(BaseModel):
+class BillOfMaterial(Callout):
     rows: list[BillOfMaterialRow] = Field(
         ...,
         description="List of rows in the bill of material.",
@@ -1142,7 +1152,7 @@ class RevisionTableRow(BaseModel):
     )
 
 
-class RevisionTable(BaseModel):
+class RevisionTable(Callout):
     rows: list[RevisionTableRow] = Field(
         ...,
         description="List of rows in the revision table.",
@@ -1205,3 +1215,14 @@ class ToleratedQuantity(BaseModel):
     tolerance: Tolerance = Field(
         ..., description="The allowed variation for the quantity."
     )
+
+
+class UnitSystem(Callout):
+    primary_unit_system: Optional[UnitSystemType]
+    secondary_unit_system: Optional[UnitSystemType]
+
+
+class ProjectionMethod(Callout):
+    """Projection Method according to ISO 128"""
+
+    projection_method: ProjectionMethodType

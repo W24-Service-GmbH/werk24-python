@@ -743,36 +743,6 @@ class RoughnessParameter(str, Enum):
     N = "N"  # N-grade roughness
 
 
-class Unit(str, Enum):
-    """
-    Enum representing units of measurement for length and angle.
-
-    This class includes commonly used units in both metric and imperial systems,
-    as well as angular units.
-
-    Categories:
-    ----------
-    - Metric Length Units: METER, DECIMETER, CENTIMETER, etc.
-    - Imperial Length Units: FOOT, INCH, MICRO_INCH
-    - Angular Units: DEGREE
-    """
-
-    # Metric Length Units
-    METER = "METER"  # SI base unit for length
-    DECIMETER = "DECIMETER"  # 1/10th of a meter
-    CENTIMETER = "CENTIMETER"  # 1/100th of a meter
-    MILLIMETER = "MILLIMETER"  # 1/1000th of a meter
-    MICROMETER = "MICROMETER"  # 1/1,000,000th of a meter
-
-    # Imperial Length Units
-    FOOT = "FOOT"  # Imperial unit of length (12 inches)
-    INCH = "INCH"  # Imperial unit of length
-    MICRO_INCH = "MICRO_INCH"  # 1/1,000,000th of an inch
-
-    # Angular Units
-    DEGREE = "DEGREE"  # Unit of angle (1/360th of a circle)
-
-
 class IdentifierType(str, Enum):
     """
     Enum representing the types of identifiers supported by Werk24.
@@ -1333,13 +1303,6 @@ class GeometryType(str, Enum):
     ROD = "ROD"  # Includes WIRE; TUBE currently grouped here
 
 
-class ProjectionMethod(str, Enum):
-    """Projection Method according to ISO 128"""
-
-    FIRST_ANGLE = "FIRST_ANGLE"
-    THIRD_ANGLE = "THIRD_ANGLE"
-
-
 class NoteType(str, Enum):
     """
     Enum to differentiate between various types of notes in technical drawings.
@@ -1360,3 +1323,13 @@ class RedactionZoneType(str, Enum):
     PERSONAL_DATA = "PERSONAL_DATA"
     COMPANY_DATA = "COMPANY_DATA"
     KEYWORD = "KEYWORD"
+
+
+class UnitSystemType(str, Enum):
+    METRIC = "METRIC"
+    IMPERIAL = "IMPERIAL"
+
+
+class ProjectionMethodType(str, Enum):
+    FIRST_ANGLE = "FIRST_ANGLE"
+    THIRD_ANGLE = "THIRD_ANGLE"
