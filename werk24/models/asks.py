@@ -22,6 +22,7 @@ from .models import (
     Radius,
     Roughness,
     Thread,
+    UnitSystem,
 )
 from .v1.ask import W24Ask
 
@@ -43,7 +44,7 @@ class AskV2(BaseModel):
     from the server.
     """
 
-    version: Literal["v2"] = "v2"
+    ask_version: Literal["v2"] = "v2"
 
 
 Ask = Union[W24Ask, "AskV2"]
@@ -55,7 +56,7 @@ class Answer(BaseModel):
 
     """
 
-    version: Literal["v2"] = "v2"
+    ask_version: Literal["v2"] = "v2"
     page: int = Field(..., description="The page number of the answer starting from 1.")
 
 
@@ -79,7 +80,7 @@ class AnswerMetaDataMiscellaneous(AnswerMetaData):
     page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
 
 
-class AnswerAskMetaDataMechanicalComponent(AnswerMetaData):
+class AnswerMetaDataMechanicalComponent(AnswerMetaData):
     """A class that represents an answer to a request for metadata of a mechanical component drawing from the server.
 
     Attributes:
@@ -91,6 +92,7 @@ class AnswerAskMetaDataMechanicalComponent(AnswerMetaData):
     - general_roughness (Roughness): General roughness specifications.
     - material_options (List[MaterialCombination]): Material options for the component.
     - weight (Quantity): The weight of the component.
+    - unit_system (UnitSystem): The units specification for the component.
     - bill_of_material (List[BillOfMaterialRow]): Bill of materials for the component.
     - revision_table (List[RevisionTableRow]): Revision history of the drawing.
     """
@@ -134,6 +136,10 @@ class AnswerAskMetaDataMechanicalComponent(AnswerMetaData):
     bill_of_material: Optional[BillOfMaterial] = Field(
         None,
         description="Bill of materials for the component, listing parts and quantities.",
+    )
+    unit_system: Optional[UnitSystem] = Field(
+        None,
+        description="The units specification for the component.",
     )
 
 
