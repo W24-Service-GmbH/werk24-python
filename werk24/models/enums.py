@@ -44,9 +44,6 @@ class Language(str, Enum):
     CHI = "CHI"
     """ Chinese (中文) """
 
-    CRO = "CRO"
-    """ Croatian (Hrvatski) """
-
     CZE = "CZE"
     """ Czech (Čeština) """
 
@@ -1356,3 +1353,10 @@ class NoteType(str, Enum):
 
     CANVAS_NOTE = "CANVAS_NOTE"
     VIEW_NOTE = "VIEW_NOTE"
+
+
+class RedactionZoneType(str, Enum):
+    LOGO = "LOGO"
+    PERSONAL_DATA = "PERSONAL_DATA"
+    COMPANY_DATA = "COMPANY_DATA"
+    KEYWORD = "KEYWORD"

@@ -136,7 +136,7 @@ class GeneralTolerances(BaseModel):
         example="m",
     )
 
-    principle: GeneralTolerancesPrinciple = Field(
+    principle: Optional[GeneralTolerancesPrinciple] = Field(
         ...,
         description="The principle governing the tolerance application, such as independence or envelope.",
         example=GeneralTolerancesPrinciple.INDEPENDENCE,
@@ -182,7 +182,7 @@ class Balloon(BaseModel):
     )
 
 
-class Cue(BaseModel):
+class Callout(BaseModel):
     """
     Represents a design or manufacturing cue with descriptive information and metadata.
 
@@ -300,7 +300,7 @@ class Size(BaseModel):
     )
 
 
-class Dimension(Cue):
+class Dimension(Callout):
     """
     Represents a measurement cue in an engineering or technical drawing.
 
@@ -327,7 +327,7 @@ class Dimension(Cue):
     )
 
 
-class Thread(Cue):
+class Thread(Callout):
     """
     Represents a generic threaded feature in an engineering or technical drawing.
 
@@ -478,7 +478,7 @@ class ThreadKnuckle(Thread):
     knuckle_profile: Fraction
 
 
-class Chamfer(Cue):
+class Chamfer(Callout):
     """
     Represents a chamfer feature in an engineering or technical drawing.
 
@@ -783,7 +783,7 @@ class RoughnessCondition(BaseModel):
         ...,
         description="The roughness parameter being evaluated (e.g., Ra, Rz, Rt).",
     )
-    evaluation_length: RoughnessEvaluationLength = Field(
+    evaluation_length: Quantity = Field(
         ...,
         description="Details of the evaluation length used for roughness measurement.",
     )
@@ -857,7 +857,7 @@ class Roughness(BaseModel):
     )
 
 
-class Process(Cue):
+class Process(Callout):
     """
     Represents a manufacturing process with its type, category, and source.
 
@@ -893,7 +893,7 @@ class GDnTDatum(BaseModel):
     )
 
 
-class GDnT(Cue):
+class GDnT(Callout):
     """
     Represents a GD&T (Geometric Dimensioning and Tolerancing) cue in a technical drawing.
 
@@ -1045,8 +1045,7 @@ class BaseGeometryRod(Geometry):
 
 
 class Material(BaseModel):
-    blurb: str
-    raw_ocr_blurb: str
+    raw_ocr: str
     standard: str
     designation: str
     material_category: tuple[
@@ -1056,7 +1055,7 @@ class Material(BaseModel):
     ]
 
 
-class MaterialCombination(Cue):
+class MaterialCombination(Callout):
     materials: list[Material]
 
 
@@ -1065,40 +1064,37 @@ class BillOfMaterialRow(BaseModel):
 
     Attributes:
     ----------
-    - serial (Optional[str]): Serial number or Item Number,
-      giving the serial number used in BOM table.
     - position (Optional[str]): Position Number of the part
       on the assembly is defined using position bubbles.
       This position number is mentioned on the BOM table.
-    - quantity (Optional[W24PhysicalQuantity]): Quantity of the part is defined
-      as Physical Quantity with a value, unit and tolerance.
     - part_number (Optional[str]): Part Number of the parts
       listed in the bill of material.
     - designation (Optional[str]): Designation/Title of the part
       listed in the bill of material.
-    - material (list[MaterialCombination]): Material of the part listed in the
-      bill of material. These materials could be optional
+    - material_options (list[MaterialCombination]): Material of the part
+      listed in the bill of material. These materials could be optional
       set of material that could be applicable for the part.
       For example: Either (Material_A and Material_B)
         Or (Material_C and Material_D)
         Here,
-        (Material_A and Material_B) is a material set
-        (Material_C and Material_D) is another material set
+        (Material_A and Material_B) is a material combination
+        (Material_C and Material_D) is another material combination
+    - quantity (Optional[W24PhysicalQuantity]): Quantity of the part is defined
+      as Physical Quantity with a value, unit and tolerance.
     - weight (Optional[Quantity]): Weight of the parts listed in the bill of
         material.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    serial: Optional[str]
     position: Optional[str]
-    quantity: Optional[Quantity] = Field(
-        None, description="Physical quantity in the string format of Pint."
-    )
     part_number: Optional[str]
     designation: Optional[str]
     material_options: list[MaterialCombination]
-    weight: Optional[Quantity] = None
+    quantity: Optional[Quantity] = Field(
+        None, description="Physical quantity in the string format of Pint."
+    )
+    unit_weight: Optional[Quantity] = None
 
 
 class BillOfMaterial(BaseModel):
@@ -1151,7 +1147,7 @@ class RevisionTable(BaseModel):
     )
 
 
-class Cue(BaseModel):
+class Callout(BaseModel):
     """
     Base class for callout objects in technical drawings.
     """
@@ -1162,7 +1158,7 @@ class Cue(BaseModel):
     )
 
 
-class Note(Cue):
+class Note(Callout):
     """
     Represents a note in a technical drawing.
 
@@ -1181,7 +1177,7 @@ class Note(Cue):
     )
 
 
-class Doubt(Cue):
+class Doubt(Callout):
     """
     Represents a doubt or ambiguity identified by the system in the technical drawing.
 
@@ -1197,7 +1193,7 @@ class Doubt(Cue):
     pass
 
 
-class Radius(Cue):
+class Radius(Callout):
     quantity: Decimal
     curvature_type: Optional[CurvatureType] = None
     size: Size
