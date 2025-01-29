@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import PageType, ProjectionMethod, ThumbnailType
+from .enums import PageType, ProjectionMethod
 from .models import (
     BillOfMaterial,
     Bore,
