@@ -869,7 +869,7 @@ class FeatureType(str, Enum):
     Each type represents a specific aspect of the design or process.
     """
 
-    DIMENSION = "MEASURE"  # Represents a measurement cue
+    DIMENSION = "DIMENSION"  # Represents a dimension detail
     THREAD = "THREAD"  # Represents threading details
     GDNT = "GDNT"  # Represents Geometric Dimensioning and Tolerancing (GD&T)
     ROUGHNESS = "ROUGHNESS"  # Represents surface roughness details
@@ -1067,38 +1067,38 @@ class GDnTCharacteristic(str, Enum):
 
     Attributes:
     ----------
-    - FORM_STRAIGHTNESS: Straightness (⏤), ensures the surface or feature is straight.
-    - FORM_FLATNESS: Flatness (⏥), ensures the surface is uniformly flat.
-    - FORM_CIRCULARITY: Circularity (○), ensures the feature is uniformly circular.
-    - FORM_CYLINDRICITY: Cylindricity (⌭), ensures the feature is uniformly cylindrical.
-    - PROFILE_OF_SURFACE: Profile of a surface (⌓), defines the allowable deviation of a surface profile.
-    - PROFILE_OF_LINE: Profile of a line (⌒), defines the allowable deviation of a line profile.
-    - ORIENTATION_PERPENDICULARITY: Perpendicularity (⟂), ensures the feature is at a 90° angle.
-    - ORIENTATION_ANGULARITY: Angularity (∠), ensures the feature is at a specified angle.
-    - ORIENTATION_PARALLELISM: Parallelism (∥), ensures the feature is parallel to a reference.
-    - LOCATION_POSITION: Position (⌖), defines the allowable location of a feature.
-    - LOCATION_CONCENTRICITY: Concentricity (◎), ensures the center axes of features are aligned.
-    - LOCATION_SYMMETRY: Symmetry (⌯), ensures the feature is symmetric about a reference axis or plane.
-    - RUNOUT_CIRCULAR: Circular runout (↗), controls the surface elements' variation relative to a rotation axis.
-    - RUNOUT_TOTAL: Total runout (⌰), controls the surface's variation in all directions relative to a rotation axis.
-    - DATUM_INDICATOR: Datum indicator ([DATUM]), denotes the location of a reference datum.
+    - ANGULARITY: Angularity (∠), ensures the feature is at a specified angle.
+    - CIRCULAR_RUNOUT: Circular runout (↗), controls the surface elements' variation relative to a rotation axis.
+    - CIRCULARITY: Circularity (○), ensures the feature is uniformly circular.
+    - CONCENTRICITY: Concentricity (◎), ensures the center axes of features are aligned.
+    - CYLINDRICITY: Cylindricity (⌭), ensures the feature is uniformly cylindrical.
+    - DATUM: Datum indicator ([DATUM]), denotes the location of a reference datum.
+    - FLATNESS: Flatness (⏥), ensures the surface is uniformly flat.
+    - PARALLELISM: Parallelism (∥), ensures the feature is parallel to a reference.
+    - PERPENDICULARITY: Perpendicularity (⟂), ensures the feature is at a 90° angle.
+    - POSITION: Position (⌖), defines the allowable location of a feature.
+    - PROFILE_OF_A_LINE: Profile of a line (⌒), defines the allowable deviation of a line profile.
+    - PROFILE_OF_A_SURFACE: Profile of a surface (⌓), defines the allowable deviation of a surface profile.
+    - STRAIGHTNESS: Straightness (⏤), ensures the surface or feature is straight.
+    - SYMMETRY: Symmetry (⌯), ensures the feature is symmetric about a reference axis or plane.
+    - TOTAL_RUNOUT: Total runout (⌰), controls the surface's variation in all directions relative to a rotation axis.
     """
 
-    FORM_STRAIGHTNESS = "⏤"  # Straightness
-    FORM_FLATNESS = "⏥"  # Flatness
-    FORM_CIRCULARITY = "○"  # Circularity
-    FORM_CYLINDRICITY = "⌭"  # Cylindricity
-    PROFILE_OF_SURFACE = "⌓"  # Profile of a surface
-    PROFILE_OF_LINE = "⌒"  # Profile of a line
-    ORIENTATION_PERPENDICULARITY = "⟂"  # Perpendicularity
-    ORIENTATION_ANGULARITY = "∠"  # Angularity
-    ORIENTATION_PARALLELISM = "∥"  # Parallelism
-    LOCATION_POSITION = "⌖"  # Position
-    LOCATION_CONCENTRICITY = "◎"  # Concentricity
-    LOCATION_SYMMETRY = "⌯"  # Symmetry
-    RUNOUT_CIRCULAR = "↗"  # Circular runout
-    RUNOUT_TOTAL = "⌰"  # Total runout
-    DATUM_INDICATOR = "[DATUM]"  # Datum indicator
+    ANGULARITY = "∠"  # Angularity
+    CIRCULAR_RUNOUT = "↗"  # Circular runout
+    CIRCULARITY = "○"  # Circularity
+    CONCENTRICITY = "◎"  # Concentricity
+    CYLINDRICITY = "⌭"  # Cylindricity
+    DATUM = "[DATUM]"  # Datum indicator
+    FLATNESS = "⏥"  # Flatness
+    PARALLELISM = "∥"  # Parallelism
+    PERPENDICULARITY = "⟂"  # Perpendicularity
+    POSITION = "⌖"  # Position
+    PROFILE_OF_A_LINE = "⌒"  # Profile of a line
+    PROFILE_OF_A_SURFACE = "⌓"  # Profile of a surface
+    STRAIGHTNESS = "⏤"  # Straightness
+    SYMMETRY = "⌯"  # Symmetry
+    TOTAL_RUNOUT = "⌰"  # Total runout
 
 
 class GDnTZoneCombination(str, Enum):

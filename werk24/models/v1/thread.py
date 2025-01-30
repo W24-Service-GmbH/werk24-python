@@ -6,7 +6,7 @@ Author: Jochen Mattes - Werk24
 import abc
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel, validator
 
@@ -432,3 +432,14 @@ def _deserialize_thread_type(thread_type: str) -> Type[W24Thread]:
         raise ValueError(f"Unknown Ask Type '{thread_type}'")
 
     return class_
+
+
+W24ThreadUnion = Union[
+    W24ThreadACME,
+    W24ThreadISOMetric,
+    W24ThreadKnuckle,
+    W24ThreadNPT,
+    W24ThreadSM,
+    W24ThreadUTS,
+    W24ThreadWhitworth,
+]

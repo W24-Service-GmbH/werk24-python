@@ -87,7 +87,7 @@ class AnswerMetaDataMechanicalComponent(AnswerMetaData):
     Attributes:
     ----------
     - identifiers (List[Identifier]): A list of identifiers associated with the component.
-    - designation (Entry|None): Designation of the component.
+    - designation (List[Entry]): List of designations of the component in different languages.
     - languages (List[Language]): The languages used in the drawing.
     - general_tolerances (GeneralTolerances): General tolerance specifications.
     - general_roughness (Roughness): General roughness specifications.
@@ -106,8 +106,8 @@ class AnswerMetaDataMechanicalComponent(AnswerMetaData):
         default_factory=list,
         description="List of identifiers associated with the component.",
     )
-    designation: Entry | None = Field(
-        None,
+    designation: list[Entry] = Field(
+        default_factory=list,
         description="Designation of the component.",
     )
     languages: List[Language] = Field(

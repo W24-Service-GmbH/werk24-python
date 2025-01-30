@@ -203,7 +203,6 @@ class Feature(Callout):
 
     blurb: str  # Description or explanation of the cue
     feature_type: FeatureType  # The type of cue, constrained to values in CueType
-    balloon: Optional[Balloon] = None  # Additional related information, optional
 
 
 class Tolerance(BaseModel):
@@ -219,6 +218,7 @@ class Tolerance(BaseModel):
     - is_theoretically_exact (bool): Indicates whether the tolerance is theoretically exact.
     - is_reference (bool): Indicates whether the tolerance serves as a reference.
     - general_tolerance_applied (bool): Indicates whether the general tolerance was applied.
+    - is_approximation (bool): Indicates whether the tolerance is an approximation (e.g., 'approx. 5').
     """
 
     tolerance_grade: Optional[str] = Field(
@@ -257,37 +257,33 @@ class Tolerance(BaseModel):
         example=False,
     )
 
-    general_tolerance_applied: bool = Field(
+    is_general_tolerance: bool = Field(
         False,
         description="Whether the general tolerance was applied to this dimension.",
         example=True,
     )
 
+    is_approximation: bool = Field(
+        False,
+        description="Whether the tolerance is an approximation (e.g., 'approx. 5').",
+    )
 
-class Size(BaseModel):
+
+class Size(Quantity):
     """
     Represents a size definition for a part or feature in an engineering context.
 
     Attributes:
     ----------
     - size_type (SizeType): The type of size (e.g., diameter, linear, angular) as defined by `SizeType`.
-    - nominal_size (Decimal): The nominal size value without tolerances applied.
     - tolerance (Tolerance): The tolerance specifications associated with this size.
         If no tolerance is set, the general tolerance applies.
-    - unit (str): The unit of measurement for the size (e.g., mm, inch).
     """
 
     size_type: SizeType = Field(
         ...,
         description="The type of size (e.g., diameter, linear, angular).",
         example=SizeType.DIAMETER,
-    )
-
-    nominal_size: Decimal = Field(
-        ...,
-        ge=0,
-        description="The nominal size value, which is the target dimension without tolerances.",
-        example=Decimal("15.3"),
     )
 
     tolerance: Optional[Tolerance] = Field(
@@ -299,12 +295,6 @@ class Size(BaseModel):
             deviation_upper=Decimal("0.05"),
             tolerance_grade="IT7",
         ),
-    )
-
-    unit: str = Field(
-        ...,
-        description="The unit of measurement for the size (e.g., mm, inch).",
-        example="millimeter",
     )
 
 
@@ -503,7 +493,7 @@ class Chamfer(Feature):
         description="The linear size of the chamfer, such as the width or depth.",
         example=Size(
             size_type=SizeType.LINEAR,
-            nominal_size=Decimal("2"),
+            value=Decimal("2"),
             tolerance=Tolerance(
                 tolerance_grade="IT7",
                 deviation_lower=Decimal("-0.1"),
@@ -511,6 +501,7 @@ class Chamfer(Feature):
                 fit=None,
                 is_theoretically_exact=False,
                 is_reference=False,
+                is_approximation=False,
             ),
             unit="millimeter",
         ),
@@ -520,7 +511,7 @@ class Chamfer(Feature):
         description="The angle of the chamfer, typically specified in degrees.",
         example=Size(
             size_type=SizeType.ANGULAR,
-            nominal_size=Decimal("45"),
+            value=Decimal("45"),
             tolerance=Tolerance(
                 tolerance_grade="IT8",
                 deviation_lower=Decimal("-0.5"),
@@ -528,6 +519,7 @@ class Chamfer(Feature):
                 fit=None,
                 is_theoretically_exact=False,
                 is_reference=False,
+                is_approximation=False,
             ),
             unit="degree",
         ),
@@ -549,7 +541,7 @@ class Counterbore(BaseModel):
         description="The diameter of the counterbore.",
         example=Size(
             size_type=SizeType.DIAMETER,
-            nominal_size=Decimal("10"),
+            value=Decimal("10"),
             tolerance=Tolerance(
                 tolerance_grade="IT7",
                 deviation_lower=Decimal("-0.1"),
@@ -566,7 +558,7 @@ class Counterbore(BaseModel):
         description="The depth of the counterbore.",
         example=Size(
             size_type=SizeType.LINEAR,
-            nominal_size=Decimal("5"),
+            value=Decimal("5"),
             tolerance=Tolerance(
                 tolerance_grade="IT8",
                 deviation_lower=Decimal("-0.2"),
@@ -595,7 +587,7 @@ class Countersink(BaseModel):
         description="The diameter of the countersink.",
         example=Size(
             size_type=SizeType.DIAMETER,
-            nominal_size=Decimal("15"),
+            value=Decimal("15"),
             tolerance=None,
             unit="millimeter",
         ),
@@ -605,7 +597,7 @@ class Countersink(BaseModel):
         description="The angle of the countersink, typically in degrees.",
         example=Size(
             size_type=SizeType.ANGULAR,
-            nominal_size=Decimal("90"),
+            value=Decimal("90"),
             tolerance=None,
             unit="degree",
         ),
@@ -628,7 +620,7 @@ class Counterdrill(BaseModel):
         description="The diameter of the counterdrill.",
         example=Size(
             size_type=SizeType.DIAMETER,
-            nominal_size=Decimal("8"),
+            value=Decimal("8"),
             tolerance=None,
             unit="millimeter",
         ),
@@ -638,7 +630,7 @@ class Counterdrill(BaseModel):
         description="The depth of the counterdrill.",
         example=Size(
             size_type=SizeType.LINEAR,
-            nominal_size=Decimal("20"),
+            value=Decimal("20"),
             tolerance=None,
             unit="millimeter",
         ),
@@ -648,7 +640,7 @@ class Counterdrill(BaseModel):
         description="The angle of the counterdrill, typically in degrees.",
         example=Size(
             size_type=SizeType.ANGULAR,
-            nominal_size=Decimal("118"),
+            value=Decimal("118"),
             tolerance=None,
             unit="degree",
         ),
@@ -692,7 +684,7 @@ class Bore(Feature):
         description="The diameter of the bore.",
         example=Size(
             size_type=SizeType.DIAMETER,
-            nominal_size=Decimal("10"),
+            value=Decimal("10"),
             tolerance=None,
             unit="millimeter",
         ),
@@ -702,7 +694,7 @@ class Bore(Feature):
         description="The depth of the bore.",
         example=Size(
             size_type=SizeType.LINEAR,
-            nominal_size=Decimal("50"),
+            value=Decimal("50"),
             tolerance=None,
             unit="millimeter",
         ),
@@ -793,8 +785,8 @@ class RoughnessCondition(BaseModel):
         ...,
         description="The roughness parameter being evaluated (e.g., Ra, Rz, Rt).",
     )
-    evaluation_length: Quantity = Field(
-        ...,
+    evaluation_length: Optional[Quantity] = Field(
+        None,
         description="Details of the evaluation length used for roughness measurement.",
     )
     acceptance_criterion: Optional[RoughnessAcceptanceCriterion] = Field(
@@ -1068,7 +1060,7 @@ class Material(BaseModel):
 
 
 class MaterialCombination(Callout):
-    materials: list[Material]
+    material_combination: list[Material]
 
 
 class BillOfMaterialRow(BaseModel):
