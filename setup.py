@@ -54,7 +54,7 @@ setup(
     install_requires=[
         "aiohttp>=3.10.3,<=4.0.0",
         "boto3>=1.14.44,<=2.0.0",
-        "certifi>=2020.12.5,<=2025.0.0",
+        "certifi>=2020.12.5,<=2025.1.31",
         "colorama>=0.4.4,<=0.5.0",
         "cryptography>=42.0.7,<=44.0.0",
         "packaging>=21.3,<=24.2",
