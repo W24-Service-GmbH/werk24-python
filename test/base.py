@@ -1,12 +1,13 @@
-from werk24.models.techread import (
+from test.utils import AsyncTestCase
+from uuid import UUID
+
+from werk24.models.api import (
     W24AskType,
     W24TechreadMessage,
     W24TechreadMessageSubtype,
     W24TechreadMessageSubtypeProgress,
     W24TechreadMessageType,
 )
-from uuid import UUID
-from test.utils import AsyncTestCase
 
 
 class TestBase(AsyncTestCase):

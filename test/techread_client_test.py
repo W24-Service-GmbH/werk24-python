@@ -4,12 +4,12 @@ from typing import List
 
 from werk24._version import __version__
 from werk24.exceptions import UnsupportedMediaType
-from werk24.models.ask import W24Ask, W24AskPageThumbnail, W24AskVariantCAD
-from werk24.models.techread import (
+from werk24.models.api import (
     W24TechreadExceptionType,
     W24TechreadMessageType,
     W24TechreadRequest,
 )
+from werk24.models.ask import W24Ask, W24AskPageThumbnail, W24AskVariantCAD
 from werk24.techread_client import W24TechreadClient
 
 from .utils import get_drawing, get_model
@@ -116,7 +116,6 @@ class TestTechreadClient(AsyncTestCase):
             5,
         )
 
-
     async def test_read_with_callback_invalid_headers(self) -> None:
         """Test whether invalid headers raise an error."""
         client = W24TechreadClient.make_from_env()
@@ -151,7 +150,7 @@ class TestTechreadClient(AsyncTestCase):
         """Test whether invalid headers raise an error."""
         from werk24.exceptions import InsufficientCreditsException
         from werk24.techread_client import TechreadClientHttps
-        
+
         # Using assertRaises as a context manager
         with self.assertRaises(InsufficientCreditsException):
             TechreadClientHttps._raise_for_status("", 429)
