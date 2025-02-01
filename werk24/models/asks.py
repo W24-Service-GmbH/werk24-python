@@ -7,6 +7,7 @@ from .enums import PageType, RedactionZoneType
 from .models import (
     BillOfMaterial,
     Bore,
+    CalloutPosition,
     Chamfer,
     Dimension,
     Entry,
@@ -15,7 +16,6 @@ from .models import (
     Identifier,
     Language,
     MaterialCombination,
-    Polygon,
     PrimaryProcessUnion,
     ProjectionMethod,
     Radius,
@@ -79,7 +79,7 @@ class AnswerCalloutPositions(Answer):
 
     ask_type: Literal[AskType.CALLOUT_POSITIONS] = AskType.CALLOUT_POSITIONS
 
-    callout_positions: dict[int, Polygon] = Field(
+    callout_positions: list[CalloutPosition] = Field(
         ..., description="The positions of the component in the drawing."
     )
 
