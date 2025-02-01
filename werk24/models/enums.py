@@ -1317,3 +1317,12 @@ class UnitSystemType(str, Enum):
 class ProjectionMethodType(str, Enum):
     FIRST_ANGLE = "FIRST_ANGLE"
     THIRD_ANGLE = "THIRD_ANGLE"
+
+
+class VolumeEstimateType(str, Enum):
+    UPPER_BOUND_IGNORING_CAVITIES = "UPPER_BOUND_IGNORING_CAVITIES"
+
+
+class CoordinateSpace(str, Enum):
+    PIXEL_SPACE = "PIXEL_SPACE"
+    WORLD_SPACE = "WORLD_SPACE"
