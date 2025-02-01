@@ -8,7 +8,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 
 from .base_feature import W24BaseFeatureModel
 from .fraction import W24Fraction
