@@ -1277,4 +1277,4 @@ class SecondaryProcess(Feature):
 
 class CalloutPosition(BaseModel):
     callout_id: int
-    polygon: Polygon
+    polygon: Optional[Polygon]
