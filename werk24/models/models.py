@@ -1271,10 +1271,6 @@ class VolumeEstimate(Quantity):
     volume_estimate_type: VolumeEstimateType
 
 
-class SecondaryProcess(Feature):
-    process_category: list[str]
-
-
 class CalloutPosition(BaseModel):
     callout_id: int
     polygon: Optional[Polygon]
