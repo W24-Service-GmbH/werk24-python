@@ -1,6 +1,12 @@
 from enum import Enum
 
 
+class DepthType(str, Enum):
+    SIZE = "SIZE"
+    THROUGH = "THROUGH"
+    THROUGH_ALL = "THROUGH_ALL"
+
+
 class CurvatureType(str, Enum):
     """Curvature types of Radius"""
 
@@ -863,22 +869,6 @@ class GeneralTolerancesPrinciple(str, Enum):
     ENVELOPE = "ENVELOPE"  # Tolerances on size and form are combined.
 
 
-class FeatureType(str, Enum):
-    """
-    Enumeration of possible types of cues that can be associated with a design or manufacturing process.
-    Each type represents a specific aspect of the design or process.
-    """
-
-    DIMENSION = "DIMENSION"  # Represents a dimension detail
-    THREAD = "THREAD"  # Represents threading details
-    GDNT = "GDNT"  # Represents Geometric Dimensioning and Tolerancing (GD&T)
-    ROUGHNESS = "ROUGHNESS"  # Represents surface roughness details
-    CHAMFER = "CHAMFER"  # Represents a chamfer feature
-    BORE = "BORE"  # Represents a bore feature
-    BEND = "BEND"  # Represents a bending operation
-    PROCESS = "PROCESS"  # Represents a general process cue
-
-
 class PageType(str, Enum):
     """
     Enum representing page types
@@ -1239,7 +1229,7 @@ class GDnTMaterialCondition(str, Enum):
     RECIPROCITY = "Ⓡ"
 
 
-class GDnTAssociatedReference(str, Enum):
+class GDnTReferenceAssociation(str, Enum):
     """
     Enum for associations of reference elements in geometric dimensioning and tolerancing (GD&T).
 
@@ -1290,17 +1280,11 @@ class GeometryType(str, Enum):
 
     This classification categorizes common material shapes used in the industry.
     It ensures concise and clear boundaries between shapes while considering conventional usage.
-
-    Attributes:
     ----------
-    - PLATE: A flat material with a thickness of up to 17mm. Includes sheets (typically thinner than 6mm).
-    - BLOCK: A rectangular-shaped material thicker than 17mm. Includes bars, ingots, billets, and blooms.
-    - ROD: A cylindrical material, which may also include thin, flexible wires. Currently includes tubes (hollow cylinders).
     """
 
-    PLATE = "PLATE"  # Includes SHEET or SLAB
-    BLOCK = "BLOCK"  # Includes BAR, INGOT, BILLET, or BLOOM
-    ROD = "ROD"  # Includes WIRE; TUBE currently grouped here
+    CUBOID = "CUBOID"  # Includes SHEET or SLAB
+    CYLINDER = "CYLINDER"  # Includes BAR, INGOT, BILLET, or BLOOM
 
 
 class NoteType(str, Enum):

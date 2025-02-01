@@ -12,7 +12,7 @@ from .depth import W24Depth
 from .hole_feature import W24CounterBore, W24CounterDrill, W24CounterSink
 from .size import W24Size
 from .test_dimension import W24TestDimension
-from .thread import W24Thread
+from .thread import W24ThreadUnion
 from .tolerance import W24Tolerance, W24ToleranceGeneral, W24ToleranceType
 from .unit import W24UnitLength
 
@@ -163,7 +163,7 @@ class W24MeasureLabel(BaseModel):
 
     unit: Optional[W24UnitLength] = None
 
-    thread: Optional[W24Thread] = None
+    thread: Optional[W24ThreadUnion] = None
 
     chamfer: Optional[W24Chamfer] = None
 
