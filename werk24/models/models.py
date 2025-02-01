@@ -54,7 +54,7 @@ from .enums import (
     UnitSystemType,
     VolumeEstimateType,
 )
-from .v1.ask import W24Ask, W24AskResponse, W24AskType
+from .v1.ask import W24Ask, W24AskResponse, W24AskType, deserialize_ask_response
 
 ALLOWED_CALLBACK_HEADERS = {"authorization"}
 
@@ -1843,7 +1843,7 @@ class TechreadMessage(TechreadBaseResponse):
             return Answer.model_validate(v)
 
         # V1 Asks
-        return deserialize_ask_response_v1(v, info)
+        return deserialize_ask_response(v, info)
 
 
 class TechreadWithCallbackPayload(BaseModel):
