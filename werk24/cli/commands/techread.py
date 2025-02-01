@@ -7,15 +7,14 @@ from rich.console import Console
 from werk24.defaults import Settings
 from werk24.exceptions import UserInputError
 from werk24.logger import get_logger
-from werk24.models.asks import (
+from werk24.models import (
     AskCustom,
     AskFeatures,
     AskInsights,
     AskMetaData,
-    AskThumbnail,
+    Hook,
+    TechreadMessage,
 )
-from werk24.models.enums import ThumbnailType
-from werk24.models.techread import Hook, TechreadMessage
 from werk24.techread import Werk24Client
 
 console = Console()
@@ -31,7 +30,6 @@ def techread(
     max_pages: int = typer.Option(
         settings.max_pages, help="The maximum number of pages to read"
     ),
-    ask_thumbnail: ThumbnailType = typer.Option(None, help="Ask for a thumbnail"),
     ask_meta_data: bool = typer.Option(False, help="Ask for meta data"),
     ask_features: bool = typer.Option(False, help="Ask for features"),
     ask_insights: bool = typer.Option(False, help="Ask for insights"),
@@ -42,13 +40,6 @@ def techread(
 
     # Register the hooks
     hooks = [
-        (
-            Hook(
-                ask=AskThumbnail(thumbnail_type=ask_thumbnail), function=recv_thumbnail
-            )
-            if ask_thumbnail
-            else None
-        ),
         Hook(ask=AskMetaData(), function=recv_payload) if ask_meta_data else None,
         Hook(ask=AskFeatures(), function=recv_payload) if ask_features else None,
         Hook(ask=AskInsights(), function=recv_payload) if ask_insights else None,

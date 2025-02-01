@@ -1,12 +1,20 @@
 from datetime import date
 from decimal import Decimal
-from typing import List, Literal, Optional, Tuple, Union
+from enum import Enum
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from pydantic import (
+    UUID4,
     BaseModel,
     ConfigDict,
     Field,
+    HttpUrl,
+    Json,
+    ValidationInfo,
+    field_validator,
 )
+
+from werk24._version import __version__
 
 from .enums import (
     CoordinateSpace,
@@ -30,7 +38,9 @@ from .enums import (
     MaterialCategory2,
     MaterialCategory3,
     NoteType,
+    PageType,
     ProjectionMethodType,
+    RedactionZoneType,
     RoughnessAcceptanceCriterion,
     RoughnessConditionType,
     RoughnessDirectionOfLay,
@@ -44,6 +54,9 @@ from .enums import (
     UnitSystemType,
     VolumeEstimateType,
 )
+from .v1.ask import W24Ask, W24AskResponse, W24AskType
+
+ALLOWED_CALLBACK_HEADERS = {"authorization"}
 
 
 class Confidence(BaseModel):
@@ -1274,3 +1287,671 @@ class VolumeEstimate(Quantity):
 class CalloutPosition(BaseModel):
     callout_id: int
     polygon: Optional[Polygon]
+
+
+class AskType(str, Enum):
+    """The type of request to be sent to the server."""
+
+    CALLOUT_POSITIONS = "CALLOUT_POSITIONS"
+    CUSTOM = "CUSTOM"
+    FEATURES = "FEATURES"
+    INSIGHTS = "INSIGHTS"
+    META_DATA = "META_DATA"
+    REDACTION = "REDACTION"
+    SHEET_IMAGE = "SHEET_IMAGE"
+    VIEW_IMAGE = "VIEW_IMAGE"
+
+
+class AskV2(BaseModel):
+    """A class that represents a request for information
+    from the server.
+    """
+
+    ask_version: Literal["v2"] = "v2"
+
+
+Ask = Union[W24Ask, "AskV2"]
+
+
+class AskCalloutPositions(AskV2):
+    """Represents a request for the position of a component in the drawing."""
+
+    ask_type: Literal[AskType.CALLOUT_POSITIONS] = AskType.CALLOUT_POSITIONS
+
+
+class Answer(BaseModel):
+    """
+    A class that represents an answer to a request from the server.
+
+    """
+
+    ask_version: Literal["v2"] = "v2"
+
+
+class AnswerCalloutPositions(Answer):
+    """
+    A class that represents an answer to a request for the position of a component in the drawing.
+
+    Attributes:
+    ----------
+    - callout_positions (List[CalloutPosition]): The positions of the component in the drawing.
+    """
+
+    ask_type: Literal[AskType.CALLOUT_POSITIONS] = AskType.CALLOUT_POSITIONS
+
+    callout_positions: list[CalloutPosition] = Field(
+        ..., description="The positions of the component in the drawing."
+    )
+
+
+class AskMetaData(AskV2):
+    """A class that represents a request for metadata
+    from the server.
+    """
+
+    ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
+
+
+class AnswerMetaData(Answer):
+    ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
+
+
+class AnswerMetaDataMiscellaneous(AnswerMetaData):
+    """
+    A class that represents an answer to for a page that is NOT a component drawing.
+    """
+
+    page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
+
+
+class AnswerMetaDataMechanicalComponent(AnswerMetaData):
+    """A class that represents an answer to a request for metadata of a mechanical component drawing from the server.
+
+    Attributes:
+    ----------
+    - identifiers (List[Identifier]): A list of identifiers associated with the component.
+    - designation (List[Entry]): List of designations of the component in different languages.
+    - languages (List[Language]): The languages used in the drawing.
+    - general_tolerances (GeneralTolerances): General tolerance specifications.
+    - general_roughness (Roughness): General roughness specifications.
+    - material_options (List[MaterialCombination]): Material options for the component.
+    - weight (Quantity): The weight of the component.
+    - unit_system (UnitSystem): The units specification for the component.
+    - bill_of_material (List[BillOfMaterialRow]): Bill of materials for the component.
+    - revision_table (List[RevisionTableRow]): Revision history of the drawing.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
+
+    identifiers: List[Identifier] = Field(
+        default_factory=list,
+        description="List of identifiers associated with the component.",
+    )
+    designation: list[Entry] = Field(
+        default_factory=list,
+        description="Designation of the component.",
+    )
+    languages: List[Language] = Field(
+        default_factory=list,
+        description="Languages used in the drawing.",
+    )
+    general_tolerances: Optional[GeneralTolerances] = Field(
+        None,
+        description="General tolerance specifications for the component.",
+    )
+    general_roughness: Optional[Roughness] = Field(
+        None,
+        description="General roughness specifications for the component.",
+    )
+    material_options: List[MaterialCombination] = Field(
+        default_factory=list,
+        description="Material options available for the component.",
+    )
+    weight: Optional[Weight] = Field(
+        None,
+        description="Weight of the component.",
+    )
+    projection_method: Optional[ProjectionMethod] = Field(
+        None,
+        description="Projection method used in the drawing (e.g., first angle or third angle).",
+    )
+    bill_of_material: Optional[BillOfMaterial] = Field(
+        None,
+        description="Bill of materials for the component, listing parts and quantities.",
+    )
+    unit_system: Optional[UnitSystem] = Field(
+        None,
+        description="The units specification for the component.",
+    )
+
+
+class AnswerInsights(Answer):
+    ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
+
+
+class AnswerInsightsMechanicalComponent(AnswerInsights):
+    page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
+
+    primary_process_options: List[PrimaryProcessUnion] = Field(
+        ...,
+        description="The primary processing options available for the component.",
+    )
+
+    secondary_processes: List[SecondaryProcess] = Field(
+        ...,
+        description="The final geometry or shape of the material after processing.",
+    )
+
+    volume_estimate: Optional[VolumeEstimate] = Field(
+        None,
+        description="The estimated volume of the component.",
+    )
+
+
+class AskFeatures(AskV2):
+    """A class that represents a request for vallouts
+    from the server.
+    """
+
+    ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
+
+
+class AnswerFeatures(Answer):
+    ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
+
+
+class AnswerFeaturesMiscallaneous(Answer):
+    page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
+
+
+class AnswerFeaturesMechanicalComponent(Answer):
+    """
+    Represents an answer to a request for features of a mechanical component drawing from the server.
+
+    Attributes:
+    ----------
+    - dimensions (List[Dimension]): Dimension details for the component.
+    - threads (List[Thread]): Thread specifications for the component.
+    - bores (List[Bore]): Bore specifications for the component.
+    - chamfers (List[Chamfer]): Chamfer specifications for the component.
+    - roughnesses (List[Roughness]): Additional surface roughness details beyond general roughness.
+    - gdnts (List[GDnT]): Geometric dimensioning and tolerancing (GD&T) details.
+    - radii (List[Radius]): Radius specifications for the component.
+    """
+
+    page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
+
+    dimensions: List[Dimension] = Field(
+        default_factory=list,
+        description="Dimension details for the component.",
+    )
+    threads: List[ThreadUnion] = Field(
+        default_factory=list,
+        description="Thread specifications for the component.",
+    )
+    bores: List[Bore] = Field(
+        default_factory=list,
+        description="Bore specifications for the component.",
+    )
+    chamfers: List[Chamfer] = Field(
+        default_factory=list,
+        description="Chamfer specifications for the component.",
+    )
+    roughnesses: List[Roughness] = Field(
+        default_factory=list,
+        description="Additional surface roughness details beyond general roughness.",
+    )
+    gdnts: List[GDnT] = Field(
+        default_factory=list,
+        description="Geometric dimensioning and tolerancing (GD&T) details.",
+    )
+    radii: List[Radius] = Field(
+        default_factory=list,
+        description="Radius specifications for the component.",
+    )
+
+
+class AskCustom(AskV2):
+    ask_type: Literal[AskType.CUSTOM] = AskType.CUSTOM
+    custom_id: str = Field(..., description="The ID of the custom output to request.")
+    config: Dict[str, Any] = Field(
+        {}, description="Configuration options for the custom output."
+    )
+
+
+class AskInsights(AskV2):
+    """A class that represents a request for insights
+    from the server.
+    """
+
+    ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
+
+
+class ThumbnailFileFormat(str, Enum):
+    """The output format of the redacted drawing."""
+
+    PDF = "PDF"
+    PNG = "PNG"
+
+
+class RedactionKeyword(BaseModel):
+    keyword: str = Field(..., description="The keyword to redact from the drawing.")
+
+
+class AskRedaction(AskV2):
+    """
+    A class that represents a request for redaction from the server.
+    """
+
+    ask_type: Literal[AskType.REDACTION] = AskType.REDACTION
+    redact_logos: bool = Field(True, description="Redact the logos")
+    redact_company_data: bool = Field(True, description="Redact company data")
+    redact_personal_data: bool = Field(True, description="Redact personal data")
+    redact_keywords: list[RedactionKeyword] = Field(
+        [],
+        description="List of Keywords to redact. Keywords are strings that should be redacted from the drawing.",
+    )
+    output_format: ThumbnailFileFormat = Field(
+        ThumbnailFileFormat.PDF, description="Output format of the redacted drawing"
+    )
+    fill_color: str | None = Field(
+        "#ffffff",
+        description="Fill color for the redacted areas. Set to None if you only wish to obtain the redaction areas as polygons and perform the redaction on your end.",
+    )
+
+
+class RedactionZone(BaseModel):
+    """
+    A class that represents a redacted area in the drawing.
+
+    Attributes:
+    ----------
+    - polygon(list[tuple[int,int]]): A list of x,y tuples representing the vertices of the redacted area.
+    """
+
+    redaction_zone_type: RedactionZoneType
+    polygon: list[tuple[int, int]] = Field(
+        ...,
+        description="A list of x,y tuples representing the vertices of the redacted area.",
+    )
+
+
+class AnswerRedaction(Answer):
+    """
+    A class that represents an answer to a redaction request from the server.
+
+    Attributes:
+    ----------
+    - redaction_zones (HttpUrl): A list of redacted areas in the drawing.
+    """
+
+    ask_type: Literal[AskType.REDACTION] = AskType.REDACTION
+
+    redaction_zones: list[RedactionZone] = Field(
+        ..., description="A list of redacted areas in the drawing."
+    )
+
+
+class AskSheetImage(AskV2):
+    """Represents a request for a sheet image from the server."""
+
+    ask_type: Literal[AskType.SHEET_IMAGE] = AskType.SHEET_IMAGE
+
+
+class AskViewImage(AskV2):
+    """Represents a request for a view image from the server."""
+
+    ask_type: Literal[AskType.VIEW_IMAGE] = AskType.VIEW_IMAGE
+
+
+def get_ask_subclasses() -> List:
+    subclasses = AskV2.__subclasses__() + W24Ask.__subclasses__()
+    # Recursively collect subclasses of subclasses, if any
+    for subclass in subclasses:
+        subclasses.extend(subclass.__subclasses__())
+    return subclasses
+
+
+ASK_SUBCLASSES = {cls.__name__: cls for cls in get_ask_subclasses()}
+AskUnion = Union[tuple(ASK_SUBCLASSES.values())]
+
+
+class TechreadMessageType(str, Enum):
+    """Message Type of the message that is sent
+    from the server to the client in response to
+    a request.
+    """
+
+    ASK = "ASK"
+    PROGRESS = "PROGRESS"
+
+
+class TechreadMessageSubtype(str, Enum):
+    """Message Subtype for the MessageType: PROGRESS"""
+
+    PROGRESS_COMPLETED = "COMPLETED"
+    PROGRESS_INITIALIZATION_SUCCESS = "INITIALIZATION_SUCCESS"
+    PROGRESS_STARTED = "STARTED"
+
+
+class TechreadRequest(BaseModel):
+    asks: List[AskUnion] = Field(..., description="List of asks")
+    client_version: str = Field(default=__version__, description="Client version")
+    max_pages: int = Field(..., ge=1, description="Maximum number of pages to process")
+
+
+class TechreadAction(str, Enum):
+    """List of supported actions by the Techread API"""
+
+    INITIALIZE = "INITIALIZE"
+    READ = "READ"
+
+
+class Hook(BaseModel):
+    """
+    A Utility class to register callback requests for a specific message_type or W24Ask.
+
+    The 'Hook' object is used for handling and maintaining callback requests. Registering
+    an 'ask' should include a complete W24Ask definition, not just the ask type.
+
+    Attributes:
+    ----------
+    message_type (Optional[W24TechreadMessageType]): Specifies the type of the message.
+    message_subtype (Optional[W24TechreadMessageSubtype]): Specifies the subtype of the message.
+    ask (Optional[W24Ask]): The complete definition of W24Ask, if any.
+    function (Callable): The callback function to be invoked when the resulting information
+        is available.
+
+    Note:
+    ----
+    Either a message_type or an ask must be registered. Be careful when registering an ask;
+    a complete W24Ask definition is required, not just the ask type.
+    """
+
+    message_type: Optional[TechreadMessageType] = None
+    message_subtype: Optional[TechreadMessageSubtype] = None
+    ask: Optional[AskUnion] = None
+    function: Callable
+
+
+class EncryptionKeys(BaseModel):
+    """
+    A class to hold the encryption keys for the client.
+
+    Attributes:
+    ----------
+    public_key_pem (str): The public key in PEM format.
+    private_key_pem (str): The private key in PEM format.
+    """
+
+    client_public_key_pem: bytes
+    client_private_key_pem: bytes
+    client_private_key_passphrase: Optional[bytes] = None
+
+
+class TechreadExceptionType(str, Enum):
+    """List of all the error types that can possibly
+    be associated to the error type.
+    """
+
+    DRAWING_FILE_FORMAT_UNSUPPORTED = "DRAWING_FILE_FORMAT_UNSUPPORTED"
+    """ The Drawing was submitted in a file format that is not supproted
+    by the API at this stage.
+    """
+
+    DRAWING_FILE_SIZE_TOO_LARGE = "DRAWING_FILE_SIZE_TOO_LARGE"
+    """ The Drawing file size exceeded the limit
+    """
+
+    DRAWING_RESOLUTION_TOO_LOW = "DRAWING_RESOLUTION_TOO_LOW"
+    """ The resolution (dots per inch) was too low to be
+    processed
+    """
+
+    DRAWING_CONTENT_NOT_UNDERSTOOD = "DRAWING_CONTENT_NOT_UNDERSTOOD"
+    """ The file you submitted as drawing might not actually
+    be a drawing
+    """
+
+    DRAWING_PAPER_SIZE_TOO_LARGE = "DRAWING_PAPER_SIZE_TOO_LARGE"
+    """ The paper size is larger that the allowed paper size
+    """
+
+
+class TechreadException(BaseModel):
+    """
+    Error message that accompanies the W24TechreadMessage
+    if an error occured.
+
+    Attributes:
+    ----------
+    - exception_type (TechreadExceptionType): Error Type that allows the
+        API-user to translate the message to a user-info.
+    """
+
+    exception_type: TechreadExceptionType
+
+
+class TechreadBaseResponse(BaseModel):
+    """
+    BaseFormat for messages returned by the server.
+
+    Attributes:
+    ----------
+    - exceptions (List[W24TechreadException]): List of exceptions
+      that occured during the processing.
+    """
+
+    exceptions: List[TechreadException] = []
+
+    @property
+    def is_successful(self) -> bool:
+        """Check whether an exception of the ERROR level was returned.
+
+        Otherwise return True.
+
+        Returns:
+        -------
+        - True if no exceptions occured,False otherwise.
+        """
+        return not self.exceptions
+
+
+class PresignedPost(BaseModel):
+    """
+    Represents the details of a presigned POST request for uploading a file
+    to the Werk24 file system.
+
+    Attributes:
+    ----------
+    - url (HttpUrl): The URL where the POST request should be sent.
+    - fields (Dict[str, str]): A dictionary of form fields to include in the POST request.
+    """
+
+    url: HttpUrl
+    fields: Dict[str, str] = Field(alias="fields", default={})
+
+
+class TechreadInitResponse(TechreadBaseResponse):
+    """API response to the Initialize request
+
+    Attributes:
+    ----------
+    - drawing_presigned_post: Presigned Post for uploading the drawing
+    - model_presigned_post: Presigned Post for uploading the model
+    - exceptions (List[W24TechreadException]): List of exceptions that occured
+    """
+
+    drawing_presigned_post: PresignedPost
+    public_key: Optional[str] = None
+
+
+class TechreadMessage(TechreadBaseResponse):
+    """
+    Represents a message sent from the server to the client.
+
+    This class encapsulates the structure of a message that the server sends to
+    the client, providing metadata and payload for processing.
+
+    Attributes:
+    ----------
+    - request_id (UUID4): Unique identifier (UUID4) for the request, generated by
+      the server.
+    - message_type (TechreadMessageType): The main message type indicating the
+      category of the message.
+    - message_subtype (TechreadMessageSubtype): The subtype specifying additional
+      details about the message.
+    - page_number (int): The page number the message corresponds to (starting from 0).
+    - payload_dict (Optional[AskResponse]): A dictionary containing the structured payload data.
+    - payload_url (Optional[HttpUrl]): A URL for downloading binary data
+      (e.g., images or large files).
+    - payload_bytes (Optional[bytes]): Binary content downloaded from the `payload_url`.
+      This wil initially be None, and will be populated when the client downloads the
+      content from the `payload_url`. If you implement your own client, you need to
+      download the content from the `payload_url` and set the `payload_bytes` attribute.
+    """
+
+    request_id: UUID4
+    message_type: TechreadMessageType
+    message_subtype: TechreadMessageSubtype | AskType | W24AskType
+    page_number: int = 0
+    payload_dict: Optional[Answer | TechreadInitResponse | W24AskResponse] = None
+    payload_url: Optional[HttpUrl] = None
+    payload_bytes: Optional[bytes] = None
+
+    @field_validator("payload_dict", mode="before")
+    def deserialize_payload(
+        cls,
+        v: Any,
+        info: ValidationInfo,
+    ) -> Optional[Answer | TechreadInitResponse]:
+
+        if v is None:
+            return None
+
+        # Progress Messages
+        if (
+            info.data["message_subtype"]
+            == TechreadMessageSubtype.PROGRESS_INITIALIZATION_SUCCESS
+        ):
+            return TechreadInitResponse.model_validate(v)
+
+        # V2 Asks
+        if info.data["message_subtype"] in ASK_SUBCLASSES.values():
+            return Answer.model_validate(v)
+
+        # V1 Asks
+        return deserialize_ask_response_v1(v, info)
+
+
+class TechreadWithCallbackPayload(BaseModel):
+    """
+    Payload sent to the API to trigger a drawing read process with a callback URL.
+
+    This class encapsulates the details required for initiating a drawing read request
+    and registering a callback URL to receive the results.
+
+    Attributes:
+    ----------
+    - asks (List[W24AskUnion]): List of asks specifying the required information.
+    - callback_url (HttpUrl): The URL to call once processing is completed.
+    - callback_headers (Optional[Dict[str, str]]): Headers to include with the callback
+      request.
+    - max_pages (int): Maximum number of pages to process. Defaults to 5.
+    - client_version (str): The version of the client making the request.
+    - public_key (Optional[str]): Public key for encrypting the callback payload,
+      if applicable.
+    """
+
+    asks: List[AskUnion] = Field(
+        default_factory=list,
+        description="List of asks specifying the desired information to extract from the drawing.",
+    )
+
+    callback_url: HttpUrl = Field(
+        ...,
+        description="The URL to which the API will send the callback request after processing is completed.",
+    )
+
+    callback_headers: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Optional headers to include in the callback request. Headers must start with 'X-' or be whitelisted.",
+    )
+
+    max_pages: int = Field(
+        ...,
+        ge=1,
+        description="Maximum number of pages to process. Must be at least 1.",
+    )
+
+    client_version: str = Field(
+        default=__version__, description="Version of the client making the request."
+    )
+    public_key: Optional[str] = Field(
+        default=None,
+        description="Optional public key for encrypting the callback payload. Feature availability depends on the service level.",
+    )
+
+    @field_validator("callback_headers", mode="before")
+    @classmethod
+    def validate_callback_headers(
+        cls,
+        headers: Optional[Dict[str, str]],
+        max_name_length: int = 128,
+        max_value_length: int = 4096,
+    ) -> Optional[Dict[str, str]]:
+        """
+        Validate the callback headers to ensure compliance with server-side constraints.
+
+        Headers must:
+        - Be either whitelisted (`authorization`) or prefixed with "X-".
+        - Not exceed the maximum length for names and values.
+
+        Args:
+        ----
+        - headers (Optional[Dict[str, str]]): The callback headers to validate.
+        - max_name_length (int): Maximum allowed length for header names.
+        - max_value_length (int): Maximum allowed length for header values.
+
+        Returns:
+        -------
+        - Optional[Dict[str, str]]: The validated callback headers.
+
+        Raises:
+        ------
+        - ValueError: If any header name or value violates the constraints.
+        """
+        if headers is None:
+            return None
+
+        for name, value in headers.items():
+            # Validate header name
+            if (
+                name.lower() not in ALLOWED_CALLBACK_HEADERS
+                and not name.lower().startswith("x-")
+            ):
+                raise ValueError(
+                    f'Invalid header "{name}": must start with "X-" or be one of {ALLOWED_CALLBACK_HEADERS}.'
+                )
+
+            if len(name) > max_name_length:
+                raise ValueError(
+                    f'Header name "{name}" exceeds maximum length of {max_name_length} characters.'
+                )
+
+            # Validate header value
+            if len(value) > max_value_length:
+                raise ValueError(
+                    f'Header value for "{name}" exceeds maximum length of {max_value_length} characters.'
+                )
+
+        return headers
+
+
+class TechreadCommand(BaseModel):
+    """Command that is sent from the client to the Server"""
+
+    action: TechreadAction
+    message: Json

@@ -29,8 +29,8 @@ from werk24.exceptions import (
 )
 from werk24.license import find_license
 from werk24.logger import get_logger
-from werk24.models.asks import AskV2
-from werk24.models.techread import (
+from werk24.models import (
+    AskV2,
     EncryptionKeys,
     Hook,
     PresignedPost,
