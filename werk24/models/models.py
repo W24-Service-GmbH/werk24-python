@@ -9,6 +9,7 @@ from pydantic import (
 )
 
 from .enums import (
+    CoordinateSpace,
     CurvatureType,
     DepthType,
     GDnTAssociatedFeature,
@@ -41,6 +42,7 @@ from .enums import (
     ThreadHandedness,
     ThreadType,
     UnitSystemType,
+    VolumeEstimateType,
 )
 
 
@@ -1240,3 +1242,39 @@ class ProjectionMethod(Callout):
     """Projection Method according to ISO 128"""
 
     projection_method: ProjectionMethodType
+
+
+class CuttingProcess(BaseModel):
+    requires_bending: Optional[bool]
+    output_geometry: Optional[GeometryCuboid]
+
+
+class TurningProcess(BaseModel):
+    requires_secondary_milling: bool
+    output_geometry: Optional[GeometryCylinder]
+
+
+class MillingProcess(BaseModel):
+    axis_count: Optional[int]
+    output_geometry: Optional[GeometryCuboid]
+
+
+PrimaryProcessUnion = Union[CuttingProcess, TurningProcess, MillingProcess]
+
+
+class Polygon(BaseModel):
+    coordinate_space: CoordinateSpace
+    coordinates: list[tuple[int, int]]
+
+
+class VolumeEstimate(Quantity):
+    volume_estimate_type: VolumeEstimateType
+
+
+class SecondaryProcess(Feature):
+    process_category: list[str]
+
+
+class CalloutPosition(BaseModel):
+    callout_id: int
+    polygon: Polygon
