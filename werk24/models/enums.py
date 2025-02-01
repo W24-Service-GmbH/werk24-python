@@ -1329,6 +1329,13 @@ class CoordinateSpace(str, Enum):
 
 
 class TechreadExceptionLevel(str, Enum):
+    """Severity level for the Error
+
+    !!! note
+        This is defined for future-compatibility.
+        The only value that is currently used is ERROR.
+        The INFO level will follow shortly.
+    """
 
     ERROR = "ERROR"
     """ Set when the processing was stopped
@@ -1339,78 +1346,4 @@ class TechreadExceptionLevel(str, Enum):
     but we want to bring something to your awareness
     (e.g,. that you are using a feature that will soon
     be deprecated)
-    """
-
-
-class AskType(str, Enum):
-    """The type of request to be sent to the server."""
-
-    CALLOUT_POSITIONS = "CALLOUT_POSITIONS"
-    CUSTOM = "CUSTOM"
-    FEATURES = "FEATURES"
-    INSIGHTS = "INSIGHTS"
-    META_DATA = "META_DATA"
-    REDACTION = "REDACTION"
-    SHEET_IMAGE = "SHEET_IMAGE"
-    VIEW_IMAGE = "VIEW_IMAGE"
-
-
-class ThumbnailFileFormat(str, Enum):
-    """The output format of the redacted drawing."""
-
-    PDF = "PDF"
-    PNG = "PNG"
-
-
-class TechreadMessageType(str, Enum):
-    """Message Type of the message that is sent
-    from the server to the client in response to
-    a request.
-    """
-
-    ASK = "ASK"
-    PROGRESS = "PROGRESS"
-
-
-class TechreadMessageSubtype(str, Enum):
-    """Message Subtype for the MessageType: PROGRESS"""
-
-    PROGRESS_COMPLETED = "COMPLETED"
-    PROGRESS_INITIALIZATION_SUCCESS = "INITIALIZATION_SUCCESS"
-    PROGRESS_STARTED = "STARTED"
-
-
-class TechreadAction(str, Enum):
-    """List of supported actions by the Techread API"""
-
-    INITIALIZE = "INITIALIZE"
-    READ = "READ"
-
-
-class TechreadExceptionType(str, Enum):
-    """List of all the error types that can possibly
-    be associated to the error type.
-    """
-
-    DRAWING_FILE_FORMAT_UNSUPPORTED = "DRAWING_FILE_FORMAT_UNSUPPORTED"
-    """ The Drawing was submitted in a file format that is not supproted
-    by the API at this stage.
-    """
-
-    DRAWING_FILE_SIZE_TOO_LARGE = "DRAWING_FILE_SIZE_TOO_LARGE"
-    """ The Drawing file size exceeded the limit
-    """
-
-    DRAWING_RESOLUTION_TOO_LOW = "DRAWING_RESOLUTION_TOO_LOW"
-    """ The resolution (dots per inch) was too low to be
-    processed
-    """
-
-    DRAWING_CONTENT_NOT_UNDERSTOOD = "DRAWING_CONTENT_NOT_UNDERSTOOD"
-    """ The file you submitted as drawing might not actually
-    be a drawing
-    """
-
-    DRAWING_PAPER_SIZE_TOO_LARGE = "DRAWING_PAPER_SIZE_TOO_LARGE"
-    """ The paper size is larger that the allowed paper size
     """
