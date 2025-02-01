@@ -6,7 +6,7 @@ Author: Jochen Mattes - Werk24
 import abc
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union
 
 from pydantic import BaseModel, validator
 
@@ -116,7 +116,6 @@ class W24Thread(BaseModel, abc.ABC):
             NOTE: If the thread label specifies both a thread length and a
             bore length, only the thread length will be included here. The
             bore length can be found in the W24MeasureElement.depth attribute
-
     """
 
     blurb: str
@@ -179,7 +178,7 @@ class W24ThreadISOMetric(W24Thread):
 
     """
 
-    thread_type: W24ThreadType = W24ThreadType.ISO_METRIC
+    thread_type: Literal[W24ThreadType.ISO_METRIC] = W24ThreadType.ISO_METRIC
 
     female_major_diameter_tolerance: Optional[W24ToleranceType]
     female_pitch_diameter_tolerance: Optional[W24ToleranceType]
@@ -200,7 +199,7 @@ class W24ThreadSM(W24Thread):
 
     """
 
-    thread_type: W24ThreadType = W24ThreadType.SM
+    thread_type: Literal[W24ThreadType.SM] = W24ThreadType.SM
 
     sm_size: Decimal
 
@@ -229,7 +228,7 @@ class W24ThreadUTS(W24Thread):
             * 1B, 2B, 3B for internal threads
     """
 
-    thread_type: W24ThreadType = W24ThreadType.UTS
+    thread_type: Literal[W24ThreadType.UTS] = W24ThreadType.UTS
 
     uts_size: str
     uts_series: str
@@ -255,7 +254,7 @@ class W24ThreadACME(W24Thread):
 
     """
 
-    thread_type: W24ThreadType = W24ThreadType.ACME
+    thread_type: Literal[W24ThreadType.ACME] = W24ThreadType.ACME
 
     acme_size: str
     acme_series: str
@@ -280,7 +279,7 @@ class W24ThreadNPT(W24Thread):
 
     """
 
-    thread_type: W24ThreadType = W24ThreadType.NPT
+    thread_type: Literal[W24ThreadType.NPT] = W24ThreadType.NPT
 
     npt_size: str
     npt_series: str
@@ -292,7 +291,7 @@ class W24ThreadUTSCoarse(W24ThreadUTS):
     NOTE: will be deprecated in favor of W24ThreadUTS
     """
 
-    thread_type: W24ThreadType = W24ThreadType.UTS_COARSE
+    thread_type: Literal[W24ThreadType.UTS_COARSE] = W24ThreadType.UTS_COARSE
 
 
 class W24ThreadUTSFine(W24ThreadUTS):
@@ -301,7 +300,7 @@ class W24ThreadUTSFine(W24ThreadUTS):
     NOTE: will be deprecated in favor of W24ThreadUTS
     """
 
-    thread_type: W24ThreadType = W24ThreadType.UTS_FINE
+    thread_type: Literal[W24ThreadType.UTS_FINE] = W24ThreadType.UTS_FINE
 
 
 class W24ThreadUTSExtrafine(W24ThreadUTS):
@@ -310,7 +309,7 @@ class W24ThreadUTSExtrafine(W24ThreadUTS):
     NOTE: will be deprecated in favor of W24ThreadUTS
     """
 
-    thread_type: W24ThreadType = W24ThreadType.UTS_EXTRAFINE
+    thread_type: Literal[W24ThreadType.UTS_EXTRAFINE] = W24ThreadType.UTS_EXTRAFINE
 
 
 class W24ThreadUTSSpecial(W24ThreadUTS):
@@ -319,7 +318,7 @@ class W24ThreadUTSSpecial(W24ThreadUTS):
     NOTE: will be deprecated in favor of W24ThreadUTS
     """
 
-    thread_type: W24ThreadType = W24ThreadType.UTS_SPECIAL
+    thread_type: Literal[W24ThreadType.UTS_SPECIAL] = W24ThreadType.UTS_SPECIAL
 
 
 class W24ThreadWhitworth(W24Thread):
@@ -333,7 +332,7 @@ class W24ThreadWhitworth(W24Thread):
 
     """
 
-    thread_type: W24ThreadType = W24ThreadType.WHITWORTH
+    thread_type: Literal[W24ThreadType.WHITWORTH] = W24ThreadType.WHITWORTH
 
     whitworth_size: Decimal
 
@@ -390,48 +389,6 @@ class W24ThreadFeature(W24BaseFeatureModel):
     length: Optional[Decimal]
 
     threads: List[W24Thread]
-
-    @validator("threads", pre=True, allow_reuse=True)
-    def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24Thread]:
-        """Validator to de-serialize the asks. The de-serialization
-        is based on the ask_type attribute of the object. Pydantic
-        does not support this out-of-the box
-
-        Args:
-            raw (Dict[str, Any]): Raw json of the asks list
-
-        Returns:
-            List[W24AskUnion]: List of deserialized Asks
-        """
-        return [_deserialize_thread_type(t) for t in raw]
-
-
-def _deserialize_thread_type(thread_type: str) -> Type[W24Thread]:
-    """Get the Ask Class from the ask type
-
-    Args:
-        ask_type (str): Ask type in question
-
-    Raises:
-        ValueError: Raised if ask type is unknown
-
-    Returns:
-        str: Name of the AskObject
-    """
-    class_ = {
-        "ACME": W24ThreadACME,
-        "ISO_METRIC": W24ThreadISOMetric,
-        "KNUCKLE": W24ThreadKnuckle,
-        "NPT": W24ThreadNPT,
-        "SM": W24ThreadSM,
-        "UTS": W24ThreadUTS,
-        "WHITWORTH": W24ThreadWhitworth,
-    }.get(thread_type, None)
-
-    if class_ is None:
-        raise ValueError(f"Unknown Ask Type '{thread_type}'")
-
-    return class_
 
 
 W24ThreadUnion = Union[

@@ -21,7 +21,7 @@ from .models import (
     ProjectionMethod,
     Radius,
     Roughness,
-    Thread,
+    ThreadUnion,
     UnitSystem,
     Weight,
 )
@@ -38,6 +38,7 @@ class AskType(str, Enum):
     REDACTION = "REDACTION"
     SHEET_IMAGE = "SHEET_IMAGE"
     VIEW_IMAGE = "VIEW_IMAGE"
+    POSITIONS = "POSITIONS"
 
 
 class AskV2(BaseModel):
@@ -49,6 +50,12 @@ class AskV2(BaseModel):
 
 
 Ask = Union[W24Ask, "AskV2"]
+
+
+class AskPosition(AskV2):
+    """Represents a request for the position of a component in the drawing."""
+
+    ask_type: Literal[AskType.POSITIONS] = AskType.POSITIONS
 
 
 class Answer(BaseModel):
@@ -205,7 +212,7 @@ class AnswerFeaturesMechanicalComponent(Answer):
         default_factory=list,
         description="Dimension details for the component.",
     )
-    threads: List[Thread] = Field(
+    threads: List[ThreadUnion] = Field(
         default_factory=list,
         description="Thread specifications for the component.",
     )
