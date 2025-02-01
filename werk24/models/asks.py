@@ -9,20 +9,21 @@ from .models import (
     Bore,
     Chamfer,
     Dimension,
-    Doubt,
     Entry,
     GDnT,
     GeneralTolerances,
-    Geometry,
     Identifier,
     Language,
     MaterialCombination,
-    Process,
+    Polygon,
+    PrimaryProcessUnion,
     ProjectionMethod,
     Radius,
     Roughness,
+    SecondaryProcess,
     ThreadUnion,
     UnitSystem,
+    VolumeEstimate,
     Weight,
 )
 from .v1.ask import W24Ask
@@ -31,6 +32,7 @@ from .v1.ask import W24Ask
 class AskType(str, Enum):
     """The type of request to be sent to the server."""
 
+    CALLOUT_POSITIONS = "CALLOUT_POSITIONS"
     CUSTOM = "CUSTOM"
     FEATURES = "FEATURES"
     INSIGHTS = "INSIGHTS"
@@ -38,7 +40,6 @@ class AskType(str, Enum):
     REDACTION = "REDACTION"
     SHEET_IMAGE = "SHEET_IMAGE"
     VIEW_IMAGE = "VIEW_IMAGE"
-    POSITIONS = "POSITIONS"
 
 
 class AskV2(BaseModel):
@@ -52,10 +53,10 @@ class AskV2(BaseModel):
 Ask = Union[W24Ask, "AskV2"]
 
 
-class AskPosition(AskV2):
+class AskCalloutPositions(AskV2):
     """Represents a request for the position of a component in the drawing."""
 
-    ask_type: Literal[AskType.POSITIONS] = AskType.POSITIONS
+    ask_type: Literal[AskType.CALLOUT_POSITIONS] = AskType.CALLOUT_POSITIONS
 
 
 class Answer(BaseModel):
@@ -65,7 +66,22 @@ class Answer(BaseModel):
     """
 
     ask_version: Literal["v2"] = "v2"
-    page: int = Field(..., description="The page number of the answer starting from 1.")
+
+
+class AnswerCalloutPositions(Answer):
+    """
+    A class that represents an answer to a request for the position of a component in the drawing.
+
+    Attributes:
+    ----------
+    - callout_positions (List[CalloutPosition]): The positions of the component in the drawing.
+    """
+
+    ask_type: Literal[AskType.CALLOUT_POSITIONS] = AskType.CALLOUT_POSITIONS
+
+    callout_positions: dict[int, Polygon] = Field(
+        ..., description="The positions of the component in the drawing."
+    )
 
 
 class AskMetaData(AskV2):
@@ -158,19 +174,19 @@ class AnswerInsights(Answer):
 class AnswerInsightsMechanicalComponent(AnswerInsights):
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
-    input_geometry: Optional[Geometry] = Field(
+    primary_process_options: List[PrimaryProcessUnion] = Field(
         ...,
-        description="The input geometry or shape of the material prior to processing.",
+        description="The primary processing options available for the component.",
     )
 
-    output_geometry: Optional[Geometry] = Field(
+    secondary_processes: List[SecondaryProcess] = Field(
         ...,
         description="The final geometry or shape of the material after processing.",
     )
 
-    processes: List[Process] = Field(
-        default_factory=list,
-        description="List of manufacturing processes applied to the component.",
+    volume_estimate: Optional[VolumeEstimate] = Field(
+        None,
+        description="The estimated volume of the component.",
     )
 
 
@@ -203,7 +219,6 @@ class AnswerFeaturesMechanicalComponent(Answer):
     - roughnesses (List[Roughness]): Additional surface roughness details beyond general roughness.
     - gdnts (List[GDnT]): Geometric dimensioning and tolerancing (GD&T) details.
     - radii (List[Radius]): Radius specifications for the component.
-    - doubts (List[Doubt]): Doubts or ambiguities identified by the system.
     """
 
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
@@ -235,10 +250,6 @@ class AnswerFeaturesMechanicalComponent(Answer):
     radii: List[Radius] = Field(
         default_factory=list,
         description="Radius specifications for the component.",
-    )
-    doubts: List[Doubt] = Field(
-        default_factory=list,
-        description="Doubts or ambiguities identified by the system.",
     )
 
 

@@ -1083,7 +1083,7 @@ class GeometryCylinder(Geometry):
 
     geometry_type: Literal[GeometryType.CYLINDER] = GeometryType.CYLINDER
     diameter: Size
-    height: Size
+    depth: Size
 
 
 class Material(BaseModel):
