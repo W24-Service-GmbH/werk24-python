@@ -13,9 +13,8 @@ def expose_v1_modules():
     TARGET_MODULE = "werk24.models"
 
     # Dynamically import all submodules from v1 and alias them under werk24.models
-    for finder, name, ispkg in pkgutil.iter_modules(
-        importlib.import_module(BASE_MODULE).__path__
-    ):
+    for row in pkgutil.iter_modules(importlib.import_module(BASE_MODULE).__path__):
+        name = row[1]
         full_name = f"{BASE_MODULE}.{name}"
         module = importlib.import_module(full_name)
 
