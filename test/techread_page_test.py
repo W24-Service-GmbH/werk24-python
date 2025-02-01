@@ -1,14 +1,14 @@
+from test.base import TestBase
 from unittest import mock
 
-from werk24.models.ask import W24AskPageThumbnail
-from werk24.models.techread import (
+from werk24.models.api import (
     W24AskType,
     W24TechreadMessageSubtypeProgress,
     W24TechreadMessageType,
 )
+from werk24.models.ask import W24AskPageThumbnail
 from werk24.techread_client import Hook, W24TechreadClient
 
-from test.base import TestBase
 from .utils import CWD, get_drawing
 
 LICENSE_PATH_INVALID_CREDS = CWD / "assets" / "invalid_creds.werk24"

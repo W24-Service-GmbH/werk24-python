@@ -1,12 +1,14 @@
 """ Integration test to verify that we can send AskTitleBlock request
 and receive a response that fits the expected format
 """
-from werk24.models.ask import W24AskTitleBlock
-from werk24.models.title_block import W24TitleBlock
-from werk24.models.techread import W24AskType, W24TechreadMessageSubtypeProgress
-from werk24.techread_client import W24TechreadClient
 
 from test.base import TestBase
+
+from werk24.models.api import W24AskType, W24TechreadMessageSubtypeProgress
+from werk24.models.ask import W24AskTitleBlock
+from werk24.models.title_block import W24TitleBlock
+from werk24.techread_client import W24TechreadClient
+
 from .utils import get_drawing
 
 DRAWING_BYTES = get_drawing()

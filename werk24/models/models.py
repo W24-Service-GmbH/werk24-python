@@ -17,6 +17,7 @@ from pydantic import (
 from werk24._version import __version__
 
 from .enums import (
+    AskType,
     CoordinateSpace,
     CurvatureType,
     DepthType,
@@ -49,8 +50,14 @@ from .enums import (
     RoughnessParameter,
     RoughnessStandard,
     SizeType,
+    TechreadAction,
+    TechreadExceptionLevel,
+    TechreadExceptionType,
+    TechreadMessageSubtype,
+    TechreadMessageType,
     ThreadHandedness,
     ThreadType,
+    ThumbnailFileFormat,
     UnitSystemType,
     VolumeEstimateType,
 )
@@ -1289,19 +1296,6 @@ class CalloutPosition(BaseModel):
     polygon: Optional[Polygon]
 
 
-class AskType(str, Enum):
-    """The type of request to be sent to the server."""
-
-    CALLOUT_POSITIONS = "CALLOUT_POSITIONS"
-    CUSTOM = "CUSTOM"
-    FEATURES = "FEATURES"
-    INSIGHTS = "INSIGHTS"
-    META_DATA = "META_DATA"
-    REDACTION = "REDACTION"
-    SHEET_IMAGE = "SHEET_IMAGE"
-    VIEW_IMAGE = "VIEW_IMAGE"
-
-
 class AskV2(BaseModel):
     """A class that represents a request for information
     from the server.
@@ -1529,13 +1523,6 @@ class AskInsights(AskV2):
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
 
 
-class ThumbnailFileFormat(str, Enum):
-    """The output format of the redacted drawing."""
-
-    PDF = "PDF"
-    PNG = "PNG"
-
-
 class RedactionKeyword(BaseModel):
     keyword: str = Field(..., description="The keyword to redact from the drawing.")
 
@@ -1618,35 +1605,10 @@ ASK_SUBCLASSES = {cls.__name__: cls for cls in get_ask_subclasses()}
 AskUnion = Union[tuple(ASK_SUBCLASSES.values())]
 
 
-class TechreadMessageType(str, Enum):
-    """Message Type of the message that is sent
-    from the server to the client in response to
-    a request.
-    """
-
-    ASK = "ASK"
-    PROGRESS = "PROGRESS"
-
-
-class TechreadMessageSubtype(str, Enum):
-    """Message Subtype for the MessageType: PROGRESS"""
-
-    PROGRESS_COMPLETED = "COMPLETED"
-    PROGRESS_INITIALIZATION_SUCCESS = "INITIALIZATION_SUCCESS"
-    PROGRESS_STARTED = "STARTED"
-
-
 class TechreadRequest(BaseModel):
     asks: List[AskUnion] = Field(..., description="List of asks")
     client_version: str = Field(default=__version__, description="Client version")
     max_pages: int = Field(..., ge=1, description="Maximum number of pages to process")
-
-
-class TechreadAction(str, Enum):
-    """List of supported actions by the Techread API"""
-
-    INITIALIZE = "INITIALIZE"
-    READ = "READ"
 
 
 class Hook(BaseModel):
@@ -1691,35 +1653,6 @@ class EncryptionKeys(BaseModel):
     client_private_key_passphrase: Optional[bytes] = None
 
 
-class TechreadExceptionType(str, Enum):
-    """List of all the error types that can possibly
-    be associated to the error type.
-    """
-
-    DRAWING_FILE_FORMAT_UNSUPPORTED = "DRAWING_FILE_FORMAT_UNSUPPORTED"
-    """ The Drawing was submitted in a file format that is not supproted
-    by the API at this stage.
-    """
-
-    DRAWING_FILE_SIZE_TOO_LARGE = "DRAWING_FILE_SIZE_TOO_LARGE"
-    """ The Drawing file size exceeded the limit
-    """
-
-    DRAWING_RESOLUTION_TOO_LOW = "DRAWING_RESOLUTION_TOO_LOW"
-    """ The resolution (dots per inch) was too low to be
-    processed
-    """
-
-    DRAWING_CONTENT_NOT_UNDERSTOOD = "DRAWING_CONTENT_NOT_UNDERSTOOD"
-    """ The file you submitted as drawing might not actually
-    be a drawing
-    """
-
-    DRAWING_PAPER_SIZE_TOO_LARGE = "DRAWING_PAPER_SIZE_TOO_LARGE"
-    """ The paper size is larger that the allowed paper size
-    """
-
-
 class TechreadException(BaseModel):
     """
     Error message that accompanies the W24TechreadMessage
@@ -1727,10 +1660,12 @@ class TechreadException(BaseModel):
 
     Attributes:
     ----------
+    - exception_level (TechreadExceptionLevel): Error Level that allows the
     - exception_type (TechreadExceptionType): Error Type that allows the
         API-user to translate the message to a user-info.
     """
 
+    exception_level: TechreadExceptionLevel
     exception_type: TechreadExceptionType
 
 
