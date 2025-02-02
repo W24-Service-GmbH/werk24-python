@@ -1,3 +1,4 @@
+import abc
 from datetime import date
 from decimal import Decimal
 from enum import Enum
@@ -10,6 +11,7 @@ from pydantic import (
     Field,
     HttpUrl,
     Json,
+    ValidationError,
     ValidationInfo,
     field_validator,
 )
@@ -1320,13 +1322,66 @@ class AskCalloutPositions(AskV2):
     ask_type: Literal[AskType.CALLOUT_POSITIONS] = AskType.CALLOUT_POSITIONS
 
 
-class Answer(BaseModel):
+class Answer(BaseModel, abc.ABC):
     """
     A class that represents an answer to a request from the server.
 
     """
 
     ask_version: Literal["v2"] = "v2"
+
+
+class AnswerFeaturesMiscallaneous(Answer):
+    ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
+    page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
+
+
+class AnswerFeaturesMechanicalComponent(Answer):
+    """
+    Represents an answer to a request for features of a mechanical component drawing from the server.
+
+    Attributes:
+    ----------
+    - dimensions (List[Dimension]): Dimension details for the component.
+    - threads (List[Thread]): Thread specifications for the component.
+    - bores (List[Bore]): Bore specifications for the component.
+    - chamfers (List[Chamfer]): Chamfer specifications for the component.
+    - roughnesses (List[Roughness]): Additional surface roughness details beyond general roughness.
+    - gdnts (List[GDnT]): Geometric dimensioning and tolerancing (GD&T) details.
+    - radii (List[Radius]): Radius specifications for the component.
+    """
+
+    ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
+    page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
+
+    dimensions: List[Dimension] = Field(
+        default_factory=list,
+        description="Dimension details for the component.",
+    )
+    threads: List[ThreadUnion] = Field(
+        default_factory=list,
+        description="Thread specifications for the component.",
+    )
+    bores: List[Bore] = Field(
+        default_factory=list,
+        description="Bore specifications for the component.",
+    )
+    chamfers: List[Chamfer] = Field(
+        default_factory=list,
+        description="Chamfer specifications for the component.",
+    )
+    roughnesses: List[Roughness] = Field(
+        default_factory=list,
+        description="Additional surface roughness details beyond general roughness.",
+    )
+    gdnts: List[GDnT] = Field(
+        default_factory=list,
+        description="Geometric dimensioning and tolerancing (GD&T) details.",
+    )
+    radii: List[Radius] = Field(
+        default_factory=list,
+        description="Radius specifications for the component.",
+    )
 
 
 class AnswerCalloutPositions(Answer):
@@ -1345,6 +1400,26 @@ class AnswerCalloutPositions(Answer):
     )
 
 
+class AnswerInsightsMechanicalComponent(Answer):
+    ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
+    page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
+
+    primary_process_options: List[PrimaryProcessUnion] = Field(
+        ...,
+        description="The primary processing options available for the component.",
+    )
+
+    secondary_processes: List[SecondaryProcess] = Field(
+        ...,
+        description="The final geometry or shape of the material after processing.",
+    )
+
+    volume_estimate: Optional[VolumeEstimate] = Field(
+        None,
+        description="The estimated volume of the component.",
+    )
+
+
 class AskMetaData(AskV2):
     """A class that represents a request for metadata
     from the server.
@@ -1353,19 +1428,16 @@ class AskMetaData(AskV2):
     ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
 
 
-class AnswerMetaData(Answer):
-    ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
-
-
-class AnswerMetaDataMiscellaneous(AnswerMetaData):
+class AnswerMetaDataMiscellaneous(Answer):
     """
     A class that represents an answer to for a page that is NOT a component drawing.
     """
 
+    ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
     page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
 
 
-class AnswerMetaDataMechanicalComponent(AnswerMetaData):
+class AnswerMetaDataMechanicalComponent(Answer):
     """A class that represents an answer to a request for metadata of a mechanical component drawing from the server.
 
     Attributes:
@@ -1384,6 +1456,7 @@ class AnswerMetaDataMechanicalComponent(AnswerMetaData):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
     identifiers: List[Identifier] = Field(
@@ -1428,90 +1501,12 @@ class AnswerMetaDataMechanicalComponent(AnswerMetaData):
     )
 
 
-class AnswerInsights(Answer):
-    ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
-
-
-class AnswerInsightsMechanicalComponent(AnswerInsights):
-    page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
-
-    primary_process_options: List[PrimaryProcessUnion] = Field(
-        ...,
-        description="The primary processing options available for the component.",
-    )
-
-    secondary_processes: List[SecondaryProcess] = Field(
-        ...,
-        description="The final geometry or shape of the material after processing.",
-    )
-
-    volume_estimate: Optional[VolumeEstimate] = Field(
-        None,
-        description="The estimated volume of the component.",
-    )
-
-
 class AskFeatures(AskV2):
     """A class that represents a request for vallouts
     from the server.
     """
 
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
-
-
-class AnswerFeatures(Answer):
-    ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
-
-
-class AnswerFeaturesMiscallaneous(Answer):
-    page_type: Literal[PageType.MISCELLANEOUS] = PageType.MISCELLANEOUS
-
-
-class AnswerFeaturesMechanicalComponent(Answer):
-    """
-    Represents an answer to a request for features of a mechanical component drawing from the server.
-
-    Attributes:
-    ----------
-    - dimensions (List[Dimension]): Dimension details for the component.
-    - threads (List[Thread]): Thread specifications for the component.
-    - bores (List[Bore]): Bore specifications for the component.
-    - chamfers (List[Chamfer]): Chamfer specifications for the component.
-    - roughnesses (List[Roughness]): Additional surface roughness details beyond general roughness.
-    - gdnts (List[GDnT]): Geometric dimensioning and tolerancing (GD&T) details.
-    - radii (List[Radius]): Radius specifications for the component.
-    """
-
-    page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
-
-    dimensions: List[Dimension] = Field(
-        default_factory=list,
-        description="Dimension details for the component.",
-    )
-    threads: List[ThreadUnion] = Field(
-        default_factory=list,
-        description="Thread specifications for the component.",
-    )
-    bores: List[Bore] = Field(
-        default_factory=list,
-        description="Bore specifications for the component.",
-    )
-    chamfers: List[Chamfer] = Field(
-        default_factory=list,
-        description="Chamfer specifications for the component.",
-    )
-    roughnesses: List[Roughness] = Field(
-        default_factory=list,
-        description="Additional surface roughness details beyond general roughness.",
-    )
-    gdnts: List[GDnT] = Field(
-        default_factory=list,
-        description="Geometric dimensioning and tolerancing (GD&T) details.",
-    )
-    radii: List[Radius] = Field(
-        default_factory=list,
-        description="Radius specifications for the component.",
-    )
 
 
 class AskCustom(AskV2):
@@ -1615,8 +1610,17 @@ def get_ask_subclasses() -> List:
     return subclasses
 
 
-ASK_SUBCLASSES = {cls.__name__: cls for cls in get_ask_subclasses()}
-AskUnion = Union[tuple(ASK_SUBCLASSES.values())]
+def get_answer_subclasses() -> List:
+    subclasses = Answer.__subclasses__()
+    # Recursively collect subclasses of subclasses, if any
+    for subclass in subclasses:
+        subclasses.extend(subclass.__subclasses__())
+    return subclasses
+
+
+AskUnion = Union[tuple(get_ask_subclasses())]
+ANSWER_SUBCLASSES = get_answer_subclasses()
+AnswerUnion = Union[tuple(ANSWER_SUBCLASSES)]
 
 
 class TechreadMessageType(str, Enum):
@@ -1819,7 +1823,9 @@ class TechreadMessage(TechreadBaseResponse):
     message_type: TechreadMessageType
     message_subtype: TechreadMessageSubtype | AskType | W24AskType
     page_number: int = 0
-    payload_dict: Optional[Answer | TechreadInitResponse | W24AskResponse] = None
+    payload_dict: Optional[
+        AnswerUnion | TechreadInitResponse | W24AskResponse | dict
+    ] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
 
@@ -1828,7 +1834,7 @@ class TechreadMessage(TechreadBaseResponse):
         cls,
         v: Any,
         info: ValidationInfo,
-    ) -> Optional[Answer | TechreadInitResponse]:
+    ) -> Optional[AnswerUnion | TechreadInitResponse | W24AskResponse | dict]:
 
         if v is None:
             return None
@@ -1840,12 +1846,22 @@ class TechreadMessage(TechreadBaseResponse):
         ):
             return TechreadInitResponse.model_validate(v)
 
-        # V2 Asks
-        if info.data["message_subtype"] in ASK_SUBCLASSES.values():
-            return Answer.model_validate(v)
+        if v.get("ask_version") == "v2":
+            for c_class in ANSWER_SUBCLASSES:
+                print(c_class)
+                try:
+                    parsed = c_class.model_validate(v)
+                    print(parsed)
+                    return parsed
+                except ValidationError:
+                    pass
 
-        # V1 Asks
-        return deserialize_ask_response(v, info)
+    #     # V2 Asks
+    #     if info.data["message_subtype"] in ASK_SUBCLASSES.values():
+    #         return Answer.model_validate(v)
+
+    #     # V1 Asks
+    #     return deserialize_ask_response(v, info)
 
 
 class TechreadWithCallbackPayload(BaseModel):
