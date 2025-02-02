@@ -1856,12 +1856,8 @@ class TechreadMessage(TechreadBaseResponse):
                 except ValidationError:
                     pass
 
-    #     # V2 Asks
-    #     if info.data["message_subtype"] in ASK_SUBCLASSES.values():
-    #         return Answer.model_validate(v)
-
-    #     # V1 Asks
-    #     return deserialize_ask_response(v, info)
+        # V1 Asks
+        return deserialize_ask_response(v, info)
 
 
 class TechreadWithCallbackPayload(BaseModel):
