@@ -1,15 +1,6 @@
-import os
 from test.utils import AsyncTestCase
-from typing import List
 
 from werk24._version import __version__
-from werk24.exceptions import UnsupportedMediaType
-from werk24.models.api import (
-    W24TechreadExceptionType,
-    W24TechreadMessageType,
-    W24TechreadRequest,
-)
-from werk24.models.ask import W24Ask, W24AskPageThumbnail, W24AskVariantCAD
 from werk24.techread_client import W24TechreadClient
 
 from .utils import get_drawing, get_model

@@ -64,6 +64,7 @@ async def run(server: str, fh: str, hooks: list[Hook], max_pages: int):
 
 
 def recv_payload(message: TechreadMessage):
+    print(f"Received message: {message}")
     console.print(message.payload_dict)
 
 
