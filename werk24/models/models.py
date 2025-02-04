@@ -181,42 +181,22 @@ class GeneralTolerances(Reference):
     )
 
 
-class Balloon(BaseModel):
+class Balloon(Reference):
     """
     Represents a balloon annotation in a drawing or part diagram.
 
+
     Attributes:
     ----------
-    - label (str): The identifier displayed within the balloon.
     - center (Tuple[int, int]): The (x, y) coordinates of the balloon's center.
     - width (int): The width of the balloon in pixels.
     - height (int): The height of the balloon in pixels.
     """
 
-    label: str = Field(
-        ...,
-        description="The text or identifier displayed within the balloon.",
-        example="1",
-    )
-
     center: Tuple[int, int] = Field(
         ...,
         description="The (x, y) coordinates of the balloon's center on the diagram.",
         example=(150, 200),
-    )
-
-    width: int = Field(
-        ...,
-        ge=1,
-        description="The width of the balloon in pixels or units. Must be a positive integer.",
-        example=30,
-    )
-
-    height: int = Field(
-        ...,
-        ge=1,
-        description="The height of the balloon in pixels or units. Must be a positive integer.",
-        example=30,
     )
 
 
@@ -1291,12 +1271,13 @@ class ReferencePosition(BaseModel):
 class AskType(str, Enum):
     """The type of request to be sent to the server."""
 
-    REFERENCE_POSITIONS = "REFERENCE_POSITIONS"
+    BALLOON_POSITIONS = "BALLOON_POSITIONS"
     CUSTOM = "CUSTOM"
     FEATURES = "FEATURES"
     INSIGHTS = "INSIGHTS"
     META_DATA = "META_DATA"
     REDACTION = "REDACTION"
+    REFERENCE_POSITIONS = "REFERENCE_POSITIONS"
     SHEET_IMAGE = "SHEET_IMAGE"
     VIEW_IMAGE = "VIEW_IMAGE"
 
@@ -1325,6 +1306,19 @@ class Answer(BaseModel, abc.ABC):
     """
 
     ask_version: Literal["v2"] = "v2"
+
+
+class AskBalloonPositions(AskV2):
+    """Represents a request for ballooning of a technical drawing."""
+
+    ask_type: Literal[AskType.BALLOON_POSITIONS] = AskType.BALLOONING
+
+
+class AnswerBalloonPositions(Answer):
+    ask_type: Literal[AskType.BALLOON_POSITIONS] = AskType.BALLOONING
+    balloons: List[Balloon] = Field(
+        ..., description="The balloons in the technical drawing."
+    )
 
 
 class AnswerFeaturesMiscallaneous(Answer):
