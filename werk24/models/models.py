@@ -83,11 +83,7 @@ class Quantity(BaseModel):
     unit: str
 
 
-class CalloutReference(BaseModel):
-    callout_id: int
-
-
-class Callout(BaseModel):
+class Reference(BaseModel):
     """
     Represents a general information entry.
 
@@ -97,14 +93,14 @@ class Callout(BaseModel):
     - value (str): The text value of the information.
     """
 
-    callout_id: int
+    reference_id: int
 
 
-class Weight(Quantity, Callout):
+class Weight(Quantity, Reference):
     pass
 
 
-class Entry(Callout):
+class Entry(Reference):
 
     language: Optional[Language] = Field(
         None,
@@ -149,7 +145,7 @@ class Identifier(Entry):
     )
 
 
-class GeneralTolerances(Callout):
+class GeneralTolerances(Reference):
     """
     Model representing general tolerances for a part or drawing.
 
@@ -224,7 +220,7 @@ class Balloon(BaseModel):
     )
 
 
-class Feature(Callout):
+class Feature(Reference):
     """
     Represents a design or manufacturing cue with descriptive information and metadata.
 
@@ -782,8 +778,8 @@ class Bore(Feature):
             depth_type=DepthType.SIZE,
         ),
     )
-    thread: Optional[CalloutReference] = Field(
-        None, description="Reference to the callout_id of the associated thread."
+    thread: Optional[Reference] = Field(
+        None, description="Reference to the reference_id of the associated thread."
     )
 
 
@@ -1115,7 +1111,7 @@ class Material(BaseModel):
     ]
 
 
-class MaterialCombination(Callout):
+class MaterialCombination(Reference):
     material_combination: list[Material]
 
 
@@ -1157,7 +1153,7 @@ class BillOfMaterialRow(BaseModel):
     unit_weight: Optional[Quantity] = None
 
 
-class BillOfMaterial(Callout):
+class BillOfMaterial(Reference):
     rows: list[BillOfMaterialRow] = Field(
         ...,
         description="List of rows in the bill of material.",
@@ -1200,7 +1196,7 @@ class RevisionTableRow(BaseModel):
     )
 
 
-class RevisionTable(Callout):
+class RevisionTable(Reference):
     rows: list[RevisionTableRow] = Field(
         ...,
         description="List of rows in the revision table.",
@@ -1249,12 +1245,12 @@ class ToleratedQuantity(BaseModel):
     )
 
 
-class UnitSystem(Callout):
+class UnitSystem(Reference):
     primary_unit_system: Optional[UnitSystemType]
     secondary_unit_system: Optional[UnitSystemType]
 
 
-class ProjectionMethod(Callout):
+class ProjectionMethod(Reference):
     """Projection Method according to ISO 128"""
 
     projection_method: ProjectionMethodType
@@ -1287,15 +1283,15 @@ class VolumeEstimate(Quantity):
     volume_estimate_type: VolumeEstimateType
 
 
-class CalloutPosition(BaseModel):
-    callout_id: int
+class ReferencePosition(BaseModel):
+    reference_id: int
     polygon: Optional[Polygon]
 
 
 class AskType(str, Enum):
     """The type of request to be sent to the server."""
 
-    CALLOUT_POSITIONS = "CALLOUT_POSITIONS"
+    REFERENCE_POSITIONS = "REFERENCE_POSITIONS"
     CUSTOM = "CUSTOM"
     FEATURES = "FEATURES"
     INSIGHTS = "INSIGHTS"
@@ -1316,10 +1312,10 @@ class AskV2(BaseModel):
 Ask = Union[W24Ask, "AskV2"]
 
 
-class AskCalloutPositions(AskV2):
+class AskReferencePositions(AskV2):
     """Represents a request for the position of a component in the drawing."""
 
-    ask_type: Literal[AskType.CALLOUT_POSITIONS] = AskType.CALLOUT_POSITIONS
+    ask_type: Literal[AskType.REFERENCE_POSITIONS] = AskType.REFERENCE_POSITIONS
 
 
 class Answer(BaseModel, abc.ABC):
@@ -1384,18 +1380,18 @@ class AnswerFeaturesMechanicalComponent(Answer):
     )
 
 
-class AnswerCalloutPositions(Answer):
+class AnswerReferencePositions(Answer):
     """
     A class that represents an answer to a request for the position of a component in the drawing.
 
     Attributes:
     ----------
-    - callout_positions (List[CalloutPosition]): The positions of the component in the drawing.
+    - reference_positions (List[ReferencePosition]): The positions of the component in the drawing.
     """
 
-    ask_type: Literal[AskType.CALLOUT_POSITIONS] = AskType.CALLOUT_POSITIONS
+    ask_type: Literal[AskType.REFERENCE_POSITIONS] = AskType.REFERENCE_POSITIONS
 
-    callout_positions: list[CalloutPosition] = Field(
+    reference_positions: list[ReferencePosition] = Field(
         ..., description="The positions of the component in the drawing."
     )
 
@@ -1848,10 +1844,8 @@ class TechreadMessage(TechreadBaseResponse):
 
         if v.get("ask_version") == "v2":
             for c_class in ANSWER_SUBCLASSES:
-                print(c_class)
                 try:
                     parsed = c_class.model_validate(v)
-                    print(parsed)
                     return parsed
                 except ValidationError:
                     pass
