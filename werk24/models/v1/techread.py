@@ -5,7 +5,7 @@ the W24 Techread API.
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import UUID4, BaseModel, ConfigDict, Field, HttpUrl, Json, validator
+from pydantic import UUID4, BaseModel, ConfigDict, Field, HttpUrl, Json, field_validator
 
 from werk24._version import __version__
 
@@ -286,7 +286,7 @@ class W24TechreadRequest(BaseModel):
 
     sub_account: Optional[UUID4] = None
 
-    @validator("asks", pre=True)
+    @field_validator("asks", mode="before")
     def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24AskUnion]:
         """Validator to de-serialize the asks. The de-serialization
         is based on the ask_type attribute of the object. Pydantic
@@ -355,60 +355,62 @@ class W24TechreadWithCallbackPayload(BaseModel):
     max_pages: Maximum number of pages that shall be processed.
     """
 
-    @validator("callback_headers", pre=True, each_item=False)
+    @field_validator("callback_headers", mode="before")
+    @classmethod
     def validate_callback_headers(
         cls,
-        v: Optional[Dict[str, str]],
+        headers: Optional[Dict[str, str]],
         max_name_length: int = 128,
         max_value_length: int = 4096,
-    ) -> Dict[str, str]:
-        """Validate the callback headers.
+    ) -> Optional[Dict[str, str]]:
+        """
+        Validate the callback headers to ensure compliance with server-side constraints.
 
-        NOTE: Removing the validator in the client will not affect
-        the server-side validation. The server will still enforce
-        the same rules.
+        Headers must:
+        - Be either whitelisted (`authorization`) or prefixed with "X-".
+        - Not exceed the maximum length for names and values.
 
         Args:
-        -----
-        v (Dict[str, str]): The callback headers
-        max_name_length (int): Maximum length of the header name
-        max_value_length (int): Maximum length of the header value
+        ----
+        - headers (Optional[Dict[str, str]]): The callback headers to validate.
+        - max_name_length (int): Maximum allowed length for header names.
+        - max_value_length (int): Maximum allowed length for header values.
 
         Returns:
-        --------
-        Dict[str, str]: The validated callback headers
+        -------
+        - Optional[Dict[str, str]]: The validated callback headers.
+
+        Raises:
+        ------
+        - ValueError: If any header name or value violates the constraints.
         """
-        WHITELIST = {"authorization"}
-        if v is None:
+        if headers is None:
             return None
 
-        # Check whether the header is white-listed
-        # Check the length of the header name
-        for header_name in v.keys():
-
+        for name, value in headers.items():
+            # Validate header name
             if (
-                header_name.lower() not in WHITELIST
-                and not header_name.lower().startswith("x-")
+                name.lower() not in ALLOWED_CALLBACK_HEADERS
+                and not name.lower().startswith("x-")
             ):
                 raise ValueError(
-                    f'Header name "{header_name}" does not start with "X-"'
+                    f'Invalid header "{name}": must start with "X-" or be one of {ALLOWED_CALLBACK_HEADERS}.'
                 )
 
-            if len(header_name) > max_name_length:
+            if len(name) > max_name_length:
                 raise ValueError(
-                    f'Header name "{header_name}" exceeds maximum length of {max_name_length} characters'
+                    f'Header name "{name}" exceeds maximum length of {max_name_length} characters.'
                 )
 
-        # Check the length of the header value
-        for header_value in v.values():
-            if len(header_value) > max_value_length:
+            # Validate header value
+            if len(value) > max_value_length:
                 raise ValueError(
-                    f'Header value "{header_value}" exceeds maximum length of {max_value_length} characters'
+                    f'Header value for "{name}" exceeds maximum length of {max_value_length} characters.'
                 )
 
-        return v
+        return headers
 
-    @validator("asks", pre=True)
+    @field_validator("asks", mode="before")
     def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24AskUnion]:
         """Validator to de-serialize the asks. The de-serialization
         is based on the ask_type attribute of the object. Pydantic

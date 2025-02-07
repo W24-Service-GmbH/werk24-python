@@ -43,7 +43,7 @@ def mock_env_vars():
 @pytest.fixture
 def mock_search_paths():
     """Mock search paths to avoid creating real files."""
-    with patch("license_handler.SEARCH_PATHS", ["./mock_license.txt"]):
+    with patch("werk24.utils.license.SEARCH_PATHS", ["./mock_license.txt"]):
         yield
 
 
@@ -76,9 +76,10 @@ def test_parse_license_file_invalid(mock_search_paths):
 
 def test_find_license_in_paths(mock_search_paths, valid_license):
     """Test finding a license in search paths."""
-    with patch("builtins.open", mock_open(read_data=VALID_LICENSE_TEXT)):
-        license = find_license_in_paths()
-        assert license == valid_license  # nosec
+    with patch("os.path.exists", return_value=True):
+        with patch("builtins.open", mock_open(read_data=VALID_LICENSE_TEXT)):
+            license = find_license_in_paths()
+            assert license == valid_license  # nosec
 
 
 def test_find_license_in_paths_not_found(mock_search_paths):

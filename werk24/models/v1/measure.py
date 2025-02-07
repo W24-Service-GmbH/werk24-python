@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import UUID4, BaseModel, validator
+from pydantic import UUID4, BaseModel, field_validator
 
 from .base_feature import W24BaseFeatureModel
 from .chamfer import W24Chamfer
@@ -147,7 +147,7 @@ class W24MeasureLabel(BaseModel):
 
     """
 
-    @validator("size_tolerance", pre=True)
+    @field_validator("size_tolerance", mode="before")
     def deserialize_size_tolerance(cls, v):
         if isinstance(v, W24Tolerance):
             return v

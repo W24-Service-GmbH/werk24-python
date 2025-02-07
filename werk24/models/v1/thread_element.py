@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Type, Union
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from .gender import W24Gender
 from .thread import (
@@ -104,7 +104,7 @@ class W24ThreadElement(BaseModel):
 
     threads: List[W24Thread]
 
-    @validator("threads", pre=True)
+    @field_validator("threads", mode="before")
     def ask_list_validator(cls, raw: List[Dict[str, Any]]) -> List[W24Thread]:
         """Validator to de-serialize the asks. The de-serialization
         is based on the ask_type attribute of the object. Pydantic
