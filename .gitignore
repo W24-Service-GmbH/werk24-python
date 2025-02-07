@@ -14,7 +14,6 @@ werk24.egg-info
 .flake8
 .isort.cfg
 .markdownlint.yaml
-.trunk
 .coverage
 coverage.xml
 

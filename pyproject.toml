@@ -1,0 +1,79 @@
+[build-system]
+requires = ["wheel", "setuptools"]
+
+[project]
+name = "werk24"
+version = "2.0.0"
+description = "AI-powered platform for extracting and analyzing data from technical drawings / CAD drawings to enhance manufacturing workflows."
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE.txt" }
+authors = [{ name = "W24 Service GmbH", email = "info@werk24.io" }]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Software Development",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Internet",
+  "Topic :: Internet :: WWW/HTTP",
+  "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+  "Typing :: Typed",
+  "Natural Language :: English",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+  "aiohttp>=3.10.11,<=4.0.0",
+  "certifi>=2024.12.14",
+  "cryptography>=44.0.0,<=45.0.0",
+  "packaging>=24.2,<=25.0",
+  "pint>=0.24,<=0.25",
+  "pydantic-extra-types>=2.0.0,<=3.0.0",
+  "pydantic>=2.0.0,<=3.0.0",
+  "pydantic-settings>=2.0.0,<=3.0.0",
+  "python-dotenv>=1.0.0,<=2.0.0",
+  "typer>=0.15.0,<=0.16.0",
+  "websockets>=14.2,<15.0",
+]
+keywords = [
+  "technical drawing data extraction",
+  "engineering drawing analysis",
+  "AI-powered CAD drawing processing",
+  "additive manufacturing assessment",
+  "feasibility analysis for manufacturing",
+  "PMI extraction",
+  "sheet rebranding",
+  "title block recognition",
+  "measure and tolerance extraction",
+  "thread and chamfer detection",
+  "geometric dimensioning and tolerancing",
+  "surface roughness analysis",
+  "API integration for technical drawings",
+  "automated feature extraction",
+  "manufacturing data digitization",
+  "AI in manufacturing",
+  "computer vision in engineering",
+  "digital supply chain optimization",
+  "technical drawing interpretation",
+  "manufacturing process automation",
+]
+
+[project.urls]
+homepage = "https://werk24.io"
+repository = "https://github.com/W24-Service-GmbH/werk24-python"
+documentation = "https://werk24.io/docs"
+
+
+[project.scripts]
+werk24 = "werk24.cli.werk24:app"

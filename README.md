@@ -1,4 +1,5 @@
-# Werk24 Client
+# Werk24 Python Client
+
 <p align="center">
   <p align="center">
     <a href="https://werk24.io/?utm_source=github&utm_medium=logo" target="_blank">
@@ -7,74 +8,65 @@
   </p>
 </p>
 
-[![pypi](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
-[![Tests | cpython 3.8, 3.9, 3.10](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
+[![PyPI version](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
+[![Tests](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
 
+## Overview
 
+Werk24 provides AI-powered solutions for extracting and interpreting technical drawings.
+This Python client enables easy interaction with the Werk24 API for processing technical drawings efficiently.
+The API give you access to the following structured data:
 
-# Features
-When submitting a PDF, PNG, JPEG of a Technical Drawing to Werk24's API, you receive within seconds
-the following features:
-
-- Measures and Tolerances
-- Threads and Chamfers
-- Geometric Dimensioning and Tolerancing frames
-- External Dimensions
-- Surface Roughnesses
-- the Title Block information (Material, Drawing ID, Designation, General Tolerances)
-
-And finally you can obtain a CAD Approximation of the part's Geometry.
-Currently this features is focused on flat parts, such as sheet metal parts, but more is in the pipeline.
+- **Meta Data**: Drawing ID, Part ID, Designation, General Tolerances, General Roughness, Material, Weight, Bill of Material, Revision Table, Languages and Notes.
+- **Features**: Dimensions incl. Tolerances, Threads, Bores, Chamfers, Roughnesses, GDnTs, Radii
+- **Insights**: Manufacturing Method, Postprocesses, Input Geometry, Output Geometry
+- **Redaction**: Redact information from Technical Drawings.
 
 Check our website at [https://werk24.io](https://werk24.io/?utm_source=github&utm_medium=feature_link).
 
+## Features
 
-<table style="width:100%">
-<tr>
-<td>
-Input
-</td>
-<td>
-Output
-</td>
-</tr>
-<tr>
-<td style="width:50%">
-    <a href="https://werk24.io/?utm_source=github&utm_medium=drawing_input" target="_blank">
-      <img src="https://docs.werk24.io/img/drawing_input.png" alt="Werk24" style="max-height:200px">
-    </a>
-</td>
-<td style="width:50%">
-    <a href="https://werk24.io/?utm_source=github&utm_medium=drawing_output" target="_blank">
-      <img src="https://docs.werk24.io/img/drawing_output.png" alt="Werk24" style="max-height:200px">
-    </a>
-</td>
-</tr>
-<tr>
-<td colspan="2">
-    <small>Original drawing by T. Hartmann (CC)</small>
-</td>
-</tr>
-</table>
+- **Automated Extraction**: Retrieve metadata, dimensions, and annotations from technical drawings.
+- **Fast Processing**: Optimized API calls for efficient inference.
+- **Seamless Integration**: Works with Python-based workflows for manufacturing, CAD, and ERP systems.
+- **JSON Output**: Standardized response format for easy processing.
 
+## Applications
 
+Harness Werk24 for:
 
-# Applications
-Typical applications of our Technology include
-
-- Instant Pricing on 2D Engineering Drawings
-- Feasibility Checks on incoming RFQs
-- Auto-Fill of Online Configurators
-- Automated Anonymiziation of Technical Drawings
-- Automated Supplier Scouting
-- Automated Registration of incoming RFQs into your ERP system
-- Structured Archiving
+- **Instant Pricing**: Automate 2D drawing-based quoting.
+- **Feasibility Checks**: Evaluate RFQs efficiently.
+- **Configurator Auto-Fill**: Populate online configurators with minimal input.
+- **Drawing Anonymization**: Protect sensitive data in technical drawings.
+- **Supplier Scouting**: Automate vendor selection for specific requirements.
+- **ERP Registration**: Streamline incoming RFQ registrations.
+- **Structured Archiving**: Organize drawings with metadata extraction.
 
 ## Installation
 
 Pip installation
 
-    pip install werk24
+```bash
+pip install werk24    # install the library
+werk24 init           # obtain a trial license
+```
+
+## Quick Start
+
+Here's how you can use the Werk24 client to extract data from a technical drawing:
+
+```python
+import asyncio
+from werk24 import Werk24Client, AskMetaData
+
+async def read_drawing(path, asks):
+  with open(path, "rb") as fid:
+    async with Werk24Client() as client:
+        return [msg async for msg in client.read_drawing(fid, asks)]
+
+asyncio.run(read_drawing("<path>", [AskMetaData()]))
+```
 
 ## Documentation
 
@@ -84,22 +76,21 @@ See [https://werk24.io/docs/index.html](https://werk24.io/docs/index.html)
 
 To get a first impression, you can run the CLI:
 
-    usage: w24cli techread [-h] [--ask-techread-started] [--ask-page-thumbnail]
-                       [--ask-sheet-thumbnail] [--ask-sectional-thumbnail]
-                       [--ask-variant-measures]
-                       input_files
+```bash
+$> werk24 --help
+ Usage: python -m werk24.cli.werk24 [OPTIONS] COMMAND [ARGS]...
 
-## Example
+╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --log-level                 TEXT  Set the log level [default: WARNING]                                             │
+│ --install-completion              Install completion for the current shell.                                        │
+│ --show-completion                 Show completion for the current shell, to copy it or customize the installation. │
+│ --help                            Show this message and exit.                                                      │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ init           Initialize Werk24 by providing or creating a license.                                               │
+│ health-check   Run a comprehensive health check for the CLI.                                                       │
+│ techread       Read a drawing file and extract information.                                                        │
+│ version        Print the version of the Client.                                                                    │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-    from werk24 import Hook, W24TechreadClient, W24AskVariantMeasures
-
-    async def read_measures_from_drawing(document_bytes:bytes) -> None:
-
-        # define what you want to learn about the drawing, and what function
-        # should be called when a response arrives
-        hooks = [Hook(ask=W24AskVariantMeasures(), function=print)]
-
-        # make the call
-        client = W24TechreadClient.make_from_env()
-        async with client as session:
-            await session.read_drawing_with_hooks(document_bytes,hooks)
+```
