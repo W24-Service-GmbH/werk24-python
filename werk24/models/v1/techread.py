@@ -384,6 +384,7 @@ class W24TechreadWithCallbackPayload(BaseModel):
         ------
         - ValueError: If any header name or value violates the constraints.
         """
+        ALLOWED_CALLBACK_HEADERS = {"authorization"}
         if headers is None:
             return None
 
