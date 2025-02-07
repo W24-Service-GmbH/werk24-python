@@ -31,7 +31,7 @@ Check our website at [https://werk24.io](https://werk24.io/?utm_source=github&ut
 - **Seamless Integration**: Works with Python-based workflows for manufacturing, CAD, and ERP systems.
 - **JSON Output**: Standardized response format for easy processing.
 
-# Applications
+## Applications
 
 Harness Werk24 for:
 
