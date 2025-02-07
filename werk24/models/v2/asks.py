@@ -93,16 +93,16 @@ class AskReferencePositions(AskV2):
     ask_type: Literal[AskType.REFERENCE_POSITIONS] = AskType.REFERENCE_POSITIONS
 
 
-class AskSheetImage(AskV2):
+class AskSheetImages(AskV2):
     """Represents a request for a sheet image from the server."""
 
-    ask_type: Literal[AskType.SHEET_IMAGE] = AskType.SHEET_IMAGE
+    ask_type: Literal[AskType.SHEET_IMAGES] = AskType.SHEET_IMAGES
 
 
-class AskViewImage(AskV2):
+class AskViewImages(AskV2):
     """Represents a request for a view image from the server."""
 
-    ask_type: Literal[AskType.VIEW_IMAGE] = AskType.VIEW_IMAGE
+    ask_type: Literal[AskType.VIEW_IMAGES] = AskType.VIEW_IMAGES
 
 
 def get_ask_subclasses() -> List:

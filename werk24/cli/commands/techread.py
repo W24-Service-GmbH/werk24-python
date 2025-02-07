@@ -5,10 +5,14 @@ import typer
 from rich.console import Console
 
 from werk24.models import (
+    AskBalloons,
     AskCustom,
     AskFeatures,
     AskInsights,
     AskMetaData,
+    AskReferencePositions,
+    AskSheetImages,
+    AskViewImages,
     Hook,
     TechreadMessage,
 )
@@ -30,24 +34,41 @@ def techread(
     max_pages: int = typer.Option(
         settings.max_pages, help="The maximum number of pages to read"
     ),
-    ask_meta_data: bool = typer.Option(False, help="Ask for meta data"),
+    ask_balloons: bool = typer.Option(False, help="Ask for balloons"),
+    ask_custom: str | None = typer.Option(None, help="Ask for custom output"),
     ask_features: bool = typer.Option(False, help="Ask for features"),
     ask_insights: bool = typer.Option(False, help="Ask for insights"),
-    ask_custom: str | None = typer.Option(None, help="Ask for custom output"),
+    ask_meta_data: bool = typer.Option(False, help="Ask for meta data"),
+    ask_reference_positions: bool = typer.Option(
+        False, help="Ask for reference positions"
+    ),
+    ask_sheet_images: bool = typer.Option(False, help="Ask for sheet images"),
+    ask_view_images: bool = typer.Option(False, help="Ask for view image"),
 ):
     """Read a drawing file and extract information."""
-    pass
 
     # Register the hooks
     hooks = [
-        Hook(ask=AskMetaData(), function=recv_payload) if ask_meta_data else None,
-        Hook(ask=AskFeatures(), function=recv_payload) if ask_features else None,
-        Hook(ask=AskInsights(), function=recv_payload) if ask_insights else None,
+        Hook(ask=AskBalloons(), function=recv_payload) if ask_balloons else None,
         (
             Hook(ask=AskCustom(custom_id=ask_custom), function=recv_payload)
             if ask_custom
             else None
         ),
+        Hook(ask=AskFeatures(), function=recv_payload) if ask_features else None,
+        Hook(ask=AskInsights(), function=recv_payload) if ask_insights else None,
+        Hook(ask=AskMetaData(), function=recv_payload) if ask_meta_data else None,
+        (
+            Hook(ask=AskReferencePositions(), function=recv_payload)
+            if ask_reference_positions
+            else None
+        ),
+        (
+            Hook(ask=AskSheetImages(), function=recv_thumbnail)
+            if ask_sheet_images
+            else None
+        ),
+        Hook(ask=AskViewImages(), function=recv_thumbnail) if ask_view_images else None,
     ]
     hooks = [hook for hook in hooks if hook]
 
