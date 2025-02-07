@@ -30,31 +30,31 @@ from .models import (
 )
 
 
-class Reponse(BaseModel, abc.ABC):
+class Response(BaseModel, abc.ABC):
     """
-    A class that represents an Reponse to a request from the server.
+    A class that represents an Response to a request from the server.
 
     """
 
     ask_version: Literal["v2"] = "v2"
 
 
-class ReponseBalloons(Reponse):
+class ResponseBalloons(Response):
     ask_type: Literal[AskType.BALLOONS] = AskType.BALLOONS
     balloons: List[Balloon] = Field(
         ..., description="The balloons in the technical drawing."
     )
 
 
-class ReponseCustom(Reponse):
+class ResponseCustom(Response):
     ask_type: Literal[AskType.CUSTOM] = AskType.CUSTOM
     custom_id: str = Field(..., description="The ID of the custom output.")
     output: Any = Field(..., description="The custom output.")
 
 
-class ReponseFeaturesMechanicalComponent(Reponse):
+class ResponseFeaturesMechanicalComponent(Response):
     """
-    Represents an Reponse to a request for features of a mechanical component drawing from the server.
+    Represents an Response to a request for features of a mechanical component drawing from the server.
 
     Attributes:
     ----------
@@ -100,7 +100,7 @@ class ReponseFeaturesMechanicalComponent(Reponse):
     )
 
 
-class ReponseInsightsMechanicalComponent(Reponse):
+class ResponseInsightsMechanicalComponent(Response):
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
@@ -120,8 +120,8 @@ class ReponseInsightsMechanicalComponent(Reponse):
     )
 
 
-class ReponseMetaDataMechanicalComponent(Reponse):
-    """A class that represents an Reponse to a request for metadata of a mechanical component drawing from the server.
+class ResponseMetaDataMechanicalComponent(Response):
+    """A class that represents an Response to a request for metadata of a mechanical component drawing from the server.
 
     Attributes:
     ----------
@@ -184,9 +184,9 @@ class ReponseMetaDataMechanicalComponent(Reponse):
     )
 
 
-class ReponseRedaction(Reponse):
+class ResponseRedaction(Response):
     """
-    A class that represents an Reponse to a redaction request from the server.
+    A class that represents an Response to a redaction request from the server.
 
     Attributes:
     ----------
@@ -200,9 +200,9 @@ class ReponseRedaction(Reponse):
     )
 
 
-class ReponseReferencePositions(Reponse):
+class ResponseReferencePositions(Response):
     """
-    A class that represents an Reponse to a request for the position of a component in the drawing.
+    A class that represents an Response to a request for the position of a component in the drawing.
 
     Attributes:
     ----------
@@ -216,13 +216,13 @@ class ReponseReferencePositions(Reponse):
     )
 
 
-def get_Reponse_subclasses() -> List:
-    subclasses = Reponse.__subclasses__()
+def get_Response_subclasses() -> List:
+    subclasses = Response.__subclasses__()
     # Recursively collect subclasses of subclasses, if any
     for subclass in subclasses:
         subclasses.extend(subclass.__subclasses__())
     return subclasses
 
 
-RESPONSE_SUBCLASSES = get_Reponse_subclasses()
-ReponseUnion = Union[tuple(RESPONSE_SUBCLASSES)]
+RESPONSE_SUBCLASSES = get_Response_subclasses()
+ResponseUnion = Union[tuple(RESPONSE_SUBCLASSES)]

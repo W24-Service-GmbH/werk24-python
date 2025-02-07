@@ -20,7 +20,7 @@ from werk24.models.v1.ask import (
 )
 from werk24.models.v2.asks import AskType, AskUnion
 from werk24.models.v2.enums import TechreadExceptionLevel
-from werk24.models.v2.responses import RESPONSE_SUBCLASSES, ReponseUnion
+from werk24.models.v2.responses import RESPONSE_SUBCLASSES, ResponseUnion
 
 
 class TechreadMessageType(str, Enum):
@@ -224,21 +224,23 @@ class TechreadMessage(TechreadBaseResponse):
     message_subtype: TechreadMessageSubtype | AskType | W24AskType
     page_number: int = 0
     payload_dict: Optional[
-        ReponseUnion | TechreadInitResponse | W24AskResponse | dict
+        ResponseUnion | TechreadInitResponse | W24AskResponse | dict
     ] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
 
     @field_validator("payload_dict", mode="before")
+    @classmethod
     def deserialize_payload(
         cls,
         v: Any,
         info: ValidationInfo,
-    ) -> Optional[ReponseUnion | TechreadInitResponse | W24AskResponse | dict]:
+    ) -> Optional[ResponseUnion | TechreadInitResponse | W24AskResponse | dict]:
 
         if v is None:
             return None
 
+        print(v)
         # Progress Messages
         if (
             info.data["message_subtype"]
@@ -251,8 +253,8 @@ class TechreadMessage(TechreadBaseResponse):
                 try:
                     parsed = c_class.model_validate(v)
                     return parsed
-                except ValidationError:
-                    pass
+                except ValidationError as exc:
+                    parsed = None
 
         # V1 Asks
         return deserialize_ask_response(v, info)

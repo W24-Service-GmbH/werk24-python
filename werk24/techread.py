@@ -91,7 +91,6 @@ class Werk24Client:
         wss_close_timeout: float = settings.wss_close_timeout,
     ):
         headers = self._get_auth_headers()
-
         if USE_EXTRA_HEADERS:
             return websockets.connect(
                 self._wss_server,
@@ -105,7 +104,11 @@ class Werk24Client:
         )
 
     async def __aenter__(self):
-        self._wss_session = await self._create_websocket_session()
+        try:
+            self._wss_session = await self._create_websocket_session()
+        except Exception as exc:
+            logger.error("Failed to establish a connection with the server: %s", exc)
+            raise ServerException(details=str(exc)) from exc
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
