@@ -1,3 +1,4 @@
+from contextlib import suppress
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
@@ -237,26 +238,28 @@ class TechreadMessage(TechreadBaseResponse):
         info: ValidationInfo,
     ) -> Optional[ResponseUnion | TechreadInitResponse | W24AskResponse | dict]:
 
+        # If we have a None value, return None
         if v is None:
             return None
 
-        print(v)
-        # Progress Messages
+        # If it is already deserialized, return it
+        if isinstance(v, (ResponseUnion, TechreadInitResponse, W24AskResponse)):
+            return v
+
+        # Special Case for TechreadInitResponse
         if (
             info.data["message_subtype"]
             == TechreadMessageSubtype.PROGRESS_INITIALIZATION_SUCCESS
         ):
             return TechreadInitResponse.model_validate(v)
 
+        # Deserialize V2 responses
         if v.get("ask_version") == "v2":
             for c_class in RESPONSE_SUBCLASSES:
-                try:
-                    parsed = c_class.model_validate(v)
-                    return parsed
-                except ValidationError:
-                    parsed = None
+                with suppress(ValidationError):
+                    return c_class.model_validate(v)
 
-        # V1 Asks
+        # Desirialize V1 responses
         return deserialize_ask_response(v, info)
 
 
