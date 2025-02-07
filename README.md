@@ -81,7 +81,7 @@ $> werk24 --help
  Usage: python -m werk24.cli.werk24 [OPTIONS] COMMAND [ARGS]...
 
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --log-level                 TEXT  Set the log level [default: INFO]                                                                                                                                        │
+│ --log-level                 TEXT  Set the log level [default: WARNING]                                                                                                                                        │
 │ --install-completion              Install completion for the current shell.                                                                                                                                │
 │ --show-completion                 Show completion for the current shell, to copy it or customize the installation.                                                                                         │
 │ --help                            Show this message and exit.                                                                                                                                              │

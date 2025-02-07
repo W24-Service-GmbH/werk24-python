@@ -10,9 +10,9 @@ from rich.table import Table
 from websockets.exceptions import InvalidStatus, InvalidStatusCode
 
 from werk24._version import __version__
-from werk24.defaults import Settings
-from werk24.license import LicenseInvalid, find_license
 from werk24.techread import Werk24Client
+from werk24.utils.defaults import Settings
+from werk24.utils.license import LicenseInvalid, find_license
 
 # Initialize Typer app and Rich console
 app = typer.Typer()

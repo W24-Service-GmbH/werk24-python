@@ -4,9 +4,9 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 
-from ..defaults import Settings
-from ..exceptions import TechreadException
-from ..logger import get_logger
+from ..utils.defaults import Settings
+from ..utils.exceptions import TechreadException
+from ..utils.logger import get_logger
 from .commands.health_check import app as health_check_app
 from .commands.init import app as init_app
 from .commands.techread import app as techread_app
@@ -33,7 +33,7 @@ class PromptType(str, Enum):
 
 
 # Callback function for global options
-def common_options(log_level: str = typer.Option("INFO", help="Set the log level")):
+def common_options(log_level: str = typer.Option("WARNING", help="Set the log level")):
     logger.setLevel(level=log_level.upper())
     logger.info(f"Log level set to {log_level}")
 

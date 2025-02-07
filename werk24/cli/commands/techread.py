@@ -4,9 +4,6 @@ import io
 import typer
 from rich.console import Console
 
-from werk24.defaults import Settings
-from werk24.exceptions import UserInputError
-from werk24.logger import get_logger
 from werk24.models import (
     AskCustom,
     AskFeatures,
@@ -16,6 +13,9 @@ from werk24.models import (
     TechreadMessage,
 )
 from werk24.techread import Werk24Client
+from werk24.utils.defaults import Settings
+from werk24.utils.exceptions import UserInputError
+from werk24.utils.logger import get_logger
 
 console = Console()
 app = typer.Typer()
