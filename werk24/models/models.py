@@ -74,7 +74,7 @@ class Confidence(BaseModel):
     score: Decimal = Field(
         ...,
         description="The confidence score of the feature, indicating the confidence the symstem has in the reading.",
-        example=Decimal("0.75"),
+        examples=[Decimal("0.75")],
     )
 
 
@@ -165,19 +165,19 @@ class GeneralTolerances(Reference):
     tolerance_standard: GeneralTolerancesStandard = Field(
         ...,
         description="The standard used for general tolerance definitions, e.g., DIN 7168 or ISO 2768.",
-        example=GeneralTolerancesStandard.ISO_2768,
+        examples=[GeneralTolerancesStandard.ISO_2768],
     )
 
     tolerance_class: Optional[str] = Field(
         ...,
         description="The tolerance class or grade, defined as a short string such as 'm', 'f', or 'c'.",
-        example="m",
+        examples=["m"],
     )
 
     principle: Optional[GeneralTolerancesPrinciple] = Field(
         ...,
         description="The principle governing the tolerance application, such as independence or envelope.",
-        example=GeneralTolerancesPrinciple.INDEPENDENCE,
+        examples=[GeneralTolerancesPrinciple.INDEPENDENCE],
     )
 
 
@@ -196,7 +196,7 @@ class Balloon(Reference):
     center: Tuple[int, int] = Field(
         ...,
         description="The (x, y) coordinates of the balloon's center on the diagram.",
-        example=(150, 200),
+        examples=[(150, 200)],
     )
 
 
@@ -236,43 +236,40 @@ class Tolerance(BaseModel):
     tolerance_grade: Optional[str] = Field(
         None,
         description="The grade of tolerance, such as 'IT7' for an 'H7' fit. Calcuated if not specified.",
-        example="IT7",
+        examples=["IT7"],
     )
 
     deviation_lower: Optional[Decimal] = Field(
         None,
         description="The lower deviation limit in the specified unit. Use None if unspecified.",
-        example=Decimal("-0.05"),
+        examples=[Decimal("-0.05")],
     )
 
     deviation_upper: Optional[Decimal] = Field(
         None,
         description="The upper deviation limit in the specified unit. Use None if unspecified.",
-        example=Decimal("0.05"),
+        examples=[Decimal("0.05")],
     )
 
     fit: Optional[str] = Field(
         None,
         description="The fit specification, such as 'H7'. Optional if not applicable.",
-        example="H7",
+        examples=["H7"],
     )
 
     is_theoretically_exact: bool = Field(
         False,
         description="Whether the tolerance is theoretically exact (e.g., basic dimensions).",
-        example=True,
     )
 
     is_reference: bool = Field(
         False,
         description="Whether the tolerance serves as a reference dimension.",
-        example=False,
     )
 
     is_general_tolerance: bool = Field(
         False,
         description="Whether the general tolerance was applied to this dimension.",
-        example=True,
     )
 
     is_approximation: bool = Field(
@@ -295,18 +292,20 @@ class Size(Quantity):
     size_type: SizeType = Field(
         ...,
         description="The type of size (e.g., diameter, linear, angular).",
-        example=SizeType.DIAMETER,
+        examples=[SizeType.DIAMETER],
     )
 
     tolerance: Optional[Tolerance] = Field(
         None,
         description="The tolerance specifications associated with the size.",
-        example=Tolerance(
-            fit="H7",
-            deviation_lower=Decimal("-0.05"),
-            deviation_upper=Decimal("0.05"),
-            tolerance_grade="IT7",
-        ),
+        examples=[
+            Tolerance(
+                fit="H7",
+                deviation_lower=Decimal("-0.05"),
+                deviation_upper=Decimal("0.05"),
+                tolerance_grade="IT7",
+            )
+        ],
     )
 
 
@@ -337,7 +336,7 @@ class Dimension(Feature):
         ...,
         ge=0,
         description="The quantity or value associated with the measurement, must be non-negative.",
-        example=10,
+        examples=[10],
     )
 
     size: Size = Field(
@@ -356,7 +355,7 @@ class ThreadSpacing(BaseModel):
         ...,
         ge=0,
         description="The number of threads per inch (TPI) for imperial threads. Must be non-negative.",
-        example=Decimal("20"),
+        examples=[Decimal("20")],
     )
 
 
@@ -378,7 +377,7 @@ class Thread(Feature):
         ...,
         ge=0,
         description="The number of threads or instances. Must be non-negative.",
-        example=Decimal("1"),
+        examples=[Decimal("1")],
     )
 
     diameter: Size = Field(
@@ -548,39 +547,43 @@ class Chamfer(Feature):
     size: Size = Field(
         ...,
         description="The linear size of the chamfer, such as the width or depth.",
-        example=Size(
-            size_type=SizeType.LINEAR,
-            value=Decimal("2"),
-            tolerance=Tolerance(
-                tolerance_grade="IT7",
-                deviation_lower=Decimal("-0.1"),
-                deviation_upper=Decimal("0.1"),
-                fit=None,
-                is_theoretically_exact=False,
-                is_reference=False,
-                is_approximation=False,
-            ),
-            unit="millimeter",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("2"),
+                tolerance=Tolerance(
+                    tolerance_grade="IT7",
+                    deviation_lower=Decimal("-0.1"),
+                    deviation_upper=Decimal("0.1"),
+                    fit=None,
+                    is_theoretically_exact=False,
+                    is_reference=False,
+                    is_approximation=False,
+                ),
+                unit="millimeter",
+            )
+        ],
     )
 
     angle: Size = Field(
         ...,
         description="The angle of the chamfer, typically specified in degrees.",
-        example=Size(
-            size_type=SizeType.ANGULAR,
-            value=Decimal("45"),
-            tolerance=Tolerance(
-                tolerance_grade="IT8",
-                deviation_lower=Decimal("-0.5"),
-                deviation_upper=Decimal("0.5"),
-                fit=None,
-                is_theoretically_exact=False,
-                is_reference=False,
-                is_approximation=False,
-            ),
-            unit="degree",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.ANGULAR,
+                value=Decimal("45"),
+                tolerance=Tolerance(
+                    tolerance_grade="IT8",
+                    deviation_lower=Decimal("-0.5"),
+                    deviation_upper=Decimal("0.5"),
+                    fit=None,
+                    is_theoretically_exact=False,
+                    is_reference=False,
+                    is_approximation=False,
+                ),
+                unit="degree",
+            )
+        ],
     )
 
 
@@ -597,36 +600,40 @@ class Counterbore(BaseModel):
     diameter: Size = Field(
         ...,
         description="The diameter of the counterbore.",
-        example=Size(
-            size_type=SizeType.DIAMETER,
-            value=Decimal("10"),
-            tolerance=Tolerance(
-                tolerance_grade="IT7",
-                deviation_lower=Decimal("-0.1"),
-                deviation_upper=Decimal("0.1"),
-                fit=None,
-                is_theoretically_exact=False,
-                is_reference=False,
-            ),
-            unit="millimeter",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("10"),
+                tolerance=Tolerance(
+                    tolerance_grade="IT7",
+                    deviation_lower=Decimal("-0.1"),
+                    deviation_upper=Decimal("0.1"),
+                    fit=None,
+                    is_theoretically_exact=False,
+                    is_reference=False,
+                ),
+                unit="millimeter",
+            )
+        ],
     )
     depth: Depth = Field(
         ...,
         description="The depth of the counterbore.",
-        example=Size(
-            size_type=SizeType.LINEAR,
-            value=Decimal("5"),
-            tolerance=Tolerance(
-                tolerance_grade="IT8",
-                deviation_lower=Decimal("-0.2"),
-                deviation_upper=Decimal("0.2"),
-                fit=None,
-                is_theoretically_exact=False,
-                is_reference=False,
-            ),
-            unit="millimeter",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("5"),
+                tolerance=Tolerance(
+                    tolerance_grade="IT8",
+                    deviation_lower=Decimal("-0.2"),
+                    deviation_upper=Decimal("0.2"),
+                    fit=None,
+                    is_theoretically_exact=False,
+                    is_reference=False,
+                ),
+                unit="millimeter",
+            )
+        ],
     )
 
 
@@ -643,22 +650,26 @@ class Countersink(BaseModel):
     diameter: Size = Field(
         ...,
         description="The diameter of the countersink.",
-        example=Size(
-            size_type=SizeType.DIAMETER,
-            value=Decimal("15"),
-            tolerance=None,
-            unit="millimeter",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("15"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
     )
     angle: Size = Field(
         ...,
         description="The angle of the countersink, typically in degrees.",
-        example=Size(
-            size_type=SizeType.ANGULAR,
-            value=Decimal("90"),
-            tolerance=None,
-            unit="degree",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.ANGULAR,
+                value=Decimal("90"),
+                tolerance=None,
+                unit="degree",
+            )
+        ],
     )
 
 
@@ -676,32 +687,38 @@ class Counterdrill(BaseModel):
     diameter: Size = Field(
         ...,
         description="The diameter of the counterdrill.",
-        example=Size(
-            size_type=SizeType.DIAMETER,
-            value=Decimal("8"),
-            tolerance=None,
-            unit="millimeter",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("8"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
     )
     depth: Depth = Field(
         ...,
         description="The depth of the counterdrill.",
-        example=Size(
-            size_type=SizeType.LINEAR,
-            value=Decimal("20"),
-            tolerance=None,
-            unit="millimeter",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("20"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
     )
     angle: Optional[Size] = Field(
         ...,
         description="The angle of the counterdrill, typically in degrees.",
-        example=Size(
-            size_type=SizeType.ANGULAR,
-            value=Decimal("118"),
-            tolerance=None,
-            unit="degree",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.ANGULAR,
+                value=Decimal("118"),
+                tolerance=None,
+                unit="degree",
+            )
+        ],
     )
 
 
@@ -724,7 +741,7 @@ class Bore(Feature):
         ...,
         ge=1,
         description="The number of bores or instances. Must be at least 1.",
-        example=2,
+        examples=[2],
     )
     counterbore: Optional[Counterbore] = Field(
         None, description="The counterbore feature, if present."
@@ -738,25 +755,29 @@ class Bore(Feature):
     diameter: Size = Field(
         ...,
         description="The diameter of the bore.",
-        example=Size(
-            size_type=SizeType.DIAMETER,
-            value=Decimal("10"),
-            tolerance=None,
-            unit="millimeter",
-        ),
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("10"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
     )
     depth: Optional[Depth] = Field(
         ...,
         description="The depth of the bore.",
-        example=Depth(
-            size=Size(
-                size_type=SizeType.LINEAR,
-                value=Decimal("50"),
-                tolerance=None,
-                unit="millimeter",
-            ),
-            depth_type=DepthType.SIZE,
-        ),
+        examples=[
+            Depth(
+                size=Size(
+                    size_type=SizeType.LINEAR,
+                    value=Decimal("50"),
+                    tolerance=None,
+                    unit="millimeter",
+                ),
+                depth_type=DepthType.SIZE,
+            )
+        ],
     )
     thread: Optional[Reference] = Field(
         None, description="Reference to the reference_id of the associated thread."
@@ -859,7 +880,7 @@ class RoughnessCondition(BaseModel):
     roughness_grade: Optional[str] = Field(
         None,
         description="An optional roughness grade (e.g., N6, N7) associated with the condition.",
-        example="N6",
+        examples=["N6"],
     )
 
 
@@ -930,7 +951,7 @@ class SecondaryProcess(Feature):
     process_category: List[str] = Field(
         ...,
         description="The category of the process based on DIN 8580, e.g., forming or coating.",
-        example=["SEPARATION", "CUTTING", "WATERJET_CUTTING"],
+        examples=[["SEPARATION", "CUTTING", "WATERJET_CUTTING"]],
     )
 
 
@@ -1160,19 +1181,19 @@ class RevisionTableRow(BaseModel):
             "Serial number used to identify the revision, typically indicated by "
             "letters (e.g., 'A', 'B') or numbers (e.g., '01', '02')."
         ),
-        example="A",
+        examples=["A"],
     )
 
     description: str = Field(
         ...,
         description="Description of the change or revision made.",
-        example="Added dimension to part edge.",
+        examples=["Added dimension to part edge."],
     )
 
     revision_date: Optional[date] = Field(
         None,
         description="The date when the revision was implemented.",
-        example="2025-01-24",
+        examples=["2025-01-24"],
     )
 
 
@@ -1271,7 +1292,7 @@ class ReferencePosition(BaseModel):
 class AskType(str, Enum):
     """The type of request to be sent to the server."""
 
-    BALLOON_POSITIONS = "BALLOON_POSITIONS"
+    BALLOONS = "BALLOONS"
     CUSTOM = "CUSTOM"
     FEATURES = "FEATURES"
     INSIGHTS = "INSIGHTS"
@@ -1308,14 +1329,14 @@ class Answer(BaseModel, abc.ABC):
     ask_version: Literal["v2"] = "v2"
 
 
-class AskBalloonPositions(AskV2):
+class AskBalloons(AskV2):
     """Represents a request for ballooning of a technical drawing."""
 
-    ask_type: Literal[AskType.BALLOON_POSITIONS] = AskType.BALLOONING
+    ask_type: Literal[AskType.BALLOONS] = AskType.BALLOONS
 
 
-class AnswerBalloonPositions(Answer):
-    ask_type: Literal[AskType.BALLOON_POSITIONS] = AskType.BALLOONING
+class AnswerBalloons(Answer):
+    ask_type: Literal[AskType.BALLOONS] = AskType.BALLOONS
     balloons: List[Balloon] = Field(
         ..., description="The balloons in the technical drawing."
     )
@@ -1578,6 +1599,12 @@ class AnswerRedaction(Answer):
     redaction_zones: list[RedactionZone] = Field(
         ..., description="A list of redacted areas in the drawing."
     )
+
+
+class AnswerCustom(Answer):
+    ask_type: Literal[AskType.CUSTOM] = AskType.CUSTOM
+    custom_id: str = Field(..., description="The ID of the custom output.")
+    output: Any = Field(..., description="The custom output.")
 
 
 class AskSheetImage(AskV2):

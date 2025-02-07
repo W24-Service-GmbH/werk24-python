@@ -2,7 +2,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from .base_feature import W24BaseFeatureModel
 from .unit import W24UnitLength
@@ -81,7 +81,7 @@ class W24ToleranceTableItem(BaseModel):
 
     unit: Optional[W24UnitLength] = None
 
-    @validator("nominal_min", pre=True)
+    @field_validator("nominal_min", mode="before")
     def nominal_min_validator(  # NOQA
         cls, raw: Union[str, float, None]
     ) -> Optional[Decimal]:
@@ -90,7 +90,7 @@ class W24ToleranceTableItem(BaseModel):
         """
         return cls._convert_decimal(raw)
 
-    @validator("nominal_max", pre=True)
+    @field_validator("nominal_max", mode="before")
     def nominal_max_validator(  # NOQA
         cls, raw: Union[str, float, None]
     ) -> Optional[Decimal]:

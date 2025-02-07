@@ -142,6 +142,3 @@ class W24GeometricShapeCylinder(BaseModel):
 
     diameter: Decimal
     depth: Decimal
-
-
-W24GeometricShapeCuboid.update_forward_refs()

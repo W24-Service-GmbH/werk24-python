@@ -14,21 +14,6 @@ from packaging.version import Version
 from pydantic import UUID4, HttpUrl, ValidationError
 
 from werk24._version import __version__
-from werk24.crypt import decrypt_with_private_key, encrypt_with_public_key
-from werk24.defaults import Settings
-from werk24.exceptions import (
-    BadRequestException,
-    EncryptionException,
-    InsufficientCreditsException,
-    RequestTooLargeException,
-    ResourceNotFoundException,
-    ServerException,
-    SSLCertificateError,
-    UnauthorizedException,
-    UnsupportedMediaType,
-)
-from werk24.license import find_license
-from werk24.logger import get_logger
 from werk24.models import (
     AskV2,
     EncryptionKeys,
@@ -42,6 +27,21 @@ from werk24.models import (
     TechreadRequest,
     TechreadWithCallbackPayload,
 )
+from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
+from werk24.utils.defaults import Settings
+from werk24.utils.exceptions import (
+    BadRequestException,
+    EncryptionException,
+    InsufficientCreditsException,
+    RequestTooLargeException,
+    ResourceNotFoundException,
+    ServerException,
+    SSLCertificateError,
+    UnauthorizedException,
+    UnsupportedMediaType,
+)
+from werk24.utils.license import find_license
+from werk24.utils.logger import get_logger
 
 HTTP_EXCEPTION_CLASSES = {
     range(200, 300): None,
@@ -73,7 +73,7 @@ class Werk24Client:
 
     def __init__(self, wss_server=settings.wss_server):
         self.license = find_license()
-        self._wss_server = wss_server
+        self._wss_server = str(wss_server)
         self._wss_session = None
 
     def _get_auth_headers(self):

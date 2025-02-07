@@ -11,14 +11,11 @@
 [![PyPI version](https://img.shields.io/pypi/v/werk24.svg)](https://pypi.python.org/pypi/werk24)
 [![Tests](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
 
-## Introduction
+## Overview
 
-Werk24 enables instant processing of technical drawings (PDF, PNG, JPEG) via its API.
-With advanced features like automatic extraction of the MetaData, Features and Insights from Mechanical Component Drawings, Werk24 simplifies engineering workflows.
-
-## Features
-
-Upload a technical drawing, and within seconds, obtain:
+Werk24 provides AI-powered solutions for extracting and interpreting technical drawings.
+This Python client enables easy interaction with the Werk24 API for processing technical drawings efficiently.
+The API give you access to the following structured data:
 
 - **Meta Data**: Drawing ID, Part ID, Designation, General Tolerances, General Roughness, Material, Weight, Bill of Material, Revision Table, Languages and Notes.
 - **Features**: Dimensions incl. Tolerances, Threads, Bores, Chamfers, Roughnesses, GDnTs, Radii
@@ -27,33 +24,12 @@ Upload a technical drawing, and within seconds, obtain:
 
 Check our website at [https://werk24.io](https://werk24.io/?utm_source=github&utm_medium=feature_link).
 
-<table style="width:100%">
-<tr>
-<td>
-Input
-</td>
-<td>
-Output
-</td>
-</tr>
-<tr>
-<td style="width:50%">
-    <a href="https://werk24.io/?utm_source=github&utm_medium=drawing_input" target="_blank">
-      <img src="https://docs.werk24.io/img/drawing_input.png" alt="Werk24" style="max-height:200px">
-    </a>
-</td>
-<td style="width:50%">
-    <a href="https://werk24.io/?utm_source=github&utm_medium=drawing_output" target="_blank">
-      <img src="https://docs.werk24.io/img/drawing_output.png" alt="Werk24" style="max-height:200px">
-    </a>
-</td>
-</tr>
-<tr>
-<td colspan="2">
-    <small>Original drawing by T. Hartmann (CC)</small>
-</td>
-</tr>
-</table>
+## Features
+
+- **Automated Extraction**: Retrieve metadata, dimensions, and annotations from technical drawings.
+- **Fast Processing**: Optimized API calls for efficient inference.
+- **Seamless Integration**: Works with Python-based workflows for manufacturing, CAD, and ERP systems.
+- **JSON Output**: Standardized response format for easy processing.
 
 # Applications
 
@@ -72,7 +48,24 @@ Harness Werk24 for:
 Pip installation
 
 ```bash
-pip install werk24
+pip install werk24    # install the library
+werk24 init           # obtain a trial license
+```
+
+## Quick Start
+
+Here's how you can use the Werk24 client to extract data from a technical drawing:
+
+```python
+import asyncio
+from werk24 import Werk24Client, AskMetaData
+
+async def read_drawing(path, asks):
+  with open(path, "rb") as fid:
+    async with Werk24Client() as client:
+        return [msg async for msg in client.read_drawing(fid, asks)]
+
+asyncio.run(read_drawing("/home/jay/Downloads/DRAWING_SUCCESS.png", [AskMetaData()]))
 ```
 
 ## Documentation

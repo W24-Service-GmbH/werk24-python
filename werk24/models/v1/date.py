@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 
 class W24Date(BaseModel):
@@ -14,7 +14,7 @@ class W24Date(BaseModel):
             the object is loaded
     """
 
-    @validator("date", allow_reuse=True)
+    @field_validator("date")
     def date_validator(cls, v: date) -> date:
         return v.isoformat()
 

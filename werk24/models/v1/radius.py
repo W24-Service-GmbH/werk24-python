@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import Optional, Union
 
-from pydantic import UUID4, BaseModel, validator
+from pydantic import UUID4, BaseModel, field_validator
 
 from .base_feature import W24BaseFeatureModel
 from .size import W24Size
@@ -57,7 +57,7 @@ class W24RadiusLabel(BaseModel):
             for the complete drawing. Exceptions are very rare, but exist.
     """
 
-    @validator("size_tolerance", pre=True)
+    @field_validator("size_tolerance", mode="before")
     def deserialize_size_tolerance(cls, v):
         if isinstance(v, W24Tolerance):
             return v
