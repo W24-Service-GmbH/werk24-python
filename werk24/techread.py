@@ -817,7 +817,6 @@ class Werk24Client:
                     break
 
                 message = self._parse_message(raw_message)
-                print(message)
                 logger.info(
                     "Received message type: %s, subtype: %s",
                     message.message_type,

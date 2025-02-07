@@ -117,9 +117,6 @@ def recv_thumbnail(message: TechreadMessage):
     # and show the image
     image = Image.open(io.BytesIO(message.payload_bytes))
     try:
-        image.show(title=message.ask_type)
-    except BaseException:
-        logger.warning(
-            "Image cannot be displayed. " "Please check your local security settings."
-        )
-        return
+        image.show(title=message.payload_bytes)
+    except BaseException as exc:
+        raise UserInputError(f"Image cannot be displayed: {exc}") from exc
