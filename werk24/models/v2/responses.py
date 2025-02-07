@@ -132,7 +132,7 @@ class ResponseMetaDataMechanicalComponent(Response):
     - general_roughness (Roughness): General roughness specifications.
     - material_options (List[MaterialCombination]): Material options for the component.
     - weight (Quantity): The weight of the component.
-    - unit_system (UnitSystem): The units specification for the component.
+    - unit_systems (List[UnitSystem[]): The unit systems specification for the component.
     - bill_of_material (List[BillOfMaterialRow]): Bill of materials for the component.
     - revision_table (List[RevisionTableRow]): Revision history of the drawing.
     """
@@ -178,8 +178,8 @@ class ResponseMetaDataMechanicalComponent(Response):
         None,
         description="Bill of materials for the component, listing parts and quantities.",
     )
-    unit_system: Optional[UnitSystem] = Field(
-        None,
+    unit_systems: List[UnitSystem] = Field(
+        default_factory=list,
         description="The units specification for the component.",
     )
 

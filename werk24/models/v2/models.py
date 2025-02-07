@@ -1241,8 +1241,7 @@ class ToleratedQuantity(BaseModel):
 
 
 class UnitSystem(Reference):
-    primary_unit_system: Optional[UnitSystemType]
-    secondary_unit_system: Optional[UnitSystemType]
+    unit_system_type: UnitSystemType
 
 
 class ProjectionMethod(Reference):

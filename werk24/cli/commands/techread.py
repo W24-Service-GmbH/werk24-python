@@ -71,7 +71,6 @@ def techread(
         Hook(ask=AskViewImages(), function=recv_thumbnail) if ask_view_images else None,
     ]
     hooks = [hook for hook in hooks if hook]
-
     if not hooks:
         raise UserInputError("No hooks selected. At least one hook must be enabled.")
 
