@@ -1,16 +1,12 @@
-import abc
 from datetime import date
 from decimal import Decimal
-from enum import Enum
-from typing import Any, List, Literal, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
 )
-
-from werk24._version import __version__
 
 from .enums import (
     CoordinateSpace,

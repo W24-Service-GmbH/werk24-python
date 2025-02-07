@@ -7,7 +7,6 @@ from .enums import AskType, PageType
 from .models import (
     Balloon,
     BillOfMaterial,
-    BillOfMaterialRow,
     Bore,
     Chamfer,
     Dimension,
@@ -22,7 +21,6 @@ from .models import (
     Radius,
     RedactionZone,
     ReferencePosition,
-    RevisionTableRow,
     Roughness,
     SecondaryProcess,
     ThreadUnion,

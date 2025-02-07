@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Literal, Union
 
 from pydantic import BaseModel, Field
 
-from ..v1.ask import W24Ask, W24AskResponse, W24AskType, deserialize_ask_response
+from ..v1.ask import W24Ask
 from .enums import AskType, ThumbnailFileFormat
 from .models import RedactionKeyword
 
