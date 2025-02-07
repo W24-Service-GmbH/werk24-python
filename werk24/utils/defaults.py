@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     }
     """Supported Python versions for compatibility checks."""
 
-    log_level: str = "INFO"
+    log_level: str = "WARNING"
     """Logging level. Valid values: DEBUG, INFO, WARNING, ERROR, CRITICAL."""
 
     max_https_retries: int = Field(3, ge=0)

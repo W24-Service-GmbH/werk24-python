@@ -5,8 +5,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-from werk24.defaults import Settings
-from werk24.license import (
+from werk24.utils.defaults import Settings
+from werk24.utils.license import (
     LicenseInvalid,
     find_license,
     parse_license_text,

@@ -1347,3 +1347,24 @@ class TechreadExceptionLevel(str, Enum):
     (e.g,. that you are using a feature that will soon
     be deprecated)
     """
+
+
+class AskType(str, Enum):
+    """The type of request to be sent to the server."""
+
+    BALLOONS = "BALLOONS"
+    CUSTOM = "CUSTOM"
+    FEATURES = "FEATURES"
+    INSIGHTS = "INSIGHTS"
+    META_DATA = "META_DATA"
+    REDACTION = "REDACTION"
+    REFERENCE_POSITIONS = "REFERENCE_POSITIONS"
+    SHEET_IMAGE = "SHEET_IMAGE"
+    VIEW_IMAGE = "VIEW_IMAGE"
+
+
+class ThumbnailFileFormat(str, Enum):
+    """The output format of the redacted drawing."""
+
+    PDF = "PDF"
+    PNG = "PNG"
