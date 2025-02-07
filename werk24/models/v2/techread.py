@@ -253,7 +253,7 @@ class TechreadMessage(TechreadBaseResponse):
                 try:
                     parsed = c_class.model_validate(v)
                     return parsed
-                except ValidationError as exc:
+                except ValidationError:
                     parsed = None
 
         # V1 Asks
