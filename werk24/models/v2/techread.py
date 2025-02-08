@@ -192,6 +192,7 @@ class TechreadInitResponse(TechreadBaseResponse):
     """
 
     drawing_presigned_post: PresignedPost
+    model_presigned_post: Optional[PresignedPost] = None
     public_key: Optional[str] = None
 
 
