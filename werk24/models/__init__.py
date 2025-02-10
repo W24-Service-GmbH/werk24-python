@@ -37,6 +37,7 @@ from werk24.models.v1 import roughness as roughness
 from werk24.models.v1 import shape as shape
 from werk24.models.v1 import size as size
 from werk24.models.v1 import standard as standard
+from werk24.models.v1 import techread as techread
 from werk24.models.v1 import test_dimension as test_dimension
 from werk24.models.v1 import thread as thread
 from werk24.models.v1 import thread_element as thread_element
