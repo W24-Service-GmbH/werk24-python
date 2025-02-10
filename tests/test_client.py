@@ -39,10 +39,10 @@ async def test_read_drawing(drawing_bytes):
             elif msg.message_type == TechreadMessageType.ASK:
                 found_response = True
 
-    assert found_initialized  # noqa
-    assert found_started  # noqa
-    assert found_response  # noqa
-    assert found_completed  # noqa
+    assert found_initialized  # noqa: B101
+    assert found_started  # noqa: B101
+    assert found_response  # noqa: B101
+    assert found_completed  # noqa: B101
 
 
 @pytest.mark.asyncio
