@@ -60,12 +60,12 @@ Here's how you can use the Werk24 client to extract data from a technical drawin
 import asyncio
 from werk24 import Werk24Client, AskMetaData, get_test_drawing
 
-async def read_drawing(path, asks):
+async def read_drawing(asks):
   fid = get_test_drawing()
   async with Werk24Client() as client:
       return [msg async for msg in client.read_drawing(fid, asks)]
 
-asyncio.run(read_drawing("<path>", [AskMetaData()]))
+asyncio.run(read_drawing([AskMetaData()]))
 ```
 
 ## Documentation
@@ -80,17 +80,17 @@ To get a first impression, you can run the CLI:
 $> werk24 --help
  Usage: python -m werk24.cli.werk24 [OPTIONS] COMMAND [ARGS]...
 
-╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --log-level                 TEXT  Set the log level [default: WARNING]                                             │
-│ --install-completion              Install completion for the current shell.                                        │
-│ --show-completion                 Show completion for the current shell, to copy it or customize the installation. │
-│ --help                            Show this message and exit.                                                      │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ init           Initialize Werk24 by providing or creating a license.                                               │
-│ health-check   Run a comprehensive health check for the CLI.                                                       │
-│ techread       Read a drawing file and extract information.                                                        │
-│ version        Print the version of the Client.                                                                    │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────╮
+│ --log-level                 TEXT  Set the log level [default: WARNING]                    │
+│ --install-completion              Install completion for the current shell.               │
+│ --show-completion                 Show completion for the current shell, to copy it or... |
+│ --help                            Show this message and exit.                             │
+╰───────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ────────────────────────────────────────────────────────────────────────────────╮
+│ init           Initialize Werk24 by providing or creating a license.                      │
+│ health-check   Run a comprehensive health check for the CLI.                              │
+│ techread       Read a drawing file and extract information.                               │
+│ version        Print the version of the Client.                                           │
+╰───────────────────────────────────────────────────────────────────────────────────────────╯
 
 ```
