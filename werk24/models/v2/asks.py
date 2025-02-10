@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Literal, Union
 
 from pydantic import BaseModel, Field
 
-from ..v1.ask import W24Ask
-from .enums import AskType, ThumbnailFileFormat
-from .models import RedactionKeyword
+from werk24.models.v1.ask import W24Ask
+from werk24.models.v2.enums import AskType, ThumbnailFileFormat
+from werk24.models.v2.models import RedactionKeyword
 
 
 class AskV2(BaseModel, abc.ABC):

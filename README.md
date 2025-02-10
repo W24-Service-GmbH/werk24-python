@@ -58,12 +58,12 @@ Here's how you can use the Werk24 client to extract data from a technical drawin
 
 ```python
 import asyncio
-from werk24 import Werk24Client, AskMetaData
+from werk24 import Werk24Client, AskMetaData, get_test_drawing
 
 async def read_drawing(path, asks):
-  with open(path, "rb") as fid:
-    async with Werk24Client() as client:
-        return [msg async for msg in client.read_drawing(fid, asks)]
+  fid = get_test_drawing()
+  async with Werk24Client() as client:
+      return [msg async for msg in client.read_drawing(fid, asks)]
 
 asyncio.run(read_drawing("<path>", [AskMetaData()]))
 ```

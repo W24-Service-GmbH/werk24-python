@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import io
 import json
 import ssl
 import uuid
 from asyncio import iscoroutinefunction
 from io import BufferedReader
 from typing import AsyncGenerator, Callable, Dict, List, Optional, Tuple, Union
+from urllib.parse import urljoin
 
 import aiohttp
 import certifi
@@ -13,8 +15,7 @@ import websockets
 from packaging.version import Version
 from pydantic import UUID4, HttpUrl, ValidationError
 
-from werk24._version import __version__
-from werk24.models import (
+from werk24 import (
     AskV2,
     EncryptionKeys,
     Hook,
@@ -27,6 +28,7 @@ from werk24.models import (
     TechreadRequest,
     TechreadWithCallbackPayload,
 )
+from werk24._version import __version__
 from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
@@ -71,9 +73,12 @@ except Exception:
 
 class Werk24Client:
 
-    def __init__(self, wss_server=settings.wss_server):
+    def __init__(
+        self, wss_server=settings.wss_server, https_server=settings.http_server
+    ):
         self.license = find_license()
         self._wss_server = str(wss_server)
+        self._https_server = str(https_server)
         self._wss_session = None
 
     def _get_auth_headers(self):
@@ -139,7 +144,7 @@ class Werk24Client:
 
     async def read_drawing(
         self,
-        drawing: Union[BufferedReader, bytes],
+        drawing: Union[BufferedReader, bytes, io.BytesIO],
         asks: list[AskV2],
         max_pages: int = settings.max_pages,
         encryption_keys: Optional[EncryptionKeys] = None,
@@ -451,7 +456,7 @@ class Werk24Client:
         # without additional information. We want to inform the caller
         # that they submitted the wrong data type.
         # See Github Issue #13
-        if not isinstance(drawing, (BufferedReader, bytes)):
+        if not isinstance(drawing, (BufferedReader, bytes, io.BytesIO)):
             logger.warning("Unsupported media type for drawing")
             raise UnsupportedMediaType(
                 "Drawing bytes requires 'bytes' or 'BufferedReader' type"
@@ -658,7 +663,7 @@ class Werk24Client:
 
         # send the request
         headers = self._get_auth_headers()
-        url = self._make_support_url("techread/read-with-callback")
+        url = self._make_https_url("/techread/read-with-callback")
         async with self._make_https_session() as session:
             response = await session.post(url, data=data, headers=headers)
             self._raise_for_status(url, response.status)
@@ -668,6 +673,20 @@ class Werk24Client:
             return uuid.UUID(response_json["request_id"])
         except (ValueError, KeyError) as e:
             raise BadRequestException(f"Request failed: {response_json}") from e
+
+    def _make_https_url(self, endpoint: str) -> str:
+        """
+        Create a full HTTPS URL for the given endpoint.
+
+        Args:
+        ----
+        - endpoint (str): The API endpoint to append to the base URL.
+
+        Returns:
+        -------
+        - str: The full URL for the HTTPS request.
+        """
+        return urljoin(self._https_server, endpoint)
 
     def _make_https_session(
         self, timeout_seconds: int = 30, cafile: str = None
