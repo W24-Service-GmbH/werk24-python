@@ -2,7 +2,7 @@
 import importlib
 import sys
 
-from .v2 import *
+from .v2 import *  # noqa: F401, F403
 
 # Define the new location of the module
 
