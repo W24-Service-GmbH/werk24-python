@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     trial_license_url: HttpUrl = "https://werk24.io/trial-license"
     """URL for obtaining a trial license."""
 
+    http_server: AnyUrl = "https://api.w24.co"
     wss_server: AnyUrl = "wss://ws-api.w24.co/v2"
     """WebSocket server URL for API communication."""
 

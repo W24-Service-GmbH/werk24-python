@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from .license import (
+from werk24.utils.license import (
     License,
     LicenseInvalid,
     find_license,

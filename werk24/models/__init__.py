@@ -1,53 +1,72 @@
-from werk24.models.v1 import alignment as alignment
-from werk24.models.v1 import alphabet as alphabet
-from werk24.models.v1 import angle as angle
-from werk24.models.v1 import ask as ask
-from werk24.models.v1 import balloon as balloon
-from werk24.models.v1 import base_feature as base_feature
-from werk24.models.v1 import bend as bend
-from werk24.models.v1 import bom_table as bom_table
-from werk24.models.v1 import chamfer as chamfer
-from werk24.models.v1 import complexity as complexity
-from werk24.models.v1 import date as date
-from werk24.models.v1 import depth as depth
-from werk24.models.v1 import file_format as file_format
-from werk24.models.v1 import font as font
-from werk24.models.v1 import fraction as fraction
-from werk24.models.v1 import gdt as gdt
-from werk24.models.v1 import gender as gender
-from werk24.models.v1 import general_tolerances as general_tolerances
-from werk24.models.v1 import geometric_shape as geometric_shape
-from werk24.models.v1 import helpdesk as helpdesk
-from werk24.models.v1 import hole_feature as hole_feature
-from werk24.models.v1 import icon as icon
-from werk24.models.v1 import language as language
-from werk24.models.v1 import leader as leader
-from werk24.models.v1 import location as location
-from werk24.models.v1 import material as material
-from werk24.models.v1 import measure as measure
-from werk24.models.v1 import note as note
-from werk24.models.v1 import paper_size as paper_size
-from werk24.models.v1 import part_family as part_family
-from werk24.models.v1 import position as position
-from werk24.models.v1 import process as process
-from werk24.models.v1 import projection_method as projection_method
-from werk24.models.v1 import radius as radius
-from werk24.models.v1 import revision_table as revision_table
-from werk24.models.v1 import roughness as roughness
-from werk24.models.v1 import shape as shape
-from werk24.models.v1 import size as size
-from werk24.models.v1 import standard as standard
-from werk24.models.v1 import techread as techread
-from werk24.models.v1 import test_dimension as test_dimension
-from werk24.models.v1 import thread as thread
-from werk24.models.v1 import thread_element as thread_element
-from werk24.models.v1 import title_block as title_block
-from werk24.models.v1 import tolerance as tolerance
-from werk24.models.v1 import typed_model as typed_model
-from werk24.models.v1 import unit as unit
-from werk24.models.v1 import value as value
-from werk24.models.v1 import view as view
-from werk24.models.v1 import weight as weight
+# from werk24.models.v1 import unit as unit
+import importlib
+import sys
 
-from .v1 import *  # noqa: F403
-from .v2 import *  # noqa: F403
+from .v2 import *
+
+# Define the new location of the module
+
+old_packages = [
+    "alignment",
+    "alphabet",
+    "angle",
+    "ask",
+    "balloon",
+    "base_feature",
+    "bend",
+    "bom_table",
+    "chamfer",
+    "complexity",
+    "date",
+    "depth",
+    "file_format",
+    "font",
+    "fraction",
+    "gdt",
+    "gender",
+    "general_tolerances",
+    "geometric_shape",
+    "helpdesk",
+    "hole_feature",
+    "icon",
+    "language",
+    "leader",
+    "location",
+    "material",
+    "measure",
+    "note",
+    "paper_size",
+    "part_family",
+    "position",
+    "process",
+    "projection_method",
+    "radius",
+    "revision_table",
+    "roughness",
+    "shape",
+    "size",
+    "standard",
+    "techread",
+    "test_dimension",
+    "thread_element",
+    "thread",
+    "title_block",
+    "tolerance",
+    "typed_model",
+    "unit",
+    "value",
+    "view",
+    "weight",
+]
+
+# Import the module dynamically
+for c_package in old_packages:
+    try:
+        new_module_path = f"werk24.models.v1.{c_package}"
+        sys.modules[f"werk24.models.{c_package}"] = importlib.import_module(
+            new_module_path
+        )
+    except ModuleNotFoundError as e:
+        raise ImportError(
+            f"Could not import {new_module_path}. Did you move it?"
+        ) from e
