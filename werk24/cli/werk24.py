@@ -18,7 +18,7 @@ settings = Settings()
 console = Console()
 logger = get_logger(__name__)
 
-app = typer.Typer(pretty_exceptions_show_locals=False)
+app = typer.Typer(pretty_exceptions_show_locals=False, no_args_is_help=True)
 app.add_typer(init_app)
 app.add_typer(health_check_app)
 app.add_typer(techread_app)

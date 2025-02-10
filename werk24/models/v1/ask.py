@@ -1281,11 +1281,21 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
 
 
 W24AskResponse = Union[
-    W24TitleBlock,
     W24AskNotesResponse,
     W24AskPartFamilyCharacterizationResponse,
     W24AskProductPMIExtractResponse,
     W24AskRevisionTableResponse,
+    W24TitleBlock,
+    W24AskVariantExternalDimensionsResponse,
+    W24AskVariantGDTsResponse,
+    W24AskVariantLeadersResponse,
+    W24AskVariantMaterial,
+    W24AskVariantMeasuresResponse,
+    W24AskVariantRadiiResponse,
+    W24AskVariantRoughnessesResponse,
+    W24AskVariantCADResponse,
+    W24AskVariantThreadElementsResponse,
+    W24AskVariantProcessesResponse,
 ]
 
 

@@ -1,3 +1,3 @@
-from ._version import __version__
-from .models import *
-from .techread import Werk24Client
+from werk24._version import __version__
+from werk24.models import *
+from werk24.techread import Werk24Client as Werk24Client
