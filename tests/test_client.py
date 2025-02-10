@@ -1,6 +1,4 @@
-import io
 from importlib.resources import files
-from unittest.mock import patch
 
 import pytest
 
@@ -41,10 +39,10 @@ async def test_read_drawing(drawing_bytes):
             elif msg.message_type == TechreadMessageType.ASK:
                 found_response = True
 
-    assert found_initialized
-    assert found_started
-    assert found_response
-    assert found_completed
+    assert found_initialized  # noqa
+    assert found_started  # noqa
+    assert found_response  # noqa
+    assert found_completed  # noqa
 
 
 @pytest.mark.asyncio
