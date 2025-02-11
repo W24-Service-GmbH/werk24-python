@@ -1104,48 +1104,50 @@ class Material(BaseModel):
 
 
 class MaterialCombination(Reference):
+    """
+    List of Materials that need to be combined
+    (Material_A and Material_B) is a material combination
+    """
+
     material_combination: list[Material]
 
 
 class BillOfMaterialRow(BaseModel):
-    """Row of a BOM table
-
-    Attributes:
-    ----------
-    - position (Optional[str]): Position Number of the part
-      on the assembly is defined using position bubbles.
-      This position number is mentioned on the BOM table.
-    - part_number (Optional[str]): Part Number of the parts
-      listed in the bill of material.
-    - designation (Optional[str]): Designation/Title of the part
-      listed in the bill of material.
-    - material_options (list[MaterialCombination]): Material of the part
-      listed in the bill of material. These materials could be optional
-      set of material that could be applicable for the part.
-      For example: Either (Material_A and Material_B)
-        Or (Material_C and Material_D)
-        Here,
-        (Material_A and Material_B) is a material combination
-        (Material_C and Material_D) is another material combination
-    - quantity (Optional[W24PhysicalQuantity]): Quantity of the part is defined
-      as Physical Quantity with a value, unit and tolerance.
-    - weight (Optional[Quantity]): Weight of the parts listed in the bill of
-        material.
+    """
+    Represents a single row in a bill of material (BOM) table.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    position: Optional[str]
-    part_number: Optional[str]
-    designation: Optional[str]
-    material_options: list[MaterialCombination]
+    position: Optional[str] = Field(
+        None,
+        description="Position Number of the part on the assembly, defined using position bubbles.",
+    )
+    part_number: Optional[str] = Field(
+        None,
+        description="Part Number of the parts listed in the bill of material.",
+    )
+    designation: Optional[str] = Field(
+        None,
+        description="Designation/Title of the part listed in the bill of material.",
+    )
+    material_options: list[MaterialCombination] = Field(
+        default_factory=list,
+        description="List of possible MaterialCombinations",
+    )
     quantity: Optional[Quantity] = Field(
         None, description="Physical quantity in the string format of Pint."
     )
-    unit_weight: Optional[Quantity] = None
+    unit_weight: Optional[Quantity] = Field(
+        None, description="Unit Weight of the parts listed in the bill of material."
+    )
 
 
 class BillOfMaterial(Reference):
+    """
+    Represents a bill of material (BOM) table in a technical drawing.
+    """
+
     rows: list[BillOfMaterialRow] = Field(
         ...,
         description="List of rows in the bill of material.",
