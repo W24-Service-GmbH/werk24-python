@@ -1368,3 +1368,9 @@ class ThumbnailFileFormat(str, Enum):
 
     PDF = "PDF"
     PNG = "PNG"
+
+
+class PrimaryProcessType(str, Enum):
+    CUTTING = "CUTTING"
+    TURNING = "TURNING"
+    MILLING = "MILLING"
