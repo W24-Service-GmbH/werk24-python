@@ -173,13 +173,6 @@ class GeneralTolerances(Reference):
 class Balloon(Reference):
     """
     Represents a balloon annotation in a drawing or part diagram.
-
-
-    Attributes:
-    ----------
-    - center (Tuple[int, int]): The (x, y) coordinates of the balloon's center.
-    - width (int): The width of the balloon in pixels.
-    - height (int): The height of the balloon in pixels.
     """
 
     center: Tuple[int, int] = Field(
@@ -1285,7 +1278,11 @@ class VolumeEstimate(Quantity):
 
 
 class ReferencePosition(BaseModel):
-    reference_id: int
+    reference_id: int = Field(
+        ...,
+        description="Reference ID to identify the object.",
+        examples=[12345],
+    )
     polygon: Optional[Polygon]
 
 
