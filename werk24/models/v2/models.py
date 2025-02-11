@@ -522,11 +522,6 @@ ThreadUnion = Union[
 class Chamfer(Feature):
     """
     Represents a chamfer feature in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - size (Size): The linear size of the chamfer (e.g., the width or depth of the chamfer).
-    - angle (Size): The angle of the chamfer, typically in degrees (e.g., 45°).
     """
 
     quantity: int = Field(
