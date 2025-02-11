@@ -1,3 +1,4 @@
+import abc
 from datetime import date
 from decimal import Decimal
 from typing import List, Literal, Optional, Tuple, Union
@@ -1205,7 +1206,9 @@ class PrimaryProcessMilling(BaseModel):
     )
 
 
-PrimaryProcessUnion = Union[PrimaryProcessCutting, TurningProcess, MillingProcess]
+PrimaryProcessUnion = Union[
+    PrimaryProcessCutting, PrimaryProcessTurning, PrimaryProcessMilling
+]
 
 
 class Polygon(BaseModel):
