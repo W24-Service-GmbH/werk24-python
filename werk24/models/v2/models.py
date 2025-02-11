@@ -716,16 +716,6 @@ class Counterdrill(BaseModel):
 class Bore(Feature):
     """
     Represents a bore feature in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - quantity (Decimal): The number of bores or instances.
-    - counterbore (Optional[Counterbore]): The counterbore feature, if present.
-    - countersink (Optional[Countersink]): The countersink feature, if present.
-    - counterdrill (Optional[Counterdrill]): The counterdrill feature, if present.
-    - diameter (Size): The diameter of the bore.
-    - depth (Size): The depth of the bore.
-    - thread (Optional[Thread]): The threaded feature within the bore, if applicable.
     """
 
     quantity: int = Field(
@@ -1148,7 +1138,7 @@ class BillOfMaterial(Reference):
     Represents a bill of material (BOM) table in a technical drawing.
     """
 
-    rows: list[BillOfMaterialRow] = Field(
+    rows: List[BillOfMaterialRow] = Field(
         ...,
         description="List of rows in the bill of material.",
     )
