@@ -30,6 +30,7 @@ from .enums import (
     MaterialCategory2,
     MaterialCategory3,
     NoteType,
+    PrimaryProcessType,
     ProjectionMethodType,
     RedactionZoneType,
     RoughnessAcceptanceCriterion,
@@ -70,15 +71,18 @@ class Quantity(BaseModel):
 
 class Reference(BaseModel):
     """
-    Represents a general information entry.
+    Base model that allows refering to a specific object by its reference_id.
 
     Attributes:
     ----------
-    - language (Optional[Language]): The language of the information, if known.
-    - value (str): The text value of the information.
+    - reference_id (int): Reference ID to identify the object.
     """
 
-    reference_id: int
+    reference_id: int = Field(
+        ...,
+        description="Reference ID to identify the object.",
+        examples=[12345],
+    )
 
 
 class Weight(Quantity, Reference):
@@ -388,7 +392,7 @@ class Thread(Feature):
         ..., description="The direction of the thread, such as LEFT or RIGHT."
     )
 
-    length: Optional[Size] = Field(
+    depth: Optional[Depth] = Field(
         default=None,
         description="The length of the threaded feature, including nominal size and tolerances.",
     )
@@ -1251,16 +1255,19 @@ class ProjectionMethod(Reference):
 
 
 class CuttingProcess(BaseModel):
+    primary_process: Literal[PrimaryProcessType.CUTTING] = PrimaryProcessType.CUTTING
     requires_bending: Optional[bool]
     output_geometry: Optional[GeometryCuboid]
 
 
 class TurningProcess(BaseModel):
+    primary_process: Literal[PrimaryProcessType.TURNING] = PrimaryProcessType.TURNING
     requires_secondary_milling: bool
     output_geometry: Optional[GeometryCylinder]
 
 
 class MillingProcess(BaseModel):
+    primary_process: Literal[PrimaryProcessType.MILLING] = PrimaryProcessType.MILLING
     axis_count: Optional[int]
     output_geometry: Optional[GeometryCuboid]
 
