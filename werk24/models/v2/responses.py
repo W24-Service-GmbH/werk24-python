@@ -13,6 +13,8 @@ from .models import (
     Entry,
     GDnT,
     GeneralTolerances,
+    GeometryCuboid,
+    GeometryCylinder,
     Identifier,
     Language,
     MaterialCombination,
@@ -55,16 +57,6 @@ class ResponseCustom(Response):
 class ResponseFeaturesComponentDrawing(Response):
     """
     Represents an Response to a request for features of a mechanical component drawing from the server.
-
-    Attributes:
-    ----------
-    - dimensions (List[Dimension]): Dimension details for the component.
-    - threads (List[Thread]): Thread specifications for the component.
-    - bores (List[Bore]): Bore specifications for the component.
-    - chamfers (List[Chamfer]): Chamfer specifications for the component.
-    - roughnesses (List[Roughness]): Additional surface roughness details beyond general roughness.
-    - gdnts (List[GDnT]): Geometric dimensioning and tolerancing (GD&T) details.
-    - radii (List[Radius]): Radius specifications for the component.
     """
 
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
@@ -100,6 +92,21 @@ class ResponseFeaturesComponentDrawing(Response):
     )
 
 
+class ExternalDimensions(BaseModel):
+    """
+    Represents the external dimensions of a component.
+    """
+
+    enclosing_cuboid: Optional[GeometryCuboid] = Field(
+        None,
+        description="The enclosing cuboid of the component.",
+    )
+    enclosing_cylinder: Optional[GeometryCylinder] = Field(
+        None,
+        description="The enclosing cylinder of the component.",
+    )
+
+
 class ResponseInsightsComponentDrawing(Response):
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
@@ -119,23 +126,19 @@ class ResponseInsightsComponentDrawing(Response):
         description="The estimated volume of the component.",
     )
 
+    external_dimensions_before_processing: Optional[ExternalDimensions] = Field(
+        None,
+        description="The external dimensions of the component before processing.",
+    )
+
+    external_dimensions_after_processing: Optional[ExternalDimensions] = Field(
+        None,
+        description="The external dimensions of the component after processing.",
+    )
+
 
 class ResponseMetaDataComponentDrawing(Response):
-    """A class that represents an Response to a request for metadata of a mechanical component drawing from the server.
-
-    Attributes:
-    ----------
-    - identifiers (List[Identifier]): A list of identifiers associated with the component.
-    - designation (List[Entry]): List of designations of the component in different languages.
-    - languages (List[Language]): The languages used in the drawing.
-    - general_tolerances (GeneralTolerances): General tolerance specifications.
-    - general_roughness (Roughness): General roughness specifications.
-    - material_options (List[MaterialCombination]): Material options for the component.
-    - weight (Quantity): The weight of the component.
-    - unit_systems (List[UnitSystem[]): The unit systems specification for the component.
-    - bill_of_material (List[BillOfMaterialRow]): Bill of materials for the component.
-    - revision_table (List[RevisionTableRow]): Revision history of the drawing.
-    """
+    """A class that represents an Response to a request for metadata of a mechanical component drawing from the server."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -187,10 +190,6 @@ class ResponseMetaDataComponentDrawing(Response):
 class ResponseRedaction(Response):
     """
     A class that represents an Response to a redaction request from the server.
-
-    Attributes:
-    ----------
-    - redaction_zones (HttpUrl): A list of redacted areas in the drawing.
     """
 
     ask_type: Literal[AskType.REDACTION] = AskType.REDACTION
@@ -203,10 +202,6 @@ class ResponseRedaction(Response):
 class ResponseReferencePositions(Response):
     """
     A class that represents an Response to a request for the position of a component in the drawing.
-
-    Attributes:
-    ----------
-    - reference_positions (List[ReferencePosition]): The positions of the component in the drawing.
     """
 
     ask_type: Literal[AskType.REFERENCE_POSITIONS] = AskType.REFERENCE_POSITIONS
