@@ -2,6 +2,10 @@ from enum import Enum
 
 
 class DepthType(str, Enum):
+    """
+    Enumeration of depth types for holes and pockets.
+    """
+
     SIZE = "SIZE"
     THROUGH = "THROUGH"
     THROUGH_ALL = "THROUGH_ALL"

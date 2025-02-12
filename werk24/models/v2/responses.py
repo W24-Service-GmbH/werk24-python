@@ -52,7 +52,7 @@ class ResponseCustom(Response):
     output: Any = Field(..., description="The custom output.")
 
 
-class ResponseFeaturesMechanicalComponent(Response):
+class ResponseFeaturesComponentDrawing(Response):
     """
     Represents an Response to a request for features of a mechanical component drawing from the server.
 
@@ -100,7 +100,7 @@ class ResponseFeaturesMechanicalComponent(Response):
     )
 
 
-class ResponseInsightsMechanicalComponent(Response):
+class ResponseInsightsComponentDrawing(Response):
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
@@ -120,7 +120,7 @@ class ResponseInsightsMechanicalComponent(Response):
     )
 
 
-class ResponseMetaDataMechanicalComponent(Response):
+class ResponseMetaDataComponentDrawing(Response):
     """A class that represents an Response to a request for metadata of a mechanical component drawing from the server.
 
     Attributes:

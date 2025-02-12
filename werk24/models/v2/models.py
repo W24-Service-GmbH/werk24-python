@@ -1261,10 +1261,6 @@ class RedactionKeyword(BaseModel):
 class RedactionZone(BaseModel):
     """
     A class that represents a redacted area in the drawing.
-
-    Attributes:
-    ----------
-    - polygon(list[tuple[int,int]]): A list of x,y tuples representing the vertices of the redacted area.
     """
 
     redaction_zone_type: RedactionZoneType
