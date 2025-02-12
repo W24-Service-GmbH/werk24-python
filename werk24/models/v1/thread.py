@@ -378,10 +378,6 @@ class W24ThreadFeature(W24BaseFeatureModel):
         threads (List[W24Thread]): List of Threads that are positioned
             on the ThreadFeatures. This is a list to support multi-threads
 
-        NOTE: Tapers are currently not considered
-
-        NOTE: Future implementations might also consider the inclination
-        in two angles relative to the front view.
     """
 
     gender: Optional[W24Gender]
