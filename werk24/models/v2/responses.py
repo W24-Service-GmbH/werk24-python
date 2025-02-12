@@ -42,6 +42,12 @@ class Response(BaseModel, abc.ABC):
 
 
 class ResponseBalloons(Response):
+    """
+    `ResponseBalloons` is the corresponding response object for `AskBalloons`.
+    It contains the extracted balloon details from the technical drawing.
+
+    """
+
     ask_type: Literal[AskType.BALLOONS] = AskType.BALLOONS
     balloons: List[Balloon] = Field(
         ..., description="The balloons in the technical drawing."
@@ -57,6 +63,7 @@ class ResponseCustom(Response):
 class ResponseFeaturesComponentDrawing(Response):
     """
     Represents an Response to a request for features of a mechanical component drawing from the server.
+    It contains extracted features from the technical drawing, providing structured data for further processing.
     """
 
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
@@ -108,6 +115,11 @@ class ExternalDimensions(BaseModel):
 
 
 class ResponseInsightsComponentDrawing(Response):
+    """
+    `ResponseInsightsComponentDrawing` is the response object corresponding to an AskInsights request.
+    It provides structured insights into the manufacturability and processing of a mechanical component.
+    """
+
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
@@ -138,7 +150,14 @@ class ResponseInsightsComponentDrawing(Response):
 
 
 class ResponseMetaDataComponentDrawing(Response):
-    """A class that represents an Response to a request for metadata of a mechanical component drawing from the server."""
+    """
+    `ResponseMetaData` represents the structured response to a metadata request (AskMetaData)
+    for a mechanical component drawing. This response provides essential details such as identifiers,
+    material options, unit systems, general tolerances, and other metadata extracted from the drawing.
+
+    The response enables better integration with manufacturing systems,
+    PLM (Product Lifecycle Management), and ERP systems by providing structured component details.
+    """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

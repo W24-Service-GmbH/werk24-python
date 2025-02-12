@@ -71,19 +71,26 @@ class AskRedaction(AskV2):
     """
 
     ask_type: Literal[AskType.REDACTION] = AskType.REDACTION
-    redact_logos: bool = Field(True, description="Redact the logos")
-    redact_company_data: bool = Field(True, description="Redact company data")
-    redact_personal_data: bool = Field(True, description="Redact personal data")
+    redact_logos: bool = Field(
+        True, description="Whether to redact logos from the drawing."
+    )
+    redact_company_data: bool = Field(
+        True, description="Whether to redact company data."
+    )
+    redact_personal_data: bool = Field(
+        True, description="Whether to redact personal data."
+    )
     redact_keywords: list[RedactionKeyword] = Field(
         [],
-        description="List of Keywords to redact. Keywords are strings that should be redacted from the drawing.",
+        description="A list of keywords to redact from the drawing. Keywords are specified as strings.",
     )
     output_format: ThumbnailFileFormat = Field(
-        ThumbnailFileFormat.PDF, description="Output format of the redacted drawing"
+        ThumbnailFileFormat.PDF,
+        description="The desired output format for the redacted drawing",
     )
     fill_color: str | None = Field(
         "#ffffff",
-        description="Fill color for the redacted areas. Set to None if you only wish to obtain the redaction areas as polygons and perform the redaction on your end.",
+        description="The fill color for the redacted areas. If None, only the polygon outlines for redacted areas are returned, and the user can perform the redaction themselves.",
     )
 
 
