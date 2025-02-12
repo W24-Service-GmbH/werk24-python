@@ -1256,3 +1256,18 @@ class RedactionZone(BaseModel):
         ...,
         description="A list of x,y tuples representing the vertices of the redacted area.",
     )
+
+
+class BoundingDimensions(BaseModel):
+    """
+    Represents the bounding dimensions of a component.
+    """
+
+    enclosing_cuboid: Optional[GeometryCuboid] = Field(
+        None,
+        description="The enclosing cuboid of the component.",
+    )
+    enclosing_cylinder: Optional[GeometryCylinder] = Field(
+        None,
+        description="The enclosing cylinder of the component.",
+    )

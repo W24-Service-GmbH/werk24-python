@@ -8,13 +8,12 @@ from .models import (
     Balloon,
     BillOfMaterial,
     Bore,
+    BoundingDimensions,
     Chamfer,
     Dimension,
     Entry,
     GDnT,
     GeneralTolerances,
-    GeometryCuboid,
-    GeometryCylinder,
     Identifier,
     Language,
     MaterialCombination,
@@ -99,21 +98,6 @@ class ResponseFeaturesComponentDrawing(Response):
     )
 
 
-class ExternalDimensions(BaseModel):
-    """
-    Represents the external dimensions of a component.
-    """
-
-    enclosing_cuboid: Optional[GeometryCuboid] = Field(
-        None,
-        description="The enclosing cuboid of the component.",
-    )
-    enclosing_cylinder: Optional[GeometryCylinder] = Field(
-        None,
-        description="The enclosing cylinder of the component.",
-    )
-
-
 class ResponseInsightsComponentDrawing(Response):
     """
     `ResponseInsightsComponentDrawing` is the response object corresponding to an AskInsights request.
@@ -123,14 +107,14 @@ class ResponseInsightsComponentDrawing(Response):
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
-    dimensions_before_processing: Optional[ExternalDimensions] = Field(
+    dimensions_before_processing: Optional[BoundingDimensions] = Field(
         None,
-        description="The external dimensions of the component before processing.",
+        description="The bounding dimensions of the component before processing.",
     )
 
-    dimensions_after_processing: Optional[ExternalDimensions] = Field(
+    dimensions_after_processing: Optional[BoundingDimensions] = Field(
         None,
-        description="The external dimensions of the component after processing.",
+        description="The bounding dimensions of the component after processing.",
     )
 
     primary_process_options: List[PrimaryProcessUnion] = Field(
