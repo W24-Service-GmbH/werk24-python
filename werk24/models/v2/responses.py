@@ -62,33 +62,33 @@ class ResponseFeaturesComponentDrawing(Response):
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
-    dimensions: List[Dimension] = Field(
-        default_factory=list,
-        description="Dimension details for the component.",
-    )
-    threads: List[ThreadUnion] = Field(
-        default_factory=list,
-        description="Thread specifications for the component.",
-    )
     bores: List[Bore] = Field(
         default_factory=list,
-        description="Bore specifications for the component.",
+        description="Bore specifications for the component (e.g., `Ø6 H7 (+0.012/0) ↧13.4`, `6x Ø3.3 ↧12.0 ⌵ Ø3.3x45° M4×0.7—6H/6g×8.0`).",
     )
     chamfers: List[Chamfer] = Field(
         default_factory=list,
-        description="Chamfer specifications for the component.",
+        description="Chamfer specifications for the component (e.g., `3 x 45°`, `4x 0.031 x 45.00° TYPICAL`).",
     )
-    roughnesses: List[Roughness] = Field(
+    dimensions: List[Dimension] = Field(
         default_factory=list,
-        description="Additional surface roughness details beyond general roughness.",
+        description="Dimension details for the component (e.g, `5 ±0.3`, `Ø30`, `□5`). ",
     )
     gdnts: List[GDnT] = Field(
         default_factory=list,
-        description="Geometric dimensioning and tolerancing (GD&T) details.",
+        description="Geometric dimensioning and tolerancing (GD&T) details (e.g., `[◎|Ø0.02|A-B]`).",
     )
     radii: List[Radius] = Field(
         default_factory=list,
-        description="Radius specifications for the component.",
+        description="Radius specifications for the component (e.g., `R5`).",
+    )
+    roughnesses: List[Roughness] = Field(
+        default_factory=list,
+        description="Additional surface roughness details beyond general roughness. (e.g., `√URa  12.5`)",
+    )
+    threads: List[ThreadUnion] = Field(
+        default_factory=list,
+        description="Thread specifications for the component (e.g., `M5×0.8—6g/6H`, `0.25—20 UNC—2A`).",
     )
 
 
@@ -145,45 +145,45 @@ class ResponseMetaDataComponentDrawing(Response):
     ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
-    identifiers: List[Identifier] = Field(
-        default_factory=list,
-        description="List of identifiers associated with the component.",
+    bill_of_material: Optional[BillOfMaterial] = Field(
+        None,
+        description="Bill of materials for the component, listing parts and quantities.",
     )
     designation: list[Entry] = Field(
         default_factory=list,
         description="Designation of the component.",
     )
-    languages: List[Language] = Field(
+    identifiers: List[Identifier] = Field(
         default_factory=list,
-        description="Languages used in the drawing.",
-    )
-    general_tolerances: Optional[GeneralTolerances] = Field(
-        None,
-        description="General tolerance specifications for the component.",
+        description="List of identifiers associated with the component.",
     )
     general_roughness: Optional[Roughness] = Field(
         None,
         description="General roughness specifications for the component.",
     )
+    general_tolerances: Optional[GeneralTolerances] = Field(
+        None,
+        description="General tolerance specifications for the component.",
+    )
+    languages: List[Language] = Field(
+        default_factory=list,
+        description="Languages used in the drawing.",
+    )
     material_options: List[MaterialCombination] = Field(
         default_factory=list,
         description="Material options available for the component.",
-    )
-    weight: Optional[Weight] = Field(
-        None,
-        description="Weight of the component.",
     )
     projection_method: Optional[ProjectionMethod] = Field(
         None,
         description="Projection method used in the drawing (e.g., first angle or third angle).",
     )
-    bill_of_material: Optional[BillOfMaterial] = Field(
-        None,
-        description="Bill of materials for the component, listing parts and quantities.",
-    )
     unit_systems: List[UnitSystem] = Field(
         default_factory=list,
         description="The units specification for the component.",
+    )
+    weight: Optional[Weight] = Field(
+        None,
+        description="Weight of the component.",
     )
 
 
