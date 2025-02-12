@@ -89,11 +89,6 @@ class W24ThreadElement(BaseModel):
 
         threads (List[W24Thread]): List of Threads that are positioned
             on the ThreadElements. This is a list to support multi-threads
-
-        NOTE: Tapers are currently not considered
-
-        NOTE: Future implementations might also consider the inclination
-        in two angles relative to the front view.
     """
 
     quantity: int
