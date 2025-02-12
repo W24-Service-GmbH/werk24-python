@@ -1176,10 +1176,6 @@ class PrimaryProcessCutting(BaseModel):
         None,
         description="Whether the cutting process requires bending.",
     )
-    output_geometry: Optional[GeometryCuboid] = Field(
-        None,
-        description="The output geometry of the cutting process.",
-    )
 
 
 class PrimaryProcessTurning(BaseModel):
@@ -1188,10 +1184,6 @@ class PrimaryProcessTurning(BaseModel):
         ...,
         description="Whether the turning process requires secondary milling.",
     )
-    output_geometry: Optional[GeometryCylinder] = Field(
-        None,
-        description="The output geometry of the turning process.",
-    )
 
 
 class PrimaryProcessMilling(BaseModel):
@@ -1199,10 +1191,6 @@ class PrimaryProcessMilling(BaseModel):
     axis_count: Optional[int] = Field(
         None,
         description="The number of axes used in the milling process.",
-    )
-    output_geometry: Optional[GeometryCuboid] = Field(
-        None,
-        description="The output geometry of the milling process.",
     )
 
 
