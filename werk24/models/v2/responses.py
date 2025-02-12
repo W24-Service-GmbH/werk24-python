@@ -111,6 +111,17 @@ class ResponseInsightsComponentDrawing(Response):
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
+
+    dimensions_before_processing: Optional[ExternalDimensions] = Field(
+        None,
+        description="The external dimensions of the component before processing.",
+    )
+
+    dimensions_after_processing: Optional[ExternalDimensions] = Field(
+        None,
+        description="The external dimensions of the component after processing.",
+    )
+
     primary_process_options: List[PrimaryProcessUnion] = Field(
         ...,
         description="The primary processing options available for the component.",
@@ -126,15 +137,6 @@ class ResponseInsightsComponentDrawing(Response):
         description="The estimated volume of the component.",
     )
 
-    external_dimensions_before_processing: Optional[ExternalDimensions] = Field(
-        None,
-        description="The external dimensions of the component before processing.",
-    )
-
-    external_dimensions_after_processing: Optional[ExternalDimensions] = Field(
-        None,
-        description="The external dimensions of the component after processing.",
-    )
 
 
 class ResponseMetaDataComponentDrawing(Response):
