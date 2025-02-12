@@ -1371,7 +1371,10 @@ class ThumbnailFileFormat(str, Enum):
     """The output format of the redacted drawing."""
 
     PDF = "PDF"
+    """The output format is PDF."""
+
     PNG = "PNG"
+    """The output format is PNG."""
 
 
 class PrimaryProcessType(str, Enum):
