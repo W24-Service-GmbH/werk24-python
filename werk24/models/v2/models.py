@@ -1,3 +1,4 @@
+import abc
 from datetime import date
 from decimal import Decimal
 from typing import List, Literal, Optional, Tuple, Union
@@ -30,6 +31,7 @@ from .enums import (
     MaterialCategory2,
     MaterialCategory3,
     NoteType,
+    PrimaryProcessType,
     ProjectionMethodType,
     RedactionZoneType,
     RoughnessAcceptanceCriterion,
@@ -50,10 +52,6 @@ from .enums import (
 class Confidence(BaseModel):
     """
     Represents a confidence score for a feature or measurement.
-
-    Attributes:
-    ----------
-    - score (Decimal): The confidence score of the feature, indicating the confidence the symstem has in the reading.
     """
 
     score: Decimal = Field(
@@ -64,28 +62,46 @@ class Confidence(BaseModel):
 
 
 class Quantity(BaseModel):
-    value: Decimal
-    unit: str
+    """
+    Represents a Physical Quantity with a value and a unit.
+    """
+
+    value: Decimal = Field(
+        ...,
+        description="The value of the quantity.",
+        examples=[Decimal("10.5")],
+    )
+    unit: str = Field(
+        ...,
+        description="The unit of the quantity.",
+        examples=["mm"],
+    )
 
 
 class Reference(BaseModel):
     """
-    Represents a general information entry.
-
-    Attributes:
-    ----------
-    - language (Optional[Language]): The language of the information, if known.
-    - value (str): The text value of the information.
+    Base model that allows refering to a specific object by its reference_id.
     """
 
-    reference_id: int
+    reference_id: int = Field(
+        ...,
+        description="Reference ID to identify the object.",
+        examples=[12345],
+    )
 
 
 class Weight(Quantity, Reference):
+    """
+    Represents a weight value with a unit.
+    """
+
     pass
 
 
 class Entry(Reference):
+    """
+    Represents an entry in a list or table.
+    """
 
     language: Optional[Language] = Field(
         None,
@@ -104,13 +120,6 @@ class Entry(Reference):
 class Identifier(Entry):
     """
     Represents an identifier (such as the drawing number) used for distinguishing elements in a drawing.
-
-    Attributes:
-    ----------
-    - identifier_type (IdentifierType): The type of the identifier (e.g., part ID, drawing ID).
-    - stakeholder (Optional[IdentifierStakeholder]): The associated stakeholder (if known).
-    - period (Optional[IdentifierPeriod]): The associated period (if known).
-    - value (str): The actual value of the identifier.
     """
 
     identifier_type: IdentifierType = Field(
@@ -136,15 +145,6 @@ class GeneralTolerances(Reference):
 
     General tolerances are applied to dimensions where specific tolerances are not explicitly defined.
     These tolerances are governed by recognized standards and principles.
-
-    Attributes:
-    ----------
-    - tolerance_standard (GeneralTolerancesStandard): The standard used to define general tolerances,
-      such as DIN 7168 or ISO 2768.
-    - tolerance_class (Optional[str]): The tolerance class or grade, represented by a short string (e.g., 'm', 'f', or 'c').
-      This defines the degree of precision required as per the selected standard.
-    - principle (GeneralTolerancesPrinciple): The principle applied to tolerance interpretation, such as independence
-      (each dimension is treated independently) or envelope (dimensions must fit within an overall envelope).
     """
 
     tolerance_standard: GeneralTolerancesStandard = Field(
@@ -169,13 +169,6 @@ class GeneralTolerances(Reference):
 class Balloon(Reference):
     """
     Represents a balloon annotation in a drawing or part diagram.
-
-
-    Attributes:
-    ----------
-    - center (Tuple[int, int]): The (x, y) coordinates of the balloon's center.
-    - width (int): The width of the balloon in pixels.
-    - height (int): The height of the balloon in pixels.
     """
 
     center: Tuple[int, int] = Field(
@@ -188,14 +181,13 @@ class Balloon(Reference):
 class Feature(Reference):
     """
     Represents a design or manufacturing cue with descriptive information and metadata.
-
-    Attributes:
-    ----------
-    - label (str): A short description or note associated with the cue.
-    - confidence (Confidence): The confidence in the feature extraction or interpretation.
     """
 
-    label: str  # Description or explanation of the cue
+    label: str = Field(
+        ...,
+        description="A short description of the feature in a human-readable format.",
+    )
+
     confidence: Optional[Confidence] = Field(
         ...,
         description="Confidence in the feature extraction or interpretation.",
@@ -205,17 +197,6 @@ class Feature(Reference):
 class Tolerance(BaseModel):
     """
     Represents a tolerance specification for a part or feature.
-
-    Attributes:
-    ----------
-    - tolerance_grade (Optional[str]): The grade of tolerance, e.g., 'IT7' or 'H7'. Optional.
-    - deviation_lower (Optional[Decimal]): The lower deviation limit. None if not specified.
-    - deviation_upper (Optional[Decimal]): The upper deviation limit. None if not specified.
-    - fit (Optional[str]): The type of fit, such as 'H7/h6', or None if not applicable.
-    - is_theoretically_exact (bool): Indicates whether the tolerance is theoretically exact.
-    - is_reference (bool): Indicates whether the tolerance serves as a reference.
-    - general_tolerance_applied (bool): Indicates whether the general tolerance was applied.
-    - is_approximation (bool): Indicates whether the tolerance is an approximation (e.g., 'approx. 5').
     """
 
     tolerance_grade: Optional[str] = Field(
@@ -266,12 +247,6 @@ class Tolerance(BaseModel):
 class Size(Quantity):
     """
     Represents a size definition for a part or feature in an engineering context.
-
-    Attributes:
-    ----------
-    - size_type (SizeType): The type of size (e.g., diameter, linear, angular) as defined by `SizeType`.
-    - tolerance (Tolerance): The tolerance specifications associated with this size.
-        If no tolerance is set, the general tolerance applies.
     """
 
     size_type: SizeType = Field(
@@ -297,10 +272,6 @@ class Size(Quantity):
 class Depth(BaseModel):
     """
     Represents the depth of a feature, such as a hole or bore.
-
-    Attributes:
-    ----------
-    - depth (Decimal): The depth of the feature.
     """
 
     depth_type: DepthType
@@ -310,11 +281,6 @@ class Depth(BaseModel):
 class Dimension(Feature):
     """
     Represents a measurement cue in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - quantity (Decimal): The quantity or value associated with the measurement (e.g., length, diameter).
-    - size (Size): The size details including size type, nominal size, tolerance, and unit.
     """
 
     quantity: int = Field(
@@ -333,11 +299,6 @@ class Dimension(Feature):
 class ThreadSpacing(BaseModel):
     """
     Represents the spacing of a thread, defining the distance between thread crests.
-
-    Attributes:
-    ----------
-    - pitch_in_mm (Decimal): The pitch of the thread in millimeters.
-    - threads_per_inch (Decimal): The number of threads per inch (TPI) for imperial threads.
     """
 
     pitch_in_mm: Decimal = Field(
@@ -356,15 +317,6 @@ class ThreadSpacing(BaseModel):
 class Thread(Feature):
     """
     Represents a generic threaded feature in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - quantity (Decimal): The number of threads or instances.
-    - diameter (Size): The diameter of the thread, including nominal size and tolerances.
-    - pitch (Size): The pitch of the thread, defining the distance between thread crests.
-    - threads_per_inch (Decimal): The number of threads per inch for imperial threads.
-    - handedness (ThreadHandedness): The direction of the thread (e.g., LEFT or RIGHT).
-    - length (Size): The length of the threaded feature.
     """
 
     quantity: Decimal = Field(
@@ -388,7 +340,7 @@ class Thread(Feature):
         ..., description="The direction of the thread, such as LEFT or RIGHT."
     )
 
-    length: Optional[Size] = Field(
+    depth: Optional[Depth] = Field(
         default=None,
         description="The length of the threaded feature, including nominal size and tolerances.",
     )
@@ -397,118 +349,127 @@ class Thread(Feature):
 class ThreadISOMetric(Thread):
     """
     Represents an ISO Metric thread.
-
-    Attributes:
-    ----------
-    - female_major_diameter_tolerance (Tolerance): Tolerance for the major diameter of female threads.
-    - female_pitch_diameter_tolerance (Tolerance): Tolerance for the pitch diameter of female threads.
-    - male_major_diameter_tolerance (Tolerance): Tolerance for the major diameter of male threads.
-    - male_pitch_diameter_tolerance (Tolerance): Tolerance for the pitch diameter of male threads.
     """
 
     thread_type: Literal[ThreadType.ISO_METRIC] = ThreadType.ISO_METRIC
-    female_major_diameter_tolerance: Optional[Tolerance]
-    female_pitch_diameter_tolerance: Optional[Tolerance]
-    male_major_diameter_tolerance: Optional[Tolerance]
-    male_pitch_diameter_tolerance: Optional[Tolerance]
+    female_major_diameter_tolerance: Optional[Tolerance] = Field(
+        None,
+        description="Tolerance for the major diameter of female threads.",
+    )
+    female_pitch_diameter_tolerance: Optional[Tolerance] = Field(
+        None,
+        description="Tolerance for the pitch diameter of female threads.",
+    )
+    male_major_diameter_tolerance: Optional[Tolerance] = Field(
+        None,
+        description="Tolerance for the major diameter of male threads.",
+    )
+    male_pitch_diameter_tolerance: Optional[Tolerance] = Field(
+        None, description="Tolerance for the pitch diameter of male threads."
+    )
 
 
 class ThreadSM(Thread):
     """
     Represents a screw machine (SM) thread.
-
-    Attributes:
-    ----------
-    - sm_size (Decimal): The size of the SM thread.
     """
 
     thread_type: Literal[ThreadType.SM] = ThreadType.SM
-    sm_size: Decimal
+    sm_size: Decimal = Field(..., description="The size of the SM thread.")
 
 
 class ThreadUTS(Thread):
     """
     Represents a Unified Thread Standard (UTS) thread.
-
-    Attributes:
-    ----------
-    - uts_size (str): The size designation of the UTS thread (e.g., '1/4', '1/2').
-    - uts_series (str): The series designation of the UTS thread (e.g., 'UNC', 'UNF').
-    - tolerance_class (str): The tolerance class for the UTS thread (e.g., '2A', '3B').
     """
 
     thread_type: Literal[ThreadType.UTS] = ThreadType.UTS
-    uts_size: str
-    uts_series: str
-    uts_tolerance_class: str
+    uts_size: str = Field(
+        ...,
+        description="The nominal size of the UTS thread.",
+        examples=["1/4", "1/2"],
+    )
+    uts_series: str = Field(
+        ...,
+        description="The series designation of the UTS thread.",
+        examples=["UNC", "UNF"],
+    )
+    uts_tolerance_class: str = Field(
+        ...,
+        description="The tolerance class for the UTS thread.",
+        examples=["2A", "3B"],
+    )
 
 
 class ThreadACME(Thread):
     """
     Represents an ACME thread.
-
-    Attributes:
-    ----------
-    - acme_size (str): The nominal size of the ACME thread.
-    - acme_series (str): The series designation of the ACME thread.
     """
 
     thread_type: Literal[ThreadType.ACME] = ThreadType.ACME
-    acme_size: str
-    acme_series: str
+    acme_size: str = Field(
+        ...,
+        description="The nominal size of the ACME thread.",
+        examples=["1/4", "1/2"],
+    )
+    acme_series: str = Field(
+        ...,
+        description="The series designation of the ACME thread.",
+        examples=["ACME", "STUB ACME"],
+    )
 
 
 class ThreadNPT(Thread):
     """American National Standard Pipe Thread standards,
-        often called National Pipe Thread (NPT) standards.
-    * NPT - National pipe taper
-    * NPS - National pipe straight
-
-    Attributes:
-    ----------
-    - npt_size: NPT size as string representation.
-      Threads diameter in inch are represented as decimal or fractions
-      with a tailing '"'
-      Examples: 2", 1 3/4"
-    - npt_series (str): NPT series following ANSI B 1.20.1.
-      Valid values include NPT, NPTF, NPSC, NPSF, NPSL, NPSM
+    often called National Pipe Thread (NPT) standards.
     """
 
     thread_type: Literal[ThreadType.NPT] = ThreadType.NPT
-    npt_size: str
-    npt_series: str
+    npt_size: str = Field(
+        ...,
+        description="The nominal size of the NPT thread.",
+    )
+    npt_series: str = Field(
+        ...,
+        description="The series designation of the NPT thread.",
+        examples=["NPT", "NPS"],
+    )
 
 
 class ThreadWhitworth(Thread):
     """
     Represents a Whitworth thread.
-
-    Attributes:
-    ----------
-    - whitworth_size (Decimal): The nominal size of the Whitworth thread.
-    - whitworth_tolerance_class (Optional[str]): The tolerance class for the Whitworth thread.
     """
 
     thread_type: Literal[ThreadType.WHITWORTH] = ThreadType.WHITWORTH
-    whitworth_size: Decimal
-    whitworth_tolerance_class: Optional[str]
+    whitworth_size: Decimal = Field(
+        ...,
+        description="The nominal size of the Whitworth thread.",
+    )
+    whitworth_tolerance_class: Optional[str] = Field(
+        None,
+        description="The tolerance class for the Whitworth thread.",
+    )
 
 
 class ThreadKnuckle(Thread):
     """
     Represents a Knuckle thread.
-
-    Attributes:
-    ----------
-    - knuckle_size (str): The nominal size of the Knuckle thread.
-    - knuckle_series (str): The series designation of the Knuckle thread.
-    - knuckle_profile (Optional[Fraction]): The profile of the Knuckle thread, represented as a fraction.
     """
 
     thread_type: Literal[ThreadType.KNUCKLE] = ThreadType.KNUCKLE
-    knuckle_size: str
-    knuckle_series: str
-    knuckle_profile: Optional[str]
+    knuckle_size: str = Field(
+        ...,
+        description="The nominal size of the Knuckle thread.",
+    )
+    knuckle_series: str = Field(
+        ...,
+        description="The series designation of the Knuckle thread.",
+    )
+    knuckle_profile: Optional[str] = Field(
+        None,
+        description="The profile of the Knuckle thread.",
+    )
 
 
 ThreadUnion = Union[
@@ -525,11 +486,6 @@ ThreadUnion = Union[
 class Chamfer(Feature):
     """
     Represents a chamfer feature in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - size (Size): The linear size of the chamfer (e.g., the width or depth of the chamfer).
-    - angle (Size): The angle of the chamfer, typically in degrees (e.g., 45°).
     """
 
     quantity: int = Field(
@@ -584,11 +540,6 @@ class Chamfer(Feature):
 class Counterbore(BaseModel):
     """
     Represents a counterbore feature in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - diameter (Size): The diameter of the counterbore.
-    - depth (Size): The depth of the counterbore.
     """
 
     diameter: Size = Field(
@@ -634,11 +585,6 @@ class Counterbore(BaseModel):
 class Countersink(BaseModel):
     """
     Represents a countersink feature in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - diameter (Size): The diameter of the countersink.
-    - angle (Size): The angle of the countersink.
     """
 
     diameter: Size = Field(
@@ -670,12 +616,6 @@ class Countersink(BaseModel):
 class Counterdrill(BaseModel):
     """
     Represents a counterdrill feature in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - diameter (Size): The diameter of the counterdrill.
-    - depth (Size): The depth of the counterdrill.
-    - angle (Size): The angle of the counterdrill.
     """
 
     diameter: Size = Field(
@@ -719,16 +659,6 @@ class Counterdrill(BaseModel):
 class Bore(Feature):
     """
     Represents a bore feature in an engineering or technical drawing.
-
-    Attributes:
-    ----------
-    - quantity (Decimal): The number of bores or instances.
-    - counterbore (Optional[Counterbore]): The counterbore feature, if present.
-    - countersink (Optional[Countersink]): The countersink feature, if present.
-    - counterdrill (Optional[Counterdrill]): The counterdrill feature, if present.
-    - diameter (Size): The diameter of the bore.
-    - depth (Size): The depth of the bore.
-    - thread (Optional[Thread]): The threaded feature within the bore, if applicable.
     """
 
     quantity: int = Field(
@@ -781,11 +711,6 @@ class Bore(Feature):
 class RoughnessWaviness(BaseModel):
     """
     Represents the waviness characteristics of a surface in terms of height and width.
-
-    Attributes:
-    ----------
-    - height (Size): The height of the waviness, typically measured as the peak-to-valley distance.
-    - width (Size): The width of the waviness, representing the wavelength or distance between peaks.
     """
 
     height: Size = Field(
@@ -804,12 +729,6 @@ class RoughnessEvaluationLength(BaseModel):
     either the sampling length in millimeter (ISO 3012:1974,
     ISO 3012:1978, ISO 3012:1992) or as multiple of the main lambda
     (ISO 3012:2002 and ISO 3012:2021).
-
-
-    Attributes:
-    ----------
-    - length: evaluation length in the specified units.
-    - lambda_c_multiple: multiple of the main cutoff lambda_c
     """
 
     length: Optional[Size]
@@ -819,22 +738,6 @@ class RoughnessEvaluationLength(BaseModel):
 class RoughnessCondition(BaseModel):
     """
     Represents a condition for surface roughness specified on a technical drawing.
-
-    Attributes:
-    ----------
-    - condition_type (RoughnessConditionType): Specifies whether the condition applies
-      to the upper limit, lower limit, or average of the roughness.
-    - filter_type (RoughnessFilterType): The filter used during roughness measurement.
-    - lambda_s (Optional[Size]): The short wavelength cutoff for filtering.
-    - lambda_c (Optional[Size]): The long wavelength cutoff for filtering.
-    - parameter (RoughnessParameter): The roughness parameter being evaluated (e.g., Ra, Rz).
-    - evaluation_length (RoughnessEvaluationLength): Details of the evaluation length
-      used for the roughness measurement.
-    - acceptance_criterion (RoughnessAcceptanceCriterion): Specifies the acceptance rule
-      for the roughness condition (e.g., 16%-rule, maximum, mean).
-    - value (Size): The target roughness value specified.
-    - roughness_grade (Optional[str]): An optional roughness grade (e.g., N6, N7)
-      associated with the condition.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -881,22 +784,6 @@ class RoughnessCondition(BaseModel):
 class Roughness(Feature):
     """
     Represents the roughness specifications on a technical drawing.
-
-    Attributes:
-    ----------
-    - standard (RoughnessStandard): The standard used for defining the roughness specifications
-      (e.g., ISO 1302:1992, ASME Y14.36M-1996).
-    - machining_allowance (Optional[Size]): Additional material allowance for machining, if specified.
-    - material_removal_type (RoughnessMaterialRemovalType): Indicates whether material removal is
-      required, prohibited, or unspecified.
-    - applies_all_around (bool): Indicates whether the roughness applies uniformly to the entire surface.
-    - direction_of_lay (Optional[RoughnessDirectionOfLay]): Specifies the lay direction of the surface
-      texture, if defined.
-    - manufacturing_process (Optional[str]): A description of the manufacturing process that affects
-      surface roughness, if provided.
-    - conditions (List[RoughnessCondition]): A list of roughness conditions specifying upper, lower,
-      or average limits for different parameters.
-    - waviness (Optional[RoughnessWaviness]): Waviness specifications for the surface, if applicable.
     """
 
     standard: RoughnessStandard = Field(
@@ -936,10 +823,6 @@ class Roughness(Feature):
 class SecondaryProcess(Feature):
     """
     Represents a manufacturing process with its type, category, and source.
-
-    Attributes:
-    ----------
-    - process_category (List[ProcessCategoryDIN8580]): One or more categories of processes based on DIN 8580.
     """
 
     process_category: List[str] = Field(
@@ -952,11 +835,6 @@ class SecondaryProcess(Feature):
 class GDnTDatum(BaseModel):
     """
     Represents a GD&T datum definition.
-
-    Attributes:
-    ----------
-    - label (str): Reference name of the datum. Typically includes a single
-      character (e.g., "A") or a composite (e.g., "(A-B-C-D)[CM]").
     """
 
     label: str = Field(
@@ -969,35 +847,73 @@ class GDnTDatum(BaseModel):
 
 
 class GDnTExtend(Size):
-    quantity: int = 1
-    angle: Optional[Decimal] = None
+    """
+    Represents the extend of the GD&T Zone
+    """
+
+    quantity: int = Field(
+        1,
+        description="The number of extends",
+        examples=[1],
+    )
+    angle: Optional[Decimal] = Field(
+        None,
+        description="The angle of the extend",
+        examples=[Decimal("45")],
+    )
 
 
 class GDnTZone(BaseModel):
-    """Preliminary defintion of the GDT Zone Value
-    Future implementation will give access to the
-    width and extend seperately
-
-    Attributes:
-    ----------
-    value: Size
-    extend: Optional[GDnTExtend] = None
+    """
+    Representation of the GDT GD&T Value
     """
 
-    value: Size
-    extend: Optional[GDnTExtend] = None
-    combination: Optional[str] = None
-    offset: Optional[str] = None
-    constraint: Optional[str] = None
+    value: Size = Field(
+        ...,
+        description="The value of the GD&T zone.",
+    )
+    extend: Optional[GDnTExtend] = Field(
+        None,
+        description="The extend of the GD&T zone.",
+    )
+    combination: Optional[str] = Field(
+        None,
+        description="The combination of the GD&T zone.",
+    )
+    offset: Optional[str] = Field(
+        None,
+        description="The offset of the GD&T zone.",
+    )
+    constraint: Optional[str] = Field(
+        None,
+        description="The constraint of the GD&T zone.",
+    )
 
 
 class GDnTFeature(BaseModel):
-    filter: Optional[str] = None
-    associated_feature: Optional[GDnTAssociatedFeature] = None
-    derived_feature: Optional[GDnTDerivedFeature] = None
+    """
+    Represents the feature of the GD&T
+    """
+
+    filter: Optional[str] = Field(
+        None,
+        description="Filter for the feature",
+    )
+    associated_feature: Optional[GDnTAssociatedFeature] = Field(
+        None,
+        description="Associated feature for the GD&T",
+    )
+    derived_feature: Optional[GDnTDerivedFeature] = Field(
+        None,
+        description="Derived feature for the GD&T",
+    )
 
 
 class GDnTReference(BaseModel):
+    """
+    Represents a reference for a GD&T characteristic.
+    """
+
     association: Optional[GDnTReferenceAssociation] = Field(
         None, description="Reference for associating elements in tolerance evaluation."
     )
@@ -1010,22 +926,6 @@ class GDnTReference(BaseModel):
 class GDnT(Feature):
     """
     Represents a GD&T (Geometric Dimensioning and Tolerancing) cue in a technical drawing.
-
-    Attributes:
-    ----------
-    - characteristic (GDnTCharacteristic): The characteristic being controlled (e.g., flatness, circularity).
-    - zone (Size): The tolerance zone defined for the characteristic.
-    - zone_combinations (List[GDnTZoneCombination]): Specifies if the zones are combined or separated.
-    - zone_offset (Optional[str]): Offset for the tolerance zone, if applicable.
-    - zone_constraint (Optional[GDnTZoneConstraint]): Constraints on the tolerance zone (e.g., orientation only).
-    - feature_filter_type (Optional[GDnTFilterType]): The type of filter applied to the feature.
-    - associated_feature (Optional[GDnTAssociatedFeature]): Specifies the feature association (e.g., Gaussian, minimax).
-    - derived_feature (Optional[GDnTDerivedFeature]): Indicates if the feature is derived (e.g., projected or mean).
-    - associated_reference (Optional[GDnTReferenceAssociation]): Reference for associating elements in tolerance evaluation.
-    - reference_parameter (Optional[GDnTReferenceParameter]): Parameter of the reference element (e.g., peak value, deviation span).
-    - material_condition (Optional[GDnTMaterialCondition]): Material condition (e.g., maximum material condition).
-    - state (Optional[GDnTState]): State of the feature (e.g., free state).
-    - datums (List[GDnTDatum]): List of datums used as references for the GD&T characteristic.
     """
 
     characteristic: GDnTCharacteristic = Field(
@@ -1053,13 +953,9 @@ class GDnT(Feature):
     )
 
 
-class Geometry(BaseModel):
+class Geometry(BaseModel, abc.ABC):
     """
     Base class for representing geometric shapes.
-
-    Attributes:
-    ----------
-    - base_geometry_type (BaseGeometryType): The type of the base geometry (e.g., PLATE, BLOCK, ROD).
     """
 
     geometry_type: GeometryType
@@ -1068,88 +964,116 @@ class Geometry(BaseModel):
 class GeometryCuboid(Geometry):
     """
     Represents the geometry of a cuboid
-
-    Attributes:
-    ----------
-    - cuboid (GeometricShapeCuboid): Dimensions of the block as a cuboid.
     """
 
     geometry_type: Literal[GeometryType.CUBOID] = GeometryType.CUBOID
-    width: Size
-    height: Size
-    depth: Size
+
+    width: Size = Field(
+        ...,
+        description="The width of the cuboid.",
+    )
+    height: Size = Field(
+        ...,
+        description="The height of the cuboid.",
+    )
+    depth: Size = Field(
+        ...,
+        description="The depth of the cuboid.",
+    )
 
 
 class GeometryCylinder(Geometry):
     """
     Represents the geometry of a plate-shaped material.
-
-    Attributes:
-    ----------
-    - base_geometry_type (Literal[BaseGeometryType.PLATE]): Specifies the shape as a plate.
-    - cuboid (GeometricShapeCuboid): Dimensions of the plate as a cuboid.
     """
 
     geometry_type: Literal[GeometryType.CYLINDER] = GeometryType.CYLINDER
-    diameter: Size
-    depth: Size
+    diameter: Size = Field(
+        ...,
+        description="The diameter of the cylinder.",
+    )
+    depth: Size = Field(
+        ...,
+        description="The depth of the cylinder.",
+    )
 
 
 class Material(BaseModel):
-    raw_ocr: str
-    standard: Optional[str]
-    designation: str
+    """
+    Represents a material definition with raw OCR text, standard name, designation, and
+    """
+
+    raw_ocr: str = Field(
+        ...,
+        description="Raw OCR text extracted from the drawing.",
+    )
+    standard: Optional[str] = Field(
+        None,
+        description="Standard that defines the standard.",
+    )
+    designation: str = Field(
+        ...,
+        description="Designation of the material following the spelling used in the standard.",
+    )
     material_category: tuple[
         Optional[MaterialCategory1],
         Optional[MaterialCategory2],
         Optional[MaterialCategory3],
-    ]
+    ] = Field(
+        ...,
+        description="Hierarchical Material category.",
+    )
 
 
 class MaterialCombination(Reference):
-    material_combination: list[Material]
+    """
+    List of Materials that need to be combined
+    (Material_A and Material_B) is a material combination
+    """
+
+    material_combination: list[Material] = Field(
+        ...,
+        description="List of materials that need to be used together.",
+    )
 
 
 class BillOfMaterialRow(BaseModel):
-    """Row of a BOM table
-
-    Attributes:
-    ----------
-    - position (Optional[str]): Position Number of the part
-      on the assembly is defined using position bubbles.
-      This position number is mentioned on the BOM table.
-    - part_number (Optional[str]): Part Number of the parts
-      listed in the bill of material.
-    - designation (Optional[str]): Designation/Title of the part
-      listed in the bill of material.
-    - material_options (list[MaterialCombination]): Material of the part
-      listed in the bill of material. These materials could be optional
-      set of material that could be applicable for the part.
-      For example: Either (Material_A and Material_B)
-        Or (Material_C and Material_D)
-        Here,
-        (Material_A and Material_B) is a material combination
-        (Material_C and Material_D) is another material combination
-    - quantity (Optional[W24PhysicalQuantity]): Quantity of the part is defined
-      as Physical Quantity with a value, unit and tolerance.
-    - weight (Optional[Quantity]): Weight of the parts listed in the bill of
-        material.
+    """
+    Represents a single row in a bill of material (BOM) table.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    position: Optional[str]
-    part_number: Optional[str]
-    designation: Optional[str]
-    material_options: list[MaterialCombination]
+    position: Optional[str] = Field(
+        None,
+        description="Position Number of the part on the assembly, defined using position bubbles.",
+    )
+    part_number: Optional[str] = Field(
+        None,
+        description="Part Number of the parts listed in the bill of material.",
+    )
+    designation: Optional[str] = Field(
+        None,
+        description="Designation/Title of the part listed in the bill of material.",
+    )
+    material_options: list[MaterialCombination] = Field(
+        default_factory=list,
+        description="List of possible MaterialCombinations",
+    )
     quantity: Optional[Quantity] = Field(
         None, description="Physical quantity in the string format of Pint."
     )
-    unit_weight: Optional[Quantity] = None
+    unit_weight: Optional[Quantity] = Field(
+        None, description="Unit Weight of the parts listed in the bill of material."
+    )
 
 
 class BillOfMaterial(Reference):
-    rows: list[BillOfMaterialRow] = Field(
+    """
+    Represents a bill of material (BOM) table in a technical drawing.
+    """
+
+    rows: List[BillOfMaterialRow] = Field(
         ...,
         description="List of rows in the bill of material.",
     )
@@ -1159,14 +1083,6 @@ class RevisionTableRow(BaseModel):
     """
     Represents a single row in a revision table, documenting changes made
     to a drawing or technical document.
-
-    Attributes:
-    ----------
-    - revision_serial (Optional[str]):  Serial number used to identify the revision.
-      Often referred to as Index or Position in the table (e.g., "A", "B", "C",
-      or "01", "02", "03").
-    - description (str): Description of the change or revision made.
-    - revision_date (Optional[date]): The date when the revision was made.
     """
 
     revision_serial: Optional[str] = Field(
@@ -1192,6 +1108,10 @@ class RevisionTableRow(BaseModel):
 
 
 class RevisionTable(Reference):
+    """
+    Represents a revision table in a technical drawing, documenting changes made
+    """
+
     rows: list[RevisionTableRow] = Field(
         ...,
         description="List of rows in the revision table.",
@@ -1201,11 +1121,6 @@ class RevisionTable(Reference):
 class Note(Feature):
     """
     Represents a note in a technical drawing.
-
-    Attributes:
-    ----------
-    - note_type (NoteType): The type of note, differentiating between canvas,
-        sectional, or sectional features.
     """
 
     note_type: NoteType = Field(
@@ -1218,29 +1133,30 @@ class Note(Feature):
 
 
 class Radius(Feature):
-    quantity: int
-    curvature_type: Optional[CurvatureType] = None
-    size: Size
-
-
-class ToleratedQuantity(BaseModel):
     """
-    Represents a quantity with an associated tolerance.
-
-    Attributes:
-    ----------
-    - quantity (Quantity) The main quantity value.
-    - tolerance (Tolerance): The allowed variation for the quantity.
+    Represents a radius feature in an engineering or technical drawing.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    quantity: Quantity = Field(..., description="The main quantity value.")
-    tolerance: Tolerance = Field(
-        ..., description="The allowed variation for the quantity."
+    quantity: int = Field(
+        ...,
+        ge=0,
+        description="The quantity or value associated with the measurement, must be non-negative.",
+    )
+    curvature_type: Optional[CurvatureType] = Field(
+        None,
+        description="The type of curvature for the radius, such as concave or convex. This is only set if the label explicitly states it (e.g., 'R10 concave').",
+    )
+    size: Size = Field(
+        ...,
+        description="Details about the size, including type, nominal value, tolerance, and unit.",
     )
 
 
 class UnitSystem(Reference):
+    """
+    Represents the unit system used in the technical drawing
+    """
+
     unit_system_type: UnitSystemType
 
 
@@ -1250,53 +1166,93 @@ class ProjectionMethod(Reference):
     projection_method: ProjectionMethodType
 
 
-class CuttingProcess(BaseModel):
-    requires_bending: Optional[bool]
-    output_geometry: Optional[GeometryCuboid]
+class PrimaryProcessCutting(BaseModel):
+    """
+    Represents a cutting process in a technical drawing.
+    """
+
+    primary_process: Literal[PrimaryProcessType.CUTTING] = PrimaryProcessType.CUTTING
+    requires_bending: Optional[bool] = Field(
+        None,
+        description="Whether the cutting process requires bending.",
+    )
 
 
-class TurningProcess(BaseModel):
-    requires_secondary_milling: bool
-    output_geometry: Optional[GeometryCylinder]
+class PrimaryProcessTurning(BaseModel):
+    primary_process: Literal[PrimaryProcessType.TURNING] = PrimaryProcessType.TURNING
+    requires_secondary_milling: bool = Field(
+        ...,
+        description="Whether the turning process requires secondary milling.",
+    )
 
 
-class MillingProcess(BaseModel):
-    axis_count: Optional[int]
-    output_geometry: Optional[GeometryCuboid]
+class PrimaryProcessMilling(BaseModel):
+    primary_process: Literal[PrimaryProcessType.MILLING] = PrimaryProcessType.MILLING
+    axis_count: Optional[int] = Field(
+        None,
+        description="The number of axes used in the milling process.",
+    )
 
 
-PrimaryProcessUnion = Union[CuttingProcess, TurningProcess, MillingProcess]
+PrimaryProcessUnion = Union[
+    PrimaryProcessCutting, PrimaryProcessTurning, PrimaryProcessMilling
+]
 
 
 class Polygon(BaseModel):
-    coordinate_space: CoordinateSpace
-    coordinates: list[tuple[int, int]]
+    """
+    Represents a polygon area in the drawing.
+    """
+
+    coordinate_space: CoordinateSpace = Field(
+        ...,
+        description="The coordinate space used to define the polygon, such as absolute or relative.",
+    )
+    coordinates: list[tuple[int, int]] = Field(
+        ...,
+        description="A list of x,y tuples representing the vertices of the polygon.",
+    )
 
 
 class VolumeEstimate(Quantity):
-    volume_estimate_type: VolumeEstimateType
+    """
+    Represents a volume estimate for a part or feature.
+    """
+
+    volume_estimate_type: VolumeEstimateType = Field(
+        ...,
+        description="The type of volume estimate, such as gross or net volume.",
+    )
 
 
 class ReferencePosition(BaseModel):
-    reference_id: int
+    """
+    Represents the position of a reference in the drawing.
+    """
+
+    reference_id: int = Field(
+        ...,
+        description="Reference ID to identify the object.",
+        examples=[12345],
+    )
     polygon: Optional[Polygon]
 
 
 class RedactionKeyword(BaseModel):
+    """
+    A class that represents a keyword to redact from the drawing.
+    """
+
     keyword: str = Field(..., description="The keyword to redact from the drawing.")
 
 
 class RedactionZone(BaseModel):
     """
     A class that represents a redacted area in the drawing.
-
-    Attributes:
-    ----------
-    - polygon(list[tuple[int,int]]): A list of x,y tuples representing the vertices of the redacted area.
     """
 
     redaction_zone_type: RedactionZoneType
-    polygon: list[tuple[int, int]] = Field(
+    polygon: Polygon = Field(
         ...,
         description="A list of x,y tuples representing the vertices of the redacted area.",
     )

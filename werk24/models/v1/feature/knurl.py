@@ -40,7 +40,7 @@ class W24FeatureKnurlPatternDin82(W24FeatureKnurlPattern):
     Attributes:
         base_pattern (W24FeatureKnurlPatternDin82BasePattern):
             base pattern of the knurling structure
-        direction  (W24FeatureKnurlPatternDin82Direction)
+        direction  (W24FeatureKnurlPatternDin82Direction):
             direction of the knurling pattern
         angle (Decimal): Optional Rotation of the
             pattern.
