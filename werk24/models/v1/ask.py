@@ -993,10 +993,6 @@ class W24SheetRebrandingCanvasPartition(BaseModel):
     shall be partitioned. The rectangle of
     color `canvas_color` will be used to paste
     the canvas of the original drawing. The
-
-
-    Args:
-        BaseModel (_type_): _description_
     """
 
     canvas_color: Color = Field(

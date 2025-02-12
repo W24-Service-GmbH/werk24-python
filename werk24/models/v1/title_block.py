@@ -90,7 +90,7 @@ class W24IdentifierPair(W24CaptionValuePair):
     """Caption-Value Pair for Identifies
 
     Attributes:
-        identifier_type (W24IdentifierType) Type of identifier.
+        identifier_type (W24IdentifierType): Type of identifier.
     """
 
     identifier_type: W24IdentifierType

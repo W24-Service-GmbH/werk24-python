@@ -361,13 +361,13 @@ class W24ThreadFeature(W24BaseFeatureModel):
     """Characterization of a Thread Feature
 
     Attributes:
-        gender: Gender (male or female) of the thread feature.
+        gender (Optional[W24Gender]): Gender (male or female) of the thread feature.
             This is determined by checking whether the thread is
             located on the outer contour of the part or inside the part.
             When the outer contour is unavailable (e.g., in detail drawings),
             the gender is set to None.
 
-        length: Length of the slug corresponding
+        length (Optional[Decimal]): Length of the slug corresponding
             to the thread. Please keep in mind that a thus can
             contain multiple threads with different lengths. This
             is considered in the threads themselves.
@@ -378,10 +378,6 @@ class W24ThreadFeature(W24BaseFeatureModel):
         threads (List[W24Thread]): List of Threads that are positioned
             on the ThreadFeatures. This is a list to support multi-threads
 
-        NOTE: Tapers are currently not considered
-
-        NOTE: Future implementations might also consider the inclination
-        in two angles relative to the front view.
     """
 
     gender: Optional[W24Gender]

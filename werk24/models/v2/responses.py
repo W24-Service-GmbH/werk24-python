@@ -13,6 +13,8 @@ from .models import (
     Entry,
     GDnT,
     GeneralTolerances,
+    GeometryCuboid,
+    GeometryCylinder,
     Identifier,
     Language,
     MaterialCombination,
@@ -40,6 +42,12 @@ class Response(BaseModel, abc.ABC):
 
 
 class ResponseBalloons(Response):
+    """
+    `ResponseBalloons` is the corresponding response object for `AskBalloons`.
+    It contains the extracted balloon details from the technical drawing.
+
+    """
+
     ask_type: Literal[AskType.BALLOONS] = AskType.BALLOONS
     balloons: List[Balloon] = Field(
         ..., description="The balloons in the technical drawing."
@@ -52,57 +60,78 @@ class ResponseCustom(Response):
     output: Any = Field(..., description="The custom output.")
 
 
-class ResponseFeaturesMechanicalComponent(Response):
+class ResponseFeaturesComponentDrawing(Response):
     """
     Represents an Response to a request for features of a mechanical component drawing from the server.
-
-    Attributes:
-    ----------
-    - dimensions (List[Dimension]): Dimension details for the component.
-    - threads (List[Thread]): Thread specifications for the component.
-    - bores (List[Bore]): Bore specifications for the component.
-    - chamfers (List[Chamfer]): Chamfer specifications for the component.
-    - roughnesses (List[Roughness]): Additional surface roughness details beyond general roughness.
-    - gdnts (List[GDnT]): Geometric dimensioning and tolerancing (GD&T) details.
-    - radii (List[Radius]): Radius specifications for the component.
+    It contains extracted features from the technical drawing, providing structured data for further processing.
     """
 
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
-    dimensions: List[Dimension] = Field(
-        default_factory=list,
-        description="Dimension details for the component.",
-    )
-    threads: List[ThreadUnion] = Field(
-        default_factory=list,
-        description="Thread specifications for the component.",
-    )
     bores: List[Bore] = Field(
         default_factory=list,
-        description="Bore specifications for the component.",
+        description="Bore specifications for the component (e.g., `Ø6 H7 (+0.012/0) ↧13.4`, `6x Ø3.3 ↧12.0 ⌵ Ø3.3x45° M4×0.7—6H/6g×8.0`).",
     )
     chamfers: List[Chamfer] = Field(
         default_factory=list,
-        description="Chamfer specifications for the component.",
+        description="Chamfer specifications for the component (e.g., `3 x 45°`, `4x 0.031 x 45.00° TYPICAL`).",
     )
-    roughnesses: List[Roughness] = Field(
+    dimensions: List[Dimension] = Field(
         default_factory=list,
-        description="Additional surface roughness details beyond general roughness.",
+        description="Dimension details for the component (e.g, `5 ±0.3`, `Ø30`, `□5`). ",
     )
     gdnts: List[GDnT] = Field(
         default_factory=list,
-        description="Geometric dimensioning and tolerancing (GD&T) details.",
+        description="Geometric dimensioning and tolerancing (GD&T) details (e.g., `[◎|Ø0.02|A-B]`).",
     )
     radii: List[Radius] = Field(
         default_factory=list,
-        description="Radius specifications for the component.",
+        description="Radius specifications for the component (e.g., `R5`).",
+    )
+    roughnesses: List[Roughness] = Field(
+        default_factory=list,
+        description="Additional surface roughness details beyond general roughness. (e.g., `√URa  12.5`)",
+    )
+    threads: List[ThreadUnion] = Field(
+        default_factory=list,
+        description="Thread specifications for the component (e.g., `M5×0.8—6g/6H`, `0.25—20 UNC—2A`).",
     )
 
 
-class ResponseInsightsMechanicalComponent(Response):
+class ExternalDimensions(BaseModel):
+    """
+    Represents the external dimensions of a component.
+    """
+
+    enclosing_cuboid: Optional[GeometryCuboid] = Field(
+        None,
+        description="The enclosing cuboid of the component.",
+    )
+    enclosing_cylinder: Optional[GeometryCylinder] = Field(
+        None,
+        description="The enclosing cylinder of the component.",
+    )
+
+
+class ResponseInsightsComponentDrawing(Response):
+    """
+    `ResponseInsightsComponentDrawing` is the response object corresponding to an AskInsights request.
+    It provides structured insights into the manufacturability and processing of a mechanical component.
+    """
+
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
+
+    dimensions_before_processing: Optional[ExternalDimensions] = Field(
+        None,
+        description="The external dimensions of the component before processing.",
+    )
+
+    dimensions_after_processing: Optional[ExternalDimensions] = Field(
+        None,
+        description="The external dimensions of the component after processing.",
+    )
 
     primary_process_options: List[PrimaryProcessUnion] = Field(
         ...,
@@ -120,21 +149,14 @@ class ResponseInsightsMechanicalComponent(Response):
     )
 
 
-class ResponseMetaDataMechanicalComponent(Response):
-    """A class that represents an Response to a request for metadata of a mechanical component drawing from the server.
+class ResponseMetaDataComponentDrawing(Response):
+    """
+    `ResponseMetaData` represents the structured response to a metadata request (AskMetaData)
+    for a mechanical component drawing. This response provides essential details such as identifiers,
+    material options, unit systems, general tolerances, and other metadata extracted from the drawing.
 
-    Attributes:
-    ----------
-    - identifiers (List[Identifier]): A list of identifiers associated with the component.
-    - designation (List[Entry]): List of designations of the component in different languages.
-    - languages (List[Language]): The languages used in the drawing.
-    - general_tolerances (GeneralTolerances): General tolerance specifications.
-    - general_roughness (Roughness): General roughness specifications.
-    - material_options (List[MaterialCombination]): Material options for the component.
-    - weight (Quantity): The weight of the component.
-    - unit_systems (List[UnitSystem[]): The unit systems specification for the component.
-    - bill_of_material (List[BillOfMaterialRow]): Bill of materials for the component.
-    - revision_table (List[RevisionTableRow]): Revision history of the drawing.
+    The response enables better integration with manufacturing systems,
+    PLM (Product Lifecycle Management), and ERP systems by providing structured component details.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -142,55 +164,51 @@ class ResponseMetaDataMechanicalComponent(Response):
     ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
-    identifiers: List[Identifier] = Field(
-        default_factory=list,
-        description="List of identifiers associated with the component.",
+    bill_of_material: Optional[BillOfMaterial] = Field(
+        None,
+        description="Bill of materials for the component, listing parts and quantities.",
     )
     designation: list[Entry] = Field(
         default_factory=list,
         description="Designation of the component.",
     )
-    languages: List[Language] = Field(
+    identifiers: List[Identifier] = Field(
         default_factory=list,
-        description="Languages used in the drawing.",
-    )
-    general_tolerances: Optional[GeneralTolerances] = Field(
-        None,
-        description="General tolerance specifications for the component.",
+        description="List of identifiers associated with the component.",
     )
     general_roughness: Optional[Roughness] = Field(
         None,
         description="General roughness specifications for the component.",
     )
+    general_tolerances: Optional[GeneralTolerances] = Field(
+        None,
+        description="General tolerance specifications for the component.",
+    )
+    languages: List[Language] = Field(
+        default_factory=list,
+        description="Languages used in the drawing.",
+    )
     material_options: List[MaterialCombination] = Field(
         default_factory=list,
         description="Material options available for the component.",
-    )
-    weight: Optional[Weight] = Field(
-        None,
-        description="Weight of the component.",
     )
     projection_method: Optional[ProjectionMethod] = Field(
         None,
         description="Projection method used in the drawing (e.g., first angle or third angle).",
     )
-    bill_of_material: Optional[BillOfMaterial] = Field(
-        None,
-        description="Bill of materials for the component, listing parts and quantities.",
-    )
     unit_systems: List[UnitSystem] = Field(
         default_factory=list,
         description="The units specification for the component.",
+    )
+    weight: Optional[Weight] = Field(
+        None,
+        description="Weight of the component.",
     )
 
 
 class ResponseRedaction(Response):
     """
     A class that represents an Response to a redaction request from the server.
-
-    Attributes:
-    ----------
-    - redaction_zones (HttpUrl): A list of redacted areas in the drawing.
     """
 
     ask_type: Literal[AskType.REDACTION] = AskType.REDACTION
@@ -203,10 +221,6 @@ class ResponseRedaction(Response):
 class ResponseReferencePositions(Response):
     """
     A class that represents an Response to a request for the position of a component in the drawing.
-
-    Attributes:
-    ----------
-    - reference_positions (List[ReferencePosition]): The positions of the component in the drawing.
     """
 
     ask_type: Literal[AskType.REFERENCE_POSITIONS] = AskType.REFERENCE_POSITIONS

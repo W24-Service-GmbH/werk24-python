@@ -2,6 +2,10 @@ from enum import Enum
 
 
 class DepthType(str, Enum):
+    """
+    Enumeration of depth types for holes and pockets.
+    """
+
     SIZE = "SIZE"
     THROUGH = "THROUGH"
     THROUGH_ALL = "THROUGH_ALL"
@@ -1368,3 +1372,9 @@ class ThumbnailFileFormat(str, Enum):
 
     PDF = "PDF"
     PNG = "PNG"
+
+
+class PrimaryProcessType(str, Enum):
+    CUTTING = "CUTTING"
+    TURNING = "TURNING"
+    MILLING = "MILLING"
