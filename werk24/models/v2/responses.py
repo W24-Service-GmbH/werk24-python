@@ -111,7 +111,6 @@ class ResponseInsightsComponentDrawing(Response):
     ask_type: Literal[AskType.INSIGHTS] = AskType.INSIGHTS
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
-
     dimensions_before_processing: Optional[ExternalDimensions] = Field(
         None,
         description="The external dimensions of the component before processing.",
@@ -136,7 +135,6 @@ class ResponseInsightsComponentDrawing(Response):
         None,
         description="The estimated volume of the component.",
     )
-
 
 
 class ResponseMetaDataComponentDrawing(Response):
