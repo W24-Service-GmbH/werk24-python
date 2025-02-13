@@ -4,7 +4,7 @@ from importlib.resources import files
 from io import BufferedReader, BytesIO
 from typing import Union
 
-from werk24 import AskUnion, TechreadMessage, TechreadMessageType, Werk24Client
+from werk24.models import AskUnion, TechreadMessage, TechreadMessageType
 
 FILE_PATH = files("werk24") / "assets/DRAWING_SUCCESS.png"
 
@@ -24,6 +24,7 @@ def read_drawing_sync(
     - drawing (Union[BufferedReader, bytes, BytesIO]): The drawing to read.
     - asks (list[AskUnion]): The requests to make to the server.
     """
+    from werk24.techread import Werk24Client  # import here to avoid circular imports
 
     async def run():
         async with Werk24Client() as client:
