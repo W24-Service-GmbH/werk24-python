@@ -74,9 +74,13 @@ except Exception:
 class Werk24Client:
 
     def __init__(
-        self, wss_server=settings.wss_server, https_server=settings.http_server
+        self,
+        wss_server=settings.wss_server,
+        https_server=settings.http_server,
+        token: str | None = None,
+        region: str | None = None,
     ):
-        self.license = find_license()
+        self.license = find_license(token, region)
         self._wss_server = str(wss_server)
         self._https_server = str(https_server)
         self._wss_session = None
