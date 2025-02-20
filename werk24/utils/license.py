@@ -29,9 +29,13 @@ class LicenseInvalid(Exception):
     pass
 
 
-def find_license() -> License:
+def find_license(token: str | None, region: str | None) -> License:
     """
     Find a valid license by searching predefined paths or environment variables.
+
+    Args:
+    ----
+    - token (str): The license token to use if provided.
 
     Returns:
     -------
@@ -41,10 +45,21 @@ def find_license() -> License:
     ------
     - LicenseInvalid: If no valid license is found.
     """
+    if token is not None and region is not None:
+        logger.info("Using provided license token.")
+        return License(token=token, region=region)
+
     logger.info("Searching for a valid license...")
     license = find_license_in_paths() or find_license_in_envs()
-    if license:
-        logger.info("Valid license found.")
+    if not license:
+        logger.error("No valid license found.")
+        raise LicenseInvalid("No valid license could be found.")
+
+    # Overwriting the region if provided
+    logger.info("Valid license found.")
+    if region:
+        logger.warning("Overwriting region with provided value.")
+        license.region = region
         return license
     logger.error("No valid license found.")
     raise LicenseInvalid("No valid license could be found.")
