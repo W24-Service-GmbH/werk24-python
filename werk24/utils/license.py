@@ -60,9 +60,8 @@ def find_license(token: str | None, region: str | None) -> License:
     if region:
         logger.warning("Overwriting region with provided value.")
         license.region = region
-        return license
-    logger.error("No valid license found.")
-    raise LicenseInvalid("No valid license could be found.")
+
+    return license
 
 
 def find_license_in_paths() -> License | None:
