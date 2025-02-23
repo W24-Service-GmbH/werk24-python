@@ -1,6 +1,6 @@
 from contextlib import suppress
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from pydantic import (
     UUID4,
@@ -223,10 +223,10 @@ class TechreadMessage(TechreadBaseResponse):
 
     request_id: UUID4
     message_type: TechreadMessageType
-    message_subtype: TechreadMessageSubtype | AskType | W24AskType
+    message_subtype: Union[TechreadMessageSubtype, AskType, W24AskType]
     page_number: int = 0
-    payload_dict: Optional[
-        ResponseUnion | TechreadInitResponse | W24AskResponse | dict
+    payload_dict: Union[
+        ResponseUnion, TechreadInitResponse, W24AskResponse, dict, None
     ] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
@@ -237,7 +237,7 @@ class TechreadMessage(TechreadBaseResponse):
         cls,
         v: Any,
         info: ValidationInfo,
-    ) -> Optional[ResponseUnion | TechreadInitResponse | W24AskResponse | dict]:
+    ) -> Union[ResponseUnion, TechreadInitResponse, W24AskResponse, dict, None]:
 
         # If we have a None value, return None
         if v is None:
