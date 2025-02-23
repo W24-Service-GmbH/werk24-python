@@ -1,5 +1,6 @@
 import asyncio
 import io
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -35,7 +36,7 @@ def techread(
         settings.max_pages, help="The maximum number of pages to read"
     ),
     ask_balloons: bool = typer.Option(False, help="Ask for balloons"),
-    ask_custom: str | None = typer.Option(None, help="Ask for custom output"),
+    ask_custom: Optional[str] = typer.Option(None, help="Ask for custom output"),
     ask_features: bool = typer.Option(False, help="Ask for features"),
     ask_insights: bool = typer.Option(False, help="Ask for insights"),
     ask_meta_data: bool = typer.Option(False, help="Ask for meta data"),
