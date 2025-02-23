@@ -29,7 +29,7 @@ class LicenseInvalid(Exception):
     pass
 
 
-def find_license(token: str | None, region: str | None) -> License:
+def find_license(token: str | None = None, region: str | None = None) -> License:
     """
     Find a valid license by searching predefined paths or environment variables.
 
@@ -57,12 +57,10 @@ def find_license(token: str | None, region: str | None) -> License:
 
     # Overwriting the region if provided
     logger.info("Valid license found.")
-    if region:
+    if region is not None:
         logger.warning("Overwriting region with provided value.")
         license.region = region
-        return license
-    logger.error("No valid license found.")
-    raise LicenseInvalid("No valid license could be found.")
+    return license
 
 
 def find_license_in_paths() -> License | None:
