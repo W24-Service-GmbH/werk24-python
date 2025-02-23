@@ -29,13 +29,15 @@ async def test_read_drawing(drawing_bytes):
     async with Werk24Client() as client:
         async for msg in client.read_drawing(drawing_bytes, asks):
             if msg.message_type == TechreadMessageType.PROGRESS:
-                match msg.message_subtype:
-                    case TechreadMessageSubtype.PROGRESS_INITIALIZATION_SUCCESS:
-                        found_initialized = True
-                    case TechreadMessageSubtype.PROGRESS_STARTED:
-                        found_started = True
-                    case TechreadMessageSubtype.PROGRESS_COMPLETED:
-                        found_completed = True
+                if (
+                    msg.message_subtype
+                    == TechreadMessageSubtype.PROGRESS_INITIALIZATION_SUCCESS
+                ):
+                    found_initialized = True
+                elif msg.message_subtype == TechreadMessageSubtype.PROGRESS_STARTED:
+                    found_started = True
+                elif msg.message_subtype == TechreadMessageSubtype.PROGRESS_COMPLETED:
+                    found_completed = True
             elif msg.message_type == TechreadMessageType.ASK:
                 found_response = True
 
