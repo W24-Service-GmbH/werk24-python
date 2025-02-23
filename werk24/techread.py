@@ -77,8 +77,8 @@ class Werk24Client:
         self,
         wss_server=settings.wss_server,
         https_server=settings.http_server,
-        token: str | None = None,
-        region: str | None = None,
+        token: Optional[str] = None,
+        region: Optional[str] = None,
     ):
         self.license = find_license(token, region)
         self._wss_server = str(wss_server)

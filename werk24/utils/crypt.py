@@ -129,7 +129,7 @@ def decrypt_with_private_key(
     Args:
     ----
     private_key_pem (bytes): The private key to use for decryption.
-    passphrase (str | None): The master key to decrypt the private key.
+    passphrase (Optional[str]): The master key to decrypt the private key.
     encrypted_package (bytes): The encrypted package to decrypt.
 
     Returns:
