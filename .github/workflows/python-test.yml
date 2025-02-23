@@ -33,4 +33,4 @@ jobs:
         env:
           W24TECHREAD_AUTH_REGION: ${{ secrets.W24TECHREAD_AUTH_REGION }}
           W24TECHREAD_AUTH_TOKEN: ${{ secrets.W24TECHREAD_AUTH_TOKEN }}
-        run: nose2
+        run: pytest
