@@ -147,6 +147,11 @@ class GeneralTolerances(Reference):
     These tolerances are governed by recognized standards and principles.
     """
 
+    label: str = Field(
+        ...,
+        description="A short description of the general tolerance in a human-readable format.",
+    )
+
     tolerance_standard: GeneralTolerancesStandard = Field(
         ...,
         description="The standard used for general tolerance definitions, e.g., DIN 7168 or ISO 2768.",
