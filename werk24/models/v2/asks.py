@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -88,7 +88,7 @@ class AskRedaction(AskV2):
         ThumbnailFileFormat.PDF,
         description="The desired output format for the redacted drawing",
     )
-    fill_color: str | None = Field(
+    fill_color: Optional[str] = Field(
         "#ffffff",
         description="The fill color for the redacted areas. If None, only the polygon outlines for redacted areas are returned, and the user can perform the redaction themselves.",
     )

@@ -1,5 +1,6 @@
 import io
 import os
+from typing import Optional
 
 import dotenv
 from pydantic import BaseModel
@@ -29,7 +30,7 @@ class LicenseInvalid(Exception):
     pass
 
 
-def find_license(token: str | None, region: str | None) -> License:
+def find_license(token: Optional[str] = None, region: Optional[str] = None) -> License:
     """
     Find a valid license by searching predefined paths or environment variables.
 
@@ -57,15 +58,13 @@ def find_license(token: str | None, region: str | None) -> License:
 
     # Overwriting the region if provided
     logger.info("Valid license found.")
-    if region:
+    if region is not None:
         logger.warning("Overwriting region with provided value.")
         license.region = region
-        return license
-    logger.error("No valid license found.")
-    raise LicenseInvalid("No valid license could be found.")
+    return license
 
 
-def find_license_in_paths() -> License | None:
+def find_license_in_paths() -> Optional[License]:
     """
     Search for a license file in predefined paths.
 
@@ -87,7 +86,7 @@ def find_license_in_paths() -> License | None:
     return None
 
 
-def find_license_in_envs() -> License | None:
+def find_license_in_envs() -> Optional[License]:
     """
     Search for a license in environment variables.
 
