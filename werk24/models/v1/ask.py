@@ -1295,7 +1295,7 @@ W24AskResponse = Union[
 ]
 
 
-def deserialize_ask_response(v, info) -> W24AskResponse | None:
+def deserialize_ask_response(v, info) -> Optional[W24AskResponse]:
     def is_type(t):
         return info.data["message_subtype"] == t
 
