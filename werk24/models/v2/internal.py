@@ -226,7 +226,7 @@ class TechreadMessage(TechreadBaseResponse):
     message_subtype: Union[TechreadMessageSubtype, AskType, W24AskType]
     page_number: int = 0
     payload_dict: Union[
-        ResponseUnion, TechreadInitResponse, W24AskResponse, dict, None
+        ResponseUnion | TechreadInitResponse | W24AskResponse | dict | None
     ] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
@@ -261,7 +261,10 @@ class TechreadMessage(TechreadBaseResponse):
                     return c_class.model_validate(v)
 
         # Desirialize V1 responses
-        return deserialize_ask_response(v, info)
+        try:
+            return deserialize_ask_response(v, info)
+        except ValueError:
+            return v
 
 
 class TechreadWithCallbackPayload(BaseModel):
