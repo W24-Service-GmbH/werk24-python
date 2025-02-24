@@ -111,7 +111,6 @@ class Entry(Reference):
 
     value: str = Field(
         ...,
-        min_length=1,
         description="The value of the identifier. Must be a non-empty string.",
         examples=["12345-ABC"],
     )
