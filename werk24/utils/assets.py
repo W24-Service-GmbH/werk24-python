@@ -28,9 +28,13 @@ def read_drawing_sync(
 
     async def run():
         async with Werk24Client() as client:
-            return [msg async for msg in client.read_drawing(drawing, asks)]
+            return [
+                msg.payload_dict
+                async for msg in client.read_drawing(drawing, asks)
+                if msg.message_type == TechreadMessageType.ASK
+            ]
 
-    asyncio.run(run())
+    return asyncio.run(run())
 
 
 def read_example_drawing(asks: list[AskUnion]):
