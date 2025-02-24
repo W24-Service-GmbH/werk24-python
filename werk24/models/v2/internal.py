@@ -261,7 +261,12 @@ class TechreadMessage(TechreadBaseResponse):
                     return c_class.model_validate(v)
 
         # Desirialize V1 responses
-        return deserialize_ask_response(v, info)
+        try:
+            return deserialize_ask_response(v, info)
+
+        # Fallback to pure dictionary
+        except ValidationError:
+            return v
 
 
 class TechreadWithCallbackPayload(BaseModel):
