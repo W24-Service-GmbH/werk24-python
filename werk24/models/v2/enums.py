@@ -978,6 +978,7 @@ class RoughnessStandard(str, Enum):
     ASME_Y14_36_1978 = "ASME Y14.36-1978"
     ASME_Y14_36M_1996 = "ASME Y14.36M-1996"
     ASME_Y14_36_2018 = "ASME Y14.36-2018"
+    VARIABLE = "VARIABLE"
 
 
 class RoughnessMaterialRemovalType(str, Enum):
