@@ -779,6 +779,7 @@ class IdentifierType(str, Enum):
     - NUMBER: Generic number.
     - ORDER_NAME: Name associated with an order.
     - ORDER_NUMBER: Number associated with an order.
+    - MISCELLANEOUS: Miscellaneous identifier.
     """
 
     ASSEMBLY_NAME = "ASSEMBLY_NAME"
@@ -797,6 +798,7 @@ class IdentifierType(str, Enum):
     NUMBER = "NUMBER"
     ORDER_NAME = "ORDER_NAME"
     ORDER_NUMBER = "ORDER_NUMBER"
+    MISCELLANEOUS = "MISCELLANEOUS"
 
 
 class IdentifierStakeholder(str, Enum):

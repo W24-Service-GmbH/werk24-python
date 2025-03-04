@@ -68,6 +68,7 @@ class W24IdentifierType(str, Enum):
     NUMBER = "NUMBER"
     ORDER_NAME = "ORDER_NAME"
     ORDER_NUMBER = "ORDER_NUMBER"
+    PART_NUMBER = "PART_NUMBER"
 
 
 class W24IdentifierStakeholder(str, Enum):
