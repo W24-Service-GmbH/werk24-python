@@ -776,10 +776,12 @@ class IdentifierType(str, Enum):
     - ITEM_NUMBER: Number assigned to an item (corrected from "ITEM_NUMER").
     - MANUFACTURER_NAME: Name of the manufacturer.
     - MANUFACTURER_NUMBER: Identifier assigned to the manufacturer.
+    - MISCELLANEOUS: Miscellaneous identifier.
     - NUMBER: Generic number.
     - ORDER_NAME: Name associated with an order.
     - ORDER_NUMBER: Number associated with an order.
-    - MISCELLANEOUS: Miscellaneous identifier.
+    - REPLACED_BY: Identifier for the component that replaces another.
+    - REPLACEMENT_FOR: Identifier for the component that is replaced by another.
     """
 
     ASSEMBLY_NAME = "ASSEMBLY_NAME"
@@ -795,10 +797,13 @@ class IdentifierType(str, Enum):
     ITEM_NUMBER = "ITEM_NUMBER"  # Corrected typo
     MANUFACTURER_NAME = "MANUFACTURER_NAME"
     MANUFACTURER_NUMBER = "MANUFACTURER_NUMBER"
+    MISCELLANEOUS = "MISCELLANEOUS"
     NUMBER = "NUMBER"
+    PRODUCT_GROUP = "PRODUCT_GROUP"
     ORDER_NAME = "ORDER_NAME"
     ORDER_NUMBER = "ORDER_NUMBER"
-    MISCELLANEOUS = "MISCELLANEOUS"
+    REPLACED_BY = "REPLACED_BY"
+    REPLACEMENT_FOR = "REPLACEMENT_FOR"
 
 
 class IdentifierStakeholder(str, Enum):
