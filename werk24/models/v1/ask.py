@@ -1344,4 +1344,4 @@ def deserialize_ask_response(v, info) -> Optional[W24AskResponse]:
     if is_type(W24AskType.VARIANT_PROCESSES):
         return W24AskVariantProcessesResponse.model_validate(v)
 
-    return None
+    return v
