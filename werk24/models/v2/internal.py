@@ -231,7 +231,7 @@ class TechreadMessage(TechreadBaseResponse):
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
 
-    @field_validator("payload_dict", mode="before")
+    @field_validator("payload_dict", mode="plain")
     @classmethod
     def deserialize_payload(
         cls,
