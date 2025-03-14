@@ -214,7 +214,7 @@ class ResponseReferencePositions(Response):
     )
 
 
-def get_Response_subclasses() -> List:
+def get_response_subclasses() -> List:
     subclasses = Response.__subclasses__()
     # Recursively collect subclasses of subclasses, if any
     for subclass in subclasses:
@@ -222,5 +222,5 @@ def get_Response_subclasses() -> List:
     return subclasses
 
 
-RESPONSE_SUBCLASSES = get_Response_subclasses()
+RESPONSE_SUBCLASSES = get_response_subclasses()
 ResponseUnion = Union[tuple(RESPONSE_SUBCLASSES)]
