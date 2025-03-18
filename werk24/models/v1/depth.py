@@ -10,6 +10,7 @@ class W24DepthThroughType(str, Enum):
 
     THRU = "THRU"
     THRU_ALL = "THRU_ALL"
+    BLIND = "BLIND"
 
 
 class W24Depth(BaseModel):
