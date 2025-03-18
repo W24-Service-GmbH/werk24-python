@@ -9,6 +9,7 @@ class DepthType(str, Enum):
     SIZE = "SIZE"
     THROUGH = "THROUGH"
     THROUGH_ALL = "THROUGH_ALL"
+    BLIND = "BLIND"
 
 
 class CurvatureType(str, Enum):
