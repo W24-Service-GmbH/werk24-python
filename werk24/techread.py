@@ -22,6 +22,9 @@ from werk24 import (
     PresignedPost,
     TechreadAction,
     TechreadCommand,
+    TechreadException,
+    TechreadExceptionLevel,
+    TechreadExceptionType,
     TechreadInitResponse,
     TechreadMessage,
     TechreadMessageType,
@@ -56,6 +59,11 @@ HTTP_EXCEPTION_CLASSES = {
     range(300, 400): ServerException,
     range(500, 600): ServerException,
     range(416, 500): ServerException,
+}
+
+EXCEPTION_MAP = {
+    RequestTooLargeException: TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
+    BadRequestException: TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
 }
 
 settings = Settings()
@@ -227,6 +235,58 @@ class Werk24Client:
         except Exception as exc:
             logger.error("An error occurred while sending the read command: %s", exc)
             raise
+
+    @staticmethod
+    async def _trigger_asks_exception(
+        asks: List[AskV2],
+        exception_raw: Union[BadRequestException, RequestTooLargeException],
+    ) -> AsyncGenerator[TechreadMessage, None]:
+        """
+        Trigger exceptions for all the submitted asks.
+
+        This helps us to mock consistent exception handling
+        behavior even when the files are rejected before they
+        reach the API.
+
+        Args:
+        ----
+        - asks (List[W24Ask]): List of all submitted asks
+        - exception (RequestTooLargeException): Exception
+            that shall be pushed
+
+        Yields:
+        ------
+        - W24TechreadMessage: Exception message
+        """
+        logger.debug("API method _trigger_asks_exception() called")
+
+        # get the exception type from the MAP
+        try:
+            exception_type = EXCEPTION_MAP[type(exception_raw)]
+
+        # if we see an exception that we were not supposed
+        # to handle, there must have been a developer passing
+        # a new exception type. Let's tell her by rasing
+        # a runtime error
+        except KeyError as exception:
+            raise RuntimeError(
+                "Unknown exception type passed: %s" % type(exception_raw)
+            ) from exception
+
+        # translate the exception into an official exception
+        exception = TechreadException(
+            exception_level=TechreadExceptionLevel.ERROR,
+            exception_type=exception_type,
+        )
+
+        # then yield one message for each of the requested asks
+        for cur_ask in asks:
+            yield TechreadMessage(
+                request_id=uuid.uuid4(),
+                message_type=TechreadMessageType.ASK,
+                message_subtype=cur_ask.ask_type,
+                exceptions=[exception],
+            )
 
     async def init_request(
         self,
