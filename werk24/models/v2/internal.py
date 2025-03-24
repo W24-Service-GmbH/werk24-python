@@ -32,6 +32,7 @@ class TechreadMessageType(str, Enum):
 
     ASK = "ASK"
     PROGRESS = "PROGRESS"
+    ERROR = "ERROR"
 
 
 class TechreadMessageSubtype(str, Enum):
@@ -40,6 +41,7 @@ class TechreadMessageSubtype(str, Enum):
     PROGRESS_COMPLETED = "COMPLETED"
     PROGRESS_INITIALIZATION_SUCCESS = "INITIALIZATION_SUCCESS"
     PROGRESS_STARTED = "STARTED"
+    ERROR_INTERNAL = "INTERNAL"
 
 
 class TechreadRequest(BaseModel):
