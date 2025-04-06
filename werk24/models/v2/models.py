@@ -70,6 +70,7 @@ class Quantity(BaseModel):
         ...,
         description="The value of the quantity.",
         examples=[Decimal("10.5")],
+        allow_inf_nan=True,  # Allowing inf for "R PLANE"
     )
     unit: str = Field(
         ...,
