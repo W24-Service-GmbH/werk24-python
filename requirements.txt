@@ -1,4 +1,4 @@
-aiohttp==3.11.12
+aiohttp==3.11.16
 certifi==2024.12.14
 cryptography>=44.0.0
 packaging>=24.2
@@ -6,6 +6,6 @@ pint==0.24.4
 pydantic-extra-types==2.10.2
 pydantic==2.10.6
 python-dotenv==1.0.1
-pydantic-settings==2.7.1
-typer==0.15.1
-websockets==14.2
+pydantic-settings==2.8.1
+typer==0.15.2
+websockets==15.0.1
