@@ -3,7 +3,7 @@ requires = ["wheel", "setuptools"]
 
 [project]
 name = "werk24"
-version = "2.0.8"
+version = "2.0.7"
 description = "AI-powered platform for extracting and analyzing data from technical drawings / CAD drawings to enhance manufacturing workflows."
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE.txt" }
