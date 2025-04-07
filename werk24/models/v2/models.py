@@ -331,7 +331,7 @@ class Thread(Feature):
         description="The diameter of the thread, including nominal size and tolerances.",
     )
 
-    spacing: ThreadSpacing = Field(
+    spacing: Optional[ThreadSpacing] = Field(
         ...,
         description="The spacing of the thread, defining the distance between thread crests.",
     )
