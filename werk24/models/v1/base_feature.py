@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .balloon import W24Balloon
 
@@ -52,3 +52,7 @@ class W24BaseFeatureModel(BaseModel):
     # NOTE: position is optional for the transition period
     position: Optional[W24BaseFeaturePosition] = None
     balloon: Optional[W24Balloon] = None
+    raw_ocr_blurb: str = Field(
+        default="",
+        description="Raw OCR text that was detected on the image",
+    )
