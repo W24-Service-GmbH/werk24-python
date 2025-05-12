@@ -69,8 +69,7 @@ class W24PropertyRefractiveVariationFreeText(W24PropertyRefractiveVariation):
 
 W24PropertyRefractiveVariationType = Union[
     W24PropertyRefractiveVariationSchottGrade,
-    # W24PropertyRefractiveVariationIso12123
-    None,
+    W24PropertyRefractiveVariationIso12123,
     W24PropertyRefractiveVariationFreeText,
 ]
 
