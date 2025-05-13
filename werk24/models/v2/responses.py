@@ -17,6 +17,7 @@ from .models import (
     Identifier,
     Language,
     MaterialCombination,
+    Note,
     PrimaryProcessUnion,
     ProjectionMethod,
     Radius,
@@ -187,6 +188,10 @@ class ResponseMetaDataComponentDrawing(Response):
     weight: Optional[Weight] = Field(
         None,
         description="Weight of the component.",
+    )
+    notes: list[Note] = Field(
+        default_factory=list,
+        description="List of all notes in the drawing.",
     )
 
 
