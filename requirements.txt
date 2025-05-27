@@ -1,4 +1,4 @@
-aiohttp==3.11.16
+aiohttp==3.12.2
 certifi==2024.12.14
 cryptography>=44.0.0
 packaging>=24.2
