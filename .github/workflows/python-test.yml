@@ -2,7 +2,6 @@ name: 🧪 Tests (CPython 3.10 – 3.13)
 
 on:
   push:            # run on every push to any branch
-  pull_request:    # and for every PR
 
 defaults:
   run:
