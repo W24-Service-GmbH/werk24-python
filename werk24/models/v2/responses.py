@@ -203,7 +203,7 @@ class ResponseRedaction(Response):
     ask_type: Literal[AskType.REDACTION] = AskType.REDACTION
 
     redaction_zones: list[RedactionZone] = Field(
-        ..., description="A list of redacted areas in the drawing."
+        default_factory=list, description="A list of redacted areas in the drawing."
     )
 
 
