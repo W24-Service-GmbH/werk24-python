@@ -241,17 +241,7 @@ class W24TechreadClient:
             self._techread_client_wss.__aexit__(exc_type, exc_value, traceback)
         )
 
-    def register(
-        self,
-        cognito_region: Optional[str] = None,
-        cognito_identity_pool_id: Optional[str] = None,
-        cognito_user_pool_id: Optional[str] = None,
-        cognito_client_id: Optional[str] = None,
-        cognito_client_secret: Optional[str] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        token: Optional[str] = None,
-    ) -> None:
+    def register(self, token: Optional[str] = None) -> None:
         """
         Register with the authentication service (i.e., lazy login)
 
@@ -272,25 +262,7 @@ class W24TechreadClient:
         """
         # create an client instance to connect
         # to the authentication service
-        self._auth_client = AuthClient(
-            cognito_region,
-            cognito_identity_pool_id,
-            cognito_user_pool_id,
-            cognito_client_id,
-            cognito_client_secret,
-            username,
-            password,
-            token,
-        )
-        # ensure that we have a token
-        try:
-            logging.debug("Authenticating with the authentication service")
-            self._auth_client.login()  # type: ignore
-        except AttributeError as exc:
-            raise RuntimeError(
-                "No connection to the authentication service was "
-                + "established. Please call register()"
-            ) from exc
+        self._auth_client = AuthClient(token)
 
         # tell the techread clients about it
         self._techread_client_https.register_auth_client(self._auth_client)
@@ -848,12 +820,6 @@ class W24TechreadClient:
             # not trigger a network request
             client.register(
                 auth_region,
-                environs.get("W24TECHREAD_AUTH_IDENTITY_POOL_ID"),
-                environs.get("W24TECHREAD_AUTH_USER_POOL_ID"),
-                environs.get("W24TECHREAD_AUTH_CLIENT_ID"),
-                environs.get("W24TECHREAD_AUTH_CLIENT_SECRET"),
-                environs.get("W24TECHREAD_AUTH_USERNAME"),
-                environs.get("W24TECHREAD_AUTH_PASSWORD"),
                 environs.get("W24TECHREAD_AUTH_TOKEN"),
             )
 
