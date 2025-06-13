@@ -18,17 +18,6 @@ class AuthClient:
     def __init__(self, api_token: Optional[str]):
         self.api_token = api_token
 
-    def login(self) -> None:
-        """Login with AWS Cognito
-
-        Raises:
-            UnauthorizedException: Raised when the user credentials
-                were not accepted by Cognito
-        """
-        # If we are have an API Token, we don't need to login
-        if self.api_token is not None:
-            return
-
     def get_auth_headers(self) -> dict:
         """Get the Authentication Headers.
 

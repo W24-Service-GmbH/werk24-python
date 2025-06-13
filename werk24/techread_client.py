@@ -738,7 +738,7 @@ class W24TechreadClient:
         # register the credentials. This will in effect
         # only set the variabels in the authorizer. It will
         # not trigger a network request
-        client.register(cognito_region=region, token=token)
+        client.register(token=token)
 
         # return the client
         return client
@@ -818,10 +818,7 @@ class W24TechreadClient:
             # register the credentials. This will in effect
             # only set the variabels in the authorizer. It will
             # not trigger a network request
-            client.register(
-                auth_region,
-                environs.get("W24TECHREAD_AUTH_TOKEN"),
-            )
+            client.register(environs.get("W24TECHREAD_AUTH_TOKEN"))
 
         except KeyError:
             raise LicenseError(LICENSE_ERROR_TEXT)
