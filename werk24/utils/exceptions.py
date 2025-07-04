@@ -121,3 +121,13 @@ class UserInputError(TechreadException):
     cli_message_body: str = (
         "The input provided is invalid. Please verify your input and try again."
     )
+
+
+class InvalidLicenseException(TechreadException):
+    """Exception raised when the provided license is invalid."""
+
+    cli_message_header: str = "Invalid License"
+    cli_message_body: str = (
+        "The provided license is invalid or has expired.\n\n"
+        "Please ensure that you provide a token AND a region."
+    )

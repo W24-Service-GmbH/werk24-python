@@ -3,9 +3,9 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
+from werk24.utils.exceptions import InvalidLicenseException
 from werk24.utils.license import (
     License,
-    LicenseInvalid,
     find_license,
     find_license_in_envs,
     find_license_in_paths,
@@ -56,7 +56,7 @@ def test_parse_license_text(valid_license):
 
 def test_parse_license_text_invalid():
     """Test parsing invalid license text raises an exception."""
-    with pytest.raises(LicenseInvalid):
+    with pytest.raises(InvalidLicenseException):
         parse_license_text(INVALID_LICENSE_TEXT)
 
 
@@ -70,7 +70,7 @@ def test_parse_license_file(valid_license, mock_search_paths):
 def test_parse_license_file_invalid(mock_search_paths):
     """Test parsing an invalid license file raises an exception."""
     with patch("builtins.open", mock_open(read_data=INVALID_LICENSE_TEXT)):
-        with pytest.raises(LicenseInvalid):
+        with pytest.raises(InvalidLicenseException):
             parse_license_file("./mock_license.txt")
 
 
@@ -125,5 +125,5 @@ def test_find_license_no_valid_license(mock_search_paths):
     with patch("builtins.open", side_effect=FileNotFoundError), patch.dict(
         os.environ, {}, clear=True
     ):
-        with pytest.raises(LicenseInvalid):
+        with pytest.raises(InvalidLicenseException):
             find_license()

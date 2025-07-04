@@ -123,6 +123,25 @@ class Werk24Client:
     async def __aenter__(self):
         try:
             self._wss_session = await self._create_websocket_session()
+
+        # -----------------------------------------------------------
+        # Handle the error codes
+        # -----------------------------------------------------------
+        except websockets.exceptions.InvalidStatus as exc:
+            match exc.response.status_code:
+                case 403:
+                    raise UnauthorizedException(
+                        "Invalid status when connecting to the server"
+                    ) from exc
+
+                case _:
+                    raise ServerException(
+                        f"Invalid status when connecting to the server: {exc.response.status_code}"
+                    ) from exc
+
+        # -----------------------------------------------------------
+        # Handle remaining exceptions
+        # -----------------------------------------------------------
         except Exception as exc:
             logger.error("Failed to establish a connection with the server: %s", exc)
             raise ServerException(details=str(exc)) from exc
