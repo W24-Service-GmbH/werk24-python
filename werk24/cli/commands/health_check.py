@@ -12,7 +12,8 @@ from websockets.exceptions import InvalidStatus, InvalidStatusCode
 from werk24._version import __version__
 from werk24.techread import Werk24Client
 from werk24.utils.defaults import Settings
-from werk24.utils.license import LicenseInvalid, find_license
+from werk24.utils.exceptions import InvalidLicenseException
+from werk24.utils.license import find_license
 
 # Initialize Typer app and Rich console
 app = typer.Typer()
@@ -62,7 +63,7 @@ def license_information():
     try:
         find_license()
         license_status = "[green]Found[/green]"
-    except LicenseInvalid:
+    except InvalidLicenseException:
         license_status = (
             "[red]Not Found[/red] - Run [bold]werk24 init[/bold] to configure."
         )
