@@ -10,6 +10,7 @@ from werk24 import (
     Werk24Client,
     get_test_drawing,
 )
+from werk24.utils.exceptions import InvalidLicenseException, UnauthorizedException
 
 FILE_PATH = files("werk24") / "assets/DRAWING_SUCCESS.png"
 
@@ -71,3 +72,23 @@ async def test_read_drawing_with_callback(
             drawing_bytes, [AskMetaData()], callback_url
         )
     assert request_id is not None
+
+
+@pytest.mark.asyncio
+async def test_invalid_token():
+    """
+    Test that an empty token raises an UnauthorizedException.
+    """
+    with pytest.raises(UnauthorizedException):
+        async with Werk24Client(token="", region="eu-central-1") as client:
+            ...
+
+
+@pytest.mark.asyncio
+async def test_invalid_region():
+    """
+    Test that an empty region raises an InvalidLicenseException.
+    """
+    with pytest.raises(InvalidLicenseException):
+        async with Werk24Client(token="", region=None) as client:
+            ...

@@ -5,6 +5,8 @@ from typing import Optional
 import dotenv
 from pydantic import BaseModel
 
+from werk24.utils.exceptions import InvalidLicenseException
+
 from .logger import get_logger
 
 # Define constants
@@ -25,11 +27,6 @@ class License(BaseModel):
     region: str
 
 
-# Custom exception for invalid licenses
-class LicenseInvalid(Exception):
-    pass
-
-
 def find_license(token: Optional[str] = None, region: Optional[str] = None) -> License:
     """
     Find a valid license by searching predefined paths or environment variables.
@@ -44,24 +41,33 @@ def find_license(token: Optional[str] = None, region: Optional[str] = None) -> L
 
     Raises:
     ------
-    - LicenseInvalid: If no valid license is found.
+    - InvalidLicenseException: If no valid license is found.
     """
-    if token is not None and region is not None:
-        logger.info("Using provided license token.")
-        return License(token=token, region=region)
 
+    # -----------------------------------------------------------
+    # Check if token and region are provided
+    # -----------------------------------------------------------
+    if token is not None:
+        try:
+            return License(token=token, region=region)
+        except ValueError as e:
+            raise InvalidLicenseException(
+                "The license requires a token and a region"
+            ) from e
+
+    # -----------------------------------------------------------
+    # If not provided, search for a valid license
+    # -----------------------------------------------------------
     logger.info("Searching for a valid license...")
     license = find_license_in_paths() or find_license_in_envs()
-    if not license:
-        logger.error("No valid license found.")
-        raise LicenseInvalid("No valid license could be found.")
+    if license:
+        return license
 
-    # Overwriting the region if provided
-    logger.info("Valid license found.")
-    if region is not None:
-        logger.warning("Overwriting region with provided value.")
-        license.region = region
-    return license
+    # -----------------------------------------------------------
+    # If no valid license is found, raise an exception
+    # -----------------------------------------------------------
+    logger.error("No valid license found.")
+    raise InvalidLicenseException("No valid license could be found.")
 
 
 def find_license_in_paths() -> Optional[License]:
@@ -79,7 +85,7 @@ def find_license_in_paths() -> Optional[License]:
         if os.path.exists(expanded_path):
             try:
                 return parse_license_file(expanded_path)
-            except LicenseInvalid:
+            except InvalidLicenseException:
                 logger.debug(f"Invalid license at {expanded_path}")
         else:
             logger.debug(f"No license file found at {expanded_path}")
@@ -119,7 +125,7 @@ def parse_license_file(path: str) -> License:
 
     Raises:
     ------
-    - LicenseInvalid: If the license file is invalid or cannot be read.
+    - InvalidLicenseException: If the license file is invalid or cannot be read.
     """
     logger.debug(f"Attempting to parse license file at {path}")
     try:
@@ -128,10 +134,10 @@ def parse_license_file(path: str) -> License:
         return parse_license_text(content)
     except FileNotFoundError as e:
         logger.error(f"License file not found at {path}")
-        raise LicenseInvalid("License file not found.") from e
+        raise InvalidLicenseException("License file not found.") from e
     except Exception as e:
         logger.error(f"Error parsing license file at {path}: {e}")
-        raise LicenseInvalid("Invalid license file.") from e
+        raise InvalidLicenseException("Invalid license file.") from e
 
 
 def parse_license_text(text: str) -> License:
@@ -148,7 +154,7 @@ def parse_license_text(text: str) -> License:
 
     Raises:
     ------
-    - LicenseInvalid: If the license text is invalid.
+    - InvalidLicenseException: If the license text is invalid.
     """
     logger.debug("Parsing license text...")
     try:
@@ -159,9 +165,9 @@ def parse_license_text(text: str) -> License:
         region = vars["W24TECHREAD_AUTH_REGION"]
         logger.debug("License text parsed successfully.")
         return License(token=token, region=region)
-    except KeyError as e:
+    except (ValueError, KeyError) as e:
         logger.error(f"Missing key in license text: {e}")
-        raise LicenseInvalid("Invalid license text format.") from e
+        raise InvalidLicenseException("Invalid license text format.") from e
 
 
 def save_license_file(license: License):
@@ -180,4 +186,4 @@ def save_license_file(license: License):
         logger.info(f"License saved successfully at {license_path}")
     except Exception as e:
         logger.error(f"Error saving license file: {e}")
-        raise LicenseInvalid("Could not save the license file.") from e
+        raise InvalidLicenseException("Could not save the license file.") from e
