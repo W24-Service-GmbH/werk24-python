@@ -6,8 +6,8 @@ from rich.panel import Panel
 from rich.text import Text
 
 from werk24.utils.defaults import Settings
+from werk24.utils.exceptions import InvalidLicenseException
 from werk24.utils.license import (
-    LicenseInvalid,
     find_license,
     parse_license_text,
     save_license_file,
@@ -29,7 +29,7 @@ def init():
             )
         )
         return
-    except LicenseInvalid:
+    except InvalidLicenseException:
         pass  # Continue to ask user to create a license file
     ask_user_to_create_license()
 
@@ -83,7 +83,7 @@ def accept_license_from_terminal():
         license = parse_license_text(license_text)
         save_license_file(license)
         console.print(Panel("[bold green]License successfully saved![/bold green]"))
-    except LicenseInvalid:
+    except InvalidLicenseException:
         console.print("[red]Invalid license text. Please try again.[/red]")
         accept_license_from_terminal()  # Retry on failure
 
