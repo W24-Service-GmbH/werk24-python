@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import UUID4, BaseModel, field_validator
+from pydantic import UUID4, BaseModel, Field, field_validator
 
 from .base_feature import W24BaseFeatureModel
 from .chamfer import W24Chamfer
@@ -162,6 +162,14 @@ class W24MeasureLabel(BaseModel):
     size_tolerance: W24ToleranceType = W24ToleranceGeneral()
 
     unit: Optional[W24UnitLength] = None
+
+    secondary_unit: Optional[W24UnitLength] = Field(
+        None,
+        description=(
+            "Secondary unit of measurement. For measures like 1.000 [25.40], "
+            "the unit will be inch and the secondary_unit would be millimeter."
+        ),
+    )
 
     thread: Optional[W24ThreadUnion] = None
 
