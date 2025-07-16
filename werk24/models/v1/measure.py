@@ -10,6 +10,7 @@ from .base_feature import W24BaseFeatureModel
 from .chamfer import W24Chamfer
 from .depth import W24Depth
 from .hole_feature import W24CounterBore, W24CounterDrill, W24CounterSink
+from .insert import W24Insert
 from .size import W24Size
 from .test_dimension import W24TestDimension
 from .thread import W24ThreadUnion
@@ -136,15 +137,16 @@ class W24MeasureLabel(BaseModel):
 
         depth: Depth of the drilling or thread. Uses the same dimensions
 
-        counterbore: Counterbore details. This is usually defined for holes
+        counterbores: Counterbore details. This is usually defined for holes
             threads.
 
-        countersink: Countersink details. This is usually defined for holes
+        countersinks: Countersink details. This is usually defined for holes
             threads.
 
-        counterdrill: Counterdrill details. This is usually defined for holes
+        counterdrills: Counterdrill details. This is usually defined for holes
             threads.
 
+        inserts: List of Inserts
     """
 
     @field_validator("size_tolerance", mode="before")
@@ -184,6 +186,11 @@ class W24MeasureLabel(BaseModel):
     countersinks: List[W24CounterSink] = []
 
     counterdrills: List[W24CounterDrill] = []
+
+    inserts: List[W24Insert] = Field(
+        default_factory=list,
+        description="List of Inserts (e.g., Press fit, Tapping Insert, Heat-Set Inserts etc.)",
+    )
 
 
 class W24Measure(W24BaseFeatureModel):
