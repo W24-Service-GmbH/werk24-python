@@ -80,7 +80,7 @@ async def test_invalid_token():
     Test that an empty token raises an UnauthorizedException.
     """
     with pytest.raises(UnauthorizedException):
-        async with Werk24Client(token="", region="eu-central-1") as client:
+        async with Werk24Client(token="", region="eu-central-1"):
             ...
 
 
@@ -90,5 +90,5 @@ async def test_invalid_region():
     Test that an empty region raises an InvalidLicenseException.
     """
     with pytest.raises(InvalidLicenseException):
-        async with Werk24Client(token="", region=None) as client:
+        async with Werk24Client(token="", region=None):
             ...
