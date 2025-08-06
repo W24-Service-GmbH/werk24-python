@@ -1,5 +1,5 @@
 aiohttp==3.12.15
-certifi==2025.4.26
+certifi==2025.8.3
 cryptography>=45.0.3
 packaging>=25.0
 pint==0.24.4
