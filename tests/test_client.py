@@ -1,6 +1,7 @@
 from importlib.resources import files
 
 import pytest
+from unittest.mock import AsyncMock
 
 from werk24 import (
     AskMetaData,
@@ -50,17 +51,16 @@ async def test_read_drawing(drawing_bytes):
 
 @pytest.mark.asyncio
 async def test_read_drawing_with_hooks(drawing_bytes):
-    received = False
+    hook = AsyncMock()
 
-    def recv(msg):
-        nonlocal received
-        received = True
-
-    hooks = [Hook(ask=AskMetaData(), function=recv)]
+    hooks = [Hook(ask=AskMetaData(), function=hook)]
     async with Werk24Client() as client:
         await client.read_drawing_with_hooks(drawing_bytes, hooks)
 
-    assert received
+    hook.assert_called_once()
+    assert (
+        hook.call_args.args[0].message_type == TechreadMessageType.ASK
+    )
 
 
 @pytest.mark.asyncio
