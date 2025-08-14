@@ -193,7 +193,7 @@ class Werk24Client:
         Args:
         ----
         - drawing (Union[BufferedReader, bytes]): The drawing to process.
-        - asks (list[Ask]): A list of questions (asks) to provide context for reading.
+        - asks (list[AskV2]): A list of questions (asks) to provide context for reading.
         - max_pages (int, optional): Maximum number of pages to process.
             Defaults to `settings.max_pages`.
         - encryption_keys (Optional[EncryptionKeys], optional): Optional encryption
