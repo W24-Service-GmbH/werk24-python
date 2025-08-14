@@ -3,6 +3,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
+from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import InvalidLicenseException
 from werk24.utils.license import (
     License,
@@ -127,3 +128,9 @@ def test_find_license_no_valid_license(mock_search_paths):
     ):
         with pytest.raises(InvalidLicenseException):
             find_license()
+
+
+def test_settings_invalid_log_level():
+    """Ensure invalid log levels raise an error."""
+    with pytest.raises(ValueError):
+        Settings(log_level="BOGUS")
