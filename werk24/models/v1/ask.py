@@ -125,7 +125,7 @@ class W24AskType(str, Enum):
     """
 
     VARIANT_RADII = "VARIANT_RADII"
-    """List of all Radii that were found on teh Sectionals
+    """List of all Radii that were found on the Sectionals
     associated with the variant
     """
 
