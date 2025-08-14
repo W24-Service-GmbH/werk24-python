@@ -186,7 +186,7 @@ class W24TechreadBaseResponse(BaseModel):
 
     """
 
-    exceptions: List[W24TechreadException] = []
+    exceptions: List[W24TechreadException] = Field(default_factory=list)
 
     @property
     def is_successful(self) -> bool:
