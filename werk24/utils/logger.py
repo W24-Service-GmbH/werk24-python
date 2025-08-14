@@ -1,6 +1,7 @@
 import logging
 from enum import Enum
-from typing import Optional
+from functools import lru_cache
+from typing import Optional, Union
 
 LOGGER_NAME = "werk24"
 
@@ -13,8 +14,9 @@ class LogLevel(str, Enum):
     CRITICAL = "CRITICAL"
 
 
+@lru_cache(maxsize=None)
 def get_logger(
-    log_level: Optional[LogLevel] = None,
+    log_level: Optional[Union[LogLevel, str]] = None,
     log_format: str = "%(asctime)s - %(name)s [%(levelname)s] %(message)s",
 ) -> logging.Logger:
     """
@@ -35,6 +37,7 @@ def get_logger(
         handler.setFormatter(logging.Formatter(log_format))
         logger.addHandler(handler)
 
-        if log_level is not None:
-            logger.setLevel(log_level.value)  # Use LogLevel directly
+    if log_level is not None:
+        level_value = log_level.value if isinstance(log_level, LogLevel) else log_level
+        logger.setLevel(level_value)
     return logger

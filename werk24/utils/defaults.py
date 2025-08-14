@@ -1,4 +1,4 @@
-from typing import Set
+from typing import ClassVar, Set
 
 from packaging.version import Version
 from pydantic import AnyUrl, Field, HttpUrl, field_validator
@@ -61,6 +61,14 @@ class Settings(BaseSettings):
     max_https_retries: int = Field(3, ge=0)
     """Maximum retries for HTTPS requests. Must be greater than or equal to 0."""
 
+    VALID_LOG_LEVELS: ClassVar[Set[str]] = {
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL",
+    }
+
     @field_validator("log_level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:
@@ -69,7 +77,6 @@ class Settings(BaseSettings):
         Ensures that the provided log level is one of the accepted values and
         returns the validated value.
         """
-        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
-        if v not in valid_log_levels:
-            raise ValueError(f"log_level must be one of {valid_log_levels}")
+        if v not in cls.VALID_LOG_LEVELS:
+            raise ValueError(f"log_level must be one of {cls.VALID_LOG_LEVELS}")
         return v
