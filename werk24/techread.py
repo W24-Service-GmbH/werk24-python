@@ -92,6 +92,10 @@ class Werk24Client:
         self._wss_server = str(wss_server)
         self._https_server = str(https_server)
         self._wss_session = None
+        # Reuse a single SSL context configured with the certifi CA bundle
+        # to avoid recreating it for each connection and to ensure that the
+        # certificate chain is properly verified.
+        self._ssl_context = ssl.create_default_context(cafile=certifi.where())
 
     def _get_auth_headers(self):
         """
@@ -113,11 +117,13 @@ class Werk24Client:
                 self._wss_server,
                 extra_headers=headers,
                 close_timeout=wss_close_timeout,
+                ssl=self._ssl_context,
             )
         return websockets.connect(
             self._wss_server,
             additional_headers=headers,
             close_timeout=wss_close_timeout,
+            ssl=self._ssl_context,
         )
 
     async def __aenter__(self):
