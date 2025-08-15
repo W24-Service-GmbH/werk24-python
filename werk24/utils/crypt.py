@@ -7,6 +7,10 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+# the cryptography backend is stateless; creating it once avoids repeated
+# initialisation cost in hot paths
+BACKEND = default_backend()
+
 
 def generate_new_key_pair(
     passphrase: bytes,
@@ -39,7 +43,7 @@ def generate_new_key_pair(
         private_key = rsa.generate_private_key(
             public_exponent=public_exponent,
             key_size=key_size,
-            backend=default_backend(),
+            backend=BACKEND,
         )
 
         # Serialize the private key with passphrase encryption
@@ -87,7 +91,7 @@ def encrypt_with_public_key(
     # Load the recipient's public key
     public_key = serialization.load_pem_public_key(
         public_key_pem,
-        backend=default_backend(),
+        backend=BACKEND,
     )
 
     # ensure that the data is in bytes
@@ -99,7 +103,7 @@ def encrypt_with_public_key(
     aes_key = os.urandom(32)  # 256-bit AES key
     iv = os.urandom(12)  # GCM standard IV size is 96 bits (12 bytes)
 
-    cipher = Cipher(algorithms.AES(aes_key), modes.GCM(iv), backend=default_backend())
+    cipher = Cipher(algorithms.AES(aes_key), modes.GCM(iv), backend=BACKEND)
     encryptor = cipher.encryptor()
     encrypted_data = encryptor.update(raw_data) + encryptor.finalize()
 
@@ -146,7 +150,7 @@ def decrypt_with_private_key(
     private_key = serialization.load_pem_private_key(
         private_key_pem,
         password=password,
-        backend=default_backend(),
+        backend=BACKEND,
     )
 
     # Extract the encrypted AES key, IV, tag, and encrypted data
@@ -171,7 +175,7 @@ def decrypt_with_private_key(
     cipher = Cipher(
         algorithms.AES(aes_key),
         modes.GCM(iv, tag),
-        backend=default_backend(),
+        backend=BACKEND,
     )
     decryptor = cipher.decryptor()
     decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()

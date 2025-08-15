@@ -10,12 +10,15 @@ from werk24.utils.exceptions import InvalidLicenseException
 from .logger import get_logger
 
 # Define constants
-SEARCH_PATHS = [
+_RAW_SEARCH_PATHS = [
     ".werk24",  # Local directory
-    os.path.expanduser("~/.werk24"),  # Home directory hidden file
+    "~/.werk24",  # Home directory hidden file
     "werk24_license.txt",  # Current directory license file
-    os.path.expanduser("~/werk24_license.txt"),  # Home directory license file
+    "~/werk24_license.txt",  # Home directory license file
 ]
+
+# Expand user paths once at import time
+SEARCH_PATHS = [os.path.expanduser(p) for p in _RAW_SEARCH_PATHS]
 
 # Initialize logger
 logger = get_logger()
@@ -80,15 +83,14 @@ def find_license_in_paths() -> Optional[License]:
       None: If no valid license is found in the paths.
     """
     for path in SEARCH_PATHS:
-        expanded_path = os.path.expanduser(path)
-        logger.info(f"Looking for license file at {expanded_path}")
-        if os.path.exists(expanded_path):
+        logger.info(f"Looking for license file at {path}")
+        if os.path.exists(path):
             try:
-                return parse_license_file(expanded_path)
+                return parse_license_file(path)
             except InvalidLicenseException:
-                logger.debug(f"Invalid license at {expanded_path}")
+                logger.debug(f"Invalid license at {path}")
         else:
-            logger.debug(f"No license file found at {expanded_path}")
+            logger.debug(f"No license file found at {path}")
     return None
 
 
@@ -101,14 +103,13 @@ def find_license_in_envs() -> Optional[License]:
     - License: A valid License object if found.
       None: If no valid license is found in the environment variables.
     """
-    try:
-        token = os.environ["W24TECHREAD_AUTH_TOKEN"]
-        region = os.environ["W24TECHREAD_AUTH_REGION"]
+    token = os.environ.get("W24TECHREAD_AUTH_TOKEN")
+    region = os.environ.get("W24TECHREAD_AUTH_REGION")
+    if token and region:
         logger.debug("License found in environment variables.")
         return License(token=token, region=region)
-    except KeyError:
-        logger.debug("Required environment variables not set.")
-        return None
+    logger.debug("Required environment variables not set.")
+    return None
 
 
 def parse_license_file(path: str) -> License:
@@ -158,11 +159,11 @@ def parse_license_text(text: str) -> License:
     """
     logger.debug("Parsing license text...")
     try:
-        vars = {
-            k: v for k, v in dotenv.dotenv_values(stream=io.StringIO(text)).items() if v
-        }
-        token = vars["W24TECHREAD_AUTH_TOKEN"]
-        region = vars["W24TECHREAD_AUTH_REGION"]
+        vars = dotenv.dotenv_values(stream=io.StringIO(text))
+        token = vars.get("W24TECHREAD_AUTH_TOKEN")
+        region = vars.get("W24TECHREAD_AUTH_REGION")
+        if not (token and region):
+            raise KeyError("missing token or region")
         logger.debug("License text parsed successfully.")
         return License(token=token, region=region)
     except (ValueError, KeyError) as e:
@@ -178,7 +179,7 @@ def save_license_file(license: License):
     ----
     - license (License): A valid License object to save.
     """
-    license_path = os.path.expanduser(SEARCH_PATHS[0])
+    license_path = SEARCH_PATHS[0]
     try:
         with open(license_path, "w+") as file:
             file.write(f"W24TECHREAD_AUTH_TOKEN={license.token}\n")
