@@ -114,6 +114,7 @@ $> werk24 --help
 │ health-check   Run a comprehensive health check for the CLI.                              │
 │ techread       Read a drawing file and extract information.                               │
 │ version        Print the version of the Client.                                           │
+│ status         Fetch and display the Werk24 system status.                               │
 ╰───────────────────────────────────────────────────────────────────────────────────────────╯
 
 ```

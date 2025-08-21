@@ -11,6 +11,7 @@ from .commands.health_check import app as health_check_app
 from .commands.init import app as init_app
 from .commands.techread import app as techread_app
 from .commands.version import app as version_app
+from .commands.status import app as status_app
 
 settings = Settings()
 
@@ -23,6 +24,7 @@ app.add_typer(init_app)
 app.add_typer(health_check_app)
 app.add_typer(techread_app)
 app.add_typer(version_app)
+app.add_typer(status_app)
 
 
 class PromptType(str, Enum):

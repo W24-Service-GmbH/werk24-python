@@ -28,6 +28,7 @@ def health_check():
     system_information()
     license_information()
     asyncio.run(network_information())
+    asyncio.run(status_information())
 
 
 def system_information():
@@ -126,6 +127,20 @@ async def network_information():
         )
 
     print_panel("Network Information", network_info)
+
+
+async def status_information():
+    """Display the system status information."""
+    status_info = []
+    try:
+        status = await Werk24Client.get_system_status()
+        status_info.append(("Indicator", status.status_indicator))
+        if status.status_description:
+            status_info.append(("Description", status.status_description))
+    except Exception as e:
+        status_info.append(("Error", f"[red]{type(e).__name__} - {e}[/red]"))
+
+    print_panel("System Status", status_info)
 
 
 def print_panel(title: str, rows: list[tuple[str, str]]) -> None:
