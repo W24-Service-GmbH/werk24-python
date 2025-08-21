@@ -20,6 +20,7 @@ from werk24 import (
     EncryptionKeys,
     Hook,
     PresignedPost,
+    SystemStatus,
     TechreadAction,
     TechreadCommand,
     TechreadException,
@@ -30,7 +31,6 @@ from werk24 import (
     TechreadMessageType,
     TechreadRequest,
     TechreadWithCallbackPayload,
-    SystemStatus,
 )
 from werk24._version import __version__
 from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
@@ -772,8 +772,12 @@ class Werk24Client:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         connector = aiohttp.TCPConnector(ssl=ssl_context)
         timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=30)
-        async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
-            async with session.get(url, headers={"Accept": "application/json"}) as response:
+        async with aiohttp.ClientSession(
+            timeout=timeout, connector=connector
+        ) as session:
+            async with session.get(
+                url, headers={"Accept": "application/json"}
+            ) as response:
                 Werk24Client._raise_for_status(url, response.status)
                 payload = await response.json()
         return SystemStatus.model_validate(payload)

@@ -15,6 +15,7 @@ Unlock manufacturing intelligence from technical drawings with AI.
 [![Tests](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Why Werk24?](#why-werk24)
 - [Features](#features)

@@ -20,4 +20,4 @@ def test_status_cli(monkeypatch):
     runner = CliRunner()
     result = runner.invoke(status_cmd.app, [])
     assert result.exit_code == 0
-    assert "\"status_indicator\": \"ok\"" in result.stdout
+    assert '"status_indicator": "ok"' in result.stdout

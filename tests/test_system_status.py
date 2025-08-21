@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from werk24 import SystemStatus, Werk24Client
 import aiohttp
+import pytest
+
+from werk24 import SystemStatus, Werk24Client
 
 
 @pytest.mark.asyncio
