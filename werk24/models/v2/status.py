@@ -45,7 +45,5 @@ class SystemStatus(BaseModel):
     status_indicator: str
     status_description: Optional[str] = None
     incidents: List[SystemStatusIncident] = Field(default_factory=list)
-    scheduled_maintenances: List[SystemStatusMaintenance] = Field(
-        default_factory=list
-    )
+    scheduled_maintenances: List[SystemStatusMaintenance] = Field(default_factory=list)
     components: List[SystemStatusComponent] = Field(default_factory=list)
