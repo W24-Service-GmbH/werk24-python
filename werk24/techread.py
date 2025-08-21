@@ -20,6 +20,7 @@ from werk24 import (
     EncryptionKeys,
     Hook,
     PresignedPost,
+    SystemStatus,
     TechreadAction,
     TechreadCommand,
     TechreadException,
@@ -762,6 +763,24 @@ class Werk24Client:
             return uuid.UUID(response_json["request_id"])
         except (ValueError, KeyError) as e:
             raise BadRequestException(f"Request failed: {response_json}") from e
+
+    @staticmethod
+    async def get_system_status() -> SystemStatus:
+        """Fetch the current system status from the API."""
+
+        url = urljoin(str(settings.http_server), "/status")
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        connector = aiohttp.TCPConnector(ssl=ssl_context)
+        timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=30)
+        async with aiohttp.ClientSession(
+            timeout=timeout, connector=connector
+        ) as session:
+            async with session.get(
+                url, headers={"Accept": "application/json"}
+            ) as response:
+                Werk24Client._raise_for_status(url, response.status)
+                payload = await response.json()
+        return SystemStatus.model_validate(payload)
 
     def _make_https_url(self, endpoint: str) -> str:
         """

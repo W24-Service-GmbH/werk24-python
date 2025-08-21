@@ -15,6 +15,7 @@ Unlock manufacturing intelligence from technical drawings with AI.
 [![Tests](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml/badge.svg)](https://github.com/W24-Service-GmbH/werk24-python/actions/workflows/python-test.yml)
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Why Werk24?](#why-werk24)
 - [Features](#features)
@@ -114,6 +115,7 @@ $> werk24 --help
 │ health-check   Run a comprehensive health check for the CLI.                              │
 │ techread       Read a drawing file and extract information.                               │
 │ version        Print the version of the Client.                                           │
+│ status         Fetch and display the Werk24 system status.                               │
 ╰───────────────────────────────────────────────────────────────────────────────────────────╯
 
 ```
