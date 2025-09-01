@@ -45,6 +45,9 @@ def techread(
     ),
     ask_sheet_images: bool = typer.Option(False, help="Ask for sheet images"),
     ask_view_images: bool = typer.Option(False, help="Ask for view image"),
+    custom_cafile: str = typer.Option(
+        None, help="Path to an additional CA bundle for TLS verification"
+    ),
 ):
     """Read a drawing file and extract information."""
 
@@ -76,11 +79,13 @@ def techread(
         raise UserInputError("No hooks selected. At least one hook must be enabled.")
 
     with open(file_path, "rb") as fid:
-        asyncio.run(run(server, fid, hooks, max_pages))
+        asyncio.run(run(server, fid, hooks, max_pages, custom_cafile))
 
 
-async def run(server: str, fh: str, hooks: list[Hook], max_pages: int):
-    async with Werk24Client(server) as client:
+async def run(
+    server: str, fh: str, hooks: list[Hook], max_pages: int, custom_cafile: Optional[str]
+):
+    async with Werk24Client(server, custom_cafile=custom_cafile) as client:
         await client.read_drawing_with_hooks(fh, hooks, max_pages)
 
 
