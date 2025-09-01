@@ -88,15 +88,20 @@ class Werk24Client:
         https_server=settings.http_server,
         token: Optional[str] = None,
         region: Optional[str] = None,
+        custom_cafile: Optional[str] = None,
     ):
         self.license = find_license(token, region)
         self._wss_server = str(wss_server)
         self._https_server = str(https_server)
         self._wss_session = None
+        self._custom_cafile = custom_cafile
         # Reuse a single SSL context configured with the certifi CA bundle
         # to avoid recreating it for each connection and to ensure that the
-        # certificate chain is properly verified.
+        # certificate chain is properly verified. Load an additional custom
+        # CA file if provided.
         self._ssl_context = ssl.create_default_context(cafile=certifi.where())
+        if self._custom_cafile:
+            self._ssl_context.load_verify_locations(cafile=self._custom_cafile)
 
     def _get_auth_headers(self):
         """
@@ -529,7 +534,7 @@ class Werk24Client:
 
         try:
             logger.debug("Uploading file to the server: %s", str(presigned_post.url))
-            async with self._make_https_session() as session:
+            async with self._make_https_session(cafile=self._custom_cafile) as session:
                 response = await session.post(str(presigned_post.url), data=form)
                 self._raise_for_status(str(presigned_post.url), response.status)
             logger.info("File uploaded successfully.")
@@ -754,7 +759,7 @@ class Werk24Client:
         # send the request
         headers = self._get_auth_headers()
         url = self._make_https_url("/techread/read-with-callback")
-        async with self._make_https_session() as session:
+        async with self._make_https_session(cafile=self._custom_cafile) as session:
             response = await session.post(url, data=data, headers=headers)
             self._raise_for_status(url, response.status)
             response_json = await response.json(content_type=None)
@@ -765,11 +770,13 @@ class Werk24Client:
             raise BadRequestException(f"Request failed: {response_json}") from e
 
     @staticmethod
-    async def get_system_status() -> SystemStatus:
+    async def get_system_status(custom_cafile: str | None = None) -> SystemStatus:
         """Fetch the current system status from the API."""
 
         url = urljoin(str(settings.http_server), "/status")
         ssl_context = ssl.create_default_context(cafile=certifi.where())
+        if custom_cafile:
+            ssl_context.load_verify_locations(cafile=custom_cafile)
         connector = aiohttp.TCPConnector(ssl=ssl_context)
         timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=30)
         async with aiohttp.ClientSession(
@@ -814,9 +821,12 @@ class Werk24Client:
         - aiohttp.ClientSession: A configured HTTP client session.
         """
         try:
-            # Use the provided CA file or the default certifi CA bundle
-            cafile = cafile or certifi.where()
-            ssl_context = ssl.create_default_context(cafile=cafile)
+            # Always start with the certifi CA bundle and load any custom
+            # certificate file on top so the default trust store remains
+            # available.
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            if cafile:
+                ssl_context.load_verify_locations(cafile=cafile)
             connector = aiohttp.TCPConnector(ssl=ssl_context)
 
             # Configure timeouts
@@ -1006,7 +1016,7 @@ class Werk24Client:
 
         # Attempt to download the payload
         try:
-            async with self._make_https_session() as session:
+            async with self._make_https_session(cafile=self._custom_cafile) as session:
                 logger.debug("Sending GET request to %s", payload_url)
                 response = await session.get(str(payload_url))
 
