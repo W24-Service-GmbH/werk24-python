@@ -1,5 +1,5 @@
 from importlib.resources import files
-
+import os
 import pytest
 from unittest.mock import AsyncMock
 
@@ -14,6 +14,16 @@ from werk24 import (
 from werk24.utils.exceptions import InvalidLicenseException, UnauthorizedException
 
 FILE_PATH = files("werk24") / "assets/DRAWING_SUCCESS.png"
+
+
+# Skip integration tests if no license is available in the environment
+pytestmark = pytest.mark.skipif(
+    not (
+        os.getenv("W24TECHREAD_AUTH_TOKEN")
+        and os.getenv("W24TECHREAD_AUTH_REGION")
+    ),
+    reason="Werk24 license not configured",
+)
 
 
 @pytest.fixture
