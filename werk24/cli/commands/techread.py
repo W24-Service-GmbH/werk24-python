@@ -95,8 +95,12 @@ def recv_payload(message: TechreadMessage):
     structure, or ``None``.  This helper collapses the payload to the first
     child level and lets the user drill down into nested structures on demand.
     """
+    payload = getattr(message, "payload_dict", None)
+    if payload is None:
+        console.print("[yellow]No payload available for this message[/yellow]")
+        return
 
-    explore(message.payload)
+    explore(payload)
 
 
 def explore(data: Any, name: str | int | None = None) -> None:
