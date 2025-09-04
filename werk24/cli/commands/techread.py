@@ -1,9 +1,16 @@
 import asyncio
 import io
-from typing import Optional
+import sys
+from typing import Any, Optional
 
 import typer
+from pydantic import BaseModel
 from rich.console import Console
+from rich.pretty import Pretty
+from rich.tree import Tree
+from rich.text import Text
+import termios
+import tty
 
 from werk24.models import (
     AskBalloons,
@@ -85,9 +92,154 @@ async def run(server: str, fh: str, hooks: list[Hook], max_pages: int):
 
 
 def recv_payload(message: TechreadMessage):
-    print(f"Received message: {message}")
-    print(type(message.payload_dict))
-    console.print(message.payload_dict)
+    """Interactively explore the message payload.
+
+    The payload can be a :class:`pydantic.BaseModel`, a ``dict`` or ``list``
+    structure, or ``None``.  This helper collapses the payload to the first
+    child level and lets the user drill down into nested structures on demand.
+    """
+    payload = getattr(message, "payload_dict", None)
+    if payload is None:
+        console.print("[yellow]No payload available for this message[/yellow]")
+        return
+
+    explore(payload)
+
+
+def explore(data: Any, name: str | int | None = None) -> None:
+    """Recursively explore a nested payload structure using arrow keys.
+
+    Navigation
+    ----------
+    • ``↑`` / ``↓`` – move between siblings
+    • ``→`` / ``Enter`` – expand selected child
+    • ``←`` – return to the parent level
+    • ``q`` – quit the explorer
+    """
+
+    if not sys.stdin.isatty():
+        console.print(Pretty(data))
+        return
+
+    stack: list[tuple[str | int | None, Any, int]] = [(name, data, 0)]
+    while stack:
+        current_name, current, selected = stack[-1]
+        children = get_children(current)
+        console.clear()
+        display_stack(stack)
+
+        key = read_key()
+        if key == "up" and children:
+            selected = (selected - 1) % len(children)
+            stack[-1] = (current_name, current, selected)
+        elif key == "down" and children:
+            selected = (selected + 1) % len(children)
+            stack[-1] = (current_name, current, selected)
+        elif key in {"right", "enter"} and children:
+            child_name, child_value = children[selected]
+            if is_container(child_value):
+                stack.append((child_name, child_value, 0))
+        elif key == "left":
+            if len(stack) == 1:
+                break
+            stack.pop()
+        elif key in {"quit", "escape"}:
+            break
+
+
+def display_stack(stack: list[tuple[str | int | None, Any, int]]) -> None:
+    """Render the current navigation stack as a tree with context."""
+
+    root_name, root_value, _ = stack[0]
+    label = str(root_name) if root_name is not None else "payload"
+    path = format_path(stack)
+    console.print(Text(path, style="bold cyan"))
+    tree = Tree(label, guide_style="bright_blue")
+
+    def build(node: Tree, level: int, value: Any) -> None:
+        children = get_children(value)
+        if not children:
+            node.add(Pretty(value))
+            return
+
+        selected_idx = stack[level][2]
+        for idx, (child_name, child_value) in enumerate(children):
+            is_current = level == len(stack) - 1 and idx == selected_idx
+            icon = "▼" if is_container(child_value) and level + 1 < len(stack) and idx == selected_idx else (
+                "▶" if is_container(child_value) else "•"
+            )
+            style = "reverse" if is_current else ""
+            branch = node.add(f"{icon} {child_name}", style=style)
+            if is_container(child_value) and level + 1 < len(stack) and idx == selected_idx:
+                build(branch, level + 1, stack[level + 1][1])
+            elif is_container(child_value):
+                branch.add("…", style="dim")
+            else:
+                branch.add(Pretty(child_value))
+
+    build(tree, 0, root_value)
+    console.print(tree)
+    console.print(
+        Text(
+            "↑/↓ move  ← parent  →/Enter expand  q quit",
+            style="dim",
+        )
+    )
+
+
+def format_path(stack: list[tuple[str | int | None, Any, int]]) -> str:
+    """Return a breadcrumb-like path of the current selection."""
+
+    parts: list[str] = []
+    for name, _, _ in stack:
+        parts.append(str(name) if name is not None else "payload")
+    return " > ".join(parts)
+
+
+def get_children(data: Any) -> list[tuple[str | int, Any]]:
+    """Return the child items of a container object."""
+
+    if isinstance(data, dict):
+        return list(data.items())
+    if isinstance(data, list):
+        return list(enumerate(data))
+    if isinstance(data, BaseModel):
+        return [(key, getattr(data, key)) for key in data.model_fields.keys()]
+    return []
+
+
+def is_container(value: Any) -> bool:
+    """Return ``True`` if *value* can have nested children."""
+
+    return isinstance(value, (dict, list, BaseModel))
+
+
+def read_key() -> str:
+    """Read a single key from stdin and map arrow keys."""
+
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        first = sys.stdin.read(1)
+        if first == "\x1b":
+            second = sys.stdin.read(1)
+            if second in "[O":
+                third = sys.stdin.read(1)
+                return {
+                    "A": "up",
+                    "B": "down",
+                    "C": "right",
+                    "D": "left",
+                }.get(third, "escape")
+            return "escape"
+        if first in {"\r", "\n"}:
+            return "enter"
+        if first == "q":
+            return "quit"
+        return first
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 
 def recv_thumbnail(message: TechreadMessage):
