@@ -125,7 +125,7 @@ def explore(data: Any, name: str | int | None = None) -> None:
         current_name, current, selected = stack[-1]
         children = get_children(current)
         console.clear()
-        display_tree(current_name, children, selected, current)
+        display_stack(stack)
 
         key = read_key()
         if key == "up" and children:
@@ -134,15 +134,10 @@ def explore(data: Any, name: str | int | None = None) -> None:
         elif key == "down" and children:
             selected = (selected + 1) % len(children)
             stack[-1] = (current_name, current, selected)
-        elif key in {"right", "enter"}:
-            if not children:
-                show_value(current_name, current)
-            else:
-                child_name, child_value = children[selected]
-                if is_container(child_value):
-                    stack.append((child_name, child_value, 0))
-                else:
-                    show_value(child_name, child_value)
+        elif key in {"right", "enter"} and children:
+            child_name, child_value = children[selected]
+            if is_container(child_value):
+                stack.append((child_name, child_value, 0))
         elif key == "left":
             if len(stack) == 1:
                 break
@@ -151,30 +146,36 @@ def explore(data: Any, name: str | int | None = None) -> None:
             break
 
 
-def display_tree(
-    name: str | int | None,
-    children: list[tuple[str | int, Any]],
-    selected: int,
-    value: Any,
-) -> None:
-    """Display a single level of the given data structure as a tree."""
+def display_stack(stack: list[tuple[str | int | None, Any, int]]) -> None:
+    """Render the current navigation stack as a tree.
 
-    label = str(name) if name is not None else "payload"
+    The parent levels remain visible with the selected path expanded down to
+    the currently focused node.
+    """
+
+    root_name, root_value, _ = stack[0]
+    label = str(root_name) if root_name is not None else "payload"
     tree = Tree(label)
 
-    if children:
+    def build(node: Tree, level: int, value: Any) -> None:
+        children = get_children(value)
+        if not children:
+            node.add(Pretty(value))
+            return
+
+        selected_idx = stack[level][2]
         for idx, (child_name, child_value) in enumerate(children):
-            prefix = ">" if idx == selected else " "
-            branch_label = f"{prefix} {child_name}"
-            branch_style = "reverse" if idx == selected else ""
-            branch = tree.add(branch_label, style=branch_style)
-            if is_container(child_value):
+            pointer = ">" if level == len(stack) - 1 and idx == selected_idx else " "
+            style = "reverse" if level == len(stack) - 1 and idx == selected_idx else ""
+            branch = node.add(f"{pointer} {child_name}", style=style)
+            if is_container(child_value) and level + 1 < len(stack) and idx == selected_idx:
+                build(branch, level + 1, stack[level + 1][1])
+            elif is_container(child_value):
                 branch.add("...")
             else:
                 branch.add(Pretty(child_value))
-    else:
-        tree.add(Pretty(value))
 
+    build(tree, 0, root_value)
     console.print(tree)
 
 
@@ -222,19 +223,6 @@ def read_key() -> str:
         return first
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-
-
-def show_value(name: str | int | None, value: Any) -> None:
-    """Display a leaf value and wait for the user to return."""
-
-    console.clear()
-    tree = Tree(str(name) if name is not None else "value")
-    tree.add(Pretty(value))
-    console.print(tree)
-    console.print("\n[dim]Press left to go back[/dim]")
-    while True:
-        if read_key() in {"left", "quit", "escape", "enter", "right"}:
-            break
 
 
 def recv_thumbnail(message: TechreadMessage):
