@@ -4,6 +4,9 @@ from typing import Optional
 
 import typer
 from rich.console import Console
+from rich.prompt import Prompt
+from rich.tree import Tree
+from rich.pretty import Pretty
 
 from werk24.models import (
     AskBalloons,
@@ -85,9 +88,97 @@ async def run(server: str, fh: str, hooks: list[Hook], max_pages: int):
 
 
 def recv_payload(message: TechreadMessage):
-    print(f"Received message: {message}")
-    print(type(message.payload_dict))
-    console.print(message.payload_dict)
+    """Interactively explore the payload dictionary.
+
+    The previous implementation printed the entire object using Rich's default
+    pretty printer which could result in a very long, unreadable output.  This
+    helper collapses the payload to the first child level and lets the user
+    drill down into nested structures on demand.
+    """
+
+    explore_dict(message.payload_dict)
+
+
+def explore_dict(data: object, name: str | int | None = None) -> None:
+    """Recursively explore a nested ``dict`` / ``list`` structure.
+
+    Parameters
+    ----------
+    data:
+        The object to explore. Typically the ``payload_dict`` from a
+        :class:`TechreadMessage`.
+    name:
+        Optional label for the current level. Used when navigating through
+        lists to display the index that was selected.
+    """
+
+    stack: list[tuple[str | int | None, object]] = [(name, data)]
+    while stack:
+        current_name, current = stack[-1]
+        console.clear()
+        display_tree(current, current_name)
+
+        if isinstance(current, dict):
+            keys = list(current.keys())
+            choice = Prompt.ask(
+                "Enter key to expand, '..' to go back or leave empty to quit",
+                default="",
+            )
+            if choice == "":
+                break
+            if choice == "..":
+                stack.pop()
+                continue
+            if choice in current:
+                stack.append((choice, current[choice]))
+            else:
+                console.print(f"[red]Key '{choice}' not found[/red]")
+                Prompt.ask("Press enter to continue")
+        elif isinstance(current, list):
+            choice = Prompt.ask(
+                "Enter index to expand, '..' to go back or leave empty to quit",
+                default="",
+            )
+            if choice == "":
+                break
+            if choice == "..":
+                stack.pop()
+                continue
+            try:
+                index = int(choice)
+                stack.append((index, current[index]))
+            except (ValueError, IndexError):
+                console.print("[red]Invalid index[/red]")
+                Prompt.ask("Press enter to continue")
+        else:
+            Prompt.ask("Value displayed. Press enter to go back")
+            stack.pop()
+
+
+def display_tree(data: object, name: str | int | None) -> None:
+    """Display a single level of the given data structure as a tree."""
+
+    label = str(name) if name is not None else "payload"
+    tree = Tree(label)
+
+    if isinstance(data, dict):
+        for key, value in data.items():
+            branch = tree.add(str(key))
+            if isinstance(value, (dict, list)):
+                branch.add("...")
+            else:
+                branch.add(Pretty(value))
+    elif isinstance(data, list):
+        for idx, value in enumerate(data):
+            branch = tree.add(str(idx))
+            if isinstance(value, (dict, list)):
+                branch.add("...")
+            else:
+                branch.add(Pretty(value))
+    else:
+        tree.add(Pretty(data))
+
+    console.print(tree)
 
 
 def recv_thumbnail(message: TechreadMessage):
