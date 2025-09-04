@@ -1394,6 +1394,16 @@ class ThumbnailFileFormat(str, Enum):
     """The output format is PNG."""
 
 
+class PostprocessorSlot(str, Enum):
+    """Enumeration for available postprocessor systems."""
+
+    GREEN = "GREEN"
+    """Use the green postprocessing system."""
+
+    BLUE = "BLUE"
+    """Use the blue postprocessing system."""
+
+
 class PrimaryProcessType(str, Enum):
     CUTTING = "CUTTING"
     TURNING = "TURNING"
