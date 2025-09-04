@@ -1,12 +1,13 @@
 import asyncio
 import io
-from typing import Optional
+from typing import Any, Optional
 
 import typer
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.tree import Tree
 from rich.pretty import Pretty
+from pydantic import BaseModel
 
 from werk24.models import (
     AskBalloons,
@@ -88,31 +89,30 @@ async def run(server: str, fh: str, hooks: list[Hook], max_pages: int):
 
 
 def recv_payload(message: TechreadMessage):
-    """Interactively explore the payload dictionary.
+    """Interactively explore the message payload.
 
-    The previous implementation printed the entire object using Rich's default
-    pretty printer which could result in a very long, unreadable output.  This
-    helper collapses the payload to the first child level and lets the user
-    drill down into nested structures on demand.
+    The payload can be a :class:`pydantic.BaseModel`, a ``dict`` or ``list``
+    structure, or ``None``.  This helper collapses the payload to the first
+    child level and lets the user drill down into nested structures on demand.
     """
 
-    explore_dict(message.payload_dict)
+    explore(message.payload)
 
 
-def explore_dict(data: object, name: str | int | None = None) -> None:
-    """Recursively explore a nested ``dict`` / ``list`` structure.
+def explore(data: Any, name: str | int | None = None) -> None:
+    """Recursively explore a nested payload structure.
 
     Parameters
     ----------
     data:
-        The object to explore. Typically the ``payload_dict`` from a
+        The object to explore. Typically the ``payload`` from a
         :class:`TechreadMessage`.
     name:
         Optional label for the current level. Used when navigating through
         lists to display the index that was selected.
     """
 
-    stack: list[tuple[str | int | None, object]] = [(name, data)]
+    stack: list[tuple[str | int | None, Any]] = [(name, data)]
     while stack:
         current_name, current = stack[-1]
         console.clear()
@@ -150,6 +150,22 @@ def explore_dict(data: object, name: str | int | None = None) -> None:
             except (ValueError, IndexError):
                 console.print("[red]Invalid index[/red]")
                 Prompt.ask("Press enter to continue")
+        elif isinstance(current, BaseModel):
+            keys = list(current.model_fields.keys())
+            choice = Prompt.ask(
+                "Enter field to expand, '..' to go back or leave empty to quit",
+                default="",
+            )
+            if choice == "":
+                break
+            if choice == "..":
+                stack.pop()
+                continue
+            if choice in keys:
+                stack.append((choice, getattr(current, choice)))
+            else:
+                console.print(f"[red]Field '{choice}' not found[/red]")
+                Prompt.ask("Press enter to continue")
         else:
             Prompt.ask("Value displayed. Press enter to go back")
             stack.pop()
@@ -164,14 +180,22 @@ def display_tree(data: object, name: str | int | None) -> None:
     if isinstance(data, dict):
         for key, value in data.items():
             branch = tree.add(str(key))
-            if isinstance(value, (dict, list)):
+            if isinstance(value, (dict, list, BaseModel)):
                 branch.add("...")
             else:
                 branch.add(Pretty(value))
     elif isinstance(data, list):
         for idx, value in enumerate(data):
             branch = tree.add(str(idx))
-            if isinstance(value, (dict, list)):
+            if isinstance(value, (dict, list, BaseModel)):
+                branch.add("...")
+            else:
+                branch.add(Pretty(value))
+    elif isinstance(data, BaseModel):
+        for key in data.model_fields.keys():
+            value = getattr(data, key)
+            branch = tree.add(str(key))
+            if isinstance(value, (dict, list, BaseModel)):
                 branch.add("...")
             else:
                 branch.add(Pretty(value))
