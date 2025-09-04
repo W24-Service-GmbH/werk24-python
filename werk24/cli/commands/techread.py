@@ -129,15 +129,16 @@ def explore(data: Any, name: str | int | None = None) -> None:
         key = read_key()
         if key == "up" and children:
             selected = (selected - 1) % len(children)
+            stack[-1] = (current_name, current, selected)
         elif key == "down" and children:
             selected = (selected + 1) % len(children)
+            stack[-1] = (current_name, current, selected)
         elif key in {"right", "enter"}:
             if not children:
                 show_value(current_name, current)
             else:
                 child_name, child_value = children[selected]
                 if is_container(child_value):
-                    stack[-1] = (current_name, current, selected)
                     stack.append((child_name, child_value, 0))
                 else:
                     show_value(child_name, child_value)
@@ -147,8 +148,6 @@ def explore(data: Any, name: str | int | None = None) -> None:
             stack.pop()
         elif key in {"quit", "escape"}:
             break
-
-        stack[-1] = (current_name, current, selected)
 
 
 def display_tree(
