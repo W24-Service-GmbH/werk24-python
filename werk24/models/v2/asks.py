@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Field
 
 from werk24.models.v1.ask import W24Ask
-from werk24.models.v2.enums import AskType, ThumbnailFileFormat
+from werk24.models.v2.enums import AskType, ThumbnailFileFormat, PostprocessorSlot
 from werk24.models.v2.models import RedactionKeyword
 
 
@@ -32,12 +32,17 @@ class AskCustom(AskV2):
     ----------
     - custom_id (str): The ID of the custom output to request.
     - config (Dict[str, Any]): Configuration options for the custom output.
+    - postprocessor_slot (Optional[PostprocessorSlot]): The post-processing system to
+      use for this request.
     """
 
     ask_type: Literal[AskType.CUSTOM] = AskType.CUSTOM
     custom_id: str = Field(..., description="The ID of the custom output to request.")
     config: Dict[str, Any] = Field(
         {}, description="Configuration options for the custom output."
+    )
+    postprocessor_slot: Optional[PostprocessorSlot] = Field(
+        None, description="Select which postprocessing system to use."
     )
 
 
