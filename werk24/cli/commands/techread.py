@@ -3,12 +3,13 @@ import io
 import sys
 from typing import Any, Optional
 
-import click
 import typer
 from pydantic import BaseModel
 from rich.console import Console
 from rich.pretty import Pretty
 from rich.tree import Tree
+import termios
+import tty
 
 from werk24.models import (
     AskBalloons,
@@ -163,8 +164,10 @@ def display_tree(
 
     if children:
         for idx, (child_name, child_value) in enumerate(children):
-            style = "reverse" if idx == selected else ""
-            branch = tree.add(str(child_name), style=style)
+            prefix = ">" if idx == selected else " "
+            branch_label = f"{prefix} {child_name}"
+            branch_style = "reverse" if idx == selected else ""
+            branch = tree.add(branch_label, style=branch_style)
             if is_container(child_value):
                 branch.add("...")
             else:
@@ -196,20 +199,29 @@ def is_container(value: Any) -> bool:
 def read_key() -> str:
     """Read a single key from stdin and map arrow keys."""
 
-    first = click.getchar()
-    if first == "\x1b":
-        second = click.getchar()
-        if second == "[":
-            third = click.getchar()
-            return {"A": "up", "B": "down", "C": "right", "D": "left"}.get(
-                third, "escape"
-            )
-        return "escape"
-    if first in {"\r", "\n"}:
-        return "enter"
-    if first == "q":
-        return "quit"
-    return first
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        first = sys.stdin.read(1)
+        if first == "\x1b":
+            second = sys.stdin.read(1)
+            if second in "[O":
+                third = sys.stdin.read(1)
+                return {
+                    "A": "up",
+                    "B": "down",
+                    "C": "right",
+                    "D": "left",
+                }.get(third, "escape")
+            return "escape"
+        if first in {"\r", "\n"}:
+            return "enter"
+        if first == "q":
+            return "quit"
+        return first
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 
 def show_value(name: str | int | None, value: Any) -> None:
