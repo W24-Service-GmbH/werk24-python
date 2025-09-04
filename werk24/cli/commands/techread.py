@@ -6,6 +6,7 @@ from typing import Any, Optional
 import typer
 from pydantic import BaseModel
 from rich.console import Console
+from rich.padding import Padding
 from rich.pretty import Pretty
 from rich.tree import Tree
 import termios
@@ -113,7 +114,7 @@ def explore(data: Any, name: str | int | None = None) -> None:
     • ``↑`` / ``↓`` – move between siblings
     • ``→`` / ``Enter`` – expand selected child
     • ``←`` – return to the parent level
-    • ``q`` – quit the explorer
+    • ``q`` / ``Ctrl+C`` – quit the explorer
     """
 
     if not sys.stdin.isatty():
@@ -139,9 +140,8 @@ def explore(data: Any, name: str | int | None = None) -> None:
             if is_container(child_value):
                 stack.append((child_name, child_value, 0))
         elif key == "left":
-            if len(stack) == 1:
-                break
-            stack.pop()
+            if len(stack) > 1:
+                stack.pop()
         elif key in {"quit", "escape"}:
             break
 
@@ -176,7 +176,7 @@ def display_stack(stack: list[tuple[str | int | None, Any, int]]) -> None:
                 branch.add(Pretty(child_value))
 
     build(tree, 0, root_value)
-    console.print(tree)
+    console.print(Padding(tree, (0, 0, 0, 1)))
 
 
 def get_children(data: Any) -> list[tuple[str | int, Any]]:
@@ -205,6 +205,8 @@ def read_key() -> str:
     try:
         tty.setraw(fd)
         first = sys.stdin.read(1)
+        if first == "\x03":
+            return "quit"
         if first == "\x1b":
             second = sys.stdin.read(1)
             if second in "[O":
