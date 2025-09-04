@@ -1,13 +1,14 @@
 import asyncio
 import io
+import sys
 from typing import Any, Optional
 
+import click
 import typer
-from rich.console import Console
-from rich.prompt import Prompt
-from rich.tree import Tree
-from rich.pretty import Pretty
 from pydantic import BaseModel
+from rich.console import Console
+from rich.pretty import Pretty
+from rich.tree import Tree
 
 from werk24.models import (
     AskBalloons,
@@ -104,109 +105,125 @@ def recv_payload(message: TechreadMessage):
 
 
 def explore(data: Any, name: str | int | None = None) -> None:
-    """Recursively explore a nested payload structure.
+    """Recursively explore a nested payload structure using arrow keys.
 
-    Parameters
+    Navigation
     ----------
-    data:
-        The object to explore. Typically the ``payload`` from a
-        :class:`TechreadMessage`.
-    name:
-        Optional label for the current level. Used when navigating through
-        lists to display the index that was selected.
+    • ``↑`` / ``↓`` – move between siblings
+    • ``→`` / ``Enter`` – expand selected child
+    • ``←`` – return to the parent level
+    • ``q`` – quit the explorer
     """
 
-    stack: list[tuple[str | int | None, Any]] = [(name, data)]
+    if not sys.stdin.isatty():
+        console.print(Pretty(data))
+        return
+
+    stack: list[tuple[str | int | None, Any, int]] = [(name, data, 0)]
     while stack:
-        current_name, current = stack[-1]
+        current_name, current, selected = stack[-1]
+        children = get_children(current)
         console.clear()
-        display_tree(current, current_name)
+        display_tree(current_name, children, selected, current)
 
-        if isinstance(current, dict):
-            keys = list(current.keys())
-            choice = Prompt.ask(
-                "Enter key to expand, '..' to go back or leave empty to quit",
-                default="",
-            )
-            if choice == "":
-                break
-            if choice == "..":
-                stack.pop()
-                continue
-            if choice in current:
-                stack.append((choice, current[choice]))
+        key = read_key()
+        if key == "up" and children:
+            selected = (selected - 1) % len(children)
+        elif key == "down" and children:
+            selected = (selected + 1) % len(children)
+        elif key in {"right", "enter"}:
+            if not children:
+                show_value(current_name, current)
             else:
-                console.print(f"[red]Key '{choice}' not found[/red]")
-                Prompt.ask("Press enter to continue")
-        elif isinstance(current, list):
-            choice = Prompt.ask(
-                "Enter index to expand, '..' to go back or leave empty to quit",
-                default="",
-            )
-            if choice == "":
+                child_name, child_value = children[selected]
+                if is_container(child_value):
+                    stack[-1] = (current_name, current, selected)
+                    stack.append((child_name, child_value, 0))
+                else:
+                    show_value(child_name, child_value)
+        elif key == "left":
+            if len(stack) == 1:
                 break
-            if choice == "..":
-                stack.pop()
-                continue
-            try:
-                index = int(choice)
-                stack.append((index, current[index]))
-            except (ValueError, IndexError):
-                console.print("[red]Invalid index[/red]")
-                Prompt.ask("Press enter to continue")
-        elif isinstance(current, BaseModel):
-            keys = list(current.model_fields.keys())
-            choice = Prompt.ask(
-                "Enter field to expand, '..' to go back or leave empty to quit",
-                default="",
-            )
-            if choice == "":
-                break
-            if choice == "..":
-                stack.pop()
-                continue
-            if choice in keys:
-                stack.append((choice, getattr(current, choice)))
-            else:
-                console.print(f"[red]Field '{choice}' not found[/red]")
-                Prompt.ask("Press enter to continue")
-        else:
-            Prompt.ask("Value displayed. Press enter to go back")
             stack.pop()
+        elif key in {"quit", "escape"}:
+            break
+
+        stack[-1] = (current_name, current, selected)
 
 
-def display_tree(data: object, name: str | int | None) -> None:
+def display_tree(
+    name: str | int | None,
+    children: list[tuple[str | int, Any]],
+    selected: int,
+    value: Any,
+) -> None:
     """Display a single level of the given data structure as a tree."""
 
     label = str(name) if name is not None else "payload"
     tree = Tree(label)
 
-    if isinstance(data, dict):
-        for key, value in data.items():
-            branch = tree.add(str(key))
-            if isinstance(value, (dict, list, BaseModel)):
+    if children:
+        for idx, (child_name, child_value) in enumerate(children):
+            style = "reverse" if idx == selected else ""
+            branch = tree.add(str(child_name), style=style)
+            if is_container(child_value):
                 branch.add("...")
             else:
-                branch.add(Pretty(value))
-    elif isinstance(data, list):
-        for idx, value in enumerate(data):
-            branch = tree.add(str(idx))
-            if isinstance(value, (dict, list, BaseModel)):
-                branch.add("...")
-            else:
-                branch.add(Pretty(value))
-    elif isinstance(data, BaseModel):
-        for key in data.model_fields.keys():
-            value = getattr(data, key)
-            branch = tree.add(str(key))
-            if isinstance(value, (dict, list, BaseModel)):
-                branch.add("...")
-            else:
-                branch.add(Pretty(value))
+                branch.add(Pretty(child_value))
     else:
-        tree.add(Pretty(data))
+        tree.add(Pretty(value))
 
     console.print(tree)
+
+
+def get_children(data: Any) -> list[tuple[str | int, Any]]:
+    """Return the child items of a container object."""
+
+    if isinstance(data, dict):
+        return list(data.items())
+    if isinstance(data, list):
+        return list(enumerate(data))
+    if isinstance(data, BaseModel):
+        return [(key, getattr(data, key)) for key in data.model_fields.keys()]
+    return []
+
+
+def is_container(value: Any) -> bool:
+    """Return ``True`` if *value* can have nested children."""
+
+    return isinstance(value, (dict, list, BaseModel))
+
+
+def read_key() -> str:
+    """Read a single key from stdin and map arrow keys."""
+
+    first = click.getchar()
+    if first == "\x1b":
+        second = click.getchar()
+        if second == "[":
+            third = click.getchar()
+            return {"A": "up", "B": "down", "C": "right", "D": "left"}.get(
+                third, "escape"
+            )
+        return "escape"
+    if first in {"\r", "\n"}:
+        return "enter"
+    if first == "q":
+        return "quit"
+    return first
+
+
+def show_value(name: str | int | None, value: Any) -> None:
+    """Display a leaf value and wait for the user to return."""
+
+    console.clear()
+    tree = Tree(str(name) if name is not None else "value")
+    tree.add(Pretty(value))
+    console.print(tree)
+    console.print("\n[dim]Press left to go back[/dim]")
+    while True:
+        if read_key() in {"left", "quit", "escape", "enter", "right"}:
+            break
 
 
 def recv_thumbnail(message: TechreadMessage):
