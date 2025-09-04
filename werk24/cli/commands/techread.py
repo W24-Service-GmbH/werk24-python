@@ -140,9 +140,8 @@ def explore(data: Any, name: str | int | None = None) -> None:
             if is_container(child_value):
                 stack.append((child_name, child_value, 0))
         elif key == "left":
-            if len(stack) == 1:
-                break
-            stack.pop()
+            if len(stack) > 1:
+                stack.pop()
         elif key in {"quit", "escape"}:
             break
 
