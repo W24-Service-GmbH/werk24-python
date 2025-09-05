@@ -1,16 +1,17 @@
 import asyncio
 import io
+import json
 import sys
 from typing import Any, Optional
 
+import termios
+import tty
 import typer
 from pydantic import BaseModel
 from rich.console import Console
 from rich.pretty import Pretty
 from rich.tree import Tree
 from rich.text import Text
-import termios
-import tty
 
 from werk24.models import (
     AskBalloons,
@@ -114,6 +115,7 @@ def explore(data: Any, name: str | int | None = None) -> None:
     • ``↑`` / ``↓`` – move between siblings
     • ``→`` / ``Enter`` – expand selected child
     • ``←`` – return to the parent level
+    • ``Tab`` – toggle JSON/tree view
     • ``q`` – quit the explorer
     """
 
@@ -122,13 +124,31 @@ def explore(data: Any, name: str | int | None = None) -> None:
         return
 
     stack: list[tuple[str | int | None, Any, int]] = [(name, data, 0)]
+    json_mode = False
     while stack:
+        if json_mode:
+            console.clear()
+            root_label = stack[0][0] if stack[0][0] is not None else "payload"
+            console.print(Text(str(root_label), style="bold cyan"))
+            json_data = json.dumps(to_jsonable(stack[0][1]), indent=2, default=str)
+            console.print_json(json_data)
+            console.print(Text("Tab tree  q quit", style="dim"))
+            key = read_key()
+            if key == "tab":
+                json_mode = False
+            elif key in {"quit", "escape"}:
+                break
+            continue
+
         current_name, current, selected = stack[-1]
         children = get_children(current)
         console.clear()
         display_stack(stack)
 
         key = read_key()
+        if key == "tab":
+            json_mode = True
+            continue
         if key == "up" and children:
             selected = (selected - 1) % len(children)
             stack[-1] = (current_name, current, selected)
@@ -180,7 +200,7 @@ def display_stack(stack: list[tuple[str | int | None, Any, int]]) -> None:
     console.print(tree)
     console.print(
         Text(
-            "↑/↓ move  ← parent  →/Enter expand  q quit",
+            "↑/↓ move  ← parent  →/Enter expand  Tab json  q quit",
             style="dim",
         )
     )
@@ -193,6 +213,18 @@ def format_path(stack: list[tuple[str | int | None, Any, int]]) -> str:
     for name, _, _ in stack:
         parts.append(str(name) if name is not None else "payload")
     return " > ".join(parts)
+
+
+def to_jsonable(value: Any) -> Any:
+    """Convert ``value`` to a JSON-serializable structure."""
+
+    if isinstance(value, BaseModel):
+        return {k: to_jsonable(v) for k, v in value.model_dump().items()}
+    if isinstance(value, dict):
+        return {k: to_jsonable(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [to_jsonable(v) for v in value]
+    return value
 
 
 def get_children(data: Any) -> list[tuple[str | int, Any]]:
@@ -232,6 +264,8 @@ def read_key() -> str:
                     "D": "left",
                 }.get(third, "escape")
             return "escape"
+        if first == "\t":
+            return "tab"
         if first in {"\r", "\n"}:
             return "enter"
         if first == "q":
