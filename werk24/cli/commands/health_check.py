@@ -3,6 +3,7 @@ import platform
 import sys
 
 import typer
+from typing import Optional
 from packaging.version import Version
 from rich.console import Console
 from rich.panel import Panel
@@ -22,13 +23,17 @@ settings = Settings()
 
 
 @app.command()
-def health_check():
+def health_check(
+    custom_cafile: str = typer.Option(
+        None, help="Path to an additional CA bundle for TLS verification"
+    )
+):
     """Run a comprehensive health check for the CLI."""
     console.print(Panel(f"[blue]Werk24 CLI Health Check v{__version__}[/blue]"))
     system_information()
     license_information()
-    asyncio.run(network_information())
-    asyncio.run(status_information())
+    asyncio.run(network_information(custom_cafile))
+    asyncio.run(status_information(custom_cafile))
 
 
 def system_information():
@@ -73,7 +78,7 @@ def license_information():
     print_panel("License Information", license_info)
 
 
-async def network_information():
+async def network_information(custom_cafile: Optional[str]):
     """
     Display network information and test WebSocket connections.
     """
@@ -81,7 +86,7 @@ async def network_information():
     network_info = []
 
     try:
-        async with Werk24Client() as _:
+        async with Werk24Client(custom_cafile=custom_cafile) as _:
             network_info.append(
                 (f"WebSocket Connection ({server_uri})", "[green]Successful[/green]")
             )
@@ -129,11 +134,14 @@ async def network_information():
     print_panel("Network Information", network_info)
 
 
-async def status_information():
+async def status_information(custom_cafile: Optional[str]):
     """Display the system status information."""
     status_info = []
     try:
-        status = await Werk24Client.get_system_status()
+        if custom_cafile:
+            status = await Werk24Client.get_system_status(custom_cafile=custom_cafile)
+        else:
+            status = await Werk24Client.get_system_status()
         status_info.append(("Indicator", status.status_indicator))
         if status.status_description:
             status_info.append(("Description", status.status_description))
