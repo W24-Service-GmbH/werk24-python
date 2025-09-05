@@ -123,6 +123,12 @@ class TechreadExceptionType(str, Enum):
     be a drawing
     """
 
+    CONFIGURATION_INCORRECT = "CONFIGURATION_INCORRECT"
+    """ The configuration is incomplete or malformed.
+    Requires client version 2.3.0 or newer. Older clients
+    will receive DRAWING_CONTENT_NOT_UNDERSTOOD instead.
+    """
+
     DRAWING_PAPER_SIZE_TOO_LARGE = "DRAWING_PAPER_SIZE_TOO_LARGE"
     """ The paper size is larger that the allowed paper size
     """
