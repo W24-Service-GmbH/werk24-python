@@ -1282,7 +1282,7 @@ class Certification(BaseModel):
     certification_type: CertificationType = Field(
         ...,
         description="The type of certification, such as CE, UL, or ISO.",
-        examples=[CertificationType.CE],
+        examples=[CertificationType.EAR],
     )
 
     raw_ocr: Optional[str] = Field(
