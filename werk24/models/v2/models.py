@@ -10,6 +10,7 @@ from pydantic import (
 )
 
 from .enums import (
+    CertificationType,
     CoordinateSpace,
     CurvatureType,
     DepthType,
@@ -1270,4 +1271,22 @@ class BoundingDimensions(BaseModel):
     enclosing_cylinder: Optional[GeometryCylinder] = Field(
         None,
         description="The enclosing cylinder of the component.",
+    )
+
+
+class Certification(BaseModel):
+    """
+    Represents a certification or compliance mark on a part or drawing.
+    """
+
+    certification_type: CertificationType = Field(
+        ...,
+        description="The type of certification, such as CE, UL, or ISO.",
+        examples=[CertificationType.CE],
+    )
+
+    raw_ocr: Optional[str] = Field(
+        None,
+        description="Raw OCR text extracted from the drawing that contains the certification information.",
+        examples=["Requires Certificate of Compliance"],
     )
