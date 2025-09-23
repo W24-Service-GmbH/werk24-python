@@ -9,6 +9,7 @@ from .models import (
     BillOfMaterial,
     Bore,
     BoundingDimensions,
+    Certification,
     Chamfer,
     Dimension,
     Entry,
@@ -153,6 +154,10 @@ class ResponseMetaDataComponentDrawing(Response):
         None,
         description="Bill of materials for the component, listing parts and quantities.",
     )
+    certifications: List[Certification] = Field(
+        default_factory=list,
+        description="List of certifications associated with the component.",
+    )
     designation: list[Entry] = Field(
         default_factory=list,
         description="Designation of the component.",
@@ -177,6 +182,10 @@ class ResponseMetaDataComponentDrawing(Response):
         default_factory=list,
         description="Material options available for the component.",
     )
+    notes: list[Note] = Field(
+        default_factory=list,
+        description="List of all notes in the drawing.",
+    )
     projection_method: Optional[ProjectionMethod] = Field(
         None,
         description="Projection method used in the drawing (e.g., first angle or third angle).",
@@ -188,10 +197,6 @@ class ResponseMetaDataComponentDrawing(Response):
     weight: Optional[Weight] = Field(
         None,
         description="Weight of the component.",
-    )
-    notes: list[Note] = Field(
-        default_factory=list,
-        description="List of all notes in the drawing.",
     )
 
 
