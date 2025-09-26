@@ -17,7 +17,7 @@ settings = Settings()
 
 
 console = Console()
-logger = get_logger(__name__)
+logger = get_logger()
 
 app = typer.Typer(pretty_exceptions_show_locals=False, no_args_is_help=True)
 app.add_typer(init_app)
