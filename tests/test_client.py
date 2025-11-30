@@ -1,8 +1,8 @@
 import os
 import uuid
+from unittest.mock import AsyncMock, Mock
 
 import pytest
-from unittest.mock import AsyncMock, Mock
 
 from werk24 import (
     AskMetaData,
@@ -25,10 +25,7 @@ from werk24.utils.exceptions import (
 )
 
 requires_license = pytest.mark.skipif(
-    not (
-        os.getenv("W24TECHREAD_AUTH_TOKEN")
-        and os.getenv("W24TECHREAD_AUTH_REGION")
-    ),
+    not (os.getenv("W24TECHREAD_AUTH_TOKEN") and os.getenv("W24TECHREAD_AUTH_REGION")),
     reason="Werk24 license credentials not provided",
 )
 
@@ -77,9 +74,7 @@ async def test_read_drawing_with_hooks(drawing_bytes):
         await client.read_drawing_with_hooks(drawing_bytes, hooks)
 
     hook.assert_called_once()
-    assert (
-        hook.call_args.args[0].message_type == TechreadMessageType.ASK
-    )
+    assert hook.call_args.args[0].message_type == TechreadMessageType.ASK
 
 
 @requires_license
@@ -144,9 +139,7 @@ def test_get_hook_function_for_message_no_match():
         message_type=TechreadMessageType.PROGRESS,
         message_subtype=TechreadMessageSubtype.PROGRESS_STARTED,
     )
-    assert (
-        Werk24Client._get_hook_function_for_message(message, [hook]) is None
-    )
+    assert Werk24Client._get_hook_function_for_message(message, [hook]) is None
 
 
 @pytest.mark.asyncio

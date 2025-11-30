@@ -6,7 +6,7 @@ client's read_drawing and read_drawing_with_callback methods.
 """
 
 import io
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 

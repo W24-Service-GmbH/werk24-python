@@ -12,7 +12,6 @@ from werk24 import (
     W24RateLimitError,
     W24ServerError,
     W24ValidationError,
-    Werk24Client,
 )
 
 
@@ -155,7 +154,7 @@ def example_error_handling_with_retry():
         except W24RateLimitError as e:
             retry_count += 1
             if retry_count >= max_retries:
-                print(f"Max retries reached. Giving up.")
+                print("Max retries reached. Giving up.")
                 raise
 
             wait_time = e.retry_after or 5
@@ -168,7 +167,7 @@ def example_error_handling_with_retry():
             if e.is_transient:
                 retry_count += 1
                 if retry_count >= max_retries:
-                    print(f"Max retries reached. Giving up.")
+                    print("Max retries reached. Giving up.")
                     raise
 
                 wait_time = e.error_details.get("retry_after", 5)
@@ -178,7 +177,7 @@ def example_error_handling_with_retry():
                 time.sleep(wait_time)
             else:
                 # Non-transient error, don't retry
-                print(f"Permanent server error. Not retrying.")
+                print("Permanent server error. Not retrying.")
                 raise
 
 

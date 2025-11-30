@@ -59,7 +59,7 @@ async def example_invalid_ask():
         Werk24Client.validate_asks(asks)
         print("✓ All ask types are valid!")
     except BadRequestException as e:
-        print(f"✗ Validation failed:")
+        print("✗ Validation failed:")
         print(f"  {e}")
 
     print()
@@ -77,7 +77,7 @@ async def example_empty_asks():
         Werk24Client.validate_asks(asks)
         print("✓ All ask types are valid!")
     except BadRequestException as e:
-        print(f"✗ Validation failed:")
+        print("✗ Validation failed:")
         print(f"  {e}")
 
     print()
@@ -106,7 +106,7 @@ async def example_validation_in_read_drawing():
             async for message in client.read_drawing(drawing, [InvalidAsk()]):
                 print(f"Received message: {message}")
     except BadRequestException as e:
-        print(f"✓ Validation caught the error before sending to API:")
+        print("✓ Validation caught the error before sending to API:")
         print(f"  {e}")
     except Exception as e:
         print(f"Other error: {e}")
@@ -135,8 +135,8 @@ async def example_helpful_error_message():
     except BadRequestException as e:
         error_msg = str(e)
         print("Error message includes:")
-        print(f"  - Invalid ask types: WRONG_TYPE_1, WRONG_TYPE_2")
-        print(f"  - List of all valid ask types")
+        print("  - Invalid ask types: WRONG_TYPE_1, WRONG_TYPE_2")
+        print("  - List of all valid ask types")
         print()
         print("Full error message (truncated):")
         print(f"  {error_msg[:200]}...")
