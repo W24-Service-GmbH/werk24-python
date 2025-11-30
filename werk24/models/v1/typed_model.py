@@ -29,7 +29,7 @@ print(MetaData.parse_obj(obj))
 """
 
 from pint import Quantity
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic_core import PydanticUndefined
 
 
@@ -46,20 +46,19 @@ class W24TypedModel(BaseModel):
 
     __subtypes__ = {}
 
-    class Config:
-        arbitrary_types_allowed = True
-
-        """Have the custom encoders here.
-        This is not the nicest solution, but more
-        a workaround until Pydantic 2.0 is ready.
-        See: https://github.com/pydantic/pydantic/issues/2277
-        """
-        json_encoders = {
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        # Have the custom encoders here.
+        # This is not the nicest solution, but more
+        # a workaround until Pydantic 2.0 is ready.
+        # See: https://github.com/pydantic/pydantic/issues/2277
+        json_encoders={
             # NOTE: specify a custom validator to make
             # sure that the serialization is done correctly.
             # See validator for details.
             Quantity: lambda v: str(v)
-        }
+        },
+    )
 
     @classmethod
     def __pydantic_init_subclass__(
@@ -69,6 +68,15 @@ class W24TypedModel(BaseModel):
 
         Registers the class locally.
         """
+        # Get discriminators from model_config if available
+        discriminators = []
+        if hasattr(cls, "model_config") and isinstance(cls.model_config, dict):
+            discriminator = cls.model_config.get("discriminator")
+            if discriminator:
+                discriminators = (
+                    [discriminator] if isinstance(discriminator, str) else discriminator
+                )
+
         key_ = tuple(
             [cls._first_child()]
             + [
@@ -77,7 +85,7 @@ class W24TypedModel(BaseModel):
                     if cls.model_fields[disc].default == PydanticUndefined
                     else cls.model_fields[disc].default
                 )
-                for disc in cls.Config.discriminators
+                for disc in discriminators
             ]
         )
         cls.__subtypes__[key_] = cls
@@ -96,8 +104,17 @@ class W24TypedModel(BaseModel):
     @classmethod
     def _convert_to_real_type_(cls, data):
         """Convert the data to the correct subtype."""
+        # Get discriminators from model_config if available
+        discriminators = []
+        if hasattr(cls, "model_config") and isinstance(cls.model_config, dict):
+            discriminator = cls.model_config.get("discriminator")
+            if discriminator:
+                discriminators = (
+                    [discriminator] if isinstance(discriminator, str) else discriminator
+                )
+
         # get the key from the data.
-        key_ = tuple([cls] + [data.get(disc) for disc in cls.Config.discriminators])
+        key_ = tuple([cls] + [data.get(disc) for disc in discriminators])
 
         # check whether the subtype actually exists.
         # Be careful with updates here.

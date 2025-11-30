@@ -16,4 +16,3 @@ def test_postprocessor_slot_enum_value():
 def test_postprocessor_slot_invalid_value():
     with pytest.raises(ValueError):
         AskCustom(custom_id="foo", postprocessor_slot="red")
-

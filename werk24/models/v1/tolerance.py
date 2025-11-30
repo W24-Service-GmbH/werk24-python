@@ -2,7 +2,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from .base_feature import W24BaseFeatureModel
 from .gender import W24Gender
@@ -20,8 +20,7 @@ class W24Tolerance(W24TypedModel):
             deserialization
     """
 
-    class Config:
-        discriminators = ("toleration_type",)
+    model_config = ConfigDict(discriminator="toleration_type")
 
     blurb: str
     toleration_type: str

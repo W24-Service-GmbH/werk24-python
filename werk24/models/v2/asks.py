@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Field
 
 from werk24.models.v1.ask import W24Ask
-from werk24.models.v2.enums import AskType, ThumbnailFileFormat, PostprocessorSlot
+from werk24.models.v2.enums import AskType, PostprocessorSlot, ThumbnailFileFormat
 from werk24.models.v2.models import RedactionKeyword
 
 
