@@ -98,6 +98,80 @@ class Werk24Client:
         # certificate chain is properly verified.
         self._ssl_context = ssl.create_default_context(cafile=certifi.where())
 
+    @staticmethod
+    def validate_asks(asks: List[AskV2]) -> None:
+        """
+        Validate ask types before sending request to the API.
+
+        This method checks if all provided ask types are valid according to either
+        API v1 (W24AskType) or API v2 (AskType) specifications. It raises a
+        BadRequestException with helpful error messages if invalid ask types are found.
+
+        Parameters
+        ----------
+        asks : List[AskV2]
+            List of ask types to validate. Can be W24Ask (v1) or AskV2 (v2) objects.
+
+        Raises
+        ------
+        BadRequestException
+            If any ask types are invalid, with a message listing the invalid types
+            and all valid ask types.
+
+        Examples
+        --------
+        >>> from werk24.models.v1.ask import W24AskVariantMeasures
+        >>> from werk24.models.v2.asks import AskBalloons
+        >>> asks = [W24AskVariantMeasures(), AskBalloons()]
+        >>> Werk24Client.validate_asks(asks)  # No exception raised
+
+        >>> from pydantic import BaseModel
+        >>> class InvalidAsk(BaseModel):
+        ...     ask_type = "INVALID_TYPE"
+        >>> Werk24Client.validate_asks([InvalidAsk()])  # Raises BadRequestException
+        """
+        from werk24.models.v1.ask import W24AskType
+        from werk24.models.v2.enums import AskType
+
+        if not asks:
+            raise BadRequestException(
+                "No ask types provided. At least one ask type is required."
+            )
+
+        # Get all valid ask types from both versions
+        valid_v1_types = {ask_type.value for ask_type in W24AskType}
+        valid_v2_types = {ask_type.value for ask_type in AskType}
+        all_valid_types = valid_v1_types | valid_v2_types
+
+        # Extract and validate ask type names from the input
+        invalid_asks = []
+        for ask in asks:
+            # Get the ask_type attribute
+            ask_type_value = getattr(ask, "ask_type", None)
+
+            if ask_type_value is None:
+                invalid_asks.append("(missing ask_type)")
+                continue
+
+            # Convert enum to string if needed
+            if hasattr(ask_type_value, "value"):
+                ask_type_str = ask_type_value.value
+            else:
+                ask_type_str = str(ask_type_value)
+
+            # Check if the ask type is valid
+            if ask_type_str not in all_valid_types:
+                invalid_asks.append(ask_type_str)
+
+        if invalid_asks:
+            # Create helpful error message
+            sorted_valid_types = sorted(all_valid_types)
+            error_msg = (
+                f"Invalid ask type(s): {', '.join(invalid_asks)}. "
+                f"Valid ask types are: {', '.join(sorted_valid_types)}"
+            )
+            raise BadRequestException(error_msg)
+
     def _get_auth_headers(self):
         """
         Get the authentication headers for the request.
@@ -166,7 +240,23 @@ class Werk24Client:
         max_pages: int = settings.max_pages,
         encryption_keys: Optional[EncryptionKeys] = None,
     ):
+        """
+        Read the drawing and call hooks for each message.
 
+        This method extracts asks from hooks and processes the drawing.
+        Ask validation is performed by the read_drawing method.
+
+        Args:
+        ----
+        - drawing (Union[BufferedReader, bytes]): The drawing to process.
+        - hooks (list[Hook]): List of hooks to call for each message.
+        - max_pages (int, optional): Maximum number of pages to process.
+        - encryption_keys (Optional[EncryptionKeys], optional): Optional encryption keys.
+
+        Raises:
+        ------
+        - BadRequestException: If ask types are invalid.
+        """
         asks_list = [cur_ask.ask for cur_ask in hooks if cur_ask.ask is not None]
 
         # send out the request and make a generator
@@ -192,10 +282,11 @@ class Werk24Client:
 
         This function performs the following steps:
         1. Validates the input drawing.
-        2. Sends an initiation request with the specified questions (`asks`).
-        3. Uploads the drawing to the server.
-        4. Signals the server to start reading the uploaded drawing.
-        5. Yields messages as the process progresses.
+        2. Validates the ask types.
+        3. Sends an initiation request with the specified questions (`asks`).
+        4. Uploads the drawing to the server.
+        5. Signals the server to start reading the uploaded drawing.
+        6. Yields messages as the process progresses.
 
         Args:
         ----
@@ -212,12 +303,15 @@ class Werk24Client:
 
         Raises:
         ------
-        - BadRequestException: If the request is malformed.
+        - BadRequestException: If the request is malformed or ask types are invalid.
         - RequestTooLargeException: If the drawing exceeds the maximum size limit.
         - Any other exceptions encountered will be logged and re-raised.
         """
         # Run the preflight checks
         self.run_preflight_checks(drawing)
+
+        # Validate ask types before sending request
+        self.validate_asks(asks)
 
         # Initiate the request
         init_message, init_response = await self.init_request(asks, max_pages)
@@ -717,6 +811,7 @@ class Werk24Client:
 
         Raises:
         ------
+        - BadRequestException: Raised when ask types are invalid.
         - ServerException: Raised when the server returns an error message.
         - InsufficientCreditsException: Raised when the user lacks sufficient credits
           for the request.
@@ -727,6 +822,9 @@ class Werk24Client:
         - UUID4: The request ID of the registered request.
         """
         logger.debug("API method read_drawing_with_callback() called")
+
+        # Validate ask types before sending request
+        self.validate_asks(asks)
 
         # send the request to the API
 
