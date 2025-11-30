@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Any, Literal, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..property.base import W24Property
 from ..property.fraunhofer import W24FraunhoferLine
@@ -9,8 +9,7 @@ from ..typed_model import W24TypedModel
 
 
 class W24PropertyRefractiveTolerance(W24TypedModel):
-    class Config:
-        discriminators = ("refractive_tolerance_type",)
+    model_config = ConfigDict(discriminator="refractive_tolerance_type")
 
     refractive_tolerance_type: Any
 
@@ -38,8 +37,7 @@ W24PropertyRefractiveToleranceType = Union[
 
 
 class W24PropertyRefractiveVariation(BaseModel):
-    class Config:
-        discriminators = ("variation_type",)
+    model_config = ConfigDict(discriminator="variation_type")
 
     variation_type: Any
 

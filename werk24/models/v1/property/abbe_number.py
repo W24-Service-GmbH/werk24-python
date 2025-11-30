@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Any, Literal, Optional, Union
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ..typed_model import W24TypedModel
 from .base import W24Property
@@ -9,8 +9,7 @@ from .fraunhofer import W24FraunhoferLine
 
 
 class W24PropertyAbbeTolerance(W24TypedModel):
-    class Config:
-        discriminators = ("abbe_tolerance_type",)
+    model_config = ConfigDict(discriminator="abbe_tolerance_type")
 
     blurb: str
     abbe_tolerance_type: Any
