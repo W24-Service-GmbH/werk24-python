@@ -78,3 +78,7 @@ changelog = "https://github.com/W24-Service-GmbH/werk24-python/releases"
 
 [project.scripts]
 werk24 = "werk24.cli.werk24:app"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
