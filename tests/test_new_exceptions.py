@@ -5,8 +5,6 @@ W24RateLimitError, and W24ServerError exception classes to ensure
 they properly handle error details and provide useful information.
 """
 
-import pytest
-
 from werk24.utils.exceptions import (
     W24AuthenticationError,
     W24RateLimitError,

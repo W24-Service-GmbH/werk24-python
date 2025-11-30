@@ -1,11 +1,12 @@
 from typing import Any
 
+from pydantic import ConfigDict
+
 from ..typed_model import W24TypedModel
 
 
 class W24Property(W24TypedModel):
-    class Config:
-        discriminators = ("property_type", "property_subtype")
+    model_config = ConfigDict(discriminator="property_type")
 
     property_type: Any
     property_subtype: Any

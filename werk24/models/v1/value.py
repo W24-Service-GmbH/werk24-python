@@ -3,7 +3,14 @@ from typing import Annotated, Optional
 
 from pint import Quantity as PintQuantity
 from pint import UnitRegistry
-from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer, WithJsonSchema
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    WithJsonSchema,
+)
 
 from .tolerance import W24Tolerance
 
@@ -24,8 +31,7 @@ class W24PhysicalQuantity(BaseModel):
     Physical Quantity with a value, unit and tolerance.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     blurb: str = Field(
         title="blurb",

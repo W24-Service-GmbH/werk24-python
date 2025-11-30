@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 import ssl
@@ -79,6 +80,21 @@ try:
 except Exception:
     USE_EXTRA_HEADERS = False
 
+# Import websockets exceptions - they moved in version 14.0
+try:
+    from websockets.exceptions import (
+        ConnectionClosedError,
+        ConnectionClosedOK,
+        InvalidStatus,
+    )
+except ImportError:
+    # websockets 14+ moved exceptions to the main module
+    from websockets import (
+        ConnectionClosedError,
+        ConnectionClosedOK,
+        InvalidStatus,
+    )
+
 
 class Werk24Client:
 
@@ -88,6 +104,10 @@ class Werk24Client:
         https_server=settings.http_server,
         token: Optional[str] = None,
         region: Optional[str] = None,
+        ping_interval: float = 30.0,
+        ping_timeout: float = 10.0,
+        max_reconnect_attempts: int = 3,
+        reconnect_delay: float = 1.0,
     ):
         self.license = find_license(token, region)
         self._wss_server = str(wss_server)
@@ -97,6 +117,14 @@ class Werk24Client:
         # to avoid recreating it for each connection and to ensure that the
         # certificate chain is properly verified.
         self._ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+        # WebSocket connection management
+        self._ping_interval = ping_interval
+        self._ping_timeout = ping_timeout
+        self._max_reconnect_attempts = max_reconnect_attempts
+        self._reconnect_delay = reconnect_delay
+        self._is_shutting_down = False
+        self._reconnect_attempts = 0
 
     @staticmethod
     def validate_asks(asks: List[AskV2]) -> None:
@@ -193,45 +221,131 @@ class Werk24Client:
                 extra_headers=headers,
                 close_timeout=wss_close_timeout,
                 ssl=self._ssl_context,
+                ping_interval=self._ping_interval,
+                ping_timeout=self._ping_timeout,
             )
         return websockets.connect(
             self._wss_server,
             additional_headers=headers,
             close_timeout=wss_close_timeout,
             ssl=self._ssl_context,
+            ping_interval=self._ping_interval,
+            ping_timeout=self._ping_timeout,
         )
 
-    async def __aenter__(self):
+    async def _reconnect(self):
+        """
+        Attempt to reconnect the WebSocket connection.
+
+        This method is called when the connection is lost or becomes unresponsive.
+        It closes the existing connection and attempts to establish a new one.
+
+        Raises:
+        ------
+        - ServerException: If reconnection fails after all retry attempts.
+        """
+        if self._is_shutting_down:
+            logger.debug("Skipping reconnect during shutdown")
+            return
+
+        logger.info("Attempting to reconnect WebSocket")
+
+        # Close existing connection if any
+        if self._wss_session:
+            try:
+                await self._wss_session.close()
+            except Exception as exc:
+                logger.debug("Error closing old connection: %s", exc)
+
+        # Attempt to reconnect with retry logic
         try:
-            self._wss_session = await self._create_websocket_session()
-
-        # -----------------------------------------------------------
-        # Handle the error codes
-        # -----------------------------------------------------------
-        except websockets.exceptions.InvalidStatus as exc:
-            match exc.response.status_code:
-                case 403:
-                    raise UnauthorizedException(
-                        "Invalid status when connecting to the server"
-                    ) from exc
-
-                case _:
-                    raise ServerException(
-                        f"Invalid status when connecting to the server: {exc.response.status_code}"
-                    ) from exc
-
-        # -----------------------------------------------------------
-        # Handle remaining exceptions
-        # -----------------------------------------------------------
+            await self._connect_with_retry()
         except Exception as exc:
-            logger.error("Failed to establish a connection with the server: %s", exc)
-            raise ServerException(details=str(exc)) from exc
+            logger.error("Failed to reconnect: %s", exc)
+            raise
+
+    async def __aenter__(self):
+        await self._connect_with_retry()
         return self
 
+    async def _connect_with_retry(self):
+        """
+        Establish WebSocket connection with retry logic.
+
+        Raises:
+        ------
+        - UnauthorizedException: If authentication fails (403).
+        - ServerException: If connection fails after all retry attempts.
+        """
+        self._reconnect_attempts = 0
+
+        while self._reconnect_attempts < self._max_reconnect_attempts:
+            try:
+                self._wss_session = await self._create_websocket_session()
+                self._reconnect_attempts = 0  # Reset on successful connection
+                logger.info("WebSocket connection established successfully")
+                return
+
+            # -----------------------------------------------------------
+            # Handle the error codes
+            # -----------------------------------------------------------
+            except InvalidStatus as exc:
+                match exc.response.status_code:
+                    case 403:
+                        raise UnauthorizedException(
+                            "Invalid status when connecting to the server"
+                        ) from exc
+
+                    case _:
+                        raise ServerException(
+                            f"Invalid status when connecting to the server: {exc.response.status_code}"
+                        ) from exc
+
+            # -----------------------------------------------------------
+            # Handle remaining exceptions
+            # -----------------------------------------------------------
+            except Exception as exc:
+                self._reconnect_attempts += 1
+                if self._reconnect_attempts >= self._max_reconnect_attempts:
+                    logger.error(
+                        "Failed to establish connection after %d attempts: %s",
+                        self._max_reconnect_attempts,
+                        exc,
+                    )
+                    raise ServerException(details=str(exc)) from exc
+
+                # Exponential backoff
+                delay = self._reconnect_delay * (2 ** (self._reconnect_attempts - 1))
+                logger.warning(
+                    "Connection attempt %d/%d failed, retrying in %.1fs: %s",
+                    self._reconnect_attempts,
+                    self._max_reconnect_attempts,
+                    delay,
+                    exc,
+                )
+                await asyncio.sleep(delay)
+
     async def __aexit__(self, exc_type, exc_value, traceback):
-        logger.debug(f"Exiting the session with the server {self._wss_server}")
+        await self._graceful_shutdown()
+
+    async def _graceful_shutdown(self):
+        """
+        Perform graceful shutdown of WebSocket connection.
+
+        This method:
+        1. Sets shutdown flag to prevent reconnection
+        2. Closes WebSocket connection cleanly
+        """
+        logger.debug(f"Starting graceful shutdown for server {self._wss_server}")
+        self._is_shutting_down = True
+
+        # Close WebSocket connection
         if self._wss_session is not None:
-            await self._wss_session.close()
+            try:
+                await self._wss_session.close()
+                logger.info("WebSocket connection closed successfully")
+            except Exception as exc:
+                logger.warning("Error during WebSocket close: %s", exc)
 
     async def read_drawing_with_hooks(
         self,
@@ -486,11 +600,25 @@ class Werk24Client:
                 "You need to call enter the profile before receiving command"
             )
 
-        # wait for the websocket to say something and interpret the message
-        message_raw = str(await self._wss_session.recv())
-        logger.debug("Received message: %s", message_raw)
-        message = self._parse_message(message_raw)
-        return message
+        try:
+            # wait for the websocket to say something and interpret the message
+            message_raw = str(await self._wss_session.recv())
+            logger.debug("Received message: %s", message_raw)
+            message = self._parse_message(message_raw)
+            return message
+        except (
+            ConnectionClosedError,
+            ConnectionClosedOK,
+        ) as exc:
+            logger.warning("Connection closed while receiving message: %s", exc)
+            if not self._is_shutting_down:
+                await self._reconnect()
+                # After reconnect, try to receive again
+                message_raw = str(await self._wss_session.recv())
+                logger.debug("Received message after reconnect: %s", message_raw)
+                message = self._parse_message(message_raw)
+                return message
+            raise
 
     async def _send_command(self, action: str, message: str = "{}") -> None:
         """
@@ -525,8 +653,20 @@ class Werk24Client:
         command = TechreadCommand(action=action, message=message)
         logger.debug("Sending command: %s", command.model_dump_json())
 
-        # Send the serialized command to the websocket server
-        await self._wss_session.send(command.model_dump_json())
+        try:
+            # Send the serialized command to the websocket server
+            await self._wss_session.send(command.model_dump_json())
+        except (
+            ConnectionClosedError,
+            ConnectionClosedOK,
+        ) as exc:
+            logger.warning("Connection closed while sending command: %s", exc)
+            if not self._is_shutting_down:
+                await self._reconnect()
+                # Retry sending after reconnect
+                await self._wss_session.send(command.model_dump_json())
+            else:
+                raise
 
     @staticmethod
     def _parse_message(message_raw: str) -> TechreadMessage:
