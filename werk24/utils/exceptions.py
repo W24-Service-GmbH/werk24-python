@@ -52,7 +52,7 @@ class RequestTooLargeException(TechreadException):
     cli_message_header: str = "Request Too Large"
     cli_message_body: str = (
         "The request size exceeds the maximum allowed size of 10MB.\n\n"
-        "For more information, visit:\nhttps://docs.werk24.io/limitations/drawing_file_size.html"
+        "For more information, visit:\nhttps://v2.docs.werk24.io"
     )
 
 
@@ -62,7 +62,7 @@ class UnsupportedMediaType(TechreadException):
     cli_message_header: str = "Unsupported Media Type"
     cli_message_body: str = (
         "The uploaded file format is not supported.\n\n"
-        "For a list of supported formats, visit:\nhttps://docs.werk24.io/limitations/drawing_file_format.html"
+        "For a list of supported formats, visit:\nhttps://v2.docs.werk24.io"
     )
 
 
@@ -131,3 +131,244 @@ class InvalidLicenseException(TechreadException):
         "The provided license is invalid or has expired.\n\n"
         "Please ensure that you provide a token AND a region."
     )
+
+
+class W24AuthenticationError(TechreadException):
+    """Exception raised when authentication fails (401 responses).
+
+    This exception is raised when the API returns a 401 status code,
+    indicating that the authentication credentials are invalid, expired,
+    or missing.
+
+    Attributes:
+        error_code: The specific error code from the API response
+        error_details: Additional details about the authentication failure
+        request_id: Unique identifier for the failed request
+    """
+
+    cli_message_header: str = "Authentication Failed"
+    cli_message_body: str = (
+        "Authentication with the Werk24 API failed.\n\n"
+        "Please verify that:\n"
+        "1. Your API token is valid and has not expired\n"
+        "2. Your token has the necessary permissions\n"
+        "3. You are using the correct region\n\n"
+        "For assistance, contact support@werk24.io"
+    )
+
+    def __init__(
+        self,
+        details: str = "",
+        error_code: str = "401",
+        error_details: dict = None,
+        request_id: str = None,
+    ):
+        """Initialize the authentication error with structured error information.
+
+        Args:
+            details: Human-readable error message
+            error_code: HTTP status code or application-specific error code
+            error_details: Additional context about the error
+            request_id: Unique identifier for the request
+        """
+        self.error_code = error_code
+        self.error_details = error_details or {}
+        self.request_id = request_id
+        super().__init__(details)
+
+
+class W24ValidationError(TechreadException):
+    """Exception raised when request validation fails (400 responses).
+
+    This exception is raised when the API returns a 400 status code,
+    indicating that the request contains invalid data, malformed input,
+    or violates validation rules.
+
+    Attributes:
+        error_code: The specific error code from the API response
+        error_details: Detailed validation errors (e.g., invalid fields, invalid ask types)
+        request_id: Unique identifier for the failed request
+    """
+
+    cli_message_header: str = "Validation Error"
+    cli_message_body: str = (
+        "The request failed validation.\n\n"
+        "Please check your request parameters and ensure:\n"
+        "1. All required fields are provided\n"
+        "2. Field values are in the correct format\n"
+        "3. Ask types are valid and supported\n"
+        "4. File format is supported (PDF, PNG, JPEG, TIFF)\n\n"
+        "For more information, visit: https://v2.docs.werk24.io"
+    )
+
+    def __init__(
+        self,
+        details: str = "",
+        error_code: str = "400",
+        error_details: dict = None,
+        request_id: str = None,
+    ):
+        """Initialize the validation error with structured error information.
+
+        Args:
+            details: Human-readable error message
+            error_code: HTTP status code or application-specific error code
+            error_details: Detailed validation errors (e.g., invalid_asks, valid_asks)
+            request_id: Unique identifier for the request
+        """
+        self.error_code = error_code
+        self.error_details = error_details or {}
+        self.request_id = request_id
+
+        # Enhance message with validation details if available
+        if error_details:
+            detail_lines = []
+            if "invalid_asks" in error_details:
+                detail_lines.append(
+                    f"Invalid ask types: {', '.join(error_details['invalid_asks'])}"
+                )
+            if "valid_asks" in error_details:
+                detail_lines.append(
+                    f"Valid ask types: {', '.join(error_details['valid_asks'][:5])}..."
+                    if len(error_details["valid_asks"]) > 5
+                    else f"Valid ask types: {', '.join(error_details['valid_asks'])}"
+                )
+            if "field" in error_details:
+                detail_lines.append(
+                    f"Field '{error_details['field']}': {error_details.get('error', 'invalid')}"
+                )
+            if detail_lines:
+                details = (
+                    f"{details}\n\n" + "\n".join(detail_lines)
+                    if details
+                    else "\n".join(detail_lines)
+                )
+
+        super().__init__(details)
+
+
+class W24RateLimitError(TechreadException):
+    """Exception raised when rate limit is exceeded (429 responses).
+
+    This exception is raised when the API returns a 429 status code,
+    indicating that the client has sent too many requests in a given
+    time period.
+
+    Attributes:
+        error_code: The specific error code from the API response
+        error_details: Rate limit information (e.g., retry_after, limit, current)
+        request_id: Unique identifier for the failed request
+        retry_after: Number of seconds to wait before retrying
+    """
+
+    cli_message_header: str = "Rate Limit Exceeded"
+    cli_message_body: str = (
+        "You have exceeded the API rate limit.\n\n"
+        "Please wait before sending additional requests.\n"
+        "Consider implementing exponential backoff in your application.\n\n"
+        "For information about rate limits, visit: https://v2.docs.werk24.io"
+    )
+
+    def __init__(
+        self,
+        details: str = "",
+        error_code: str = "429",
+        error_details: dict = None,
+        request_id: str = None,
+        retry_after: int = None,
+    ):
+        """Initialize the rate limit error with structured error information.
+
+        Args:
+            details: Human-readable error message
+            error_code: HTTP status code or application-specific error code
+            error_details: Rate limit details (retry_after, limit, current)
+            request_id: Unique identifier for the request
+            retry_after: Number of seconds to wait before retrying
+        """
+        self.error_code = error_code
+        self.error_details = error_details or {}
+        self.request_id = request_id
+        self.retry_after = (
+            retry_after or error_details.get("retry_after") if error_details else None
+        )
+
+        # Enhance message with retry information
+        if self.retry_after:
+            details = (
+                f"{details}\n\nPlease retry after {self.retry_after} seconds."
+                if details
+                else f"Please retry after {self.retry_after} seconds."
+            )
+
+        if error_details and "limit" in error_details:
+            limit_info = f"Rate limit: {error_details.get('current', '?')}/{error_details['limit']} requests"
+            details = f"{details}\n{limit_info}" if details else limit_info
+
+        super().__init__(details)
+
+
+class W24ServerError(TechreadException):
+    """Exception raised for server errors (500/503 responses).
+
+    This exception is raised when the API returns a 500 (Internal Server Error)
+    or 503 (Service Unavailable) status code, indicating a problem on the
+    server side.
+
+    Attributes:
+        error_code: The specific error code from the API response
+        error_details: Additional context about the server error
+        request_id: Unique identifier for the failed request
+        is_transient: Whether the error is likely temporary (503) or persistent (500)
+    """
+
+    cli_message_header: str = "Server Error"
+    cli_message_body: str = (
+        "The Werk24 API encountered an error while processing your request.\n\n"
+        "The service team has been notified and will investigate the issue.\n"
+        "Please try again later.\n\n"
+        "If the problem persists, contact support@werk24.io with your request ID."
+    )
+
+    def __init__(
+        self,
+        details: str = "",
+        error_code: str = "500",
+        error_details: dict = None,
+        request_id: str = None,
+        is_transient: bool = False,
+    ):
+        """Initialize the server error with structured error information.
+
+        Args:
+            details: Human-readable error message
+            error_code: HTTP status code (500 or 503)
+            error_details: Additional context about the error
+            request_id: Unique identifier for the request
+            is_transient: True for 503 (temporary), False for 500 (persistent)
+        """
+        self.error_code = error_code
+        self.error_details = error_details or {}
+        self.request_id = request_id
+        self.is_transient = is_transient or error_code == "503"
+
+        # Enhance message based on error type
+        if self.is_transient:
+            self.cli_message_header = "Service Temporarily Unavailable"
+            retry_msg = (
+                "The service is temporarily unavailable. Please retry your request."
+            )
+            if error_details and "retry_after" in error_details:
+                retry_msg += (
+                    f" Estimated wait time: {error_details['retry_after']} seconds."
+                )
+            details = f"{details}\n\n{retry_msg}" if details else retry_msg
+
+        if request_id:
+            details = (
+                f"{details}\n\nRequest ID: {request_id}"
+                if details
+                else f"Request ID: {request_id}"
+            )
+
+        super().__init__(details)
