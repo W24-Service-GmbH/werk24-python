@@ -26,9 +26,9 @@ class InvalidAsk(BaseModel):
 
 try:
     request = TechreadRequest(asks=[InvalidAsk()], max_pages=5)
-    print(f"✗ Invalid ask was accepted (shouldn't happen)")
+    print("✗ Invalid ask was accepted (shouldn't happen)")
 except ValidationError as e:
-    print(f"✓ Pydantic caught the invalid ask:")
+    print("✓ Pydantic caught the invalid ask:")
     print(f"  {e.errors()[0]['msg']}")
 
 print()
@@ -37,6 +37,6 @@ print()
 print("Test 3: Empty asks list")
 try:
     request = TechreadRequest(asks=[], max_pages=5)
-    print(f"✓ Empty asks list accepted (Pydantic doesn't validate list length)")
+    print("✓ Empty asks list accepted (Pydantic doesn't validate list length)")
 except ValidationError as e:
     print(f"✗ Validation error: {e}")

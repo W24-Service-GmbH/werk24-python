@@ -83,7 +83,6 @@ except Exception:
 # Import websockets exceptions - they moved in version 14.0
 try:
     from websockets.exceptions import (
-        ConnectionClosed,
         ConnectionClosedError,
         ConnectionClosedOK,
         InvalidStatus,
@@ -91,7 +90,6 @@ try:
 except ImportError:
     # websockets 14+ moved exceptions to the main module
     from websockets import (
-        ConnectionClosed,
         ConnectionClosedError,
         ConnectionClosedOK,
         InvalidStatus,

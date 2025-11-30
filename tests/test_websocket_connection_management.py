@@ -7,30 +7,11 @@ This module tests:
 - Configuration options
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from werk24.techread import Werk24Client
-from werk24.utils.exceptions import ServerException, UnauthorizedException
-
-# Import websockets exceptions - they moved in version 14.0
-try:
-    from websockets.exceptions import (
-        ConnectionClosed,
-        ConnectionClosedError,
-        ConnectionClosedOK,
-        InvalidStatus,
-    )
-except ImportError:
-    # websockets 14+ moved exceptions to the main module
-    from websockets import (
-        ConnectionClosed,
-        ConnectionClosedError,
-        ConnectionClosedOK,
-        InvalidStatus,
-    )
 
 
 @pytest.fixture
