@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import Any, List, Literal, Optional, Tuple, Union
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base_feature import BaseModel, W24BaseFeatureModel
 from .property.glass_homogeneity import W24PropertyGlassHomogeneityType
@@ -525,8 +525,7 @@ class W24MaterialCategory3(str, Enum):
 
 
 class W24MaterialConditionBase(W24TypedModel):
-    class Config:
-        discriminators: Tuple[str, ...] = ("condition_type",)
+    model_config = ConfigDict(discriminator="condition_type")
 
     condition_type: str
     blurb: str
