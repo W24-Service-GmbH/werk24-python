@@ -134,40 +134,6 @@ pip show werk24
 pip list | grep -E "(cryptography|pydantic|websockets)"
 ```
 
-### Migration Notes
-
-**Upgrading from werk24 < 2.4.0:**
-
-Previous versions of werk24 used restrictive upper bounds on dependencies (e.g., `cryptography<=47.0.0`). Starting with version 2.4.0, we've removed these restrictions to improve compatibility.
-
-**What this means for you:**
-
-- ✅ **More Flexibility**: You can now install werk24 alongside packages that require newer dependency versions
-- ✅ **Fewer Conflicts**: pip can resolve compatible versions across your entire dependency tree
-- ✅ **Security Updates**: You can receive security updates for dependencies without waiting for werk24 updates
-- ⚠️ **Minimum Versions Still Required**: You must still meet the minimum version requirements for security and functionality
-
-**If you experience issues after upgrading:**
-
-1. Create a fresh virtual environment
-2. Install the new version: `pip install werk24>=2.4.0`
-3. Test your integration
-4. Report any compatibility issues you encounter
-
-### For Developers
-
-If you're contributing to werk24 or need reproducible environments:
-
-- **Development**: Use `requirements.txt` for exact versions we've tested
-- **Testing**: Our CI pipeline tests against these pinned versions
-- **Updates**: We periodically update `requirements.txt` to test newer dependency versions
-
-```bash
-# Install exact development dependencies
-pip install -r requirements.txt
-pip install -r tests/requirements.txt
-```
-
 ## Quick Start
 
 Here's how you can use the Werk24 client to extract data from a technical drawing:
