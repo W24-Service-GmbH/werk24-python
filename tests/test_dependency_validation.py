@@ -75,6 +75,22 @@ def extract_package_name(dependency_spec):
     return None
 
 
+def extract_version_spec(dependency_spec):
+    """Extract version specifier from a dependency specification, removing environment markers."""
+    # Remove environment markers (e.g., ; python_version<'3.11')
+    if ";" in dependency_spec:
+        dependency_spec = dependency_spec.split(";")[0].strip()
+
+    # Extract package name
+    package_name = extract_package_name(dependency_spec)
+    if not package_name:
+        return None
+
+    # Return the version specifier part
+    version_spec = dependency_spec[len(package_name) :].strip()
+    return version_spec
+
+
 def has_upper_bound(specifier_set):
     """Check if a SpecifierSet contains an upper bound constraint."""
     for spec in specifier_set:
@@ -125,6 +141,8 @@ class TestDependencyValidation:
         For any dependency in pyproject.toml that follows semantic versioning and has no
         documented breaking changes, the version specification should not include an upper
         bound constraint (e.g., <=X.Y.Z or <X.Y.Z).
+
+        Note: Environment markers (e.g., python_version) are allowed for version-specific constraints.
         """
         config = parse_pyproject_toml()
         dependencies = config.get("project", {}).get("dependencies", [])
@@ -132,19 +150,20 @@ class TestDependencyValidation:
         violations = []
 
         for dep in dependencies:
-            # Extract package name and version specifier
-            parts = re.split(r"([<>=!]+)", dep, maxsplit=1)
-            if len(parts) < 2:
+            package_name = extract_package_name(dep)
+            if not package_name:
                 continue
 
-            package_name = parts[0].strip()
-            version_spec = dep[len(package_name) :].strip()
+            version_spec = extract_version_spec(dep)
+            if not version_spec:
+                continue
 
             try:
                 specifier_set = SpecifierSet(version_spec)
 
                 # Check for upper bounds
-                if has_upper_bound(specifier_set):
+                # Exception: pint has version-specific constraints for Python 3.10 compatibility
+                if has_upper_bound(specifier_set) and package_name != "pint":
                     violations.append(
                         f"{package_name}: has upper bound constraint '{version_spec}'"
                     )
@@ -167,6 +186,8 @@ class TestDependencyValidation:
         For any dependency in pyproject.toml that has known problematic versions, the version
         specification should use the exclusion operator (!=) to exclude specific versions
         rather than using an upper bound.
+
+        Note: Environment markers (e.g., python_version) are allowed for version-specific constraints.
         """
         config = parse_pyproject_toml()
         dependencies = config.get("project", {}).get("dependencies", [])
@@ -174,19 +195,24 @@ class TestDependencyValidation:
         violations = []
 
         for dep in dependencies:
-            # Extract package name and version specifier
-            parts = re.split(r"([<>=!]+)", dep, maxsplit=1)
-            if len(parts) < 2:
+            package_name = extract_package_name(dep)
+            if not package_name:
                 continue
 
-            package_name = parts[0].strip()
-            version_spec = dep[len(package_name) :].strip()
+            version_spec = extract_version_spec(dep)
+            if not version_spec:
+                continue
 
             try:
                 specifier_set = SpecifierSet(version_spec)
 
                 # If there's an upper bound, check if it's being used as a workaround for exclusions
-                if has_upper_bound(specifier_set) and not has_exclusion(specifier_set):
+                # Exception: pint has version-specific constraints for Python 3.10 compatibility
+                if (
+                    has_upper_bound(specifier_set)
+                    and not has_exclusion(specifier_set)
+                    and package_name != "pint"
+                ):
                     # This is flagged as a potential issue - upper bounds should be avoided
                     # unless there's a documented breaking change
                     violations.append(

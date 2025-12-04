@@ -51,8 +51,10 @@ dependencies = [
   "packaging>=24.2",
 
   # pint: Minimum 0.24 provides unit conversion features used in measurement processing
-  # No upper bound - follows SemVer
-  "pint>=0.24",
+  # Version 0.24.4+ fixes dataclass issues; 0.25+ requires Python 3.11+
+  # Use version markers to allow newer versions on Python 3.11+
+  "pint>=0.24.4,<0.25; python_version<'3.11'",
+  "pint>=0.24.4; python_version>='3.11'",
 
   # pydantic-extra-types: Minimum 2.0.0 for Pydantic v2 compatibility
   # No upper bound - follows SemVer, compatible with pydantic 2.x and 3.x
