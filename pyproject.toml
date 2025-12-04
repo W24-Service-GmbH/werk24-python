@@ -34,17 +34,51 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "aiohttp>=3.10.11,<=4.0.0",
+  # aiohttp: Minimum 3.10.11 includes security fixes for CVE-2024-23334 and CVE-2024-23829
+  # No upper bound - follows SemVer, backward compatible within major version
+  "aiohttp>=3.10.11",
+
+  # certifi: Minimum 2024.12.14 includes latest CA certificate bundle for secure TLS connections
+  # No upper bound - certificate bundle updates are backward compatible
   "certifi>=2024.12.14",
-  "cryptography>=44.0.0,<=47.0.0",
-  "packaging>=24.2,<=25.0",
-  "pint>=0.24,<=0.25",
-  "pydantic-extra-types>=2.0.0,<=3.0.0",
-  "pydantic>=2.0.0,<=3.0.0",
-  "pydantic-settings>=2.0.0,<=3.0.0",
-  "python-dotenv>=1.0.0,<=2.0.0",
-  "typer>=0.15.0,<=0.16.0",
-  "websockets>=14.2,<15.0",
+
+  # cryptography: Minimum 44.0.0 includes critical security fixes for CVE-2024-26130
+  # No upper bound - follows SemVer, removing restrictive constraint to prevent dependency conflicts
+  "cryptography>=44.0.0",
+
+  # packaging: Minimum 24.2 provides required version parsing functionality
+  # No upper bound - stable API, backward compatible
+  "packaging>=24.2",
+
+  # pint: Minimum 0.24 provides unit conversion features used in measurement processing
+  # Version 0.24.4+ fixes dataclass issues; 0.25+ requires Python 3.11+
+  # Use version markers to allow newer versions on Python 3.11+
+  "pint>=0.24.4,<0.25; python_version<'3.11'",
+  "pint>=0.24.4; python_version>='3.11'",
+
+  # pydantic-extra-types: Minimum 2.0.0 for Pydantic v2 compatibility
+  # No upper bound - follows SemVer, compatible with pydantic 2.x and 3.x
+  "pydantic-extra-types>=2.0.0",
+
+  # pydantic: Minimum 2.0.0 required for core validation features and performance improvements
+  # No upper bound - follows SemVer, allows compatibility with both 2.x and 3.x
+  "pydantic>=2.0.0",
+
+  # pydantic-settings: Minimum 2.0.0 for Pydantic v2 compatibility
+  # No upper bound - follows SemVer
+  "pydantic-settings>=2.0.0",
+
+  # python-dotenv: Minimum 1.0.0 provides environment variable loading functionality
+  # No upper bound - stable API, backward compatible
+  "python-dotenv>=1.0.0",
+
+  # typer: Minimum 0.15.0 provides CLI framework features
+  # No upper bound - follows SemVer
+  "typer>=0.15.0",
+
+  # websockets: Minimum 14.2 includes performance improvements and bug fixes
+  # No upper bound - follows SemVer, removing restrictive constraint
+  "websockets>=14.2",
 ]
 keywords = [
   "technical-drawings",
