@@ -1,11 +1,17 @@
-aiohttp>=3.12.15
-certifi>=2025.8.3
-cryptography>=45.0.6
-packaging>=25.0
-pint>=0.24.4
-pydantic-extra-types>=2.10.5
-pydantic>=2.11.5
-python-dotenv>=1.1.0
-pydantic-settings>=2.9.1
-typer>=0.16.0
-websockets>=15.0.1
+# This file pins exact versions of all runtime dependencies for reproducible development and testing environments.
+# These are the versions that have been tested and verified to work with werk24.
+# When installing werk24 as a library, pip will use the flexible constraints from pyproject.toml.
+# This file is used in CI/CD pipelines and local development to ensure consistent test environments.
+# Update these versions periodically after running the full test suite to verify compatibility.
+
+aiohttp==3.13.2
+certifi==2025.11.12
+cryptography==46.0.0
+packaging==24.2
+pint==0.24.4
+pydantic-extra-types==2.9.0
+pydantic==2.10.6
+pydantic-settings==2.7.1
+python-dotenv==1.0.1
+typer==0.15.1
+websockets==14.2

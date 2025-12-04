@@ -21,6 +21,7 @@ Unlock manufacturing intelligence from technical drawings with AI.
 - [Features](#features)
 - [Applications](#applications)
 - [Installation](#installation)
+- [Dependency Management](#dependency-management)
 - [Quick Start](#quick-start)
 - [Documentation](#documentation)
 - [Community & Support](#community--support)
@@ -74,6 +75,63 @@ Pip installation
 ```bash
 pip install werk24    # install the library
 werk24 init           # obtain a trial license
+```
+
+## Dependency Management
+
+### Overview
+
+The werk24 library uses a flexible dependency management strategy designed to minimize conflicts with other packages in your environment. We specify **minimum versions** for dependencies based on required features and security fixes, but avoid restrictive upper bounds that can cause installation conflicts.
+
+### Why Minimum Versions?
+
+Each minimum version requirement exists for a specific reason:
+
+- **Security Fixes**: Dependencies like `cryptography>=44.0.0` require minimum versions that include critical security patches
+- **Required Features**: Some dependencies introduced features we rely on in specific versions
+- **API Stability**: Minimum versions ensure the APIs we use are available and stable
+
+### Philosophy
+
+We follow these principles:
+
+1. **Trust Semantic Versioning**: For dependencies that follow [SemVer](https://semver.org/), we trust that minor and patch updates won't break compatibility
+2. **No Restrictive Upper Bounds**: We avoid upper bounds (like `<=X.Y.Z`) on stable dependencies to prevent blocking your other packages
+3. **Surgical Exclusions**: If a specific version has issues, we exclude only that version using `!=X.Y.Z` rather than blocking all future versions
+4. **Tested Configurations**: We maintain `requirements.txt` with exact versions we've tested, but your environment can use compatible newer versions
+
+### Troubleshooting Dependency Conflicts
+
+If you encounter dependency conflicts during installation:
+
+1. **Check Your Environment**: Use `pip list` to see what's already installed
+2. **Update pip**: Ensure you're using a recent version: `pip install --upgrade pip`
+3. **Use Virtual Environments**: Always install in a clean virtual environment to avoid conflicts
+4. **Review Conflict Messages**: pip will show which packages have incompatible requirements
+5. **Report Issues**: If werk24's requirements conflict with popular packages, please [open an issue](https://github.com/W24-Service-GmbH/werk24-python/issues)
+
+### Common Scenarios
+
+**Installing alongside other packages:**
+
+```bash
+# werk24 works well with other packages
+pip install werk24 requests pandas numpy
+```
+
+**Upgrading from older versions:**
+
+```bash
+# Simply upgrade to the latest version
+pip install --upgrade werk24
+```
+
+**Checking installed versions:**
+
+```bash
+# See what versions are actually installed
+pip show werk24
+pip list | grep -E "(cryptography|pydantic|websockets)"
 ```
 
 ## Quick Start
