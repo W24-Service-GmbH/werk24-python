@@ -16,4 +16,5 @@ werk24.egg-info
 .markdownlint.yaml
 .coverage
 coverage.xml
+.kiro
 
