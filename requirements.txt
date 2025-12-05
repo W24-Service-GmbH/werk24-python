@@ -9,7 +9,7 @@ certifi==2025.11.12
 cryptography==46.0.0
 packaging==24.2
 pint==0.24.4
-pydantic-extra-types==2.9.0
+pydantic-extra-types==2.10.6
 pydantic==2.10.6
 pydantic-settings==2.7.1
 python-dotenv==1.0.1
