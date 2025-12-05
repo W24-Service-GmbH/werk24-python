@@ -12,6 +12,6 @@ pint==0.24.4
 pydantic-extra-types==2.9.0
 pydantic==2.10.6
 pydantic-settings==2.7.1
-python-dotenv==1.0.1
+python-dotenv==1.2.1
 typer==0.15.1
 websockets==14.2
