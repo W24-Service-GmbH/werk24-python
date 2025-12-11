@@ -72,7 +72,7 @@ class W24PropertyAbbeValueFreeText(W24PropertyAbbeValue):
     """Abbe Value Free Text"""
 
     free_text: str
-    variation_type: Literal["FREETEXT"] = "FREETEXT"
+    property_subtype: Literal["FREETEXT"] = "FREETEXT"
 
 
 W24PropertyAbbeValueType = Union[
