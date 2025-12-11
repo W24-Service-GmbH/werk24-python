@@ -111,7 +111,7 @@ class W24PropertyRefractiveIndexFreeText(W24PropertyRefractiveIndex):
     """Refractive Index Free Text"""
 
     free_text: str
-    variation_type: Literal["FREETEXT"] = "FREETEXT"
+    property_subtype: Literal["FREETEXT"] = "FREETEXT"
 
 
 W24PropertyRefractiveIndexType = Union[
