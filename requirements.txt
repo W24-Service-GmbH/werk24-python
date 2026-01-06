@@ -4,7 +4,7 @@
 # This file is used in CI/CD pipelines and local development to ensure consistent test environments.
 # Update these versions periodically after running the full test suite to verify compatibility.
 
-aiohttp==3.13.2
+aiohttp==3.13.3
 certifi==2025.11.12
 cryptography==46.0.0
 packaging==24.2
