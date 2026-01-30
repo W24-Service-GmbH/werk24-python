@@ -1431,3 +1431,27 @@ class CertificationType(str, Enum):
     NIST_800_171 = "NIST_800_171"
     REACH = "REACH"
     ROHS = "ROHS"
+
+
+class Priority(str, Enum):
+    """
+    Valid priority levels for drawing requests.
+
+    Priority determines the order in which drawing requests are processed.
+    Lower numbers indicate higher priority (faster processing).
+
+    Attributes:
+    ----------
+    - PRIO1: Highest priority, fastest processing
+    - PRIO2: Medium priority
+    - PRIO3: Lowest priority, suitable for batch processing
+    """
+
+    PRIO1 = "PRIO1"
+    """Highest priority - fastest processing."""
+
+    PRIO2 = "PRIO2"
+    """Medium priority."""
+
+    PRIO3 = "PRIO3"
+    """Lowest priority - suitable for batch processing."""

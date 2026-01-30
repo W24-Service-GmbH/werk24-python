@@ -372,3 +372,86 @@ class W24ServerError(TechreadException):
             )
 
         super().__init__(details)
+
+
+class PriorityTooHighError(TechreadException):
+    """Exception raised when requested priority exceeds account tier (403).
+
+    This exception is raised when a user requests a priority level that is
+    higher than their account tier allows. For example, if an account has
+    PRIO2 tier and requests PRIO1 processing.
+
+    Attributes:
+        account_tier: The maximum priority level allowed by the account
+        requested_priority: The priority level that was requested
+    """
+
+    cli_message_header: str = "Priority Too High"
+    cli_message_body: str = (
+        "The requested priority exceeds your account tier.\n\n"
+        "You can only request priorities at or below your account tier level.\n"
+        "For example, if your account tier is PRIO2, you can request PRIO2 or PRIO3."
+    )
+
+    def __init__(
+        self,
+        details: str = "",
+        account_tier: str = None,
+        requested_priority: str = None,
+    ):
+        """Initialize the priority too high error with structured error information.
+
+        Args:
+            details: Human-readable error message
+            account_tier: The maximum priority level allowed by the account
+            requested_priority: The priority level that was requested
+        """
+        self.account_tier = account_tier
+        self.requested_priority = requested_priority
+
+        # Enhance message with priority details if available
+        if account_tier and requested_priority:
+            priority_info = (
+                f"Account tier: {account_tier}\n"
+                f"Requested priority: {requested_priority}"
+            )
+            details = f"{details}\n\n{priority_info}" if details else priority_info
+
+        super().__init__(details)
+
+
+class InvalidPriorityError(TechreadException):
+    """Exception raised when priority value is invalid (400).
+
+    This exception is raised when a user provides a priority value that
+    is not one of the valid options (PRIO1, PRIO2, PRIO3).
+
+    Attributes:
+        invalid_value: The invalid priority value that was provided
+    """
+
+    cli_message_header: str = "Invalid Priority"
+    cli_message_body: str = (
+        "The provided priority value is invalid.\n\n"
+        "Valid priority values are: PRIO1, PRIO2, PRIO3"
+    )
+
+    def __init__(
+        self,
+        details: str = "",
+        invalid_value: str = None,
+    ):
+        """Initialize the invalid priority error with structured error information.
+
+        Args:
+            details: Human-readable error message
+            invalid_value: The invalid priority value that was provided
+        """
+        self.invalid_value = invalid_value
+
+        # Enhance message with the invalid value if available
+        if invalid_value:
+            value_info = f"Invalid value provided: '{invalid_value}'"
+            details = f"{details}\n\n{value_info}" if details else value_info
+
+        super().__init__(details)
