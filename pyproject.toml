@@ -116,3 +116,9 @@ werk24 = "werk24.cli.werk24:app"
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+markers = [
+  "integration: mark test as an integration test that interacts with real API",
+  "requires_api: mark test as requiring API credentials (W24TECHREAD_AUTH_TOKEN)",
+  "slow: mark test as slow (execution time > 10 seconds)",
+  "concurrent: mark test as testing concurrent behavior",
+]
