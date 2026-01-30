@@ -5,6 +5,8 @@ from .exceptions import BadRequestException as BadRequestException
 from .exceptions import EncryptionException as EncryptionException
 from .exceptions import InsufficientCreditsException as InsufficientCreditsException
 from .exceptions import InvalidLicenseException as InvalidLicenseException
+from .exceptions import InvalidPriorityError as InvalidPriorityError
+from .exceptions import PriorityTooHighError as PriorityTooHighError
 from .exceptions import RequestTooLargeException as RequestTooLargeException
 from .exceptions import ResourceNotFoundException as ResourceNotFoundException
 from .exceptions import ServerException as ServerException
