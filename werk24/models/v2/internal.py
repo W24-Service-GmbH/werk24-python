@@ -325,6 +325,11 @@ class TechreadWithCallbackPayload(BaseModel):
         description="Optional public key for encrypting the callback payload. Feature availability depends on the service level.",
     )
 
+    priority: Optional[str] = Field(
+        default=None,
+        description="Optional priority level for the request. Valid values are PRIO1, PRIO2, PRIO3. If not specified, the account's default tier is used.",
+    )
+
     @field_validator("callback_headers", mode="before")
     @classmethod
     def validate_callback_headers(
