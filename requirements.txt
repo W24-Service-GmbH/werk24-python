@@ -4,14 +4,15 @@
 # This file is used in CI/CD pipelines and local development to ensure consistent test environments.
 # Update these versions periodically after running the full test suite to verify compatibility.
 
-aiohttp==3.13.2
-certifi==2025.11.12
-cryptography==46.0.0
-packaging==24.2
-pint==0.24.4
-pydantic-extra-types==2.9.0
-pydantic==2.10.6
-pydantic-settings==2.7.1
-python-dotenv==1.0.1
-typer==0.15.1
-websockets==14.2
+aiohttp==3.13.3
+certifi==2026.1.4
+cryptography==46.0.4
+packaging==26.0
+pint==0.25.2
+pydantic-extra-types==2.11.0
+pydantic==2.12.5
+pydantic-settings==2.12.0
+python-dotenv==1.2.1
+typer==0.21.1
+websockets==16.0
+
