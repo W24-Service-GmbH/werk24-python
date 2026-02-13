@@ -40,6 +40,8 @@ from werk24.utils.exceptions import (
     BadRequestException,
     EncryptionException,
     InsufficientCreditsException,
+    InvalidPriorityError,
+    PriorityTooHighError,
     RequestTooLargeException,
     ResourceNotFoundException,
     ServerException,
@@ -49,6 +51,7 @@ from werk24.utils.exceptions import (
 )
 from werk24.utils.license import find_license
 from werk24.utils.logger import get_logger
+from werk24.utils.priority import validate_priority
 
 HTTP_EXCEPTION_CLASSES = {
     range(200, 300): None,
@@ -353,6 +356,7 @@ class Werk24Client:
         hooks: list[Hook],
         max_pages: int = settings.max_pages,
         encryption_keys: Optional[EncryptionKeys] = None,
+        priority: Optional[str] = None,
     ):
         """
         Read the drawing and call hooks for each message.
@@ -366,10 +370,14 @@ class Werk24Client:
         - hooks (list[Hook]): List of hooks to call for each message.
         - max_pages (int, optional): Maximum number of pages to process.
         - encryption_keys (Optional[EncryptionKeys], optional): Optional encryption keys.
+        - priority (Optional[str], optional): Optional priority level for the request.
+            Valid values are "PRIO1", "PRIO2", "PRIO3" (case-insensitive).
+            If not specified, the account's default tier is used.
 
         Raises:
         ------
         - BadRequestException: If ask types are invalid.
+        - InvalidPriorityError: If the priority value is invalid.
         """
         asks_list = [cur_ask.ask for cur_ask in hooks if cur_ask.ask is not None]
 
@@ -381,6 +389,7 @@ class Werk24Client:
             asks_list,
             max_pages=max_pages,
             encryption_keys=encryption_keys,
+            priority=priority,
         ):
             await self.call_hooks_for_message(message, hooks)
 
@@ -390,6 +399,7 @@ class Werk24Client:
         asks: list[AskV2],
         max_pages: int = settings.max_pages,
         encryption_keys: Optional[EncryptionKeys] = None,
+        priority: Optional[str] = None,
     ) -> AsyncGenerator[TechreadMessage, None, None]:
         """
         Read the drawing and return the extracted text.
@@ -397,10 +407,11 @@ class Werk24Client:
         This function performs the following steps:
         1. Validates the input drawing.
         2. Validates the ask types.
-        3. Sends an initiation request with the specified questions (`asks`).
-        4. Uploads the drawing to the server.
-        5. Signals the server to start reading the uploaded drawing.
-        6. Yields messages as the process progresses.
+        3. Validates the priority (if provided).
+        4. Sends an initiation request with the specified questions (`asks`).
+        5. Uploads the drawing to the server.
+        6. Signals the server to start reading the uploaded drawing.
+        7. Yields messages as the process progresses.
 
         Args:
         ----
@@ -410,6 +421,9 @@ class Werk24Client:
             Defaults to `settings.max_pages`.
         - encryption_keys (Optional[EncryptionKeys], optional): Optional encryption
             keys for secure communication.
+        - priority (Optional[str], optional): Optional priority level for the request.
+            Valid values are "PRIO1", "PRIO2", "PRIO3" (case-insensitive).
+            If not specified, the account's default tier is used.
 
         Yields:
         ------
@@ -419,6 +433,7 @@ class Werk24Client:
         ------
         - BadRequestException: If the request is malformed or ask types are invalid.
         - RequestTooLargeException: If the drawing exceeds the maximum size limit.
+        - InvalidPriorityError: If the priority value is invalid.
         - Any other exceptions encountered will be logged and re-raised.
         """
         # Run the preflight checks
@@ -426,6 +441,9 @@ class Werk24Client:
 
         # Validate ask types before sending request
         self.validate_asks(asks)
+
+        # Validate priority before sending request
+        validated_priority = validate_priority(priority)
 
         # Initiate the request
         init_message, init_response = await self.init_request(asks, max_pages)
@@ -464,7 +482,23 @@ class Werk24Client:
 
         # Notify the server to start reading the drawing
         try:
-            async for message in self._send_command_read(encryption_keys):
+            # Unpack encryption keys if provided
+            client_public_key_pem = None
+            client_private_key_pem = None
+            client_private_key_passphrase = None
+            if encryption_keys:
+                client_public_key_pem = encryption_keys.client_public_key_pem
+                client_private_key_pem = encryption_keys.client_private_key_pem
+                client_private_key_passphrase = (
+                    encryption_keys.client_private_key_passphrase
+                )
+
+            async for message in self._send_command_read(
+                client_public_key_pem=client_public_key_pem,
+                client_private_key_pem=client_private_key_pem,
+                client_private_key_passphrase=client_private_key_passphrase,
+                priority=validated_priority,
+            ):
                 yield message
         except Exception as exc:
             logger.error("An error occurred while sending the read command: %s", exc)
@@ -681,6 +715,10 @@ class Werk24Client:
         ------
         - UnauthorizedException: Raised when the requested action is forbidden
           or the user lacks the necessary privileges.
+        - PriorityTooHighError: Raised when the requested priority exceeds the
+          account tier (403 PRIORITY_TOO_HIGH).
+        - InvalidPriorityError: Raised when the priority value is invalid
+          (400 INVALID_PRIORITY).
         - ServerException: Raised when the server's response is invalid or unexpected.
 
         Returns:
@@ -705,8 +743,27 @@ class Werk24Client:
                     f"Invalid JSON received: {message_raw}"
                 ) from exception
 
-            # Extract the error message from the parsed response
+            # Extract the error type and message from the parsed response
+            error_type = response.get("error")
             error_message = response.get("message", "Unknown error")
+            details = response.get("details", {})
+
+            # Handle PRIORITY_TOO_HIGH error (403)
+            if error_type == "PRIORITY_TOO_HIGH":
+                logger.warning("Priority too high error received")
+                raise PriorityTooHighError(
+                    details=error_message,
+                    account_tier=details.get("account_tier"),
+                    requested_priority=details.get("requested_priority"),
+                ) from exception
+
+            # Handle INVALID_PRIORITY error (400)
+            if error_type == "INVALID_PRIORITY":
+                logger.warning("Invalid priority error received")
+                raise InvalidPriorityError(
+                    details=error_message,
+                    invalid_value=details.get("priority"),
+                ) from exception
 
             # Raise specific exceptions for known error messages
             if error_message == "Forbidden":
@@ -929,6 +986,7 @@ class Werk24Client:
         drawing_filename: Optional[str] = None,
         callback_headers: Optional[Dict[str, str]] = None,
         public_key: Optional[bytes] = None,
+        priority: Optional[str] = None,
     ) -> UUID4:
         """
         Read the drawing and register a callback URL.
@@ -948,6 +1006,9 @@ class Werk24Client:
           the callback request. Defaults to None.
         - public_key (Optional[bytes], optional): Optional public key for encrypting
           the callback request.
+        - priority (Optional[str], optional): Optional priority level for the request.
+            Valid values are "PRIO1", "PRIO2", "PRIO3" (case-insensitive).
+            If not specified, the account's default tier is used.
 
         Raises:
         ------
@@ -955,6 +1016,7 @@ class Werk24Client:
         - ServerException: Raised when the server returns an error message.
         - InsufficientCreditsException: Raised when the user lacks sufficient credits
           for the request.
+        - InvalidPriorityError: Raised if the priority value is invalid.
         - ValueError: Raised if the drawing or callback_url is invalid.
 
         Returns:
@@ -965,6 +1027,9 @@ class Werk24Client:
 
         # Validate ask types before sending request
         self.validate_asks(asks)
+
+        # Validate priority before sending request
+        validated_priority = validate_priority(priority)
 
         # send the request to the API
 
@@ -981,6 +1046,7 @@ class Werk24Client:
             max_pages=max_pages,
             client_version=__version__,
             public_key=public_key,
+            priority=validated_priority,
         )
 
         # create the form data
@@ -1137,6 +1203,7 @@ class Werk24Client:
         client_private_key_pem: Optional[bytes] = None,
         client_private_key_passphrase: Optional[bytes] = None,
         max_messages_per_session: int = 100,
+        priority: Optional[str] = None,
     ) -> AsyncGenerator[TechreadMessage, None]:
         """
         Send a techread request to the backend and yield resulting messages.
@@ -1145,6 +1212,8 @@ class Werk24Client:
             client_public_key_pem (Optional[bytes]): PEM-encoded public key, if applicable.
             client_private_key_pem (Optional[bytes]): PEM-encoded private key, if applicable.
             client_private_key_passphrase (Optional[bytes]): Passphrase for the private key, if applicable.
+            max_messages_per_session (int): Maximum number of messages to receive per session.
+            priority (Optional[str]): Optional priority level for the request (PRIO1, PRIO2, PRIO3).
 
         Yields:
             W24TechreadMessage: The received messages, processed as needed.
@@ -1156,6 +1225,11 @@ class Werk24Client:
         if client_public_key_pem:
             message["public_key"] = client_public_key_pem.decode("utf-8")
             logger.debug("Public key added to message")
+
+        # Include priority in message if specified (ensure uppercase)
+        if priority:
+            message["priority"] = priority.upper()
+            logger.debug("Priority added to message: %s", priority.upper())
 
         # Submit the request to the API
         logger.debug("Submitting techread request with payload: %s", message)
