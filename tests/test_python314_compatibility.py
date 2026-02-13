@@ -9,10 +9,15 @@ deferred annotation evaluation (PEP 649). The tests verify that:
 3. Type annotations work correctly with deferred evaluation
 """
 
-import tomllib
+import sys
 from decimal import Decimal
 from pathlib import Path
 from typing import Optional
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 import pytest
 from hypothesis import given, settings
