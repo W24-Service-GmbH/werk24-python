@@ -19,6 +19,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
   "Topic :: Software Development",
@@ -56,17 +57,17 @@ dependencies = [
   "pint>=0.24.4,<0.25; python_version<'3.11'",
   "pint>=0.24.4; python_version>='3.11'",
 
-  # pydantic-extra-types: Minimum 2.0.0 for Pydantic v2 compatibility
+  # pydantic-extra-types: Minimum 2.9.0 for Python 3.14 compatibility (PEP 649 deferred annotations)
   # No upper bound - follows SemVer, compatible with pydantic 2.x and 3.x
-  "pydantic-extra-types>=2.0.0",
+  "pydantic-extra-types>=2.9.0",
 
-  # pydantic: Minimum 2.0.0 required for core validation features and performance improvements
+  # pydantic: Minimum 2.12.0 required for Python 3.14 compatibility (PEP 649 deferred annotations)
   # No upper bound - follows SemVer, allows compatibility with both 2.x and 3.x
-  "pydantic>=2.0.0",
+  "pydantic>=2.12.0",
 
-  # pydantic-settings: Minimum 2.0.0 for Pydantic v2 compatibility
+  # pydantic-settings: Minimum 2.7.0 for Python 3.14 compatibility (Pydantic 2.12+ support)
   # No upper bound - follows SemVer
-  "pydantic-settings>=2.0.0",
+  "pydantic-settings>=2.7.0",
 
   # python-dotenv: Minimum 1.0.0 provides environment variable loading functionality
   # No upper bound - stable API, backward compatible
@@ -116,3 +117,9 @@ werk24 = "werk24.cli.werk24:app"
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+markers = [
+  "integration: mark test as an integration test that interacts with real API",
+  "requires_api: mark test as requiring API credentials (W24TECHREAD_AUTH_TOKEN)",
+  "slow: mark test as slow (execution time > 10 seconds)",
+  "concurrent: mark test as testing concurrent behavior",
+]
