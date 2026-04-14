@@ -35,17 +35,19 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  # aiohttp: Minimum 3.10.11 includes security fixes for CVE-2024-23334 and CVE-2024-23829
+  # aiohttp: Minimum 3.13.3 includes security fixes for CVE-2025-69223 (zip bomb DoS),
+  # CVE-2025-69227 (infinite loop DoS), CVE-2025-69228 (memory exhaustion), CVE-2025-69229 (blocking CPU DoS)
   # No upper bound - follows SemVer, backward compatible within major version
-  "aiohttp>=3.10.11",
+  "aiohttp>=3.13.3",
 
   # certifi: Minimum 2024.12.14 includes latest CA certificate bundle for secure TLS connections
   # No upper bound - certificate bundle updates are backward compatible
   "certifi>=2024.12.14",
 
-  # cryptography: Minimum 44.0.0 includes critical security fixes for CVE-2024-26130
+  # cryptography: Minimum 46.0.5 includes fix for CVE-2026-26007 (elliptic curve subgroup validation)
+  # and earlier fixes for CVE-2024-26130 (NULL pointer dereference with pkcs12)
   # No upper bound - follows SemVer, removing restrictive constraint to prevent dependency conflicts
-  "cryptography>=44.0.0",
+  "cryptography>=46.0.5",
 
   # packaging: Minimum 24.2 provides required version parsing functionality
   # No upper bound - stable API, backward compatible
