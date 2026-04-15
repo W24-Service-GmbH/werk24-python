@@ -7,7 +7,7 @@
 aiohttp==3.13.4
 certifi==2026.2.25
 cryptography==46.0.6
-packaging==26.0
+packaging==26.1
 pint==0.25.3; python_version > "3.10"
 pint==0.24.4; python_version <= "3.10"
 pydantic-extra-types==2.11.1
