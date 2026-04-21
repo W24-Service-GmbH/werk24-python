@@ -11,7 +11,7 @@ packaging==26.0
 pint==0.25.3; python_version > "3.10"
 pint==0.24.4; python_version <= "3.10"
 pydantic-extra-types==2.11.1
-pydantic==2.12.5
+pydantic==2.13.3
 pydantic-settings==2.13.1
 python-dotenv==1.2.2
 typer==0.24.1
