@@ -44,10 +44,10 @@ dependencies = [
   # No upper bound - certificate bundle updates are backward compatible
   "certifi>=2024.12.14",
 
-  # cryptography: Minimum 46.0.5 includes fix for CVE-2026-26007 (elliptic curve subgroup validation)
-  # and earlier fixes for CVE-2024-26130 (NULL pointer dereference with pkcs12)
+  # cryptography: Minimum 46.0.7 includes fix for buffer overflow with non-contiguous buffers (GHSA),
+  # plus CVE-2026-26007 (elliptic curve subgroup validation) and CVE-2024-26130 (NULL pointer dereference with pkcs12)
   # No upper bound - follows SemVer, removing restrictive constraint to prevent dependency conflicts
-  "cryptography>=46.0.5",
+  "cryptography>=46.0.7",
 
   # packaging: Minimum 24.2 provides required version parsing functionality
   # No upper bound - stable API, backward compatible
