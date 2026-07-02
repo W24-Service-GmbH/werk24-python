@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     Attributes:
     ----------
     - trial_license_url (HttpUrl): URL to access the trial license.
-      Default is "https://werk24.io/trial-license".
+      Default is "https://studio.werk24.io/console/signup".
     - wss_server (AnyUrl): WebSocket server URL for connecting to the Werk24 API.
       Default is "wss://ws-api.w24.co/v2".
     - wss_close_timeout (int): Timeout (in seconds) for WebSocket connections to
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     """
 
-    trial_license_url: HttpUrl = "https://werk24.io/trial-license"
+    trial_license_url: HttpUrl = "https://studio.werk24.io/console/signup"
     """URL for obtaining a trial license."""
 
     http_server: AnyUrl = "https://api.w24.co"
