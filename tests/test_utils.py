@@ -20,6 +20,7 @@ VALID_LICENSE_TEXT = (
     "W24TECHREAD_AUTH_TOKEN=valid_token\nW24TECHREAD_AUTH_REGION=valid_region\n"
 )
 INVALID_LICENSE_TEXT = "INVALID_KEY=missing_token\n"
+BARE_TOKEN_TEXT = "valid_token\n"
 
 
 @pytest.fixture
@@ -53,6 +54,26 @@ def test_parse_license_text(valid_license):
     """Test parsing valid license text."""
     license = parse_license_text(VALID_LICENSE_TEXT)
     assert license == valid_license  # nosec
+
+
+def test_parse_license_text_bare_token():
+    """Test parsing a bare token (the format issued during registration)."""
+    license = parse_license_text(BARE_TOKEN_TEXT)
+    assert license.token == "valid_token"  # nosec
+    assert license.region is None  # nosec
+
+
+def test_parse_license_text_bare_token_with_whitespace():
+    """Test parsing a bare token that has surrounding whitespace/blank lines."""
+    license = parse_license_text("\n  valid_token  \n\n")
+    assert license.token == "valid_token"  # nosec
+    assert license.region is None  # nosec
+
+
+def test_parse_license_text_empty():
+    """Test parsing empty text raises an exception."""
+    with pytest.raises(InvalidLicenseException):
+        parse_license_text("   \n")
 
 
 def test_parse_license_text_invalid():
