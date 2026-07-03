@@ -8,6 +8,8 @@ from ..value import W24PhysicalQuantity, W24Value
 
 
 class W24PropertyHardnessRockwellScale(str, Enum):
+    """List of available Rockwell hardness scales."""
+
     A = "A"
     B = "BW"
     C = "C"
@@ -50,26 +52,6 @@ class W24PropertyHardnessRockwell(W24PropertyHardness):
     hardness_number: W24Value
     hardness_scale: W24PropertyHardnessRockwellScale
     use_sm_indenter_and_holder: bool = False
-
-
-class W24PropertyHardnessRockwellScale(str, Enum):
-    """List of available Rockwell hardness scales."""
-
-    A = "A"
-    B = "BW"
-    C = "C"
-    D = "D"
-    E = "EW"
-    F = "FW"
-    G = "GW"
-    H = "HW"
-    K = "KW"
-    _15N = "15N"
-    _30N = "30N"
-    _45N = "45N"
-    _15T = "15TW"
-    _30T = "30TW"
-    _45T = "45TW"
 
 
 class W24PropertyHardnessLeebScale(str, Enum):
