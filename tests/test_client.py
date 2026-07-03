@@ -93,21 +93,32 @@ async def test_read_drawing_with_callback(
 @pytest.mark.asyncio
 async def test_invalid_token():
     """
-    Test that an empty token raises an UnauthorizedException.
+    Test that a bogus token raises an UnauthorizedException.
     """
     with pytest.raises(UnauthorizedException):
-        async with Werk24Client(token="", region="eu-central-1"):
+        async with Werk24Client(token="not-a-valid-token", region="eu-central-1"):
             ...
 
 
 @pytest.mark.asyncio
-async def test_invalid_region():
+async def test_empty_token():
     """
-    Test that an empty region raises an InvalidLicenseException.
+    Test that an empty token raises an InvalidLicenseException.
     """
     with pytest.raises(InvalidLicenseException):
         async with Werk24Client(token="", region=None):
             ...
+
+
+@pytest.mark.asyncio
+async def test_token_only_license():
+    """
+    Test that a client can be created with a token and no region, as issued
+    during registration.
+    """
+    client = Werk24Client(token="some-token")
+    assert client.license.token == "some-token"  # nosec
+    assert client.license.region is None  # nosec
 
 
 def test_run_preflight_checks_invalid_type():

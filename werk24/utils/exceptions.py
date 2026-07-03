@@ -129,7 +129,7 @@ class InvalidLicenseException(TechreadException):
     cli_message_header: str = "Invalid License"
     cli_message_body: str = (
         "The provided license is invalid or has expired.\n\n"
-        "Please ensure that you provide a token AND a region."
+        "Please ensure that you provide a valid token."
     )
 
 
