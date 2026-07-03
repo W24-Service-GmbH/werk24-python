@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     Attributes:
     ----------
-    - payg_license_url (HttpUrl): URL to obtain a pay-as-you-go license.
+    - signup_url (HttpUrl): URL to sign up and obtain a license token.
       Default is "https://werk24.io/trial-license".
     - wss_server (AnyUrl): WebSocket server URL for connecting to the Werk24 API.
       Default is "wss://ws-api.w24.co/v2".
@@ -33,8 +33,8 @@ class Settings(BaseSettings):
 
     """
 
-    payg_license_url: HttpUrl = "https://werk24.io/trial-license"
-    """URL for obtaining a pay-as-you-go license."""
+    signup_url: HttpUrl = "https://werk24.io/trial-license"
+    """URL for signing up and obtaining a license token."""
 
     http_server: AnyUrl = "https://api.w24.co"
     wss_server: AnyUrl = "wss://ws-api.w24.co/v2"
