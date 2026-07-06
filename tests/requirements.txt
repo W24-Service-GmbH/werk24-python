@@ -2,5 +2,5 @@
 pytest==9.1.1
 pytest-asyncio==1.4.0
 PyYAML>=6.0
-hypothesis>=6.100.0
+hypothesis>=6.156.1
 tomli>=2.0.0; python_version < "3.11"
