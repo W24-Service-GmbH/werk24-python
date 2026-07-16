@@ -121,6 +121,11 @@ class W24TechreadExceptionType(str, Enum):
     """ The paper size is larger that the allowed paper size
     """
 
+    DRAWING_PAGE_COUNT_TOO_LARGE = "DRAWING_PAGE_COUNT_TOO_LARGE"
+    """ The document has more pages than can be processed for an output
+    that must cover the whole document (e.g. redaction).
+    """
+
     DRAWING_MEASURE_SYSTEM_INCOMPLETE = "DRAWING_MEASURE_SYSTEM_INCOMPLETE"
     """ The file you submitted contains too few measures to be
     manufacturable
