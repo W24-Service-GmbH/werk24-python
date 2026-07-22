@@ -111,8 +111,17 @@ class Werk24Client:
         ping_timeout: float = 10.0,
         max_reconnect_attempts: int = 3,
         reconnect_delay: float = 1.0,
+        bearer_token: Optional[str] = None,
     ):
-        self.license = find_license(token, region)
+        # Authentication:
+        # - Static license token (default): the "Token <token>" scheme, resolved
+        #   from the argument, a license file, or the environment.
+        # - Bearer token: an externally issued OIDC/OAuth2 access token (e.g. an
+        #   AWS Cognito access token) forwarded on behalf of an end user. When a
+        #   bearer token is supplied no license is required, since the caller is
+        #   authenticated through the identity provider rather than a license.
+        self._bearer_token = bearer_token
+        self.license = None if bearer_token else find_license(token, region)
         self._wss_server = str(wss_server)
         self._https_server = str(https_server)
         self._wss_session = None
@@ -207,10 +216,15 @@ class Werk24Client:
         """
         Get the authentication headers for the request.
 
+        Uses the ``Bearer`` scheme when an externally issued access token was
+        supplied, otherwise falls back to the license-based ``Token`` scheme.
+
         Returns:
         -------
         - dict: The authentication headers.
         """
+        if self._bearer_token:
+            return {"Authorization": f"Bearer {self._bearer_token}"}
         return {"Authorization": f"Token {self.license.token}"}
 
     def _create_websocket_session(
