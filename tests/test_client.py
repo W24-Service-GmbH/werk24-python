@@ -121,6 +121,43 @@ async def test_token_only_license():
     assert client.license.region is None  # nosec
 
 
+def test_bearer_token_sets_bearer_auth_header():
+    """
+    A client created with a bearer token authenticates with the Bearer scheme
+    and does not require a license.
+    """
+    client = Werk24Client(bearer_token="an-access-token")
+    assert client.license is None  # nosec
+    assert client._get_auth_headers() == {  # nosec
+        "Authorization": "Bearer an-access-token"
+    }
+
+
+def test_bearer_token_does_not_trigger_license_lookup(monkeypatch):
+    """
+    Supplying a bearer token must not fall back to license-file / env lookup,
+    even when no license is available in the environment.
+    """
+    import werk24.techread as techread_module
+
+    def _fail_find_license(*args, **kwargs):
+        raise AssertionError("find_license must not be called in bearer mode")
+
+    monkeypatch.setattr(techread_module, "find_license", _fail_find_license)
+    client = Werk24Client(bearer_token="an-access-token")
+    assert client.license is None  # nosec
+
+
+def test_default_uses_token_scheme():
+    """
+    Without a bearer token the client keeps the license-based Token scheme.
+    """
+    client = Werk24Client(token="some-token")
+    assert client._get_auth_headers() == {  # nosec
+        "Authorization": "Token some-token"
+    }
+
+
 def test_run_preflight_checks_invalid_type():
     with pytest.raises(UnsupportedMediaType):
         Werk24Client.run_preflight_checks("not-bytes")
