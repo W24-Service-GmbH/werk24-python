@@ -47,13 +47,17 @@ class Settings(BaseSettings):
     """Maximum number of pages allowed per request. Must be greater than 0."""
 
     supported_python_versions: Set[Version] = {
-        Version("3.9"),
         Version("3.10"),
         Version("3.11"),
         Version("3.12"),
         Version("3.13"),
+        Version("3.14"),
     }
-    """Supported Python versions for compatibility checks."""
+    """Supported Python versions for compatibility checks.
+
+    Kept in sync with ``requires-python`` (>=3.10) and the version classifiers
+    in ``pyproject.toml`` (3.10 - 3.14).
+    """
 
     log_level: str = "WARNING"
     """Logging level. Valid values: DEBUG, INFO, WARNING, ERROR, CRITICAL."""
