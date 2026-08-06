@@ -70,3 +70,24 @@ for c_package in old_packages:
         raise ImportError(
             f"Could not import {new_module_path}. Did you move it?"
         ) from e
+
+# Restrict what ``from werk24.models import *`` re-exports. Without this, the
+# submodule names pulled in by ``from .v2 import *`` (notably ``models``) leak
+# upward and overwrite the ``werk24.models`` package attribute when
+# ``werk24/__init__.py`` runs ``from werk24.models import *``. Only export the
+# real public symbols and never module objects or the loop helpers above.
+_LOADER_HELPERS = {
+    "importlib",
+    "sys",
+    "old_packages",
+    "c_package",
+    "new_module_path",
+    "e",
+}
+__all__ = [
+    _name
+    for _name, _value in list(globals().items())
+    if not _name.startswith("_")
+    and _name not in _LOADER_HELPERS
+    and not isinstance(_value, __import__("types").ModuleType)
+]

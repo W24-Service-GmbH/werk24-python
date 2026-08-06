@@ -133,13 +133,21 @@ def test_find_license_in_paths_and_envs(
         assert license == valid_license  # nosec
 
 
-def test_save_license_file(valid_license, mock_search_paths):
-    """Test saving a license file."""
-    with patch("builtins.open", mock_open()) as mocked_file:
+def test_save_license_file(valid_license, tmp_path):
+    """Test saving a license file writes the token with owner-only permissions."""
+    license_path = tmp_path / "license.txt"
+    with patch(
+        "werk24.utils.license.SEARCH_PATHS", [str(license_path)]
+    ):
         save_license_file(valid_license)
-        mocked_file.assert_called_once_with("./mock_license.txt", "w+")
-        mocked_file().write.assert_any_call("W24TECHREAD_AUTH_TOKEN=valid_token\n")
-        mocked_file().write.assert_any_call("W24TECHREAD_AUTH_REGION=valid_region\n")
+
+    content = license_path.read_text()
+    assert "W24TECHREAD_AUTH_TOKEN=valid_token\n" in content  # nosec
+    assert "W24TECHREAD_AUTH_REGION=valid_region\n" in content  # nosec
+
+    # The token is a credential and must not be group/world readable.
+    mode = os.stat(license_path).st_mode & 0o777
+    assert mode == 0o600, f"expected 0o600, got {oct(mode)}"  # nosec
 
 
 def test_find_license_no_valid_license(mock_search_paths):
