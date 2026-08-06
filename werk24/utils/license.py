@@ -223,11 +223,24 @@ def save_license_file(license: License):
     """
     license_path = SEARCH_PATHS[0]
     try:
-        with open(license_path, "w+") as file:
+        # The token is a long-lived bearer credential. Create the file with
+        # owner-only permissions (0o600) so other local users cannot read it.
+        # os.open with the mode set at creation time avoids a brief window where
+        # the file exists with the default (umask-derived, often world-readable)
+        # permissions.
+        fd = os.open(
+            license_path,
+            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+            0o600,
+        )
+        with os.fdopen(fd, "w") as file:
             file.write(f"{TOKEN_ENV_KEY}={license.token}\n")
             # Only persist the region if one is present (legacy licenses).
             if license.region:
                 file.write(f"{REGION_ENV_KEY}={license.region}\n")
+        # If the file already existed, os.open does not change its mode, so
+        # enforce it explicitly as well.
+        os.chmod(license_path, 0o600)
         logger.info(f"License saved successfully at {license_path}")
     except Exception as e:
         logger.error(f"Error saving license file: {e}")

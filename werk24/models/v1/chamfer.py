@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from .size import W24Size
+from .size import W24SizeUnion
 from .unit import W24UnitAngle
 
 
@@ -30,6 +30,6 @@ class W24Chamfer(BaseModel):
 
     angle: Decimal
 
-    size: Optional[W24Size] = None
+    size: Optional[W24SizeUnion] = None
 
     unit: W24UnitAngle = W24UnitAngle.DEGREE

@@ -1297,7 +1297,7 @@ W24AskResponse = Union[
 
 def deserialize_ask_response(v, info) -> Optional[W24AskResponse]:
     def is_type(t):
-        return info.data["message_subtype"] == t
+        return info.data.get("message_subtype") == t
 
     if is_type(W24AskType.NOTES):
         return W24AskNotesResponse.model_validate(v)

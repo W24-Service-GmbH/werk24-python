@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from .depth import W24Depth
-from .size import W24Size
+from .size import W24SizeUnion
 
 
 class W24CounterBore(BaseModel):
@@ -17,7 +17,7 @@ class W24CounterBore(BaseModel):
     """
 
     blurb: str
-    size: W24Size
+    size: W24SizeUnion
     depth: W24Depth
 
 
@@ -34,7 +34,7 @@ class W24CounterDrill(BaseModel):
     """
 
     blurb: str
-    size: W24Size
+    size: W24SizeUnion
     depth: W24Depth
     angle: Optional[Decimal] = None
 
@@ -49,5 +49,5 @@ class W24CounterSink(BaseModel):
     """
 
     blurb: str
-    size: W24Size
+    size: W24SizeUnion
     angle: Decimal

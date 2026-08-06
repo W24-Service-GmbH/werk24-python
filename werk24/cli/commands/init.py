@@ -73,24 +73,44 @@ def accept_license_from_terminal():
         "[blue]Please paste your token below and press [bold]Enter[/bold] twice when done:[/blue]"
     )
 
-    license_text = ""
-    while True:
-        try:
-            line = sys.stdin.readline().strip()
-            if not line:  # Stop on an empty line
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        license_text = ""
+        while True:
+            try:
+                raw_line = sys.stdin.readline()
+            except KeyboardInterrupt:
+                console.print("[red]Input cancelled. Exiting...[/red]")
+                raise typer.Exit()  # noqa: B904
+
+            # readline() returns "" only at EOF (e.g. Ctrl-D or a closed/piped
+            # stdin), which is distinct from a blank line ("\n"). Detect EOF
+            # explicitly so we do not loop or recurse forever on empty input.
+            if raw_line == "":
+                break
+
+            line = raw_line.strip()
+            if not line:  # a blank line terminates the paste
                 break
             license_text += line + "\n"
-        except KeyboardInterrupt:
-            console.print("[red]Input cancelled. Exiting...[/red]")
-            raise typer.Exit()  # noqa: B904
 
-    try:
-        license = parse_license_text(license_text)
-        save_license_file(license)
-        console.print(Panel("[bold green]Token successfully saved![/bold green]"))
-    except InvalidLicenseException:
-        console.print("[red]Invalid token. Please try again.[/red]")
-        accept_license_from_terminal()  # Retry on failure
+        if not license_text.strip():
+            console.print("[red]No token provided. Aborting.[/red]")
+            raise typer.Exit(code=1)
+
+        try:
+            license = parse_license_text(license_text)
+            save_license_file(license)
+            console.print(Panel("[bold green]Token successfully saved![/bold green]"))
+            return
+        except InvalidLicenseException:
+            if attempt < max_attempts:
+                console.print("[red]Invalid token. Please try again.[/red]")
+            else:
+                console.print(
+                    "[red]Invalid token. Maximum number of attempts reached.[/red]"
+                )
+                raise typer.Exit(code=1)  # noqa: B904
 
 
 def sign_up_for_license():

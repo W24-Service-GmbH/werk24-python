@@ -6,7 +6,7 @@ from pydantic import Field
 
 from .angle import W24AngleSize
 from .base_feature import W24BaseFeatureModel
-from .size import W24Size, W24SizeNominal
+from .size import W24SizeNominal, W24SizeUnion
 from .tolerance import W24ToleranceGeneral, W24ToleranceType
 
 
@@ -51,7 +51,7 @@ class W24BendLabel(W24BaseFeatureModel):
         examples=[W24AngleSize(angle=Decimal("90"), blurb="90°")],
     )
 
-    radius: Optional[W24Size] = Field(
+    radius: Optional[W24SizeUnion] = Field(
         description="Radius of the bend.",
         examples=[W24SizeNominal(blurb="5", nominal_size=Decimal("5"))],
     )

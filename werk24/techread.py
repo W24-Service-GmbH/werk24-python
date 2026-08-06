@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import io
+import ipaddress
 import json
 import ssl
 import uuid
 from asyncio import iscoroutinefunction
+from functools import lru_cache
 from io import BufferedReader
 from typing import AsyncGenerator, Callable, Dict, List, Optional, Tuple, Union
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
 import certifi
@@ -29,6 +31,7 @@ from werk24 import (
     TechreadExceptionType,
     TechreadInitResponse,
     TechreadMessage,
+    TechreadMessageSubtype,
     TechreadMessageType,
     TechreadRequest,
     TechreadWithCallbackPayload,
@@ -75,6 +78,32 @@ settings = Settings()
 logger = get_logger(settings.log_level)
 
 
+@lru_cache(maxsize=1)
+def _default_ssl_context() -> ssl.SSLContext:
+    """Return a shared SSL context built from the certifi CA bundle.
+
+    Building an SSL context reads and parses the CA bundle from disk, which is
+    relatively expensive (tens of milliseconds). Caching it avoids paying that
+    cost on every HTTPS request.
+    """
+    return ssl.create_default_context(cafile=certifi.where())
+
+
+@lru_cache(maxsize=1)
+def _all_valid_ask_types() -> frozenset:
+    """Return the set of all valid ask-type values (API v1 and v2).
+
+    Computed once and cached; the enum membership never changes at runtime.
+    """
+    # Imported lazily to avoid a circular import at module load time.
+    from werk24.models.v1.ask import W24AskType
+    from werk24.models.v2.enums import AskType
+
+    return frozenset(ask_type.value for ask_type in W24AskType) | frozenset(
+        ask_type.value for ask_type in AskType
+    )
+
+
 # Determine if the websockets library supports the `extra_headers` parameter.
 # There was a breaking change in version 14.0 that changed the parameter name.
 try:
@@ -118,8 +147,9 @@ class Werk24Client:
         self._wss_session = None
         # Reuse a single SSL context configured with the certifi CA bundle
         # to avoid recreating it for each connection and to ensure that the
-        # certificate chain is properly verified.
-        self._ssl_context = ssl.create_default_context(cafile=certifi.where())
+        # certificate chain is properly verified. The context is cached at
+        # module level and shared across clients.
+        self._ssl_context = _default_ssl_context()
 
         # WebSocket connection management
         self._ping_interval = ping_interval
@@ -161,18 +191,13 @@ class Werk24Client:
         ...     ask_type = "INVALID_TYPE"
         >>> Werk24Client.validate_asks([InvalidAsk()])  # Raises BadRequestException
         """
-        from werk24.models.v1.ask import W24AskType
-        from werk24.models.v2.enums import AskType
-
         if not asks:
             raise BadRequestException(
                 "No ask types provided. At least one ask type is required."
             )
 
-        # Get all valid ask types from both versions
-        valid_v1_types = {ask_type.value for ask_type in W24AskType}
-        valid_v2_types = {ask_type.value for ask_type in AskType}
-        all_valid_types = valid_v1_types | valid_v2_types
+        # Get all valid ask types from both versions (cached at module level).
+        all_valid_types = _all_valid_ask_types()
 
         # Extract and validate ask type names from the input
         invalid_asks = []
@@ -644,15 +669,21 @@ class Werk24Client:
             ConnectionClosedError,
             ConnectionClosedOK,
         ) as exc:
+            # The request/response exchange is stateful: the pending response is
+            # bound to the connection it was requested on. Transparently
+            # reconnecting and calling recv() again on a fresh connection would
+            # block forever (no message is in flight on the new socket), so we
+            # surface the failure instead and let the caller restart the whole
+            # operation from INITIALIZE.
             logger.warning("Connection closed while receiving message: %s", exc)
-            if not self._is_shutting_down:
-                await self._reconnect()
-                # After reconnect, try to receive again
-                message_raw = str(await self._wss_session.recv())
-                logger.debug("Received message after reconnect: %s", message_raw)
-                message = self._parse_message(message_raw)
-                return message
-            raise
+            if self._is_shutting_down:
+                raise
+            raise ServerException(
+                details=(
+                    "The connection to the server was closed while awaiting a "
+                    f"response: {exc}"
+                )
+            ) from exc
 
     async def _send_command(self, action: str, message: str = "{}") -> None:
         """
@@ -1073,7 +1104,7 @@ class Werk24Client:
         """Fetch the current system status from the API."""
 
         url = urljoin(str(settings.http_server), "/status")
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        ssl_context = _default_ssl_context()
         connector = aiohttp.TCPConnector(ssl=ssl_context)
         timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=30)
         async with aiohttp.ClientSession(
@@ -1101,7 +1132,7 @@ class Werk24Client:
         return urljoin(self._https_server, endpoint)
 
     def _make_https_session(
-        self, timeout_seconds: int = 30, cafile: str = None
+        self, timeout_seconds: int = 30, cafile: Optional[str] = None
     ) -> aiohttp.ClientSession:
         """
         Create a configured aiohttp.ClientSession with SSL context and timeouts.
@@ -1118,9 +1149,14 @@ class Werk24Client:
         - aiohttp.ClientSession: A configured HTTP client session.
         """
         try:
-            # Use the provided CA file or the default certifi CA bundle
-            cafile = cafile or certifi.where()
-            ssl_context = ssl.create_default_context(cafile=cafile)
+            # Reuse the shared SSL context (built once from certifi's CA bundle)
+            # unless a custom CA file is explicitly provided. Building an SSL
+            # context reads/parses the CA bundle from disk, so rebuilding it on
+            # every request is a needless per-request cost.
+            if cafile is None:
+                ssl_context = self._ssl_context
+            else:
+                ssl_context = ssl.create_default_context(cafile=cafile)
             connector = aiohttp.TCPConnector(ssl=ssl_context)
 
             # Configure timeouts
@@ -1202,17 +1238,23 @@ class Werk24Client:
         client_public_key_pem: Optional[bytes] = None,
         client_private_key_pem: Optional[bytes] = None,
         client_private_key_passphrase: Optional[bytes] = None,
-        max_messages_per_session: int = 100,
+        max_messages_per_session: int = 1000,
         priority: Optional[str] = None,
     ) -> AsyncGenerator[TechreadMessage, None]:
         """
         Send a techread request to the backend and yield resulting messages.
 
+        The stream is terminated when the server sends a PROGRESS_COMPLETED
+        message. ``max_messages_per_session`` is only a safety net to bound the
+        loop if that signal never arrives; hitting it is logged as a warning so
+        truncation is never silent.
+
         Args:
             client_public_key_pem (Optional[bytes]): PEM-encoded public key, if applicable.
             client_private_key_pem (Optional[bytes]): PEM-encoded private key, if applicable.
             client_private_key_passphrase (Optional[bytes]): Passphrase for the private key, if applicable.
-            max_messages_per_session (int): Maximum number of messages to receive per session.
+            max_messages_per_session (int): Safety-net cap on the number of
+                messages to receive per session before giving up.
             priority (Optional[str]): Optional priority level for the request (PRIO1, PRIO2, PRIO3).
 
         Yields:
@@ -1245,15 +1287,26 @@ class Werk24Client:
 
         # Listen for incoming messages from the server
         logger.debug("Listening for responses from the server")
+        completed = False
+        hit_cap = True
         try:
             for _ in range(max_messages_per_session):
                 try:
                     raw_message = str(await self._wss_session.recv())
-                except (
-                    websockets.exceptions.ConnectionClosedError,
-                    websockets.exceptions.ConnectionClosedOK,
-                ):
+                except websockets.exceptions.ConnectionClosedOK:
+                    # Server closed the stream cleanly.
+                    hit_cap = False
                     break
+                except websockets.exceptions.ConnectionClosedError as exc:
+                    # Abnormal close mid-stream: the read was interrupted and the
+                    # results are likely incomplete. Surface this instead of
+                    # silently treating it as a normal end-of-stream.
+                    raise ServerException(
+                        details=(
+                            "The connection to the server was closed "
+                            f"unexpectedly while reading results: {exc}"
+                        )
+                    ) from exc
 
                 message = self._parse_message(raw_message)
                 logger.info(
@@ -1281,9 +1334,84 @@ class Werk24Client:
                 # Yield the message for immediate consumption
                 yield message
 
+                # Stop once the server signals that the read has completed,
+                # rather than relying on a fixed message count (which would
+                # silently truncate large results).
+                if (
+                    message.message_type == TechreadMessageType.PROGRESS
+                    and message.message_subtype
+                    == TechreadMessageSubtype.PROGRESS_COMPLETED
+                ):
+                    completed = True
+                    hit_cap = False
+                    break
+
         except Exception as e:
             logger.error("Error occurred while processing responses: %s", e)
             raise
+
+        # Warn (never silently truncate) if the stream ended without an explicit
+        # completion signal.
+        if hit_cap:
+            logger.warning(
+                "Reached max_messages_per_session=%d without a PROGRESS_COMPLETED "
+                "message; results may be truncated.",
+                max_messages_per_session,
+            )
+        elif not completed:
+            logger.warning(
+                "Result stream ended before a PROGRESS_COMPLETED message was "
+                "received; results may be incomplete."
+            )
+
+    @staticmethod
+    def _validate_payload_url(payload_url: Union[HttpUrl, str]) -> None:
+        """
+        Validate a server-supplied payload URL before downloading from it.
+
+        The payload URL is taken from the (untrusted) WebSocket message stream.
+        A malicious or compromised server, or an injected message, could point it
+        at an internal address (e.g. a cloud metadata endpoint) or a non-HTTPS
+        scheme. To prevent server-side request forgery and payload injection we
+        require the URL to be HTTPS and reject hosts that are private, loopback,
+        link-local, reserved, or multicast IP literals.
+
+        Raises:
+        ------
+        - RuntimeError: If the URL does not use HTTPS, has no host, or points at
+          a non-public IP address.
+        """
+        parsed = urlparse(str(payload_url))
+
+        if parsed.scheme != "https":
+            raise RuntimeError(
+                f"Refusing to download payload from non-HTTPS URL: {payload_url}"
+            )
+
+        host = parsed.hostname
+        if not host:
+            raise RuntimeError(
+                f"Refusing to download payload from URL without a host: {payload_url}"
+            )
+
+        # If the host is an IP literal, block non-public ranges. Hostnames are
+        # left to DNS/TLS; blocking IP literals stops the most direct SSRF
+        # vectors (e.g. https://169.254.169.254/...).
+        try:
+            ip = ipaddress.ip_address(host)
+        except ValueError:
+            ip = None
+        if ip is not None and (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        ):
+            raise RuntimeError(
+                f"Refusing to download payload from non-public address: {payload_url}"
+            )
 
     async def download_payload(
         self,
@@ -1315,6 +1443,9 @@ class Werk24Client:
         - bytes: The payload, either decrypted or raw.
         """
         logger.debug("Starting payload download from %s", payload_url)
+
+        # Validate the (untrusted) URL before issuing any request.
+        self._validate_payload_url(payload_url)
 
         # Attempt to download the payload
         try:
