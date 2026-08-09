@@ -236,7 +236,10 @@ class TechreadMessage(TechreadBaseResponse):
     - message_subtype (TechreadMessageSubtype): The subtype specifying additional
       details about the message.
     - page_number (int): The page number the message corresponds to (starting from 0).
-    - payload_dict (Optional[AskResponse]): A dictionary containing the structured payload data.
+    - payload_dict (Optional[Any]): The structured payload data. Usually
+      deserialized into one of the known response models (or kept as a dict),
+      but payloads that cannot be deserialized (e.g., a non-mapping value)
+      are preserved unchanged.
     - payload_url (Optional[HttpUrl]): A URL for downloading binary data
       (e.g., images or large files).
     - payload_bytes (Optional[bytes]): Binary content downloaded from the `payload_url`.
@@ -249,9 +252,10 @@ class TechreadMessage(TechreadBaseResponse):
     message_type: TechreadMessageType
     message_subtype: Union[TechreadMessageSubtype, AskType, W24AskType]
     page_number: int = 0
-    payload_dict: Union[
-        ResponseUnion, TechreadInitResponse, W24AskResponse, dict, None
-    ] = None
+    # Usually a ResponseUnion, TechreadInitResponse, W24AskResponse, or dict,
+    # but the deserializer preserves payloads it cannot deserialize unchanged,
+    # so the field must accept any value.
+    payload_dict: Optional[Any] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
 
@@ -261,7 +265,7 @@ class TechreadMessage(TechreadBaseResponse):
         cls,
         v: Any,
         info: ValidationInfo,
-    ) -> Union[ResponseUnion, TechreadInitResponse, W24AskResponse, dict, None]:
+    ) -> Optional[Any]:
 
         # If we have a None value, return None
         if v is None:
