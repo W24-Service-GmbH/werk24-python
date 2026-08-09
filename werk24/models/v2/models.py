@@ -1272,6 +1272,30 @@ class BoundingDimensions(BaseModel):
         None,
         description="The enclosing cylinder of the component.",
     )
+    annotations_complete: bool = Field(
+        True,
+        description=(
+            "Whether the drawing dimensions the component's outermost "
+            "geometry. False when features that extend the envelope carry no "
+            "dimension of their own - tabs, winglets, lugs, standoffs, "
+            "welded-on brackets - in which case the bounding dimensions are a "
+            "lower bound on the true envelope rather than an exact figure. "
+            "See `completeness_note` for the reason."
+        ),
+        examples=[True],
+    )
+    completeness_note: Optional[str] = Field(
+        None,
+        description=(
+            "Plain-language explanation of why the bounding dimensions are "
+            "only a lower bound. Set together with "
+            "`annotations_complete=False`, and null otherwise."
+        ),
+        examples=[
+            "The winglets on the side panels carry no dimensions, so the "
+            "depth is a lower bound and the true envelope is slightly larger."
+        ],
+    )
 
 
 class Certification(BaseModel):
