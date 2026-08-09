@@ -227,13 +227,17 @@ def save_license_file(license: License):
         # owner-only permissions (0o600) so other local users cannot read it.
         # os.open with the mode set at creation time avoids a brief window where
         # the file exists with the default (umask-derived, often world-readable)
-        # permissions.
-        fd = os.open(
-            license_path,
-            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-            0o600,
-        )
-        with os.fdopen(fd, "w") as file:
+        # permissions. O_NOFOLLOW (not available on all platforms) refuses to
+        # write through a symlink planted at the well-known license path.
+        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(license_path, flags, 0o600)
+        try:
+            file = os.fdopen(fd, "w")
+        except Exception:
+            os.close(fd)
+            raise
+        with file:
             file.write(f"{TOKEN_ENV_KEY}={license.token}\n")
             # Only persist the region if one is present (legacy licenses).
             if license.region:

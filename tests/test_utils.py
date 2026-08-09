@@ -145,9 +145,11 @@ def test_save_license_file(valid_license, tmp_path):
     assert "W24TECHREAD_AUTH_TOKEN=valid_token\n" in content  # nosec
     assert "W24TECHREAD_AUTH_REGION=valid_region\n" in content  # nosec
 
-    # The token is a credential and must not be group/world readable.
-    mode = os.stat(license_path).st_mode & 0o777
-    assert mode == 0o600, f"expected 0o600, got {oct(mode)}"  # nosec
+    # The token is a credential and must not be group/world readable. Windows
+    # does not map POSIX permission bits onto st_mode, so only assert on POSIX.
+    if os.name == "posix":
+        mode = os.stat(license_path).st_mode & 0o777
+        assert mode == 0o600, f"expected 0o600, got {oct(mode)}"  # nosec
 
 
 def test_find_license_no_valid_license(mock_search_paths):
