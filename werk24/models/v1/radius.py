@@ -7,7 +7,7 @@ from typing import Optional, Union
 from pydantic import UUID4, BaseModel, field_validator
 
 from .base_feature import W24BaseFeatureModel
-from .size import W24Size
+from .size import W24SizeUnion
 from .tolerance import (
     W24Tolerance,
     W24ToleranceApproximation,
@@ -70,7 +70,7 @@ class W24RadiusLabel(BaseModel):
     quantity: int = 1
     quality: int = 1
 
-    size: W24Size
+    size: W24SizeUnion
 
     size_tolerance: Union[
         W24ToleranceFitsizeISO,

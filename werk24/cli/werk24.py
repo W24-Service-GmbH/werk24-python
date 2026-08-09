@@ -1,3 +1,4 @@
+import sys
 from enum import Enum
 
 import typer
@@ -36,15 +37,27 @@ class PromptType(str, Enum):
 
 # Callback function for global options
 def common_options(log_level: str = typer.Option("WARNING", help="Set the log level")):
-    logger.setLevel(level=log_level.upper())
-    logger.info(f"Log level set to {log_level}")
+    level = log_level.upper()
+    if level not in Settings.VALID_LOG_LEVELS:
+        raise typer.BadParameter(
+            f"Invalid log level '{log_level}'. Valid values are: "
+            f"{', '.join(sorted(Settings.VALID_LOG_LEVELS))}"
+        )
+    logger.setLevel(level)
+    logger.info(f"Log level set to {level}")
 
 
 # Add the callback to the Typer app
 app.callback()(common_options)
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Entry point for the ``werk24`` CLI.
+
+    This wraps the Typer app so that ``TechreadException`` errors are rendered as
+    a friendly panel regardless of how the CLI is launched (the installed
+    ``werk24`` console script, ``python -m werk24``, or ``python werk24.py``).
+    """
     try:
         app()
     except TechreadException as exception:
@@ -56,5 +69,10 @@ if __name__ == "__main__":
                 title="Error",
             )
         )
-    except Exception as e:
-        raise e
+        # Exit with a non-zero status without emitting a traceback. typer.Exit is
+        # only meaningful inside a Click command context, so use sys.exit here.
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
