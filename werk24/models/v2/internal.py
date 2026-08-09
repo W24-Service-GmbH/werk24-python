@@ -23,6 +23,17 @@ from werk24.models.v2.asks import AskType, AskUnion
 from werk24.models.v2.enums import TechreadExceptionLevel
 from werk24.models.v2.responses import RESPONSE_SUBCLASSES, ResponseUnion
 
+# Map the v2 ``ask_type`` discriminator to its concrete response class so that
+# payload deserialization can dispatch in O(1) instead of trial-validating every
+# response subclass (and constructing/swallowing a ValidationError for each
+# non-matching one) on every message.
+_V2_RESPONSE_BY_ASK_TYPE = {
+    c.model_fields["ask_type"].default.value: c
+    for c in RESPONSE_SUBCLASSES
+    if "ask_type" in c.model_fields
+    and c.model_fields["ask_type"].default is not None
+}
+
 
 class TechreadMessageType(str, Enum):
     """Message Type of the message that is sent
@@ -225,7 +236,10 @@ class TechreadMessage(TechreadBaseResponse):
     - message_subtype (TechreadMessageSubtype): The subtype specifying additional
       details about the message.
     - page_number (int): The page number the message corresponds to (starting from 0).
-    - payload_dict (Optional[AskResponse]): A dictionary containing the structured payload data.
+    - payload_dict (Optional[Any]): The structured payload data. Usually
+      deserialized into one of the known response models (or kept as a dict),
+      but payloads that cannot be deserialized (e.g., a non-mapping value)
+      are preserved unchanged.
     - payload_url (Optional[HttpUrl]): A URL for downloading binary data
       (e.g., images or large files).
     - payload_bytes (Optional[bytes]): Binary content downloaded from the `payload_url`.
@@ -238,9 +252,10 @@ class TechreadMessage(TechreadBaseResponse):
     message_type: TechreadMessageType
     message_subtype: Union[TechreadMessageSubtype, AskType, W24AskType]
     page_number: int = 0
-    payload_dict: Union[
-        ResponseUnion, TechreadInitResponse, W24AskResponse, dict, None
-    ] = None
+    # Usually a ResponseUnion, TechreadInitResponse, W24AskResponse, or dict,
+    # but the deserializer preserves payloads it cannot deserialize unchanged,
+    # so the field must accept any value.
+    payload_dict: Optional[Any] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
 
@@ -250,7 +265,7 @@ class TechreadMessage(TechreadBaseResponse):
         cls,
         v: Any,
         info: ValidationInfo,
-    ) -> Union[ResponseUnion, TechreadInitResponse, W24AskResponse, dict, None]:
+    ) -> Optional[Any]:
 
         # If we have a None value, return None
         if v is None:
@@ -260,15 +275,30 @@ class TechreadMessage(TechreadBaseResponse):
         if isinstance(v, (ResponseUnion, TechreadInitResponse, W24AskResponse)):
             return v
 
-        # Special Case for TechreadInitResponse
+        # Special Case for TechreadInitResponse. Use .get() so that an
+        # unrecognized/invalid message_subtype (absent from info.data when its
+        # own validation failed) does not raise a bare KeyError out of
+        # model_validate.
         if (
-            info.data["message_subtype"]
+            info.data.get("message_subtype")
             == TechreadMessageSubtype.PROGRESS_INITIALIZATION_SUCCESS
         ):
             return TechreadInitResponse.model_validate(v)
 
-        # Deserialize V2 responses
+        # Everything below dispatches on dictionary keys. If the server sends a
+        # non-mapping payload we cannot deserialize it further, so return it
+        # unchanged instead of raising an AttributeError.
+        if not isinstance(v, dict):
+            return v
+
+        # Deserialize V2 responses. Dispatch on the ask_type discriminator so we
+        # validate only the matching subclass instead of trying every one.
         if v.get("ask_version") == "v2":
+            c_class = _V2_RESPONSE_BY_ASK_TYPE.get(v.get("ask_type"))
+            if c_class is not None:
+                with suppress(ValidationError):
+                    return c_class.model_validate(v)
+            # Fallback: unknown ask_type, try each subclass.
             for c_class in RESPONSE_SUBCLASSES:
                 with suppress(ValidationError):
                     return c_class.model_validate(v)

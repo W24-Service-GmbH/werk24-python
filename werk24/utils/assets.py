@@ -29,7 +29,7 @@ def read_drawing_sync(
     async def run():
         async with Werk24Client() as client:
             return [
-                msg.payload_dict
+                msg
                 async for msg in client.read_drawing(drawing, asks)
                 if msg.message_type == TechreadMessageType.ASK
             ]
@@ -39,7 +39,11 @@ def read_drawing_sync(
 
 def read_example_drawing(asks: list[AskUnion]):
     drawing = get_test_drawing()
-    responses = read_drawing_sync(drawing, asks)
+    try:
+        responses = read_drawing_sync(drawing, asks)
+    finally:
+        # get_test_drawing() opens a file handle; always close it.
+        drawing.close()
 
     results = defaultdict(list)
     for msg in responses:
