@@ -1,7 +1,7 @@
 import abc
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
+from typing import Annotated, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -57,7 +57,7 @@ class W24SizeNominal(W24Size):
     Nominal size for a W24Size.
     """
 
-    size_type: W24SizeType = W24SizeType.NOMINAL
+    size_type: Literal[W24SizeType.NOMINAL] = W24SizeType.NOMINAL
 
 
 class W24SizeSphericalDiameter(W24Size):
@@ -65,7 +65,9 @@ class W24SizeSphericalDiameter(W24Size):
     Spherical Diameter size for a W24Size.
     """
 
-    size_type: W24SizeType = W24SizeType.SPHERICAL_DIAMETER
+    size_type: Literal[W24SizeType.SPHERICAL_DIAMETER] = (
+        W24SizeType.SPHERICAL_DIAMETER
+    )
 
 
 class W24SizeDiameter(W24Size):
@@ -73,7 +75,7 @@ class W24SizeDiameter(W24Size):
     Diameter size for a W24Size.
     """
 
-    size_type: W24SizeType = W24SizeType.DIAMETER
+    size_type: Literal[W24SizeType.DIAMETER] = W24SizeType.DIAMETER
 
 
 class W24SizeSquare(W24Size):
@@ -81,7 +83,7 @@ class W24SizeSquare(W24Size):
     Square size for a W24Size.
     """
 
-    size_type: W24SizeType = W24SizeType.SQUARE
+    size_type: Literal[W24SizeType.SQUARE] = W24SizeType.SQUARE
 
 
 class W24SizeWidthsAcrossFlats(W24Size):
@@ -94,6 +96,25 @@ class W24SizeWidthsAcrossFlats(W24Size):
         aka. wrench size.
     """
 
-    size_type: W24SizeType = W24SizeType.WIDTH_ACROSS_FLATS
+    size_type: Literal[W24SizeType.WIDTH_ACROSS_FLATS] = (
+        W24SizeType.WIDTH_ACROSS_FLATS
+    )
 
     width_across_flats: Decimal
+
+
+# Discriminated union of the concrete size types. Fields that previously used the
+# abstract ``W24Size`` base directly were silently deserialized into the base
+# class, dropping subclass-specific fields such as ``width_across_flats``. Using
+# this union lets pydantic dispatch to the correct concrete subclass based on the
+# ``size_type`` discriminator.
+W24SizeUnion = Annotated[
+    Union[
+        W24SizeNominal,
+        W24SizeSphericalDiameter,
+        W24SizeDiameter,
+        W24SizeSquare,
+        W24SizeWidthsAcrossFlats,
+    ],
+    Field(discriminator="size_type"),
+]
