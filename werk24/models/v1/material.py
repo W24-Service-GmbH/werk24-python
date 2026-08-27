@@ -47,7 +47,7 @@ class W24MaterialCategory2(str, Enum):
     NICKEL = "NICKEL"
     NIOBIUM = "NIOBIUM"
     PLATINUM = "PLATINUM"
-    REAR_EARTHS = "REAR_EARTHS"
+    RARE_EARTHS = "RARE_EARTHS"
     SELENIUM = "SELENIUM"
     SILICON = "SILICON"
     TANTALUM = "TANTALUM"
@@ -77,6 +77,15 @@ class W24MaterialCategory2(str, Enum):
 
     # ORGANIC
     WOOD = "WOOD"
+
+    @classmethod
+    def _missing_(cls, value: object) -> "W24MaterialCategory2":
+        # "REAR_EARTHS" was a misspelling of RARE_EARTHS; accept the
+        # legacy value so payloads produced before the rename still parse.
+        if value == "REAR_EARTHS":
+            return cls.RARE_EARTHS
+        return None
+
 
 
 class W24MaterialCategory3(str, Enum):
