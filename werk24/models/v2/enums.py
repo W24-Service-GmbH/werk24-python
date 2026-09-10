@@ -898,6 +898,53 @@ class GeneralTolerancesPrinciple(str, Enum):
     ENVELOPE = "ENVELOPE"  # Tolerances on size and form are combined.
 
 
+class PaperSize(str, Enum):
+    """The sheet format a drawing is drawn on.
+
+    Orientation is normalised away, so a landscape A3 and a portrait A3 are
+    both `A3`: it is the same sheet either way. A drawing trimmed by a few
+    millimetres, or a PDF whose media box carries a bleed, still reports its
+    nominal format.
+
+    Note for anyone who finds `W24PaperSize` in the v1 models and expects it
+    here: this is deliberately a separate enum rather than a reuse. The v1
+    enum spells its values for humans (`"A4 (ISO 216)"`) where every v2 enum
+    uses a bare token, and it covers neither the ARCH formats, nor A6, nor any
+    way of saying "a real sheet that is not a named format" — so it cannot
+    represent what the reader actually produces.
+    """
+
+    A6 = "A6"
+    A5 = "A5"
+    A4 = "A4"
+    A3 = "A3"
+    A2 = "A2"
+    A1 = "A1"
+    A0 = "A0"
+    TWO_A0 = "2A0"
+
+    ANSI_A = "ANSI_A"
+    ANSI_B = "ANSI_B"
+    ANSI_C = "ANSI_C"
+    ANSI_D = "ANSI_D"
+    ANSI_E = "ANSI_E"
+
+    ARCH_A = "ARCH_A"
+    ARCH_B = "ARCH_B"
+    ARCH_C = "ARCH_C"
+    ARCH_D = "ARCH_D"
+    ARCH_E = "ARCH_E"
+    ARCH_E1 = "ARCH_E1"
+
+    CUSTOM = "CUSTOM"
+    """A sheet with a real physical size that is not one of the named formats.
+
+    Distinct from `None`, which means the input stated no physical size at all
+    — every raster image, since a photograph or a scan carries pixels rather
+    than millimetres.
+    """
+
+
 class PageType(str, Enum):
     """
     Enum representing page types.
