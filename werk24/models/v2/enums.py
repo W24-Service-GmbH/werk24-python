@@ -900,11 +900,40 @@ class GeneralTolerancesPrinciple(str, Enum):
 
 class PageType(str, Enum):
     """
-    Enum representing page types
+    Enum representing page types.
+
+    Werk24 interprets COMPONENT_DRAWING and ASSEMBLY_DRAWING. The remaining
+    members exist so that a page we cannot interpret can be *named* rather than
+    silently returned as a component drawing with nothing on it: knowing that a
+    request was a wiring diagram is a far more useful answer than an empty
+    result, both for you and for us.
+
+    New members may be added as the classification improves. Treat an
+    unrecognised value as MISCELLANEOUS rather than as an error.
     """
 
     COMPONENT_DRAWING = "COMPONENT_DRAWING"
+    """A drawing of a single manufactured part. Fully interpreted."""
+
+    ASSEMBLY_DRAWING = "ASSEMBLY_DRAWING"
+    """A drawing of several parts and how they fit together, typically with a
+    bill of material. Fully interpreted."""
+
+    ARCHITECTURAL_DRAWING = "ARCHITECTURAL_DRAWING"
+    """A building or site plan. Not interpreted."""
+
+    PID_DRAWING = "PID_DRAWING"
+    """A piping and instrumentation diagram. Not interpreted."""
+
+    WIRING_DIAGRAM = "WIRING_DIAGRAM"
+    """An electrical schematic. Not interpreted.
+
+    Named for the electrical document rather than for the metal-forming
+    process, which is a different thing entirely.
+    """
+
     MISCELLANEOUS = "MISCELLANEOUS"
+    """Anything else, including a page we could not classify."""
 
 
 class SizeType(str, Enum):
@@ -1384,6 +1413,7 @@ class AskType(str, Enum):
 
     BALLOONS = "BALLOONS"
     CUSTOM = "CUSTOM"
+    DOCUMENT_PROFILE = "DOCUMENT_PROFILE"
     FEATURES = "FEATURES"
     INSIGHTS = "INSIGHTS"
     META_DATA = "META_DATA"
