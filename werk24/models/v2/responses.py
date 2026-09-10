@@ -89,6 +89,7 @@ class ResponseDocumentProfile(Response):
     )
     page_count: int = Field(
         ...,
+        ge=1,
         description=(
             "Number of pages in the document, before any page limit is "
             "applied. Note that this does NOT drive the processing-time "
