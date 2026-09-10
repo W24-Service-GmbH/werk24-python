@@ -1171,10 +1171,15 @@ class ProcessingTimeEstimate(BaseModel):
     Show `seconds_p50` to a user; size timeouts and progress bars against
     `seconds_p95`.
 
-    The estimate is made from the document's shape (page count, sheet size,
-    file format) at the moment the file is read, before any interpretation, so
-    it is available almost immediately and does not depend on what the drawing
-    turns out to contain.
+    The estimate is made from the document's **sheet size** at the moment the
+    file is read, before any interpretation, so it is available almost
+    immediately and does not depend on what the drawing turns out to contain.
+
+    Deliberately not from page count, which is the obvious candidate and is
+    wrong: measured over 4,639 requests, two-page documents come back faster
+    than one-page ones (median 9.3 s against 18.7 s), almost certainly because
+    a two-page PDF is usually a drawing plus a cover. Scaling by it would make
+    the estimate worse.
     """
 
     seconds_p50: float = Field(
