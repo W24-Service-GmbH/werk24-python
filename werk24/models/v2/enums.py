@@ -944,6 +944,21 @@ class PaperSize(str, Enum):
     than millimetres.
     """
 
+    @classmethod
+    def _missing_(cls, value: object) -> "PaperSize":
+        """Accept a sheet format this client has never heard of.
+
+        Falling back to CUSTOM rather than raising, and this is a definition
+        rather than a fudge: CUSTOM already means "a real sheet that is not one
+        of the formats we name", and a format this client does not know is
+        precisely that from where it is standing.
+
+        Without it, the day a new format is added server-side, every older
+        client would raise on a real drawing rather than degrade to the answer
+        that was already correct for it.
+        """
+        return cls.CUSTOM
+
 
 class PageType(str, Enum):
     """
@@ -981,6 +996,23 @@ class PageType(str, Enum):
 
     MISCELLANEOUS = "MISCELLANEOUS"
     """Anything else, including a page we could not classify."""
+
+    @classmethod
+    def _missing_(cls, value: object) -> "PageType":
+        """Accept a page type this client has never heard of.
+
+        The docstring above promises that new members may appear and that an
+        unrecognised value should be treated as MISCELLANEOUS. Without this it
+        would be a promise the code breaks: a plain Enum raises on an unknown
+        string, so the first time the server learned a new document type,
+        every client older than that day would fail validation on a perfectly
+        good drawing.
+
+        The cost is that a genuine typo also lands in MISCELLANEOUS rather
+        than raising. That is the right trade for a value the server chooses
+        and the client only reads.
+        """
+        return cls.MISCELLANEOUS
 
 
 class SizeType(str, Enum):
