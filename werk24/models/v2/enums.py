@@ -898,13 +898,121 @@ class GeneralTolerancesPrinciple(str, Enum):
     ENVELOPE = "ENVELOPE"  # Tolerances on size and form are combined.
 
 
+class PaperSize(str, Enum):
+    """The sheet format a drawing is drawn on.
+
+    Orientation is normalised away, so a landscape A3 and a portrait A3 are
+    both `A3`: it is the same sheet either way. A drawing trimmed by a few
+    millimetres, or a PDF whose media box carries a bleed, still reports its
+    nominal format.
+
+    Note for anyone who finds `W24PaperSize` in the v1 models and expects it
+    here: this is deliberately a separate enum rather than a reuse. The v1
+    enum spells its values for humans (`"A4 (ISO 216)"`) where every v2 enum
+    uses a bare token, and it covers neither the ARCH formats, nor A6, nor any
+    way of saying "a real sheet that is not a named format" — so it cannot
+    represent what the reader actually produces.
+    """
+
+    A6 = "A6"
+    A5 = "A5"
+    A4 = "A4"
+    A3 = "A3"
+    A2 = "A2"
+    A1 = "A1"
+    A0 = "A0"
+    TWO_A0 = "2A0"
+
+    ANSI_A = "ANSI_A"
+    ANSI_B = "ANSI_B"
+    ANSI_C = "ANSI_C"
+    ANSI_D = "ANSI_D"
+    ANSI_E = "ANSI_E"
+
+    ARCH_A = "ARCH_A"
+    ARCH_B = "ARCH_B"
+    ARCH_C = "ARCH_C"
+    ARCH_D = "ARCH_D"
+    ARCH_E = "ARCH_E"
+    ARCH_E1 = "ARCH_E1"
+
+    CUSTOM = "CUSTOM"
+    """A sheet with a real physical size that is not one of the named formats.
+
+    Distinct from `None`, which means the input stated no physical size at all
+    — every raster image, since a photograph or a scan carries pixels rather
+    than millimetres.
+    """
+
+    @classmethod
+    def _missing_(cls, value: object) -> "PaperSize":
+        """Accept a sheet format this client has never heard of.
+
+        Falling back to CUSTOM rather than raising, and this is a definition
+        rather than a fudge: CUSTOM already means "a real sheet that is not one
+        of the formats we name", and a format this client does not know is
+        precisely that from where it is standing.
+
+        Without it, the day a new format is added server-side, every older
+        client would raise on a real drawing rather than degrade to the answer
+        that was already correct for it.
+        """
+        return cls.CUSTOM
+
+
 class PageType(str, Enum):
     """
-    Enum representing page types
+    Enum representing page types.
+
+    Werk24 interprets COMPONENT_DRAWING and ASSEMBLY_DRAWING. The remaining
+    members exist so that a page we cannot interpret can be *named* rather than
+    silently returned as a component drawing with nothing on it: knowing that a
+    request was a wiring diagram is a far more useful answer than an empty
+    result, both for you and for us.
+
+    New members may be added as the classification improves. Treat an
+    unrecognised value as MISCELLANEOUS rather than as an error.
     """
 
     COMPONENT_DRAWING = "COMPONENT_DRAWING"
+    """A drawing of a single manufactured part. Fully interpreted."""
+
+    ASSEMBLY_DRAWING = "ASSEMBLY_DRAWING"
+    """A drawing of several parts and how they fit together, typically with a
+    bill of material. Fully interpreted."""
+
+    ARCHITECTURAL_DRAWING = "ARCHITECTURAL_DRAWING"
+    """A building or site plan. Not interpreted."""
+
+    PID_DRAWING = "PID_DRAWING"
+    """A piping and instrumentation diagram. Not interpreted."""
+
+    WIRING_DIAGRAM = "WIRING_DIAGRAM"
+    """An electrical schematic. Not interpreted.
+
+    Named for the electrical document rather than for the metal-forming
+    process, which is a different thing entirely.
+    """
+
     MISCELLANEOUS = "MISCELLANEOUS"
+    """Anything else, including a page we could not classify."""
+
+    @classmethod
+    def _missing_(cls, value: object) -> "PageType":
+        """Accept a page type this client has never heard of.
+
+        The docstring above promises that new members may appear and that an
+        unrecognised value should be treated as MISCELLANEOUS. Without this it
+        would be a promise the code breaks: a plain Enum raises on an unknown
+        string, so the first time the server learned a new document type,
+        every client older than that day would fail validation on a perfectly
+        good drawing.
+
+        The cost is that a genuine typo also lands in MISCELLANEOUS rather
+        than raising. That is the right trade for a value the server chooses
+        and the client only reads.
+        """
+        return cls.MISCELLANEOUS
 
 
 class SizeType(str, Enum):
@@ -1384,6 +1492,7 @@ class AskType(str, Enum):
 
     BALLOONS = "BALLOONS"
     CUSTOM = "CUSTOM"
+    DOCUMENT_PROFILE = "DOCUMENT_PROFILE"
     FEATURES = "FEATURES"
     INSIGHTS = "INSIGHTS"
     META_DATA = "META_DATA"
