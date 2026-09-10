@@ -7,6 +7,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    model_validator,
 )
 
 from .enums import (
@@ -1159,6 +1160,66 @@ class UnitSystem(Reference):
     """
 
     unit_system_type: UnitSystemType
+
+
+class ProcessingTimeEstimate(BaseModel):
+    """How long this document is likely to take to read.
+
+    Deliberately a **range and not a single number**. Werk24's processing time
+    has a long right tail — the median is around half a minute while the 99th
+    percentile is over two — so a point estimate would be wrong in the only
+    case where being wrong is expensive: the request you are still waiting on.
+    Show `seconds_p50` to a user; size timeouts and progress bars against
+    `seconds_p95`.
+
+    The estimate is made from the document's **sheet size** at the moment the
+    file is read, before any interpretation, so it is available almost
+    immediately and does not depend on what the drawing turns out to contain.
+
+    Deliberately not from page count, which is the obvious candidate and is
+    wrong: measured over 4,639 requests, two-page documents come back faster
+    than one-page ones (median 9.3 s against 18.7 s), almost certainly because
+    a two-page PDF is usually a drawing plus a cover. Scaling by it would make
+    the estimate worse.
+    """
+
+    seconds_p50: float = Field(
+        ...,
+        gt=0,
+        description=(
+            "Median expected processing time in seconds. Half of comparable "
+            "documents finish faster than this."
+        ),
+        examples=[16.5, 34.9],
+    )
+    seconds_p95: float = Field(
+        ...,
+        gt=0,
+        description=(
+            "95th-percentile expected processing time in seconds. Size "
+            "timeouts against this rather than against the median."
+        ),
+        examples=[48.0, 120.0],
+    )
+
+    @model_validator(mode="after")
+    def _percentiles_are_ordered(self) -> "ProcessingTimeEstimate":
+        """A 95th percentile below the median is not a distribution.
+
+        Checked because this object exists to be acted on: a caller sizing a
+        timeout against `seconds_p95` would silently get a shorter one than
+        the median it is meant to bound, and nothing downstream would notice.
+
+        Equality is allowed. A sheet size with few observations can genuinely
+        report the same value at both percentiles, and rejecting that would
+        turn a thin distribution into an error.
+        """
+        if self.seconds_p95 < self.seconds_p50:
+            raise ValueError(
+                f"seconds_p95 ({self.seconds_p95}) is below seconds_p50 "
+                f"({self.seconds_p50}); percentiles must not decrease"
+            )
+        return self
 
 
 class ProjectionMethod(Reference):
