@@ -3,7 +3,7 @@ from typing import Any, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import AskType, PageType
+from .enums import AskType, PageType, PaperSize
 from .models import (
     Balloon,
     BillOfMaterial,
@@ -98,15 +98,15 @@ class ResponseDocumentProfile(Response):
         ),
         examples=[1, 12],
     )
-    paper_size: Optional[str] = Field(
+    paper_size: Optional[PaperSize] = Field(
         None,
         description=(
-            "The sheet format, named where it is recognised ('A3', 'ANSI_D') "
-            "and 'custom_<nearest A-series>' where it is not. None for inputs "
-            "that state no physical size, which is every raster image: a "
-            "photograph or scan carries pixels, not millimetres."
+            "The sheet format. CUSTOM for a real sheet that is not one of the "
+            "named formats. None for inputs that state no physical size, "
+            "which is every raster image: a photograph or a scan carries "
+            "pixels, not millimetres."
         ),
-        examples=["A3", "ANSI_D", "custom_A1"],
+        examples=[PaperSize.A3, PaperSize.ANSI_D, PaperSize.CUSTOM],
     )
     processing_time: Optional[ProcessingTimeEstimate] = Field(
         None,
