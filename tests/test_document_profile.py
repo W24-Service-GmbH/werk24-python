@@ -46,6 +46,25 @@ class TestProcessingTimeEstimate:
         with pytest.raises(ValidationError):
             ProcessingTimeEstimate(seconds_p50=21.1)
 
+    def test_a_p95_below_the_median_is_rejected(self):
+        # This object exists to be acted on: a caller sizing a timeout against
+        # seconds_p95 would silently get one shorter than the median it is
+        # meant to bound, and nothing downstream would notice.
+        with pytest.raises(ValidationError):
+            ProcessingTimeEstimate(seconds_p50=40.0, seconds_p95=10.0)
+
+    def test_equal_percentiles_are_allowed(self):
+        # A sheet size with few observations can genuinely report the same
+        # value at both. Rejecting that would turn a thin distribution into an
+        # error.
+        estimate = ProcessingTimeEstimate(seconds_p50=5.0, seconds_p95=5.0)
+        assert estimate.seconds_p50 == estimate.seconds_p95
+
+    def test_non_positive_durations_are_rejected(self):
+        for p50, p95 in [(-1.0, 10.0), (0.0, 10.0), (5.0, 0.0)]:
+            with pytest.raises(ValidationError):
+                ProcessingTimeEstimate(seconds_p50=p50, seconds_p95=p95)
+
 
 class TestResponse:
     def test_a_minimal_response_needs_only_the_page_count(self):
@@ -85,11 +104,24 @@ class TestResponse:
         assert raster.paper_size is None
         assert custom.paper_size != raster.paper_size
 
-    def test_an_unrecognised_paper_size_is_rejected(self):
-        # The point of using the enum rather than a bare str: a typo or a
-        # server-side rename fails loudly here instead of flowing through.
-        with pytest.raises(ValidationError):
-            ResponseDocumentProfile(page_count=1, paper_size="A3 (ISO 216)")
+    def test_an_unrecognised_paper_size_degrades_to_custom(self):
+        """Replaces an earlier test that asserted the opposite.
+
+        That test argued a typo should fail loudly. In production the "typo"
+        is a server-side addition, and failing loudly means breaking a
+        caller's pipeline on a real drawing. CUSTOM already means "a real
+        sheet that is not one of the formats we name", which is exactly what
+        an unknown format is from an older client's position, so degrading is
+        a definition rather than a fudge.
+        """
+        response = ResponseDocumentProfile(page_count=1, paper_size="ARCH_F")
+        assert response.paper_size is PaperSize.CUSTOM
+
+    def test_page_count_must_be_at_least_one(self):
+        # A document with zero pages is not a document.
+        for count in (0, -1):
+            with pytest.raises(ValidationError):
+                ResponseDocumentProfile(page_count=count)
 
     def test_it_round_trips_through_json(self):
         response = ResponseDocumentProfile(
@@ -103,6 +135,42 @@ class TestResponse:
         )
         assert restored == response
         assert restored.processing_time.seconds_p95 == 120.0
+
+
+class TestForwardCompatibility:
+    """A client older than the server must degrade, not raise.
+
+    Both of these enums carry values the SERVER chooses and the client only
+    reads. Without a fallback, the first time either gained a member, every
+    client released before that day would fail validation on a perfectly good
+    drawing — the worst possible failure mode for a library whose whole job is
+    to hand back what the server found.
+    """
+
+    def test_an_unknown_page_type_becomes_miscellaneous(self):
+        assert PageType("SOME_FUTURE_TYPE") is PageType.MISCELLANEOUS
+
+    def test_an_unknown_paper_size_becomes_custom(self):
+        assert PaperSize("ARCH_F") is PaperSize.CUSTOM
+
+    def test_a_response_carrying_unknown_values_still_parses(self):
+        # The case that matters: a whole payload from a newer server.
+        response = ResponseDocumentProfile.model_validate(
+            {
+                "page_count": 2,
+                "page_type": "SOME_FUTURE_TYPE",
+                "paper_size": "ARCH_F",
+                "processing_time": {"seconds_p50": 20.0, "seconds_p95": 45.0},
+            }
+        )
+        assert response.page_type is PageType.MISCELLANEOUS
+        assert response.paper_size is PaperSize.CUSTOM
+        assert response.processing_time.seconds_p50 == 20.0
+
+    def test_known_values_are_still_exact(self):
+        # The fallback must not swallow values we do know.
+        assert PageType("PID_DRAWING") is PageType.PID_DRAWING
+        assert PaperSize("ANSI_D") is PaperSize.ANSI_D
 
 
 class TestPaperSize:

@@ -7,6 +7,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    model_validator,
 )
 
 from .enums import (
@@ -1184,6 +1185,7 @@ class ProcessingTimeEstimate(BaseModel):
 
     seconds_p50: float = Field(
         ...,
+        gt=0,
         description=(
             "Median expected processing time in seconds. Half of comparable "
             "documents finish faster than this."
@@ -1192,12 +1194,32 @@ class ProcessingTimeEstimate(BaseModel):
     )
     seconds_p95: float = Field(
         ...,
+        gt=0,
         description=(
             "95th-percentile expected processing time in seconds. Size "
             "timeouts against this rather than against the median."
         ),
         examples=[48.0, 120.0],
     )
+
+    @model_validator(mode="after")
+    def _percentiles_are_ordered(self) -> "ProcessingTimeEstimate":
+        """A 95th percentile below the median is not a distribution.
+
+        Checked because this object exists to be acted on: a caller sizing a
+        timeout against `seconds_p95` would silently get a shorter one than
+        the median it is meant to bound, and nothing downstream would notice.
+
+        Equality is allowed. A sheet size with few observations can genuinely
+        report the same value at both percentiles, and rejecting that would
+        turn a thin distribution into an error.
+        """
+        if self.seconds_p95 < self.seconds_p50:
+            raise ValueError(
+                f"seconds_p95 ({self.seconds_p95}) is below seconds_p50 "
+                f"({self.seconds_p50}); percentiles must not decrease"
+            )
+        return self
 
 
 class ProjectionMethod(Reference):
