@@ -20,6 +20,7 @@ from .models import (
     MaterialCombination,
     Note,
     PrimaryProcessUnion,
+    ProcessingTimeEstimate,
     ProjectionMethod,
     Radius,
     RedactionZone,
@@ -59,6 +60,59 @@ class ResponseCustom(Response):
     ask_type: Literal[AskType.CUSTOM] = AskType.CUSTOM
     custom_id: str = Field(..., description="The ID of the custom output.")
     output: Any = Field(..., description="The custom output.")
+
+
+class ResponseDocumentProfile(Response):
+    """
+    The document's profile: what kind of drawing it is, and how long it is
+    likely to take to read.
+
+    Answered from the file's shape before any interpretation begins, so it
+    arrives well ahead of the other responses. Two things it is good for:
+    telling a waiting user how long they have to wait, and finding out early
+    that the document is not one Werk24 interprets.
+
+    Note that `page_type` describes the FIRST page. A multi-page document is
+    profiled by the page the reader leads with; `page_count` tells you whether
+    there are others.
+    """
+
+    ask_type: Literal[AskType.DOCUMENT_PROFILE] = AskType.DOCUMENT_PROFILE
+
+    page_type: PageType = Field(
+        PageType.MISCELLANEOUS,
+        description=(
+            "The kind of document this is. COMPONENT_DRAWING and "
+            "ASSEMBLY_DRAWING are interpreted; the others are recognised so "
+            "you learn early that the rest of your asks will come back empty."
+        ),
+    )
+    page_count: int = Field(
+        ...,
+        description=(
+            "Number of pages in the document, before any page limit is "
+            "applied. The largest single driver of processing time."
+        ),
+        examples=[1, 12],
+    )
+    paper_size: Optional[str] = Field(
+        None,
+        description=(
+            "The sheet format, named where it is recognised ('A3', 'ANSI_D') "
+            "and 'custom_<nearest A-series>' where it is not. None for inputs "
+            "that state no physical size, which is every raster image: a "
+            "photograph or scan carries pixels, not millimetres."
+        ),
+        examples=["A3", "ANSI_D", "custom_A1"],
+    )
+    processing_time: Optional[ProcessingTimeEstimate] = Field(
+        None,
+        description=(
+            "How long this document is likely to take. None when the shape is "
+            "too unusual to compare against anything we have measured; treat "
+            "that as 'no estimate' rather than 'fast'."
+        ),
+    )
 
 
 class ResponseFeaturesComponentDrawing(Response):
