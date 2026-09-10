@@ -1161,6 +1161,40 @@ class UnitSystem(Reference):
     unit_system_type: UnitSystemType
 
 
+class ProcessingTimeEstimate(BaseModel):
+    """How long this document is likely to take to read.
+
+    Deliberately a **range and not a single number**. Werk24's processing time
+    has a long right tail — the median is around half a minute while the 99th
+    percentile is over two — so a point estimate would be wrong in the only
+    case where being wrong is expensive: the request you are still waiting on.
+    Show `seconds_p50` to a user; size timeouts and progress bars against
+    `seconds_p95`.
+
+    The estimate is made from the document's shape (page count, sheet size,
+    file format) at the moment the file is read, before any interpretation, so
+    it is available almost immediately and does not depend on what the drawing
+    turns out to contain.
+    """
+
+    seconds_p50: float = Field(
+        ...,
+        description=(
+            "Median expected processing time in seconds. Half of comparable "
+            "documents finish faster than this."
+        ),
+        examples=[16.5, 34.9],
+    )
+    seconds_p95: float = Field(
+        ...,
+        description=(
+            "95th-percentile expected processing time in seconds. Size "
+            "timeouts against this rather than against the median."
+        ),
+        examples=[48.0, 120.0],
+    )
+
+
 class ProjectionMethod(Reference):
     """Projection Method according to ISO 128"""
 
