@@ -3,7 +3,7 @@ from typing import Any, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import AskType, PageType
+from .enums import AskType, PageType, PaperSize
 from .models import (
     Balloon,
     BillOfMaterial,
@@ -20,6 +20,7 @@ from .models import (
     MaterialCombination,
     Note,
     PrimaryProcessUnion,
+    ProcessingTimeEstimate,
     ProjectionMethod,
     Radius,
     RedactionZone,
@@ -59,6 +60,63 @@ class ResponseCustom(Response):
     ask_type: Literal[AskType.CUSTOM] = AskType.CUSTOM
     custom_id: str = Field(..., description="The ID of the custom output.")
     output: Any = Field(..., description="The custom output.")
+
+
+class ResponseDocumentProfile(Response):
+    """
+    The document's profile: what kind of drawing it is, and how long it is
+    likely to take to read.
+
+    Answered from the file's shape before any interpretation begins, so it
+    arrives well ahead of the other responses. Two things it is good for:
+    telling a waiting user how long they have to wait, and finding out early
+    that the document is not one Werk24 interprets.
+
+    Note that `page_type` describes the FIRST page. A multi-page document is
+    profiled by the page the reader leads with; `page_count` tells you whether
+    there are others.
+    """
+
+    ask_type: Literal[AskType.DOCUMENT_PROFILE] = AskType.DOCUMENT_PROFILE
+
+    page_type: PageType = Field(
+        PageType.MISCELLANEOUS,
+        description=(
+            "The kind of document this is. COMPONENT_DRAWING and "
+            "ASSEMBLY_DRAWING are interpreted; the others are recognised so "
+            "you learn early that the rest of your asks will come back empty."
+        ),
+    )
+    page_count: int = Field(
+        ...,
+        ge=1,
+        description=(
+            "Number of pages in the document, before any page limit is "
+            "applied. Note that this does NOT drive the processing-time "
+            "estimate: measured over 4,639 requests, two-page documents come "
+            "back faster than one-page ones, so the estimate is keyed on "
+            "sheet size instead."
+        ),
+        examples=[1, 12],
+    )
+    paper_size: Optional[PaperSize] = Field(
+        None,
+        description=(
+            "The sheet format. CUSTOM for a real sheet that is not one of the "
+            "named formats. None for inputs that state no physical size, "
+            "which is every raster image: a photograph or a scan carries "
+            "pixels, not millimetres."
+        ),
+        examples=[PaperSize.A3, PaperSize.ANSI_D, PaperSize.CUSTOM],
+    )
+    processing_time: Optional[ProcessingTimeEstimate] = Field(
+        None,
+        description=(
+            "How long this document is likely to take. None when the shape is "
+            "too unusual to compare against anything we have measured; treat "
+            "that as 'no estimate' rather than 'fast'."
+        ),
+    )
 
 
 class ResponseFeaturesComponentDrawing(Response):
