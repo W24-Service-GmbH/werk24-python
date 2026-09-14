@@ -9,7 +9,7 @@ import uuid
 from asyncio import iscoroutinefunction
 from functools import lru_cache
 from io import BufferedReader
-from typing import AsyncGenerator, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin, urlparse
 
 import aiohttp
@@ -734,6 +734,122 @@ class Werk24Client:
                 raise
 
     @staticmethod
+    def _priority_exception(
+        payload: Any,
+        requested_priority: Optional[str] = None,
+    ) -> Optional[Union[PriorityTooHighError, InvalidPriorityError]]:
+        """Return the typed exception for a priority refusal, or None.
+
+        crew-api answers every refusal with the same envelope -- ``code``,
+        ``message``, ``details``, ``request_id`` -- and never with a top-level
+        ``error`` key. Both priority refusals are identified from that
+        envelope:
+
+        - 403 whose ``details`` name ``account_tier`` and
+          ``requested_priority`` is the entitlement refusal. Both keys are
+          required so an ordinary 403 is not mistaken for one.
+        - ``details.error == "INVALID_PRIORITY"`` is the unparseable value,
+          which the API sets explicitly for exactly this purpose.
+
+        The older top-level ``error`` form is still accepted, so a client
+        running against a server that emits it keeps its typed exceptions.
+
+        Args:
+        ----
+        - payload (Any): The decoded error body. Anything that is not a
+          mapping is not a refusal we recognise.
+        - requested_priority (Optional[str]): The priority this client sent,
+          where the caller knows it. Used to fill in ``invalid_value`` when
+          the server does not name the offending value itself.
+
+        Returns:
+        -------
+        - Optional[Union[PriorityTooHighError, InvalidPriorityError]]: The
+          exception to raise, or None if this is not a priority refusal.
+        """
+        if not isinstance(payload, dict):
+            return None
+
+        details = payload.get("details")
+        if not isinstance(details, dict):
+            details = {}
+
+        message = payload.get("message", "Unknown error")
+        code = str(payload.get("code", ""))
+        error_type = payload.get("error")
+
+        if error_type == "PRIORITY_TOO_HIGH" or (
+            code == "403"
+            and "account_tier" in details
+            and "requested_priority" in details
+        ):
+            return PriorityTooHighError(
+                details=message,
+                account_tier=details.get("account_tier"),
+                requested_priority=details.get("requested_priority"),
+            )
+
+        if (
+            error_type == "INVALID_PRIORITY"
+            or details.get("error") == "INVALID_PRIORITY"
+        ):
+            # The current envelope names the offending value only in the
+            # prose of ``message``. Take it from the older form's
+            # ``details.priority`` when the server supplies it, otherwise from
+            # what this client actually sent. It is never inferred from the
+            # message text: that is prose meant for a human, and parsing it
+            # would break the moment the wording changed.
+            return InvalidPriorityError(
+                details=message,
+                invalid_value=details.get("priority", requested_priority),
+            )
+
+        return None
+
+    @classmethod
+    async def _raise_for_priority_error(
+        cls,
+        response: Any,
+        requested_priority: Optional[str] = None,
+    ) -> None:
+        """Raise the typed exception if *response* is a priority refusal.
+
+        ``_raise_for_status`` is handed the status code and nothing else, so
+        by itself it answers a priority refusal on the HTTPS paths with a bare
+        ``BadRequestException`` or ``UnauthorizedException`` and drops the
+        tiers the server named -- even though ``read_drawing_with_callback``
+        documents both typed exceptions. Read the body first; anything that is
+        not a priority refusal falls through to the status-code mapping
+        unchanged.
+
+        Args:
+        ----
+        - response (Any): The aiohttp response to inspect.
+        - requested_priority (Optional[str]): The priority this request sent,
+          used to describe an ``InvalidPriorityError`` the server does not
+          name a value for.
+
+        Raises:
+        ------
+        - PriorityTooHighError: When the requested priority exceeds the
+          account tier (403).
+        - InvalidPriorityError: When the priority value is invalid (400).
+        """
+        if response.status not in (400, 403):
+            return
+
+        try:
+            payload = await response.json(content_type=None)
+        except (ValueError, aiohttp.ClientError):
+            # A body we cannot decode is not one we can interpret. Leave it to
+            # the status-code mapping rather than masking it.
+            return
+
+        exception = cls._priority_exception(payload, requested_priority)
+        if exception is not None:
+            raise exception
+
+    @staticmethod
     def _parse_message(message_raw: str) -> TechreadMessage:
         """
         Interpret the raw WebSocket message and convert it into a TechreadMessage.
@@ -774,27 +890,18 @@ class Werk24Client:
                     f"Invalid JSON received: {message_raw}"
                 ) from exception
 
-            # Extract the error type and message from the parsed response
-            error_type = response.get("error")
             error_message = response.get("message", "Unknown error")
-            details = response.get("details", {})
 
-            # Handle PRIORITY_TOO_HIGH error (403)
-            if error_type == "PRIORITY_TOO_HIGH":
-                logger.warning("Priority too high error received")
-                raise PriorityTooHighError(
-                    details=error_message,
-                    account_tier=details.get("account_tier"),
-                    requested_priority=details.get("requested_priority"),
-                ) from exception
-
-            # Handle INVALID_PRIORITY error (400)
-            if error_type == "INVALID_PRIORITY":
-                logger.warning("Invalid priority error received")
-                raise InvalidPriorityError(
-                    details=error_message,
-                    invalid_value=details.get("priority"),
-                ) from exception
+            # Handle both priority refusals (403 PRIORITY_TOO_HIGH and
+            # 400 INVALID_PRIORITY). This used to key off a top-level
+            # ``error`` field that the API does not send, so every priority
+            # refusal fell through to the generic ServerException below and
+            # told the customer the service team had been notified -- for a
+            # 4xx that is theirs to fix and that the API exists to return.
+            priority_exception = Werk24Client._priority_exception(response)
+            if priority_exception is not None:
+                logger.warning("Priority error received: %s", error_message)
+                raise priority_exception from exception
 
             # Raise specific exceptions for known error messages
             if error_message == "Forbidden":
@@ -1044,10 +1151,14 @@ class Werk24Client:
         Raises:
         ------
         - BadRequestException: Raised when ask types are invalid.
-        - ServerException: Raised when the server returns an error message.
         - InsufficientCreditsException: Raised when the user lacks sufficient credits
           for the request.
-        - InvalidPriorityError: Raised if the priority value is invalid.
+        - InvalidPriorityError: Raised if the priority value is invalid, either
+          by this client before sending or by the API (400).
+        - PriorityTooHighError: Raised when the requested priority exceeds the
+          account tier (403).
+        - ServerException: Raised for any other server-side failure that is not
+          one of the typed exceptions above.
         - ValueError: Raised if the drawing or callback_url is invalid.
 
         Returns:
@@ -1091,6 +1202,7 @@ class Werk24Client:
         url = self._make_https_url("/techread/read-with-callback")
         async with self._make_https_session() as session:
             response = await session.post(url, data=data, headers=headers)
+            await self._raise_for_priority_error(response, validated_priority)
             self._raise_for_status(url, response.status)
             response_json = await response.json(content_type=None)
 
