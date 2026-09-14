@@ -226,7 +226,7 @@ class W24AskPageThumbnail(W24AskThumbnail):
         black-on-white.
     """
 
-    ask_type: W24AskType = W24AskType.PAGE_THUMBNAIL
+    ask_type: Literal[W24AskType.PAGE_THUMBNAIL] = W24AskType.PAGE_THUMBNAIL
 
 
 class W24AskSheetThumbnail(W24AskThumbnail):
@@ -240,7 +240,7 @@ class W24AskSheetThumbnail(W24AskThumbnail):
         black-on-white.
     """
 
-    ask_type: W24AskType = W24AskType.SHEET_THUMBNAIL
+    ask_type: Literal[W24AskType.SHEET_THUMBNAIL] = W24AskType.SHEET_THUMBNAIL
 
 
 class W24AskSheetAnonymization(W24AskThumbnail):
@@ -284,7 +284,7 @@ class W24AskSheetAnonymization(W24AskThumbnail):
 
     """
 
-    ask_type: W24AskType = W24AskType.SHEET_ANONYMIZATION
+    ask_type: Literal[W24AskType.SHEET_ANONYMIZATION] = W24AskType.SHEET_ANONYMIZATION
 
     replacement_logo_url: Optional[HttpUrl] = None
 
@@ -334,7 +334,7 @@ class W24AskPartFamilyCharacterization(W24Ask):
             post processor is implemented.
     """
 
-    ask_type: W24AskType = W24AskType.PART_FAMILY_CHARACTERIZATION
+    ask_type: Literal[W24AskType.PART_FAMILY_CHARACTERIZATION] = W24AskType.PART_FAMILY_CHARACTERIZATION
 
     part_family_id: UUID4
 
@@ -374,7 +374,7 @@ class W24AskCanvasThumbnail(W24AskThumbnail):
             !!! before using this attribute
     """
 
-    ask_type: W24AskType = W24AskType.CANVAS_THUMBNAIL
+    ask_type: Literal[W24AskType.CANVAS_THUMBNAIL] = W24AskType.CANVAS_THUMBNAIL
 
     remove_canvas_notes__dangerous: bool = False
 
@@ -389,7 +389,7 @@ class W24AskSectionalThumbnail(W24AskThumbnail):
         black-on-white.
     """
 
-    ask_type: W24AskType = W24AskType.SECTIONAL_THUMBNAIL
+    ask_type: Literal[W24AskType.SECTIONAL_THUMBNAIL] = W24AskType.SECTIONAL_THUMBNAIL
 
 
 class W24AskVariantAngles(W24Ask):
@@ -398,7 +398,7 @@ class W24AskVariantAngles(W24Ask):
     variant.
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_ANGLES
+    ask_type: Literal[W24AskType.VARIANT_ANGLES] = W24AskType.VARIANT_ANGLES
 
 
 class W24AskVariantAnglesResponse(BaseModel):
@@ -431,7 +431,7 @@ class W24AskVariantRoughnesses(W24Ask):
     the variant.
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_ROUGHNESSES
+    ask_type: Literal[W24AskType.VARIANT_ROUGHNESSES] = W24AskType.VARIANT_ROUGHNESSES
 
 
 class W24AskVariantRoughnessesResponse(BaseModel):
@@ -463,7 +463,7 @@ class W24AskVariantRadii(W24Ask):
     radii that were detected for the variant.
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_RADII
+    ask_type: Literal[W24AskType.VARIANT_RADII] = W24AskType.VARIANT_RADII
 
 
 class W24AskVariantRadiiResponse(BaseModel):
@@ -506,7 +506,7 @@ class W24AskVariantMeasures(W24Ask):
             that allows you to filter even further.
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_MEASURES
+    ask_type: Literal[W24AskType.VARIANT_MEASURES] = W24AskType.VARIANT_MEASURES
 
     confidence_min: float = 0.2
 
@@ -551,7 +551,7 @@ class W24AskVariantLeaders(W24Ask):
         will be ignored.
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_LEADERS
+    ask_type: Literal[W24AskType.VARIANT_LEADERS] = W24AskType.VARIANT_LEADERS
 
 
 class W24AskVariantLeadersResponse(BaseModel):
@@ -600,7 +600,7 @@ class W24AskVariantMaterial(W24Ask):
         will be ignored.
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_MATERIAL
+    ask_type: Literal[W24AskType.VARIANT_MATERIAL] = W24AskType.VARIANT_MATERIAL
 
     material_hint: Optional[str] = None
 
@@ -618,7 +618,7 @@ class W24AskRevisionTable(W24Ask):
     revision tables in the document
     """
 
-    ask_type: W24AskType = W24AskType.REVISION_TABLE
+    ask_type: Literal[W24AskType.REVISION_TABLE] = W24AskType.REVISION_TABLE
 
 
 class W24AskRevisionTableResponse(BaseModel):
@@ -641,7 +641,7 @@ class W24AskVariantGDTs(W24Ask):
     that were detected for the Variant.
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_GDTS
+    ask_type: Literal[W24AskType.VARIANT_GDTS] = W24AskType.VARIANT_GDTS
 
 
 class W24AskVariantGDTsResponse(BaseModel):
@@ -677,7 +677,7 @@ class W24AskTrain(W24Ask):
         instead.
     """
 
-    ask_type: W24AskType = W24AskType.TRAIN
+    ask_type: Literal[W24AskType.TRAIN] = W24AskType.TRAIN
 
 
 class W24AskVariantCAD(W24Ask):
@@ -695,7 +695,7 @@ class W24AskVariantCAD(W24Ask):
         applications (e.g. sheet metal).
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_CAD
+    ask_type: Literal[W24AskType.VARIANT_CAD] = W24AskType.VARIANT_CAD
 
     output_format: W24FileFormatVariantCAD = W24FileFormatVariantCAD.DXF
 
@@ -750,7 +750,7 @@ class W24AskVariantExternalDimensions(W24Ask):
     variant on the Document.
     """
 
-    ask_type: W24AskType = W24AskType.VARIANT_EXTERNAL_DIMENSIONS
+    ask_type: Literal[W24AskType.VARIANT_EXTERNAL_DIMENSIONS] = W24AskType.VARIANT_EXTERNAL_DIMENSIONS
 
 
 class W24AskVariantExternalDimensionsResponse(BaseModel):
@@ -783,7 +783,7 @@ class W24AskVariantExternalDimensionsResponse(BaseModel):
 class W24AskProductPMIExtract(W24Ask):
     """Ask object to request the PMIExtract Product."""
 
-    ask_type: W24AskType = W24AskType.PRODUCT_PMI_EXTRACT
+    ask_type: Literal[W24AskType.PRODUCT_PMI_EXTRACT] = W24AskType.PRODUCT_PMI_EXTRACT
 
 
 class W24AskProductPMIExtractResponse(BaseModel):
@@ -853,7 +853,7 @@ class W24AskProductPMIExtractResponse(BaseModel):
 class W24AskVariantThreadElements(W24Ask):
     """Ask object to obtain the thread elements"""
 
-    ask_type: W24AskType = W24AskType.VARIANT_THREAD_ELEMENTS
+    ask_type: Literal[W24AskType.VARIANT_THREAD_ELEMENTS] = W24AskType.VARIANT_THREAD_ELEMENTS
 
 
 class W24AskVariantThreadElementsResponse(BaseModel):
@@ -875,7 +875,7 @@ class W24AskVariantThreadElementsResponse(BaseModel):
 class W24AskNotes(W24Ask):
     """Ask all the notes on the Canvas and the sectionals"""
 
-    ask_type: W24AskType = W24AskType.NOTES
+    ask_type: Literal[W24AskType.NOTES] = W24AskType.NOTES
 
 
 class W24AskNotesResponse(BaseModel):
@@ -896,13 +896,13 @@ class W24AskInternalScreening(W24Ask):
     NOTE: not available on the public API.
     """
 
-    ask_type: W24AskType = W24AskType.INTERNAL_SCREENING
+    ask_type: Literal[W24AskType.INTERNAL_SCREENING] = W24AskType.INTERNAL_SCREENING
 
 
 class W24AskVariantProcesses(W24Ask):
     """Ask to receive the processes associated with the Variant."""
 
-    ask_type: W24AskType = W24AskType.VARIANT_PROCESSES
+    ask_type: Literal[W24AskType.VARIANT_PROCESSES] = W24AskType.VARIANT_PROCESSES
 
 
 class W24AskVariantProcessesResponse(BaseModel):
@@ -924,7 +924,7 @@ class W24AskDebug(W24Ask):
             to trigger.
     """
 
-    ask_type: W24AskType = W24AskType.DEBUG
+    ask_type: Literal[W24AskType.DEBUG] = W24AskType.DEBUG
     debug_key: str = ""
 
 
@@ -1039,7 +1039,7 @@ class W24RebrandingMetaData(BaseModel):
 
 
 class W24AskSheetRebranding(W24Ask):
-    ask_type: W24AskType = W24AskType.SHEET_REBRANDING
+    ask_type: Literal[W24AskType.SHEET_REBRANDING] = W24AskType.SHEET_REBRANDING
 
     template_url: HttpUrl = Field(
         description=(
@@ -1152,13 +1152,13 @@ class W24AskSheetRebranding(W24Ask):
 
 
 class W24AskExcelSummary(W24Ask):
-    ask_type: W24AskType = W24AskType.EXCEL_SUMMARY
+    ask_type: Literal[W24AskType.EXCEL_SUMMARY] = W24AskType.EXCEL_SUMMARY
 
 
 class W24AskCanvasTables(W24Ask):
     """Ask to obtain all the canvas tables from the drawing."""
 
-    ask_type: W24AskType = W24AskType.CANVAS_TABLES
+    ask_type: Literal[W24AskType.CANVAS_TABLES] = W24AskType.CANVAS_TABLES
 
     split_min_max_columns: bool = Field(
         description=("Split range columns into min and max columns."),
