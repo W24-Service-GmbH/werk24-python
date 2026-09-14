@@ -22,9 +22,11 @@ The bodies below are copied from what crew-api produces; see
 """
 
 import json
+from unittest import mock
 
 import pytest
 
+from werk24 import AskMetaData
 from werk24.techread import Werk24Client
 from werk24.utils.exceptions import (
     BadRequestException,
@@ -187,3 +189,80 @@ class TestTheCallbackPathRaisesTypedExceptions:
     async def test_an_undecodable_body_is_left_to_the_status_mapping(self):
         response = _FakeResponse(403, None, raises=ValueError("not json"))
         await Werk24Client._raise_for_priority_error(response)
+
+
+class _FakeSession:
+    """The two things ``read_drawing_with_callback`` asks of a session."""
+
+    def __init__(self, response):
+        self._response = response
+        self.calls = []
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+    async def post(self, url, data=None, headers=None):
+        self.calls.append(url)
+        return self._response
+
+
+async def _call_with_callback(client, response, priority):
+    """Drive the real ``read_drawing_with_callback`` against *response*."""
+    session = _FakeSession(response)
+    with mock.patch.object(client, "_make_https_session", return_value=session):
+        return await client.read_drawing_with_callback(
+            b"%PDF-1.7\n% a drawing\n",
+            asks=[AskMetaData()],
+            callback_url="https://example.com/webhook",
+            priority=priority,
+        )
+
+
+@pytest.mark.asyncio
+class TestReadDrawingWithCallbackIsActuallyWired:
+    """The mapping has to be reachable from the public method, not just exist.
+
+    Testing ``_raise_for_priority_error`` on its own leaves the one line that
+    calls it, and the ``validated_priority`` it passes, free to regress without
+    a single test noticing. These drive the real method.
+    """
+
+    async def test_a_403_propagates_as_a_priority_error(self):
+        client = Werk24Client(token="t", region="r")
+        response = _FakeResponse(403, _too_high("PRIO2", "PRIO1"))
+        with pytest.raises(PriorityTooHighError) as exc:
+            await _call_with_callback(client, response, "PRIO1")
+        assert exc.value.account_tier == "PRIO2"
+        assert exc.value.requested_priority == "PRIO1"
+
+    async def test_a_400_propagates_and_carries_the_priority_that_was_sent(self):
+        """Pins the ``validated_priority`` argument, not just the call.
+
+        The priority sent is valid as far as this client is concerned -- it
+        has to be, or ``validate_priority`` would have refused it locally --
+        so the only way ``invalid_value`` can read PRIO3 here is if the
+        method threads what it sent into the mapper. That is exactly the
+        wiring a regression would drop.
+        """
+        client = Werk24Client(token="t", region="r")
+        response = _FakeResponse(400, _invalid())
+        with pytest.raises(InvalidPriorityError) as exc:
+            await _call_with_callback(client, response, "prio3")
+        assert exc.value.invalid_value == "PRIO3"
+
+    async def test_an_unrelated_403_is_still_an_auth_error(self):
+        client = Werk24Client(token="t", region="r")
+        response = _FakeResponse(403, {"code": "403", "message": "Forbidden"})
+        with pytest.raises(UnauthorizedException):
+            await _call_with_callback(client, response, "PRIO3")
+
+    async def test_a_successful_read_is_untouched(self):
+        """The body is read once for the error check and once for the result."""
+        client = Werk24Client(token="t", region="r")
+        request_id = "3f7d1d1e-0000-4000-8000-000000000001"
+        response = _FakeResponse(200, {"request_id": request_id})
+        returned = await _call_with_callback(client, response, "PRIO3")
+        assert str(returned) == request_id
