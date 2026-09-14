@@ -130,12 +130,46 @@ class AskViewImages(AskV2):
     ask_type: Literal[AskType.VIEW_IMAGES] = AskType.VIEW_IMAGES
 
 
+def _names_its_own_ask_type(subclass: type) -> bool:
+    """Whether *subclass* is a concrete ask rather than a shared base.
+
+    A concrete ask declares its own ``ask_type`` as a default. A base does
+    not: ``W24AskThumbnail`` carries the thumbnail fields but inherits
+    ``ask_type`` from ``W24Ask``, where it is required and accepts ANY member
+    of ``W24AskType``.
+
+    That is what made it dangerous in the union. ``AskUnion`` is not
+    discriminated, so pydantic tries its members in order and takes the first
+    that validates. ``W24AskThumbnail`` sits ahead of most v1 asks and matches
+    every one of them -- any ask type is acceptable, and its own two fields
+    have defaults -- so a bare ``{"version": "v1", "ask_type": "NOTES"}``
+    became a ``W24AskThumbnail`` carrying a fabricated ``file_format: JPEG``
+    and ``balloons: []``, and 17 of the 28 v1 asks could not survive a
+    round-trip as themselves. Keeping bases out, and pinning every concrete
+    ``ask_type`` to a ``Literal``, leaves exactly one member that can match
+    any given ask.
+    """
+    field = subclass.model_fields.get("ask_type")
+    return field is not None and not field.is_required()
+
+
 def get_ask_subclasses() -> List:
+    """Collect every concrete ask class, v2 first and then v1."""
     subclasses = AskV2.__subclasses__() + W24Ask.__subclasses__()
     # Recursively collect subclasses of subclasses, if any
     for subclass in subclasses:
         subclasses.extend(subclass.__subclasses__())
-    return subclasses
+
+    # Bases are traversed for their subclasses but never offered to the union
+    # themselves. Deduplicated because a class reachable by more than one path
+    # would otherwise appear twice.
+    concrete, seen = [], set()
+    for subclass in subclasses:
+        if subclass in seen or not _names_its_own_ask_type(subclass):
+            continue
+        seen.add(subclass)
+        concrete.append(subclass)
+    return concrete
 
 
 AskUnion = Union[tuple(get_ask_subclasses())]
