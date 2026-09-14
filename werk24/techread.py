@@ -793,10 +793,12 @@ class Werk24Client:
             error_type == "INVALID_PRIORITY"
             or details.get("error") == "INVALID_PRIORITY"
         ):
-            # The current envelope names the offending value in ``message``
-            # and nowhere machine-readable, so prefer the older form's
-            # ``details.priority``, then what this client actually sent, and
-            # guess it back out of the prose never.
+            # The current envelope names the offending value only in the
+            # prose of ``message``. Take it from the older form's
+            # ``details.priority`` when the server supplies it, otherwise from
+            # what this client actually sent. It is never inferred from the
+            # message text: that is prose meant for a human, and parsing it
+            # would break the moment the wording changed.
             return InvalidPriorityError(
                 details=message,
                 invalid_value=details.get("priority", requested_priority),
@@ -1149,10 +1151,14 @@ class Werk24Client:
         Raises:
         ------
         - BadRequestException: Raised when ask types are invalid.
-        - ServerException: Raised when the server returns an error message.
         - InsufficientCreditsException: Raised when the user lacks sufficient credits
           for the request.
-        - InvalidPriorityError: Raised if the priority value is invalid.
+        - InvalidPriorityError: Raised if the priority value is invalid, either
+          by this client before sending or by the API (400).
+        - PriorityTooHighError: Raised when the requested priority exceeds the
+          account tier (403).
+        - ServerException: Raised for any other server-side failure that is not
+          one of the typed exceptions above.
         - ValueError: Raised if the drawing or callback_url is invalid.
 
         Returns:
