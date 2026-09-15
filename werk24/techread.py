@@ -57,9 +57,11 @@ from werk24.utils.license import find_license
 from werk24.utils.logger import get_logger
 from werk24.utils.priority import validate_priority
 
-#: How much of a refusal body to read before giving up on finding a reason
-#: in it. S3's error documents are a few hundred bytes; anything past this is
-#: not one, and reading it on an already-failing path buys nothing.
+#: How many bytes of a refusal body to read before giving up on finding a
+#: reason in it. S3's error documents are a few hundred bytes; anything past
+#: this is not one, and reading it on an already-failing path buys nothing.
+#: This bounds the read itself, not just the search, so a body that is large
+#: or never ends costs one bounded allocation and no wait for EOF.
 _S3_ERROR_BODY_LIMIT = 4096
 
 HTTP_EXCEPTION_CLASSES = {
@@ -1004,17 +1006,29 @@ class Werk24Client:
             return None
 
         try:
-            body = await response.text()
+            # Off the stream, not through ``text()``: that buffers the whole
+            # body before anything can trim it, so the limit below would
+            # bound only what is searched and not what is read. The endpoint
+            # answering here is not always S3 itself -- a proxy or an
+            # S3-compatible gateway can sit in front of it -- and a 4xx body
+            # that is large or never ends would then be allocated in full, or
+            # waited on to EOF, on the path that is already failing.
+            raw = await response.content.read(_S3_ERROR_BODY_LIMIT)
         except Exception:  # noqa: BLE001 - see docstring
             return None
 
-        if not body:
+        if not raw:
             return None
+
+        # ``replace`` rather than a decode that can raise: a bounded read can
+        # end mid-character, and a body that is not UTF-8 at all is a body
+        # with no reason in it, which is the empty answer below and not an
+        # error of its own.
+        excerpt = raw.decode("utf-8", errors="replace")
 
         # Read, rather than parse: the body arrives from the network on an
         # error path, and a regex over a bounded slice cannot be talked into
         # resolving an entity or expanding a billion laughs.
-        excerpt = body[:_S3_ERROR_BODY_LIMIT]
         code = re.search(r"<Code>([^<]{0,200})</Code>", excerpt)
         message = re.search(r"<Message>([^<]{0,500})</Message>", excerpt)
         if code is None and message is None:
