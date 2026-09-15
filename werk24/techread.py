@@ -4,6 +4,7 @@ import asyncio
 import io
 import ipaddress
 import json
+import re
 import ssl
 import uuid
 from asyncio import iscoroutinefunction
@@ -55,6 +56,13 @@ from werk24.utils.exceptions import (
 from werk24.utils.license import find_license
 from werk24.utils.logger import get_logger
 from werk24.utils.priority import validate_priority
+
+#: How many bytes of a refusal body to read before giving up on finding a
+#: reason in it. S3's error documents are a few hundred bytes; anything past
+#: this is not one, and reading it on an already-failing path buys nothing.
+#: This bounds the read itself, not just the search, so a body that is large
+#: or never ends costs one bounded allocation and no wait for EOF.
+_S3_ERROR_BODY_LIMIT = 4096
 
 HTTP_EXCEPTION_CLASSES = {
     range(200, 300): None,
@@ -960,13 +968,77 @@ class Werk24Client:
             logger.debug("Uploading file to the server: %s", str(presigned_post.url))
             async with self._make_https_session() as session:
                 response = await session.post(str(presigned_post.url), data=form)
-                self._raise_for_status(str(presigned_post.url), response.status)
+                self._raise_for_status(
+                    str(presigned_post.url),
+                    response.status,
+                    details=await self._s3_error_detail(response),
+                )
             logger.info("File uploaded successfully.")
         except aiohttp.ClientConnectorCertificateError as exc:
             raise SSLCertificateError("SSL certificate error occurred.") from exc
         except Exception as exc:
             logger.error("File upload failed: %s", exc)
             raise
+
+    @staticmethod
+    async def _s3_error_detail(response: Any) -> Optional[str]:
+        """The reason S3 gives for refusing an upload, or ``None``.
+
+        A refused presigned POST answers with an XML body naming the
+        condition that failed -- ``EntityTooLarge`` when the drawing is over
+        the policy's size range, ``EntityTooSmall`` when it is empty,
+        ``MalformedPOSTRequest`` when the form is not shaped the way S3
+        wants, ``InvalidArgument`` when a field is missing or repeated.
+        Without it a caller is told only that "the server could not
+        interpret the request", which is the same sentence for all of them
+        and points at the wrong end of the problem: none of those is a bad
+        request in the sense the message suggests, and the most common one
+        is a file the account is not allowed to send at that size.
+
+        Best effort by construction. It runs on a path that is already
+        failing, so anything that goes wrong reading the body -- a
+        connection that dropped, a body that is not XML, an S3 response
+        shape that changes -- leaves the caller with the status-code
+        message it had before rather than replacing one failure with
+        another.
+        """
+        if 200 <= response.status < 300:
+            return None
+
+        try:
+            # Off the stream, not through ``text()``: that buffers the whole
+            # body before anything can trim it, so the limit below would
+            # bound only what is searched and not what is read. The endpoint
+            # answering here is not always S3 itself -- a proxy or an
+            # S3-compatible gateway can sit in front of it -- and a 4xx body
+            # that is large or never ends would then be allocated in full, or
+            # waited on to EOF, on the path that is already failing.
+            raw = await response.content.read(_S3_ERROR_BODY_LIMIT)
+        except Exception:  # noqa: BLE001 - see docstring
+            return None
+
+        if not raw:
+            return None
+
+        # ``replace`` rather than a decode that can raise: a bounded read can
+        # end mid-character, and a body that is not UTF-8 at all is a body
+        # with no reason in it, which is the empty answer below and not an
+        # error of its own.
+        excerpt = raw.decode("utf-8", errors="replace")
+
+        # Read, rather than parse: the body arrives from the network on an
+        # error path, and a regex over a bounded slice cannot be talked into
+        # resolving an entity or expanding a billion laughs.
+        code = re.search(r"<Code>([^<]{0,200})</Code>", excerpt)
+        message = re.search(r"<Message>([^<]{0,500})</Message>", excerpt)
+        if code is None and message is None:
+            return None
+
+        return ": ".join(
+            part.group(1).strip()
+            for part in (code, message)
+            if part is not None and part.group(1).strip()
+        ) or None
 
     @staticmethod
     def run_preflight_checks(drawing: Union[BufferedReader, bytes]):
@@ -1289,7 +1361,9 @@ class Werk24Client:
             raise
 
     @staticmethod
-    def _raise_for_status(url: str, status_code: int) -> None:
+    def _raise_for_status(
+        url: str, status_code: int, details: Optional[str] = None
+    ) -> None:
         """
         Raise the correct exception based on the HTTP status code.
 
@@ -1297,6 +1371,10 @@ class Werk24Client:
         ----
         - url (str): The requested URL.
         - status_code (int): The received response status code.
+        - details (Optional[str]): What the server said about the refusal,
+          when the caller was able to read it. A status code alone maps a
+          whole family of causes onto one sentence; this is what tells them
+          apart in a log line or a support ticket.
 
         Raises:
         ------
@@ -1330,20 +1408,28 @@ class Werk24Client:
             None,
         )
 
+        described = f"Request failed '{url}' with code {status_code}"
+        if details:
+            described = f"{described}: {details}"
+
         if exception_class:
             logger.warning(
-                "Request to '%s' failed with status code %s. Raising %s.",
+                "Request to '%s' failed with status code %s (%s). Raising %s.",
                 url,
                 status_code,
+                details or "no detail given",
                 exception_class.__name__,
             )
-            raise exception_class(f"Request failed '{url}' with code {status_code}")
+            raise exception_class(described)
 
         # Fallback for unhandled status codes
         logger.error(
-            "Request to '%s' failed with unhandled status code %s.", url, status_code
+            "Request to '%s' failed with unhandled status code %s (%s).",
+            url,
+            status_code,
+            details or "no detail given",
         )
-        raise ServerException(f"Request failed '{url}' with code {status_code}")
+        raise ServerException(described)
 
     async def _send_command_read(
         self,
