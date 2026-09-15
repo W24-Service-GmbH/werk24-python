@@ -2,6 +2,7 @@ import os
 import uuid
 from unittest.mock import AsyncMock, Mock
 
+import aiohttp
 import pytest
 
 from werk24 import (
@@ -208,3 +209,152 @@ def test_raise_for_status_ok():
 def test_raise_for_status_raises(code, exc):
     with pytest.raises(exc):
         Werk24Client._raise_for_status("https://example.com", code)
+
+
+class _FakeS3Stream:
+    """The ``content`` half of a response: a reader with a byte limit.
+
+    ``read(n)`` answers at most ``n`` bytes, like aiohttp's ``StreamReader``,
+    and records what it was asked for so a test can assert the read was
+    bounded rather than trusting a slice applied afterwards.
+    """
+
+    def __init__(self, body: bytes, raises: bool = False):
+        self._body = body
+        self._raises = raises
+        self.requested: list[int] = []
+
+    async def read(self, n: int = -1) -> bytes:
+        self.requested.append(n)
+        if self._raises:
+            raise aiohttp.ClientError("connection went away")
+        return self._body if n < 0 else self._body[:n]
+
+
+class _FakeS3Response:
+    """An aiohttp-shaped response over a bounded stream."""
+
+    def __init__(self, status: int, body: str = "", raises: bool = False):
+        self.status = status
+        self.content = _FakeS3Stream(body.encode("utf-8"), raises=raises)
+
+    @property
+    def reads(self) -> int:
+        return len(self.content.requested)
+
+
+_ENTITY_TOO_LARGE = (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    "<Error><Code>EntityTooLarge</Code>"
+    "<Message>Your proposed upload exceeds the maximum allowed size</Message>"
+    "<ProposedSize>92160000</ProposedSize><MaxSizeAllowed>62914560</MaxSizeAllowed>"
+    "</Error>"
+)
+
+
+@pytest.mark.asyncio
+async def test_the_reason_s3_gives_reaches_the_exception():
+    """"Could not interpret the request" is the same sentence for every
+    refusal S3 answers with a 400. The body is what tells them apart."""
+    response = _FakeS3Response(400, _ENTITY_TOO_LARGE)
+
+    detail = await Werk24Client._s3_error_detail(response)
+    assert detail == (
+        "EntityTooLarge: Your proposed upload exceeds the maximum allowed size"
+    )
+
+    with pytest.raises(BadRequestException) as raised:
+        Werk24Client._raise_for_status("https://example.com", 400, details=detail)
+    assert "EntityTooLarge" in str(raised.value)
+    assert "maximum allowed size" in str(raised.value)
+
+
+@pytest.mark.asyncio
+async def test_the_read_itself_is_bounded():
+    """The limit has to bound the read, not just what is searched.
+
+    Reading the whole body and slicing afterwards would leave an endpoint
+    that answers with a large or never-ending 4xx body -- a proxy or an
+    S3-compatible gateway in front of S3, not S3 itself -- allocating all of
+    it or waiting for EOF, on the path that is already failing.
+    """
+    from werk24.techread import _S3_ERROR_BODY_LIMIT
+
+    padding = "<Padding>" + ("x" * 10 * _S3_ERROR_BODY_LIMIT) + "</Padding>"
+    response = _FakeS3Response(400, padding + _ENTITY_TOO_LARGE)
+
+    await Werk24Client._s3_error_detail(response)
+
+    assert response.content.requested == [_S3_ERROR_BODY_LIMIT]
+
+
+@pytest.mark.asyncio
+async def test_a_reason_past_the_limit_is_simply_not_found():
+    """The other side of the bound, stated rather than left implied: a
+    reason that sits past the limit is lost, and losing it costs the detail
+    and nothing else. Only a body that is not an S3 error document in the
+    first place can push the reason that far out."""
+    from werk24.techread import _S3_ERROR_BODY_LIMIT
+
+    padding = "<Padding>" + ("x" * 2 * _S3_ERROR_BODY_LIMIT) + "</Padding>"
+    response = _FakeS3Response(400, padding + _ENTITY_TOO_LARGE)
+
+    assert await Werk24Client._s3_error_detail(response) is None
+
+
+@pytest.mark.asyncio
+async def test_undecodable_bytes_do_not_cost_the_reason_or_raise():
+    """A bounded read can end mid-character and a gateway can answer with
+    bytes that are not UTF-8 at all. Decoding must not raise on this path,
+    and the reason must survive whatever sat around it."""
+    response = _FakeS3Response(400)
+    response.content = _FakeS3Stream(
+        b"\xff\xfe<Error><Code>EntityTooLarge</Code></Error>"
+    )
+
+    assert await Werk24Client._s3_error_detail(response) == "EntityTooLarge"
+
+
+@pytest.mark.asyncio
+async def test_a_tag_cut_in_half_by_the_limit_is_not_a_reason():
+    """The bound can land inside the element it was looking for. A half-read
+    tag names nothing, and guessing at the rest would put an invented reason
+    in front of whoever reads the log line."""
+    response = _FakeS3Response(400, "<Error><Code>EntityTooLar")
+
+    assert await Werk24Client._s3_error_detail(response) is None
+
+
+@pytest.mark.asyncio
+async def test_a_successful_upload_does_not_read_the_body():
+    """The happy path pays nothing: there is no reason to fetch, and S3
+    answers a successful POST with an empty body anyway."""
+    response = _FakeS3Response(204, "")
+    assert await Werk24Client._s3_error_detail(response) is None
+    assert response.reads == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "response",
+    [
+        _FakeS3Response(400, "", raises=True),
+        _FakeS3Response(400, ""),
+        _FakeS3Response(400, "<html><body>502 Bad Gateway</body></html>"),
+        _FakeS3Response(400, "<Error><Code></Code></Error>"),
+    ],
+)
+async def test_an_unreadable_refusal_leaves_the_old_message_alone(response):
+    """This runs on a path that is already failing. A body that cannot be
+    read, is not XML, or names nothing must cost the caller the detail and
+    nothing else -- never replace the failure being reported with a new one."""
+    assert await Werk24Client._s3_error_detail(response) is None
+
+    with pytest.raises(BadRequestException) as raised:
+        Werk24Client._raise_for_status("https://example.com", 400, details=None)
+    # The exception's own prose wraps the detail line; what matters is that
+    # the detail line is the one the caller had before, with nothing
+    # half-read appended to it.
+    assert str(raised.value).endswith(
+        "Request failed 'https://example.com' with code 400"
+    )
