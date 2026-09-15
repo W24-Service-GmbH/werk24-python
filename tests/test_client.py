@@ -2,6 +2,7 @@ import os
 import uuid
 from unittest.mock import AsyncMock, Mock
 
+import aiohttp
 import pytest
 
 from werk24 import (
@@ -208,3 +209,80 @@ def test_raise_for_status_ok():
 def test_raise_for_status_raises(code, exc):
     with pytest.raises(exc):
         Werk24Client._raise_for_status("https://example.com", code)
+
+
+class _FakeS3Response:
+    """An aiohttp-shaped response whose body is read at most once."""
+
+    def __init__(self, status: int, body: str = "", raises: bool = False):
+        self.status = status
+        self._body = body
+        self._raises = raises
+        self.reads = 0
+
+    async def text(self) -> str:
+        self.reads += 1
+        if self._raises:
+            raise aiohttp.ClientError("connection went away")
+        return self._body
+
+
+_ENTITY_TOO_LARGE = (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    "<Error><Code>EntityTooLarge</Code>"
+    "<Message>Your proposed upload exceeds the maximum allowed size</Message>"
+    "<ProposedSize>92160000</ProposedSize><MaxSizeAllowed>62914560</MaxSizeAllowed>"
+    "</Error>"
+)
+
+
+@pytest.mark.asyncio
+async def test_the_reason_s3_gives_reaches_the_exception():
+    """"Could not interpret the request" is the same sentence for every
+    refusal S3 answers with a 400. The body is what tells them apart."""
+    response = _FakeS3Response(400, _ENTITY_TOO_LARGE)
+
+    detail = await Werk24Client._s3_error_detail(response)
+    assert detail == (
+        "EntityTooLarge: Your proposed upload exceeds the maximum allowed size"
+    )
+
+    with pytest.raises(BadRequestException) as raised:
+        Werk24Client._raise_for_status("https://example.com", 400, details=detail)
+    assert "EntityTooLarge" in str(raised.value)
+    assert "maximum allowed size" in str(raised.value)
+
+
+@pytest.mark.asyncio
+async def test_a_successful_upload_does_not_read_the_body():
+    """The happy path pays nothing: there is no reason to fetch, and S3
+    answers a successful POST with an empty body anyway."""
+    response = _FakeS3Response(204, "")
+    assert await Werk24Client._s3_error_detail(response) is None
+    assert response.reads == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "response",
+    [
+        _FakeS3Response(400, "", raises=True),
+        _FakeS3Response(400, ""),
+        _FakeS3Response(400, "<html><body>502 Bad Gateway</body></html>"),
+        _FakeS3Response(400, "<Error><Code></Code></Error>"),
+    ],
+)
+async def test_an_unreadable_refusal_leaves_the_old_message_alone(response):
+    """This runs on a path that is already failing. A body that cannot be
+    read, is not XML, or names nothing must cost the caller the detail and
+    nothing else -- never replace the failure being reported with a new one."""
+    assert await Werk24Client._s3_error_detail(response) is None
+
+    with pytest.raises(BadRequestException) as raised:
+        Werk24Client._raise_for_status("https://example.com", 400, details=None)
+    # The exception's own prose wraps the detail line; what matters is that
+    # the detail line is the one the caller had before, with nothing
+    # half-read appended to it.
+    assert str(raised.value).endswith(
+        "Request failed 'https://example.com' with code 400"
+    )
