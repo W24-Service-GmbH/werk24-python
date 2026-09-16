@@ -17,7 +17,27 @@ from werk24.utils.exceptions import BadRequestException
 
 
 class TestAskValidationIntegration:
-    """Integration tests for ask validation in client methods."""
+    """Integration tests for ask validation in client methods.
+
+    The clients below are built with a dummy token and region on purpose.
+    Validation is meant to reject the asks before the client authenticates or
+    opens a socket, so these tests need no license; a bare ``Werk24Client()``
+    went looking for one and failed with ``InvalidLicenseException`` on any
+    machine that had none, which is every machine outside CI.
+
+    ``async with client`` opens a real socket in ``__aenter__``, which is not
+    what any of these tests is about, so the connect and shutdown are stubbed
+    where the context manager is used.
+    """
+
+    @staticmethod
+    def _offline(client):
+        """Stub the socket out of ``async with client``."""
+        return patch.multiple(
+            client,
+            _connect_with_retry=AsyncMock(),
+            _graceful_shutdown=AsyncMock(),
+        )
 
     @pytest.mark.asyncio
     async def test_read_drawing_validates_asks_before_processing(self):
@@ -27,11 +47,11 @@ class TestAskValidationIntegration:
         class InvalidAsk(BaseModel):
             ask_type: str = "INVALID_TYPE"
 
-        client = Werk24Client()
+        client = Werk24Client(token="t", region="r")
         drawing = io.BytesIO(b"fake drawing content")
 
         # Should raise BadRequestException due to invalid ask type
-        with pytest.raises(BadRequestException) as exc_info:
+        with self._offline(client), pytest.raises(BadRequestException) as exc_info:
             async with client:
                 async for _ in client.read_drawing(drawing, [InvalidAsk()]):
                     pass
@@ -46,7 +66,7 @@ class TestAskValidationIntegration:
         class InvalidAsk(BaseModel):
             ask_type: str = "INVALID_TYPE"
 
-        client = Werk24Client()
+        client = Werk24Client(token="t", region="r")
         drawing = io.BytesIO(b"fake drawing content")
 
         # Should raise BadRequestException due to invalid ask type
@@ -61,10 +81,10 @@ class TestAskValidationIntegration:
     @pytest.mark.asyncio
     async def test_read_drawing_with_empty_asks_raises_error(self):
         """Test that read_drawing with empty asks raises BadRequestException."""
-        client = Werk24Client()
+        client = Werk24Client(token="t", region="r")
         drawing = io.BytesIO(b"fake drawing content")
 
-        with pytest.raises(BadRequestException) as exc_info:
+        with self._offline(client), pytest.raises(BadRequestException) as exc_info:
             async with client:
                 async for _ in client.read_drawing(drawing, []):
                     pass
@@ -74,7 +94,7 @@ class TestAskValidationIntegration:
     @pytest.mark.asyncio
     async def test_read_drawing_with_valid_asks_passes_validation(self):
         """Test that read_drawing with valid asks passes validation."""
-        client = Werk24Client()
+        client = Werk24Client(token="t", region="r")
         drawing = io.BytesIO(b"fake drawing content")
         asks = [W24AskTitleBlock(), AskBalloons()]
 
