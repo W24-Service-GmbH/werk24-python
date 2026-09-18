@@ -303,3 +303,132 @@ class TestDownloadsDoNotBlockTheReceiveLoop:
         await asyncio.sleep(0)
 
         assert all(task.cancelled() or task.done() for task in spawned)
+
+
+class TestNormalTerminationLosesNothing:
+    """The message held back for the overlap is a real message.
+
+    Holding one back is what creates the overlap, but every way out of the
+    receive loop except an exception is a normal end - and at those ends the
+    held-back message still has to be delivered. Cancelling it instead loses
+    an answer the customer was already sent, and with a message cap of 1 it
+    yields nothing at all.
+    """
+
+    def _message(self, subtype=None, payload_url=None):
+        return type(
+            "M",
+            (),
+            {
+                "message_type": (
+                    TechreadMessageType.PROGRESS
+                    if subtype
+                    else TechreadMessageType.ASK
+                ),
+                "message_subtype": subtype,
+                "payload_url": payload_url,
+                "payload_bytes": None,
+                "request_id": None,
+            },
+        )()
+
+    def _wire(self, client, monkeypatch, messages, closes_after=None):
+        counter = {"n": 0}
+
+        async def fake_recv():
+            index = counter["n"]
+            counter["n"] += 1
+            if closes_after is not None and index >= closes_after:
+                import websockets
+
+                raise websockets.exceptions.ConnectionClosedOK(None, None)
+            return f"raw-{index}"
+
+        client._wss_session = type("S", (), {"recv": staticmethod(fake_recv)})()
+        monkeypatch.setattr(
+            client, "_parse_message", lambda raw: messages[int(raw.split("-")[1])]
+        )
+
+        async def send(*_a, **_k):
+            return None
+
+        monkeypatch.setattr(client, "_send_command", send)
+
+    @pytest.mark.asyncio
+    async def test_a_clean_server_close_still_delivers_the_last_message(
+        self, monkeypatch
+    ):
+        client = _client()
+        messages = [self._message(), self._message()]
+        self._wire(client, monkeypatch, messages, closes_after=2)
+
+        received = [m async for m in client._send_command_read()]
+
+        assert received == messages
+
+    @pytest.mark.asyncio
+    async def test_a_clean_close_delivers_its_payload_too(self, monkeypatch):
+        client = _client()
+        messages = [
+            self._message(),
+            self._message(payload_url="https://s3/last"),
+        ]
+        self._wire(client, monkeypatch, messages, closes_after=2)
+
+        async def download(url, *_a, **_k):
+            return str(url).encode()
+
+        monkeypatch.setattr(client, "download_payload", download)
+
+        received = [m async for m in client._send_command_read()]
+
+        assert len(received) == 2
+        assert received[-1].payload_bytes == b"https://s3/last"
+
+    @pytest.mark.asyncio
+    async def test_the_message_cap_delivers_what_it_received(self, monkeypatch):
+        """A cap of 1 used to yield nothing at all."""
+        client = _client()
+        messages = [self._message()]
+        self._wire(client, monkeypatch, messages)
+
+        received = [
+            m
+            async for m in client._send_command_read(max_messages_per_session=1)
+        ]
+
+        assert received == messages
+
+    @pytest.mark.asyncio
+    async def test_an_already_failed_download_is_not_left_unretrieved(
+        self, monkeypatch
+    ):
+        """Cancelling a task that already raised never retrieves its error.
+
+        asyncio then prints "Task exception was never retrieved" and the real
+        download failure is lost behind it.
+        """
+        client = _client()
+
+        async def fails_immediately(*_a, **_k):
+            raise OSError("s3 said no")
+
+        messages = [
+            self._message(),
+            self._message(payload_url="https://s3/boom"),
+        ]
+        self._wire(client, monkeypatch, messages)
+        monkeypatch.setattr(client, "download_payload", fails_immediately)
+
+        before = asyncio.all_tasks()
+        generator = client._send_command_read()
+        await generator.__anext__()
+        spawned = asyncio.all_tasks() - before
+
+        await generator.aclose()
+        await asyncio.sleep(0)
+
+        for task in spawned:
+            assert task.done()
+            # Retrieving it here must not raise "never retrieved" later.
+            assert task.cancelled() or task.exception() is not None
