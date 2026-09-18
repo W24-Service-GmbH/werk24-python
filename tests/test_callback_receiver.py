@@ -8,6 +8,7 @@ untested here is Cloudflare's half, which no unit test can stand in for.
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 import uuid
 
@@ -258,9 +259,19 @@ class TestTheTunnelFailsLoudly:
                 ...
 
         message = str(excinfo.value)
-        # The banner is boxed, so the hostname has to be pulled out of it.
-        assert "https://never-live-abcdef.trycloudflare.com" in message  # noqa: B101
         assert "never carried traffic" in message  # noqa: B101
+
+        # The banner is boxed, so the hostname has to be pulled back out of it.
+        # Extracted and compared whole rather than asserted as a substring of
+        # the message: a substring check passes on a URL that merely contains
+        # the expected one, which would hide exactly the parsing bug this
+        # asserts against (and is what CodeQL's incomplete-URL-sanitization
+        # rule is about).
+        announced = re.search(r"Tunnel (\S+) was announced", message)
+        assert announced is not None, message  # noqa: B101
+        assert (  # noqa: B101
+            announced.group(1) == "https://never-live-abcdef.trycloudflare.com"
+        )
 
     async def test_a_failing_binary_reports_its_output(self, tmp_path):
         """A process that dies on startup fails now, not at the timeout."""
