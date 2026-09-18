@@ -531,6 +531,7 @@ class Werk24Client:
                 client_private_key_pem=client_private_key_pem,
                 client_private_key_passphrase=client_private_key_passphrase,
                 priority=validated_priority,
+                request_id=init_message.request_id,
             ):
                 yield message
         except Exception as exc:
@@ -1438,6 +1439,7 @@ class Werk24Client:
         client_private_key_passphrase: Optional[bytes] = None,
         max_messages_per_session: int = 1000,
         priority: Optional[str] = None,
+        request_id: Optional[uuid.UUID] = None,
     ) -> AsyncGenerator[TechreadMessage, None]:
         """
         Send a techread request to the backend and yield resulting messages.
@@ -1454,6 +1456,10 @@ class Werk24Client:
             max_messages_per_session (int): Safety-net cap on the number of
                 messages to receive per session before giving up.
             priority (Optional[str]): Optional priority level for the request (PRIO1, PRIO2, PRIO3).
+            request_id (Optional[uuid.UUID]): The id INITIALIZE answered with.
+                Sent back so the server can read the request row by its
+                primary key instead of through an eventually consistent
+                index. Optional: a server that does not read it ignores it.
 
         Yields:
             W24TechreadMessage: The received messages, processed as needed.
@@ -1462,6 +1468,16 @@ class Werk24Client:
 
         # Prepare the initial request message
         message = {}
+        if request_id:
+            # The server looks its request row up again here. Without this it
+            # queries connection_id-index, which is a GSI and so cannot be
+            # read consistently: when the upload finishes before the index has
+            # propagated the row INITIALIZE wrote, the lookup comes back empty
+            # and the server sleeps 0.5s and then 1s waiting for it. The id is
+            # the row's primary key, so sending it turns that into one
+            # strongly consistent read. It is not a credential -- the server
+            # still checks the row belongs to the authenticated account.
+            message["request_id"] = str(request_id)
         if client_public_key_pem:
             message["public_key"] = client_public_key_pem.decode("utf-8")
             logger.debug("Public key added to message")
