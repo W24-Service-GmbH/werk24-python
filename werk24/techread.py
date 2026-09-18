@@ -51,6 +51,7 @@ from werk24.utils.exceptions import (
     PriorityTooHighError,
     ReadTimeoutError,
     RequestTooLargeException,
+    RetryableServerError,
     ResourceNotFoundException,
     ServerException,
     SSLCertificateError,
@@ -77,7 +78,10 @@ HTTP_EXCEPTION_CLASSES = {
     range(415, 416): UnsupportedMediaType,
     range(429, 430): InsufficientCreditsException,
     range(300, 400): ServerException,
-    range(500, 600): ServerException,
+    # 5xx alone is retryable. ServerException also covers 3xx and 416-499,
+    # so catching IT in the retry helper would resend a request the server
+    # has already rejected as wrong - see _with_https_retries.
+    range(500, 600): RetryableServerError,
     range(416, 500): ServerException,
 }
 
@@ -429,6 +433,7 @@ class Werk24Client:
         max_pages: int = settings.max_pages,
         encryption_keys: Optional[EncryptionKeys] = None,
         priority: Optional[str] = None,
+        total_timeout: Optional[float] = None,
     ):
         """
         Read the drawing and call hooks for each message.
@@ -462,6 +467,7 @@ class Werk24Client:
             max_pages=max_pages,
             encryption_keys=encryption_keys,
             priority=priority,
+            total_timeout=total_timeout,
         ):
             await self.call_hooks_for_message(message, hooks)
 
@@ -472,6 +478,7 @@ class Werk24Client:
         max_pages: int = settings.max_pages,
         encryption_keys: Optional[EncryptionKeys] = None,
         priority: Optional[str] = None,
+        total_timeout: Optional[float] = None,
     ) -> AsyncGenerator[TechreadMessage, None, None]:
         """
         Read the drawing and return the extracted text.
@@ -570,6 +577,7 @@ class Werk24Client:
                 client_private_key_pem=client_private_key_pem,
                 client_private_key_passphrase=client_private_key_passphrase,
                 priority=validated_priority,
+                total_timeout=total_timeout,
             ):
                 yield message
         except Exception as exc:
@@ -999,13 +1007,21 @@ class Werk24Client:
                     "Failed to encrypt the drawing with the server's public key."
                 ) from exc
 
-        # generate the form data by merging the presigned
-        # fields with the file
-        form = aiohttp.FormData({**presigned_post.fields, "file": content})
+        # A fresh FormData per attempt.
+        #
+        # aiohttp consumes a FormData when it writes it and marks it
+        # processed, so a second attempt on the same object raises instead of
+        # resending the drawing - which would have made the retry below fail
+        # every time it was actually needed. A file-like `content` is also
+        # left at EOF, so its position is restored before rebuilding.
+        payload = content.read() if hasattr(content, "read") else content
+
+        def _form() -> aiohttp.FormData:
+            return aiohttp.FormData({**presigned_post.fields, "file": payload})
 
         async def _attempt():
             session = self._https_session()
-            response = await session.post(str(presigned_post.url), data=form)
+            response = await session.post(str(presigned_post.url), data=_form())
             self._raise_for_status(
                 str(presigned_post.url),
                 response.status,
@@ -1366,11 +1382,18 @@ class Werk24Client:
         ``ServerException``. So a transient S3 blip failed a request whose
         quota crew-api had already spent.
 
-        Only 5xx and connection errors are retried. A 4xx is the request being
-        wrong, and resending it will not make it right; 429 in particular maps
-        to ``InsufficientCreditsException``, so retrying it would turn a quota
-        refusal into a retry storm against an account that has already run
-        out. That asymmetry is deliberate and should stay.
+        Only 5xx and connection errors are retried, and that is enforced by
+        the exception type rather than by ordering ``except`` clauses.
+        ``ServerException`` is too broad to catch here: ``HTTP_EXCEPTION_CLASSES``
+        maps 3xx and 416-499 onto it as well, so catching it would resend a
+        request the server has already rejected as wrong - a 422 up to
+        ``max_https_retries`` times. ``RetryableServerError`` is raised for
+        5xx only.
+
+        429 is excluded by the same mechanism: it maps to
+        ``InsufficientCreditsException``, which is a ``ServerException`` but
+        not a ``RetryableServerError``, so a quota refusal cannot become a
+        retry storm against an account that has already run out.
 
         Backoff is exponential with jitter, so a fleet of clients hitting the
         same blip does not come back in step.
@@ -1379,10 +1402,8 @@ class Werk24Client:
         for attempt in range(1, attempts + 1):
             try:
                 return await attempt_once()
-            except InsufficientCreditsException:
-                raise
             except (
-                ServerException,
+                RetryableServerError,
                 aiohttp.ClientConnectionError,
                 TimeoutError,
             ) as exc:
@@ -1596,6 +1617,38 @@ class Werk24Client:
         # without waiting out the total, while a long read that is still
         # making progress is not cut off.
         deadline = time.monotonic() + total_timeout
+
+        async def _resolve(entry):
+            """Await one queued download, bounded by the read's deadline.
+
+            Without this the deadline covers only ``recv``: a payload that
+            dribbles forever would keep the read running past
+            ``total_timeout``, so the total bound would not be a bound.
+            """
+            ready, ready_task = entry
+            if ready_task is None:
+                return ready
+            left = deadline - time.monotonic()
+            if left <= 0:
+                ready_task.cancel()
+                raise ReadTimeoutError(
+                    details=f"The read did not complete within {total_timeout:.0f}s."
+                )
+            try:
+                ready.payload_bytes = await asyncio.wait_for(ready_task, timeout=left)
+            except asyncio.TimeoutError as exc:
+                raise ReadTimeoutError(
+                    details=(
+                        "A payload download did not finish within the read's "
+                        f"{total_timeout:.0f}s budget."
+                    )
+                ) from exc
+            except Exception as e:
+                logger.error("Failed to download payload: %s", e)
+                raise
+            logger.debug("Payload successfully downloaded")
+            return ready
+
         try:
             for _ in range(max_messages_per_session):
                 remaining = deadline - time.monotonic()
@@ -1678,15 +1731,7 @@ class Werk24Client:
                 # Keep one message in flight so its download overlaps the next
                 # receive; on completion there is no next receive, so drain.
                 while len(pending) > (0 if is_completed else 1):
-                    ready, ready_task = pending.popleft()
-                    if ready_task is not None:
-                        try:
-                            ready.payload_bytes = await ready_task
-                            logger.debug("Payload successfully downloaded")
-                        except Exception as e:
-                            logger.error("Failed to download payload: %s", e)
-                            raise
-                    yield ready
+                    yield await _resolve(pending.popleft())
 
                 # Stop once the server signals that the read has completed,
                 # rather than relying on a fixed message count (which would
@@ -1706,15 +1751,7 @@ class Werk24Client:
             # After a PROGRESS_COMPLETED break this is empty - that path
             # already drained - so it costs nothing there.
             while pending:
-                ready, ready_task = pending.popleft()
-                if ready_task is not None:
-                    try:
-                        ready.payload_bytes = await ready_task
-                        logger.debug("Payload successfully downloaded")
-                    except Exception as e:
-                        logger.error("Failed to download payload: %s", e)
-                        raise
-                yield ready
+                yield await _resolve(pending.popleft())
 
         except Exception as e:
             logger.error("Error occurred while processing responses: %s", e)

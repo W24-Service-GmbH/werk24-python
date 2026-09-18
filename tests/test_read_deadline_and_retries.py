@@ -28,6 +28,7 @@ from werk24.utils.exceptions import (
     BadRequestException,
     InsufficientCreditsException,
     ReadTimeoutError,
+    RetryableServerError,
     ServerException,
 )
 
@@ -144,7 +145,7 @@ class TestHttpsRetries:
         async def flaky():
             calls["n"] += 1
             if calls["n"] < 3:
-                raise ServerException(details="500")
+                raise RetryableServerError(details="500")
             return "ok"
 
         assert await client._with_https_retries("upload", flaky) == "ok"
@@ -158,11 +159,39 @@ class TestHttpsRetries:
 
         async def always_fails():
             calls["n"] += 1
-            raise ServerException(details="500")
+            raise RetryableServerError(details="500")
 
-        with pytest.raises(ServerException):
+        with pytest.raises(RetryableServerError):
             await client._with_https_retries("upload", always_fails)
         assert calls["n"] == settings.max_https_retries + 1
+
+    @pytest.mark.asyncio
+    async def test_a_non_5xx_server_exception_is_not_retried(self, monkeypatch):
+        """The trap: ServerException is not only 5xx.
+
+        HTTP_EXCEPTION_CLASSES maps 3xx and 416-499 onto it too, so catching
+        ServerException in the retry helper would resend a request the server
+        has already rejected as wrong - a 422 up to max_https_retries times.
+        """
+        client = _client()
+        calls = {"n": 0}
+
+        async def unprocessable():
+            calls["n"] += 1
+            raise ServerException(details="422")
+
+        with pytest.raises(ServerException):
+            await client._with_https_retries("upload", unprocessable)
+        assert calls["n"] == 1
+
+    def test_only_5xx_maps_to_the_retryable_class(self):
+        from werk24.techread import HTTP_EXCEPTION_CLASSES
+
+        for codes, exc in HTTP_EXCEPTION_CLASSES.items():
+            if exc is RetryableServerError:
+                assert min(codes) >= 500, codes
+            elif exc is not None:
+                assert not issubclass(exc, RetryableServerError), (codes, exc)
 
     @pytest.mark.asyncio
     async def test_a_4xx_is_not_retried(self, monkeypatch):
