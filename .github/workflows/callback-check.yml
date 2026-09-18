@@ -85,4 +85,11 @@ jobs:
         run: |
           # -m callback_e2e so nothing else in the suite runs, and -rs so any
           # skip still states its reason in the summary.
-          pytest -m callback_e2e -ra -rs -v --color=yes
+          #
+          # -s because the test reports what it received on a PASS as well as
+          # a failure -- how many callbacks arrived and which subtypes -- and
+          # pytest swallows that under its default capture. It is the cheapest
+          # signal that the shape of a healthy run has changed, and it is only
+          # worth anything if it reaches this log. One test runs here, so
+          # turning capture off costs nothing.
+          pytest -m callback_e2e -ra -rs -v -s --color=yes
