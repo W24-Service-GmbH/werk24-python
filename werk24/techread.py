@@ -1696,17 +1696,47 @@ class Werk24Client:
                     hit_cap = False
                     break
 
+            # Every way out of that loop except an exception is a NORMAL end,
+            # and the message held back to create the overlap is a real
+            # message. A clean server close (ConnectionClosedOK) and the
+            # message cap both land here with one still queued; dropping it
+            # would lose an answer the customer was sent, and at a cap of 1
+            # would yield nothing at all.
+            #
+            # After a PROGRESS_COMPLETED break this is empty - that path
+            # already drained - so it costs nothing there.
+            while pending:
+                ready, ready_task = pending.popleft()
+                if ready_task is not None:
+                    try:
+                        ready.payload_bytes = await ready_task
+                        logger.debug("Payload successfully downloaded")
+                    except Exception as e:
+                        logger.error("Failed to download payload: %s", e)
+                        raise
+                yield ready
+
         except Exception as e:
             logger.error("Error occurred while processing responses: %s", e)
             raise
         finally:
-            # Whatever is still queued - because the loop raised, because the
-            # caller stopped consuming, or because the message cap was hit -
-            # must not leave a download running against a session that is
-            # about to close. Cancelling a finished task is a no-op.
-            for _, orphan in pending:
-                if orphan is not None and not orphan.done():
+            # Only an abnormal end reaches here with anything queued: the loop
+            # raised, or the caller stopped consuming. Those downloads must
+            # not keep running against a session that is about to close.
+            #
+            # Cancel, then await. A task that already FAILED is done, so
+            # cancelling it is a no-op and its exception would never be
+            # retrieved - asyncio then prints "Task exception was never
+            # retrieved" and the real download error is lost behind it.
+            # gather(return_exceptions=True) collects both cases and raises
+            # neither, which is what a cleanup path should do.
+            orphans = [task for _, task in pending if task is not None]
+            pending.clear()
+            for orphan in orphans:
+                if not orphan.done():
                     orphan.cancel()
+            if orphans:
+                await asyncio.gather(*orphans, return_exceptions=True)
 
         # Warn (never silently truncate) if the stream ended without an explicit
         # completion signal.
