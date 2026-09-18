@@ -83,6 +83,17 @@ async def test_read_drawing_with_hooks(drawing_bytes):
 async def test_read_drawing_with_callback(
     drawing_bytes, callback_url: str = "https://werk24.io"
 ):
+    """The submission is accepted and returns a request id.
+
+    That is the whole of it, and the URL is why: ``https://werk24.io`` is on
+    the server's ``SUPPRESSED_CALLBACKS`` list, so no callback is ever posted
+    to it. This test covers the *request* side of the callback endpoint and
+    nothing about delivery -- deliberately, since a test asserting on delivery
+    would need somewhere public to receive it.
+
+    Delivery is checked in ``tests/test_callback_e2e.py``, which stands up a
+    receiver behind a temporary tunnel and validates what actually arrives.
+    """
     async with Werk24Client() as client:
         request_id = await client.read_drawing_with_callback(
             drawing_bytes, [AskMetaData()], callback_url

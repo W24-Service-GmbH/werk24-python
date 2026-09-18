@@ -39,4 +39,7 @@ jobs:
           W24TECHREAD_AUTH_REGION: ${{ secrets.W24TECHREAD_AUTH_REGION }}
           W24TECHREAD_AUTH_TOKEN: ${{ secrets.W24TECHREAD_AUTH_TOKEN }}
         run: |
-          pytest -ra --color=yes            # -ra gives a concise test summary
+          # callback_e2e is deselected here: it costs a billable read and
+          # needs a tunnel, so it runs once a day in callback-check.yml
+          # rather than five times per push across this matrix.
+          pytest -ra --color=yes -m "not callback_e2e"   # -ra gives a concise test summary
