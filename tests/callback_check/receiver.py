@@ -181,9 +181,21 @@ class CallbackReceiver:
                 return False
 
             self._event.clear()
-            # Re-check after the timeout as well as after a wake-up: a delivery
-            # that landed between the predicate call above and the clear() here
-            # would otherwise not be seen until the next one arrived.
+
+            # Re-check between the clear and the await, not only after it. A
+            # delivery landing in the window between the predicate call above
+            # and this clear() sets the event, and the clear then throws that
+            # wake-up away -- so without this the wait sleeps out its whole
+            # timeout before noticing a condition that was already true. It
+            # still returned the right answer, but 300s late on the paid
+            # end-to-end run.
+            #
+            # Clear first, then check: the handler appends before it sets, so
+            # any wake-up discarded above corresponds to a delivery this call
+            # can already see.
+            if predicate(self.deliveries):
+                return True
+
             try:
                 await asyncio.wait_for(self._event.wait(), timeout=remaining)
             except asyncio.TimeoutError:
