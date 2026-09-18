@@ -1,0 +1,88 @@
+name: 📡 Callback delivery check
+
+# Proves that a registered callback is actually delivered, and that what
+# arrives is a message this client can read.
+#
+# The gap this closes: the only callback assertion in the suite submits to
+# https://werk24.io, which the server suppresses by name, so nothing about the
+# delivery path has ever been observed by CI. See tests/test_callback_e2e.py.
+#
+# It costs one billable read per run, so it is not on every push:
+on:
+  schedule:
+    # 06:15 UTC daily -- before the working day in Europe, so a platform-side
+    # break in the callback path is known before customers find it.
+    - cron: "15 6 * * *"
+  workflow_dispatch:
+    inputs:
+      timeout_seconds:
+        description: "Seconds to wait for the final callback"
+        required: false
+        default: "300"
+  push:
+    # The harness itself. A change to the receiver, the tunnel or the contract
+    # should be exercised against the real platform before it is trusted.
+    paths:
+      - "tests/callback_check/**"
+      - "tests/test_callback_e2e.py"
+      - ".github/workflows/callback-check.yml"
+
+concurrency:
+  # Never two paid runs at once, and a superseded one is not worth finishing.
+  group: callback-check
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  callback-check:
+    runs-on: ubuntu-latest
+    # A fork's pull request cannot read the repository secrets, so the job
+    # would fail on a missing token rather than on anything it tested.
+    if: github.event_name != 'push' || github.repository == 'W24-Service-GmbH/werk24-python'
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Matches the runtime the platform's own services are pinned to.
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r tests/requirements.txt
+          pip install -e .
+
+      - name: Install cloudflared
+        # The callback needs a public URL and a GitHub runner has no inbound
+        # address. A quick tunnel needs no Cloudflare account and no secret;
+        # the hostname is ephemeral and dies with the job.
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --retry 3 --retry-delay 5 \
+            -o /usr/local/bin/cloudflared \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x /usr/local/bin/cloudflared
+          cloudflared --version
+
+      - name: Run the callback check
+        env:
+          W24TECHREAD_AUTH_REGION: ${{ secrets.W24TECHREAD_AUTH_REGION }}
+          W24TECHREAD_AUTH_TOKEN: ${{ secrets.W24TECHREAD_AUTH_TOKEN }}
+          W24_CALLBACK_TIMEOUT: ${{ github.event.inputs.timeout_seconds || '300' }}
+          # Refuse to skip. A missing secret or a missing binary fails the job
+          # here instead of producing a green check over a check that never
+          # ran -- which is the same class of problem this workflow exists to
+          # fix.
+          W24_CALLBACK_CHECK_REQUIRED: "1"
+        run: |
+          # -m callback_e2e so nothing else in the suite runs, and -rs so any
+          # skip still states its reason in the summary.
+          pytest -m callback_e2e -ra -rs -v --color=yes
