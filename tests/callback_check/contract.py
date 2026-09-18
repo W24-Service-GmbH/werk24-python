@@ -164,6 +164,15 @@ def _check_sequence(
 
     if TechreadMessageSubtype.PROGRESS_STARTED not in subtypes:
         problems.append("no PROGRESS/STARTED message was delivered")
+    elif subtypes[0] != TechreadMessageSubtype.PROGRESS_STARTED:
+        # Position, not just presence. core-reader joins the STARTED task at
+        # the top of every schedule_callback precisely so nothing overtakes it,
+        # so an ASK that arrives first is a real ordering defect -- and a
+        # customer keying off STARTED to open a record would miss it.
+        problems.append(
+            "PROGRESS/STARTED was not the first message delivered "
+            f"(first was {subtypes[0]})"
+        )
 
     if TechreadMessageSubtype.PROGRESS_COMPLETED not in subtypes:
         problems.append("no PROGRESS/COMPLETED message was delivered")
@@ -250,6 +259,14 @@ def _check_ask_payload(
             problems.append(f"{label}: has neither payload_dict nor payload_url")
         return
 
+    # The v2 ``Response`` deliberately, not every family
+    # ``deserialize_payload`` can return. ``asks`` is typed ``Sequence[AskUnion]``
+    # and the v1 and v2 ask-type names do not overlap, so a v1 payload can only
+    # ever arrive under a subtype that was never requested -- which the caller
+    # above already reports as such. Widening this to the v1 classes would not
+    # reach that case and would cost real strictness here: those classes carry
+    # no ``ask_type``, so a v1 payload delivered under a v2 ask would pass both
+    # this check and the discriminator check below, silently.
     if not isinstance(payload, Response):
         problems.append(
             f"{label}: payload_dict did not deserialize into a response model "

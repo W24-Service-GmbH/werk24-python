@@ -20,6 +20,7 @@ platform.
 
 from __future__ import annotations
 
+import json
 import os
 import uuid
 from typing import Sequence
@@ -29,6 +30,7 @@ import pytest
 from werk24 import (
     AskMetaData,
     TechreadMessageSubtype,
+    TechreadMessageType,
     Werk24Client,
     get_test_drawing,
 )
@@ -95,21 +97,45 @@ be declared broken.
 TUNNEL_TIMEOUT = float(os.getenv("W24_TUNNEL_TIMEOUT", "90"))
 
 
+_RAW_TERMINAL_TOKENS = (
+    f'"{TechreadMessageSubtype.PROGRESS_COMPLETED.value}"'.encode("utf-8"),
+    b'"message_type":"ERROR"',
+)
+
+
 def _run_is_complete(deliveries: Sequence[CallbackDelivery]) -> bool:
     """True once a terminal message has arrived.
 
-    Matched on the raw body rather than on a parsed message: whether the
-    payload is well-formed is the contract's question, and a malformed
-    terminal message must still end the wait -- otherwise the run that most
-    needs reporting is the one that times out with nothing to say.
+    Read off the top-level ``message_type`` / ``message_subtype`` rather than
+    by scanning the body for the word. A raw scan also matches a payload field
+    whose value happens to be exactly ``COMPLETED`` -- a process or status
+    entry on a drawing is a perfectly ordinary place for that -- which ends
+    the wait on the first ASK and then reports a missing PROGRESS/COMPLETED
+    that the server was still about to send. A spurious failure on a run that
+    costs a read is worse than a slow one.
+
+    The raw scan survives as the fallback for a body that will not parse,
+    because a malformed terminal message must still end the wait: otherwise
+    the run that most needs reporting is the one that times out with nothing
+    to say.
     """
-    terminal = (
-        f'"{TechreadMessageSubtype.PROGRESS_COMPLETED.value}"'.encode("utf-8"),
-        b'"message_type":"ERROR"',
-    )
-    return any(
-        any(token in delivery.body for token in terminal) for delivery in deliveries
-    )
+
+    def is_terminal(body: bytes) -> bool:
+        try:
+            message = json.loads(body)
+        except ValueError:
+            return any(token in body for token in _RAW_TERMINAL_TOKENS)
+
+        if not isinstance(message, dict):
+            return any(token in body for token in _RAW_TERMINAL_TOKENS)
+
+        return (
+            message.get("message_subtype")
+            == TechreadMessageSubtype.PROGRESS_COMPLETED.value
+            or message.get("message_type") == TechreadMessageType.ERROR.value
+        )
+
+    return any(is_terminal(delivery.body) for delivery in deliveries)
 
 
 def _describe(deliveries: Sequence[CallbackDelivery]) -> str:

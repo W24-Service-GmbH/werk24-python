@@ -306,6 +306,18 @@ class TestTheSequenceIsChecked:
             "no PROGRESS/COMPLETED" in p for p in _problems([_started(), _ask()])
         )
 
+    def test_a_started_that_is_not_first_is_reported(self):
+        """Presence is not enough: an ASK must not overtake STARTED.
+
+        core-reader joins the STARTED task at the top of every
+        schedule_callback precisely so nothing can, and a customer keying off
+        STARTED to open a record would miss an ASK that arrived ahead of it.
+        """
+        deliveries = [_ask(), _started(), _completed()]
+        assert any(  # noqa: B101
+            "was not the first message" in p for p in _problems(deliveries)
+        )
+
     def test_a_completed_that_is_not_last_is_reported(self):
         deliveries = [_started(), _completed(), _ask()]
         assert any(  # noqa: B101

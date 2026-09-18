@@ -24,6 +24,7 @@ from werk24 import (
 from werk24.models.v2.responses import ResponseMetaDataComponentDrawing
 
 from tests.callback_check import (
+    CallbackDelivery,
     CallbackReceiver,
     QuickTunnel,
     TunnelUnavailable,
@@ -34,6 +35,7 @@ from tests.callback_check.contract import (
     EXPECTED_CONTENT_TYPE,
     EXPECTED_USER_AGENT,
 )
+from tests.test_callback_e2e import _run_is_complete
 
 
 async def _post(url: str, body: bytes, headers: dict) -> int:
@@ -129,6 +131,42 @@ class TestWaitingForDeliveries:
             await _post(url, b"{}", {})
             assert await receiver.wait_for(lambda d: len(d) == 1, timeout=0)  # noqa: B101
 
+    async def test_a_delivery_landing_in_the_clear_window_is_not_missed(self):
+        """The narrow race between evaluating the predicate and clearing.
+
+        A delivery that lands in that window sets the event, the clear throws
+        that wake-up away, and the wait then sleeps out its whole timeout
+        before noticing a condition that was already true. It returned the
+        right answer -- 300 seconds late on the paid run.
+        """
+        async with CallbackReceiver() as receiver:
+            calls = {"n": 0}
+
+            def predicate(deliveries):
+                calls["n"] += 1
+                if calls["n"] == 1:
+                    # Reproduce the window exactly: append and signal after the
+                    # predicate has been evaluated but before wait_for clears.
+                    receiver._deliveries.append(  # noqa: SLF001
+                        CallbackDelivery(
+                            method="POST",
+                            path="/callback",
+                            headers={},
+                            body=b"{}",
+                            received_at=time.monotonic(),
+                        )
+                    )
+                    receiver._event.set()  # noqa: SLF001
+                    return False
+                return len(deliveries) >= 1
+
+            started = time.monotonic()
+            satisfied = await receiver.wait_for(predicate, timeout=10)
+            elapsed = time.monotonic() - started
+
+        assert satisfied  # noqa: B101
+        assert elapsed < 1  # noqa: B101
+
     async def test_wait_for_returns_false_on_timeout(self):
         """False rather than raising.
 
@@ -206,9 +244,85 @@ class TestTheHarnessEndToEndWithoutATunnel:
         assert len(messages) == 3  # noqa: B101
 
 
+class TestDetectingTheTerminalMessage:
+    """`_run_is_complete` decides when the paid end-to-end run stops waiting."""
+
+    @staticmethod
+    def _body(message_type, subtype, payload=None):
+        return (
+            TechreadMessage(
+                request_id=uuid.uuid4(),
+                message_type=message_type,
+                message_subtype=subtype,
+                payload_dict=payload,
+            )
+            .model_dump_json()
+            .encode("utf-8")
+        )
+
+    def _delivery(self, body):
+        return CallbackDelivery(
+            method="POST",
+            path="/callback",
+            headers={},
+            body=body,
+            received_at=time.monotonic(),
+        )
+
+    def test_a_progress_completed_ends_the_wait(self):
+        body = self._body(
+            TechreadMessageType.PROGRESS,
+            TechreadMessageSubtype.PROGRESS_COMPLETED,
+        )
+        assert _run_is_complete([self._delivery(body)])  # noqa: B101
+
+    def test_an_error_message_ends_the_wait(self):
+        body = self._body(
+            TechreadMessageType.ERROR, TechreadMessageSubtype.ERROR_INTERNAL
+        )
+        assert _run_is_complete([self._delivery(body)])  # noqa: B101
+
+    def test_a_started_does_not_end_the_wait(self):
+        body = self._body(
+            TechreadMessageType.PROGRESS,
+            TechreadMessageSubtype.PROGRESS_STARTED,
+        )
+        assert not _run_is_complete([self._delivery(body)])  # noqa: B101
+
+    def test_an_ask_payload_saying_completed_does_not_end_the_wait(self):
+        """A drawing may legitimately carry the word as a field value.
+
+        A raw scan of the body matched it, stopped the wait on the first ASK,
+        and the contract then reported a PROGRESS/COMPLETED the server had
+        been about to send. A spurious failure on a run that costs a read.
+        """
+        payload = ResponseMetaDataComponentDrawing().model_dump(mode="json")
+        payload["designation"] = [
+            {"reference_id": 0, "value": "COMPLETED", "language": None}
+        ]
+        body = self._body(TechreadMessageType.ASK, "META_DATA", payload)
+        assert not _run_is_complete([self._delivery(body)])  # noqa: B101
+
+    def test_a_malformed_terminal_body_still_ends_the_wait(self):
+        """Otherwise the run that most needs reporting times out saying nothing."""
+        assert _run_is_complete(  # noqa: B101
+            [self._delivery(b'{"message_subtype":"COMPLETED", truncated')]
+        )
+
+
 class TestTheTunnelFailsLoudly:
-    async def test_a_missing_binary_raises_rather_than_hanging(self):
-        tunnel = QuickTunnel(port=1, binary=None)
+    async def test_a_missing_binary_raises_rather_than_hanging(self, monkeypatch):
+        """Forced through the env override, not by passing ``binary=None``.
+
+        ``binary=None`` only means "discover it", so on any machine that has
+        cloudflared on PATH -- the callback-check runner, or a developer box
+        set up to run the live check -- this launched the real binary and
+        asserted against the wrong error. Pointing the override at a path that
+        does not exist makes discovery come back empty wherever it runs.
+        """
+        monkeypatch.setenv("W24_CLOUDFLARED_BIN", "/nonexistent/cloudflared")
+
+        tunnel = QuickTunnel(port=1)
         with pytest.raises(TunnelUnavailable, match="cloudflared was not found"):
             async with tunnel:
                 ...

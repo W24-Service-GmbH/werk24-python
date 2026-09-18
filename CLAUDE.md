@@ -13,7 +13,7 @@ uv pip install -r requirements.txt -r tests/requirements.txt -e .
 .venv/bin/python -m pytest
 ```
 
-384 passed, 5 skipped, about 75 seconds.
+391 passed, 5 skipped, about 75 seconds.
 
 Three files, not one, and each does a different job:
 
@@ -86,7 +86,7 @@ locally when either the credentials or `cloudflared` are missing;
 CI sets so a missing secret cannot read as a green check.
 
 The rules themselves are covered offline in `tests/test_callback_contract.py`
-and `tests/test_callback_receiver.py` — 47 tests, no credentials, no network —
+and `tests/test_callback_receiver.py` — 54 tests, no credentials, no network —
 so a harness that has quietly stopped checking anything fails on an ordinary
 push rather than on the next paid run.
 
