@@ -66,6 +66,9 @@ class _FakeResponse:
         self.status = status
         self._payload = payload
         self._raises = raises
+        #: Set by the context manager's exit. A pooled session only pools if
+        #: every response gives its connection back.
+        self.released = False
 
     async def json(self, content_type=None):
         if self._raises is not None:
@@ -191,6 +194,32 @@ class TestTheCallbackPathRaisesTypedExceptions:
         await Werk24Client._raise_for_priority_error(response)
 
 
+class _ResponseContext:
+    """What aiohttp's ``session.post(...)`` actually returns.
+
+    It is a ``_RequestContextManager``: awaitable *and* an async context
+    manager. The stand-in below was only awaitable, so it would have kept
+    passing if the client stopped releasing its responses, which is the thing
+    a pooled session depends on.
+    """
+
+    def __init__(self, response):
+        self._response = response
+
+    def __await__(self):
+        async def _resolve():
+            return self._response
+
+        return _resolve().__await__()
+
+    async def __aenter__(self):
+        return self._response
+
+    async def __aexit__(self, *exc):
+        self._response.released = True
+        return False
+
+
 class _FakeSession:
     """The two things ``read_drawing_with_callback`` asks of a session."""
 
@@ -204,9 +233,9 @@ class _FakeSession:
     async def __aexit__(self, *exc):
         return False
 
-    async def post(self, url, data=None, headers=None):
+    def post(self, url, data=None, headers=None):
         self.calls.append(url)
-        return self._response
+        return _ResponseContext(self._response)
 
 
 async def _call_with_callback(client, response, priority):
@@ -266,3 +295,24 @@ class TestReadDrawingWithCallbackIsActuallyWired:
         response = _FakeResponse(200, {"request_id": request_id})
         returned = await _call_with_callback(client, response, "PRIO3")
         assert str(returned) == request_id
+
+    async def test_the_response_is_released(self):
+        """A pooled session only pools if each response gives its slot back.
+
+        The session is shared for the client's lifetime now, so a response
+        that is never released holds its connector slot until the garbage
+        collector reaches it - which is the pooling this was all for.
+        """
+        client = Werk24Client(token="t", region="r")
+        response = _FakeResponse(
+            200, {"request_id": "3f7d1d1e-0000-4000-8000-000000000001"}
+        )
+        await _call_with_callback(client, response, "PRIO3")
+        assert response.released is True
+
+    async def test_the_response_is_released_on_the_error_path_too(self):
+        client = Werk24Client(token="t", region="r")
+        response = _FakeResponse(403, {"code": "403", "message": "Forbidden"})
+        with pytest.raises(UnauthorizedException):
+            await _call_with_callback(client, response, "PRIO3")
+        assert response.released is True
