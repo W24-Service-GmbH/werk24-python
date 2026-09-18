@@ -4,8 +4,10 @@ import asyncio
 import io
 import ipaddress
 import json
+import random
 import re
 import ssl
+import time
 import uuid
 from asyncio import iscoroutinefunction
 from collections import deque
@@ -47,6 +49,7 @@ from werk24.utils.exceptions import (
     InsufficientCreditsException,
     InvalidPriorityError,
     PriorityTooHighError,
+    ReadTimeoutError,
     RequestTooLargeException,
     ResourceNotFoundException,
     ServerException,
@@ -1000,8 +1003,7 @@ class Werk24Client:
         # fields with the file
         form = aiohttp.FormData({**presigned_post.fields, "file": content})
 
-        try:
-            logger.debug("Uploading file to the server: %s", str(presigned_post.url))
+        async def _attempt():
             session = self._https_session()
             response = await session.post(str(presigned_post.url), data=form)
             self._raise_for_status(
@@ -1009,6 +1011,10 @@ class Werk24Client:
                 response.status,
                 details=await self._s3_error_detail(response),
             )
+
+        try:
+            logger.debug("Uploading file to the server: %s", str(presigned_post.url))
+            await self._with_https_retries("Drawing upload", _attempt)
             logger.info("File uploaded successfully.")
         except aiohttp.ClientConnectorCertificateError as exc:
             raise SSLCertificateError("SSL certificate error occurred.") from exc
@@ -1351,6 +1357,48 @@ class Werk24Client:
         """
         return urljoin(self._https_server, endpoint)
 
+    async def _with_https_retries(self, what: str, attempt_once):
+        """Run *attempt_once* until it succeeds, or the retries run out.
+
+        ``max_https_retries`` was configured and read nowhere: the upload and
+        the payload download each did one request and re-raised, and
+        ``_raise_for_status`` turns any 5xx into a terminal
+        ``ServerException``. So a transient S3 blip failed a request whose
+        quota crew-api had already spent.
+
+        Only 5xx and connection errors are retried. A 4xx is the request being
+        wrong, and resending it will not make it right; 429 in particular maps
+        to ``InsufficientCreditsException``, so retrying it would turn a quota
+        refusal into a retry storm against an account that has already run
+        out. That asymmetry is deliberate and should stay.
+
+        Backoff is exponential with jitter, so a fleet of clients hitting the
+        same blip does not come back in step.
+        """
+        attempts = settings.max_https_retries + 1
+        for attempt in range(1, attempts + 1):
+            try:
+                return await attempt_once()
+            except InsufficientCreditsException:
+                raise
+            except (
+                ServerException,
+                aiohttp.ClientConnectionError,
+                TimeoutError,
+            ) as exc:
+                if attempt >= attempts:
+                    raise
+                delay = min(8.0, 0.5 * (2 ** (attempt - 1))) * (0.5 + random.random())
+                logger.warning(
+                    "%s failed (attempt %d/%d): %s; retrying in %.2fs",
+                    what,
+                    attempt,
+                    attempts,
+                    exc,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+
     def _make_https_session(
         self, timeout_seconds: int = 30, cafile: Optional[str] = None
     ) -> aiohttp.ClientSession:
@@ -1474,6 +1522,7 @@ class Werk24Client:
         client_private_key_passphrase: Optional[bytes] = None,
         max_messages_per_session: int = 1000,
         priority: Optional[str] = None,
+        total_timeout: Optional[float] = None,
     ) -> AsyncGenerator[TechreadMessage, None]:
         """
         Send a techread request to the backend and yield resulting messages.
@@ -1495,6 +1544,10 @@ class Werk24Client:
             W24TechreadMessage: The received messages, processed as needed.
         """
         logger.debug("API method _send_command_read() called")
+
+        total_timeout = (
+            settings.read_total_timeout if total_timeout is None else total_timeout
+        )
 
         # Prepare the initial request message
         message = {}
@@ -1525,10 +1578,47 @@ class Werk24Client:
         hit_cap = True
         # (message, download task or None), in receive order.
         pending: deque = deque()
+
+        # Two bounds on the wait, because they catch different failures.
+        #
+        # The WebSocket keepalive (ping_interval=30, ping_timeout=10) detects
+        # a *dead* socket. It cannot detect a live socket that will never
+        # deliver PROGRESS_COMPLETED, and nothing else bounded this loop, so a
+        # stalled server held the caller until wss_close_timeout - 600s - or,
+        # for an SDK user driving it directly, indefinitely. crew-watchdog is
+        # one of those callers: a stalled read pins its Lambda to the Lambda's
+        # own timeout, is billed for the whole wall clock, and reports
+        # MAJOR_OUTAGE only after it, delaying the status page exactly when it
+        # matters.
+        #
+        # `deadline` bounds the whole read. `read_idle_timeout` bounds the gap
+        # between messages, so a server that has stopped talking is noticed
+        # without waiting out the total, while a long read that is still
+        # making progress is not cut off.
+        deadline = time.monotonic() + total_timeout
         try:
             for _ in range(max_messages_per_session):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise ReadTimeoutError(
+                        details=(
+                            f"The read did not complete within {total_timeout:.0f}s."
+                        )
+                    )
+                idle_budget = min(remaining, settings.read_idle_timeout)
                 try:
-                    raw_message = str(await self._wss_session.recv())
+                    raw_message = str(
+                        await asyncio.wait_for(
+                            self._wss_session.recv(), timeout=idle_budget
+                        )
+                    )
+                except asyncio.TimeoutError as exc:
+                    raise ReadTimeoutError(
+                        details=(
+                            "The server sent no message for "
+                            f"{idle_budget:.0f}s."
+                        )
+                    ) from exc
                 except websockets.exceptions.ConnectionClosedOK:
                     # Server closed the stream cleanly.
                     hit_cap = False
@@ -1716,7 +1806,7 @@ class Werk24Client:
         self._validate_payload_url(payload_url)
 
         # Attempt to download the payload
-        try:
+        async def _attempt() -> bytes:
             session = self._https_session()
             logger.debug("Sending GET request to %s", payload_url)
             response = await session.get(str(payload_url))
@@ -1724,7 +1814,12 @@ class Werk24Client:
             # Raise appropriate exceptions based on response status
             self._raise_for_status(payload_url, response.status)
 
-            raw_payload = await response.content.read()
+            return await response.content.read()
+
+        try:
+            raw_payload = await self._with_https_retries(
+                f"Payload download from {payload_url}", _attempt
+            )
             logger.info("Payload successfully downloaded from %s", payload_url)
 
         except (

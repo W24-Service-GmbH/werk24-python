@@ -104,6 +104,23 @@ class ServerException(TechreadException):
     )
 
 
+class ReadTimeoutError(TechreadException):
+    """Raised when a read exceeds its deadline or goes quiet.
+
+    Distinct from a connection failure: the socket is fine, the server simply
+    has not delivered ``PROGRESS_COMPLETED`` - or anything at all - within the
+    time allowed. Callers that retry should treat it as a server-side stall
+    rather than as a transport problem.
+    """
+
+    cli_message_header: str = "Read Timed Out"
+    cli_message_body: str = (
+        "The read did not finish within the time allowed.\n\n"
+        "The drawing may be unusually large, or the service may be degraded. "
+        "Please try again; if it persists, contact the Werk24 team."
+    )
+
+
 class InsufficientCreditsException(ServerException):
     """Raised when the user has insufficient credits for an action."""
 
