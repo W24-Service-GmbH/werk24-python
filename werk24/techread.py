@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import io
 import ipaddress
 import json
@@ -8,6 +9,7 @@ import re
 import ssl
 import uuid
 from asyncio import iscoroutinefunction
+from collections import deque
 from functools import lru_cache
 from io import BufferedReader
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Union
@@ -136,6 +138,29 @@ except ImportError:
     )
 
 
+def _closes_standalone_session(method):
+    """Close the pooled HTTPS session when the call was made on a bare client.
+
+    The HTTPS-only methods are documented as usable without
+    ``async with Werk24Client()``, and such a caller never reaches
+    ``__aexit__``. Before pooling, each of those calls built and closed its own
+    session; after pooling, nothing would close it and aiohttp warns about the
+    unclosed session when the client is collected.
+
+    Inside the context this is a no-op and the session stays pooled across
+    every call, which is the whole point of pooling it.
+    """
+
+    @functools.wraps(method)
+    async def _wrapper(self, *args, **kwargs):
+        try:
+            return await method(self, *args, **kwargs)
+        finally:
+            await self._release_https_if_standalone()
+
+    return _wrapper
+
+
 class Werk24Client:
 
     def __init__(
@@ -158,6 +183,20 @@ class Werk24Client:
         # certificate chain is properly verified. The context is cached at
         # module level and shared across clients.
         self._ssl_context = _default_ssl_context()
+
+        # One pooled HTTPS session for this client's lifetime. Built on first
+        # use by _https_session(), closed by _graceful_shutdown(). See that
+        # method for why it is not one session per call.
+        self._shared_https_session: Optional[aiohttp.ClientSession] = None
+
+        # Whether the caller is inside ``async with``. The HTTPS-only methods
+        # (read_drawing_with_callback, download_payload, get_system_status)
+        # are documented as usable on a bare client, and such a caller never
+        # reaches __aexit__ - so nothing would close the pooled session and
+        # aiohttp would warn about it on collection. Outside the context the
+        # session is closed when the call that built it returns, which is the
+        # per-call behaviour those methods had before pooling.
+        self._entered = False
 
         # WebSocket connection management
         self._ping_interval = ping_interval
@@ -301,8 +340,28 @@ class Werk24Client:
             raise
 
     async def __aenter__(self):
+        self._entered = True
         await self._connect_with_retry()
         return self
+
+    def _https_session(self) -> aiohttp.ClientSession:
+        """The one HTTPS session this client uses for its lifetime.
+
+        Every HTTPS call - the drawing upload, read-with-callback, and each
+        payload download - used to build its own ``ClientSession`` and
+        ``TCPConnector``. The SSL *context* was cached; the *connection* was
+        not, so a three-ask read paid three separate DNS, TCP and TLS
+        handshakes to S3, strictly serialised, each one blocking receipt of
+        the next ASK message.
+
+        One session keeps aiohttp's connection pool alive across all of them.
+        It is built on first use rather than in ``__aenter__`` because a
+        client may be used for HTTPS without ever entering the WebSocket
+        context, and closed in ``_graceful_shutdown``.
+        """
+        if self._shared_https_session is None or self._shared_https_session.closed:
+            self._shared_https_session = self._make_https_session()
+        return self._shared_https_session
 
     async def _connect_with_retry(self):
         """
@@ -362,7 +421,43 @@ class Werk24Client:
                 await asyncio.sleep(delay)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
+        self._entered = False
         await self._graceful_shutdown()
+
+    async def close(self) -> None:
+        """Release everything this client holds.
+
+        ``async with Werk24Client()`` does this on the way out, so most
+        callers never need it. It exists for the caller who uses only the
+        HTTPS-only methods on a bare client and wants to close explicitly
+        rather than rely on the per-call release those methods do.
+
+        Idempotent: closing a client that holds nothing is a no-op.
+        """
+        await self._graceful_shutdown()
+
+    async def _close_https_session(self) -> None:
+        """Close the pooled HTTPS session, if one was built."""
+        if self._shared_https_session is None:
+            return
+        try:
+            await self._shared_https_session.close()
+        except Exception as exc:  # noqa: BLE001 - a close never fails a call
+            logger.warning("Error during HTTPS session close: %s", exc)
+        finally:
+            self._shared_https_session = None
+
+    async def _release_https_if_standalone(self) -> None:
+        """Close the pooled session when there is no context to close it.
+
+        Called from the HTTPS-only public methods. Inside ``async with`` this
+        does nothing and the session stays pooled across every call, which is
+        the point of pooling it. Outside it, there is no ``__aexit__`` coming,
+        so the session is closed here rather than left for aiohttp to
+        complain about.
+        """
+        if not self._entered:
+            await self._close_https_session()
 
     async def _graceful_shutdown(self):
         """
@@ -382,6 +477,11 @@ class Werk24Client:
                 logger.info("WebSocket connection closed successfully")
             except Exception as exc:
                 logger.warning("Error during WebSocket close: %s", exc)
+
+        # Close the pooled HTTPS session. Leaving it open would leak the
+        # connector and emit aiohttp's "Unclosed client session" warning for
+        # every client the caller discards.
+        await self._close_https_session()
 
     async def read_drawing_with_hooks(
         self,
@@ -966,8 +1066,14 @@ class Werk24Client:
 
         try:
             logger.debug("Uploading file to the server: %s", str(presigned_post.url))
-            async with self._make_https_session() as session:
-                response = await session.post(str(presigned_post.url), data=form)
+            session = self._https_session()
+            # The response is context-managed. With a per-call session the
+            # session's own close released it; with a pooled one an
+            # unreleased response holds its connector slot until the garbage
+            # collector gets to it, which is the pooling this change is for.
+            # _s3_error_detail returns immediately for a 2xx without touching
+            # the body, so nothing else would release it.
+            async with session.post(str(presigned_post.url), data=form) as response:
                 self._raise_for_status(
                     str(presigned_post.url),
                     response.status,
@@ -1187,6 +1293,7 @@ class Werk24Client:
             )
             raise
 
+    @_closes_standalone_session
     async def read_drawing_with_callback(
         self,
         drawing: Union[BufferedReader, bytes],
@@ -1272,8 +1379,10 @@ class Werk24Client:
         # send the request
         headers = self._get_auth_headers()
         url = self._make_https_url("/techread/read-with-callback")
-        async with self._make_https_session() as session:
-            response = await session.post(url, data=data, headers=headers)
+        session = self._https_session()
+        # Context-managed for the same reason as the upload above: a pooled
+        # session only pools if each response gives its connection back.
+        async with session.post(url, data=data, headers=headers) as response:
             await self._raise_for_priority_error(response, validated_priority)
             self._raise_for_status(url, response.status)
             response_json = await response.json(content_type=None)
@@ -1487,6 +1596,8 @@ class Werk24Client:
         logger.debug("Listening for responses from the server")
         completed = False
         hit_cap = True
+        # (message, download task or None), in receive order.
+        pending: deque = deque()
         try:
             for _ in range(max_messages_per_session):
                 try:
@@ -1513,40 +1624,102 @@ class Werk24Client:
                     message.message_subtype,
                 )
 
-                # If there's a payload URL, download the associated payload
+                # Start the payload download, but do not wait for it here.
+                #
+                # Downloading inline blocked receipt of the next ASK message
+                # for the whole transfer, so a three-ask read paid three
+                # downloads strictly in series with the messages that carry
+                # them. The server sends each ASK as its result becomes ready,
+                # usually seconds apart, so a download started now has almost
+                # always finished before the next message arrives.
+                #
+                # Messages are still yielded in order and still carry their
+                # ``payload_bytes`` when they are yielded: only the waiting
+                # moves. ``pending`` holds at most one message back, which is
+                # what creates the overlap.
                 if message.payload_url:
                     logger.debug(
                         "Downloading payload from URL: %s", message.payload_url
                     )
-                    try:
-                        message.payload_bytes = await self.download_payload(
+                    task = asyncio.ensure_future(
+                        self.download_payload(
                             message.payload_url,
                             client_private_key_pem,
                             client_private_key_passphrase,
                         )
-                        logger.debug("Payload successfully downloaded")
-                    except Exception as e:
-                        logger.error("Failed to download payload: %s", e)
-                        raise
+                    )
+                else:
+                    task = None
+                pending.append((message, task))
 
-                # Yield the message for immediate consumption
-                yield message
+                is_completed = (
+                    message.message_type == TechreadMessageType.PROGRESS
+                    and message.message_subtype
+                    == TechreadMessageSubtype.PROGRESS_COMPLETED
+                )
+
+                # Keep one message in flight so its download overlaps the next
+                # receive; on completion there is no next receive, so drain.
+                while len(pending) > (0 if is_completed else 1):
+                    ready, ready_task = pending.popleft()
+                    if ready_task is not None:
+                        try:
+                            ready.payload_bytes = await ready_task
+                            logger.debug("Payload successfully downloaded")
+                        except Exception as e:
+                            logger.error("Failed to download payload: %s", e)
+                            raise
+                    yield ready
 
                 # Stop once the server signals that the read has completed,
                 # rather than relying on a fixed message count (which would
                 # silently truncate large results).
-                if (
-                    message.message_type == TechreadMessageType.PROGRESS
-                    and message.message_subtype
-                    == TechreadMessageSubtype.PROGRESS_COMPLETED
-                ):
+                if is_completed:
                     completed = True
                     hit_cap = False
                     break
 
+            # Every way out of that loop except an exception is a NORMAL end,
+            # and the message held back to create the overlap is a real
+            # message. A clean server close (ConnectionClosedOK) and the
+            # message cap both land here with one still queued; dropping it
+            # would lose an answer the customer was sent, and at a cap of 1
+            # would yield nothing at all.
+            #
+            # After a PROGRESS_COMPLETED break this is empty - that path
+            # already drained - so it costs nothing there.
+            while pending:
+                ready, ready_task = pending.popleft()
+                if ready_task is not None:
+                    try:
+                        ready.payload_bytes = await ready_task
+                        logger.debug("Payload successfully downloaded")
+                    except Exception as e:
+                        logger.error("Failed to download payload: %s", e)
+                        raise
+                yield ready
+
         except Exception as e:
             logger.error("Error occurred while processing responses: %s", e)
             raise
+        finally:
+            # Only an abnormal end reaches here with anything queued: the loop
+            # raised, or the caller stopped consuming. Those downloads must
+            # not keep running against a session that is about to close.
+            #
+            # Cancel, then await. A task that already FAILED is done, so
+            # cancelling it is a no-op and its exception would never be
+            # retrieved - asyncio then prints "Task exception was never
+            # retrieved" and the real download error is lost behind it.
+            # gather(return_exceptions=True) collects both cases and raises
+            # neither, which is what a cleanup path should do.
+            orphans = [task for _, task in pending if task is not None]
+            pending.clear()
+            for orphan in orphans:
+                if not orphan.done():
+                    orphan.cancel()
+            if orphans:
+                await asyncio.gather(*orphans, return_exceptions=True)
 
         # Warn (never silently truncate) if the stream ended without an explicit
         # completion signal.
@@ -1611,6 +1784,7 @@ class Werk24Client:
                 f"Refusing to download payload from non-public address: {payload_url}"
             )
 
+    @_closes_standalone_session
     async def download_payload(
         self,
         payload_url: HttpUrl,
@@ -1647,15 +1821,14 @@ class Werk24Client:
 
         # Attempt to download the payload
         try:
-            async with self._make_https_session() as session:
-                logger.debug("Sending GET request to %s", payload_url)
-                response = await session.get(str(payload_url))
-
+            session = self._https_session()
+            logger.debug("Sending GET request to %s", payload_url)
+            async with session.get(str(payload_url)) as response:
                 # Raise appropriate exceptions based on response status
                 self._raise_for_status(payload_url, response.status)
 
                 raw_payload = await response.content.read()
-                logger.info("Payload successfully downloaded from %s", payload_url)
+            logger.info("Payload successfully downloaded from %s", payload_url)
 
         except (
             UnauthorizedException,
