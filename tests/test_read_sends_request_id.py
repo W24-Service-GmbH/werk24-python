@@ -16,6 +16,7 @@ import uuid
 
 import pytest
 
+from werk24 import TechreadMessageSubtype
 from werk24.techread import Werk24Client
 
 REQUEST_ID = uuid.UUID("9f1d4d02-9f5f-4a4a-9c53-2a7e1f9b0c11")
@@ -82,9 +83,59 @@ async def test_it_does_not_displace_the_other_fields():
     assert payload["priority"] == "PRIO3"
 
 
-def test_read_drawing_passes_the_id_it_was_answered_with():
-    """The id sent must be the one from INITIALIZE, not a fresh one."""
-    import inspect
+@pytest.mark.asyncio
+async def test_read_drawing_passes_the_id_it_was_answered_with():
+    """The id sent must be the one from INITIALIZE, not a fresh one.
 
-    source = inspect.getsource(Werk24Client.read_drawing)
-    assert "request_id=init_message.request_id" in source
+    Driven rather than grepped: this is the wiring between two calls, and a
+    refactor that kept the line and passed a different value - a freshly
+    minted UUID, the init *response*'s id rather than the message's - would
+    satisfy a source search and break the server-side lookup it exists for.
+    """
+    from unittest import mock
+
+    from werk24 import AskMetaData, TechreadMessage, TechreadMessageType
+
+    client = Werk24Client(token="t", region="r")
+
+    init_message = TechreadMessage(
+        request_id=REQUEST_ID,
+        message_type=TechreadMessageType.PROGRESS,
+        message_subtype=TechreadMessageSubtype.PROGRESS_INITIALIZATION_SUCCESS,
+    )
+    init_response = mock.Mock(
+        is_successful=True,
+        public_key=None,
+        drawing_presigned_post=mock.Mock(),
+    )
+
+    captured = {}
+
+    async def _fake_read(**kwargs):
+        captured.update(kwargs)
+        return
+        yield  # pragma: no cover - makes this an async generator
+
+    with mock.patch.multiple(
+        client,
+        init_request=mock.AsyncMock(return_value=(init_message, init_response)),
+        _upload_associated_file=mock.AsyncMock(),
+        _send_command_read=mock.Mock(side_effect=lambda **kw: _fake_read(**kw)),
+    ):
+        messages = [m async for m in client.read_drawing(b"%PDF-1.7\n", [AskMetaData()])]
+
+    # The INITIALIZE message is yielded through to the caller.
+    assert [m.request_id for m in messages] == [REQUEST_ID]
+    # And the same id, not a new one, is what READ carries.
+    assert captured["request_id"] == REQUEST_ID
+    assert captured["request_id"] is init_message.request_id
+
+
+@pytest.mark.asyncio
+async def test_a_fresh_uuid_would_not_pass():
+    """The counterpart: the assertion above is not satisfied by any UUID.
+
+    REQUEST_ID is fixed, so an implementation minting its own would fail the
+    equality. This states that explicitly rather than leaving it implied.
+    """
+    assert REQUEST_ID != uuid.uuid4()
