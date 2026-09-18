@@ -8,6 +8,7 @@ import re
 import ssl
 import uuid
 from asyncio import iscoroutinefunction
+from collections import deque
 from functools import lru_cache
 from io import BufferedReader
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Union
@@ -159,6 +160,11 @@ class Werk24Client:
         # module level and shared across clients.
         self._ssl_context = _default_ssl_context()
 
+        # One pooled HTTPS session for this client's lifetime. Built on first
+        # use by _https_session(), closed by _graceful_shutdown(). See that
+        # method for why it is not one session per call.
+        self._shared_https_session: Optional[aiohttp.ClientSession] = None
+
         # WebSocket connection management
         self._ping_interval = ping_interval
         self._ping_timeout = ping_timeout
@@ -304,6 +310,25 @@ class Werk24Client:
         await self._connect_with_retry()
         return self
 
+    def _https_session(self) -> aiohttp.ClientSession:
+        """The one HTTPS session this client uses for its lifetime.
+
+        Every HTTPS call - the drawing upload, read-with-callback, and each
+        payload download - used to build its own ``ClientSession`` and
+        ``TCPConnector``. The SSL *context* was cached; the *connection* was
+        not, so a three-ask read paid three separate DNS, TCP and TLS
+        handshakes to S3, strictly serialised, each one blocking receipt of
+        the next ASK message.
+
+        One session keeps aiohttp's connection pool alive across all of them.
+        It is built on first use rather than in ``__aenter__`` because a
+        client may be used for HTTPS without ever entering the WebSocket
+        context, and closed in ``_graceful_shutdown``.
+        """
+        if self._shared_https_session is None or self._shared_https_session.closed:
+            self._shared_https_session = self._make_https_session()
+        return self._shared_https_session
+
     async def _connect_with_retry(self):
         """
         Establish WebSocket connection with retry logic.
@@ -382,6 +407,17 @@ class Werk24Client:
                 logger.info("WebSocket connection closed successfully")
             except Exception as exc:
                 logger.warning("Error during WebSocket close: %s", exc)
+
+        # Close the pooled HTTPS session. Leaving it open would leak the
+        # connector and emit aiohttp's "Unclosed client session" warning for
+        # every client the caller discards.
+        if self._shared_https_session is not None:
+            try:
+                await self._shared_https_session.close()
+            except Exception as exc:
+                logger.warning("Error during HTTPS session close: %s", exc)
+            finally:
+                self._shared_https_session = None
 
     async def read_drawing_with_hooks(
         self,
@@ -966,13 +1002,13 @@ class Werk24Client:
 
         try:
             logger.debug("Uploading file to the server: %s", str(presigned_post.url))
-            async with self._make_https_session() as session:
-                response = await session.post(str(presigned_post.url), data=form)
-                self._raise_for_status(
-                    str(presigned_post.url),
-                    response.status,
-                    details=await self._s3_error_detail(response),
-                )
+            session = self._https_session()
+            response = await session.post(str(presigned_post.url), data=form)
+            self._raise_for_status(
+                str(presigned_post.url),
+                response.status,
+                details=await self._s3_error_detail(response),
+            )
             logger.info("File uploaded successfully.")
         except aiohttp.ClientConnectorCertificateError as exc:
             raise SSLCertificateError("SSL certificate error occurred.") from exc
@@ -1272,11 +1308,11 @@ class Werk24Client:
         # send the request
         headers = self._get_auth_headers()
         url = self._make_https_url("/techread/read-with-callback")
-        async with self._make_https_session() as session:
-            response = await session.post(url, data=data, headers=headers)
-            await self._raise_for_priority_error(response, validated_priority)
-            self._raise_for_status(url, response.status)
-            response_json = await response.json(content_type=None)
+        session = self._https_session()
+        response = await session.post(url, data=data, headers=headers)
+        await self._raise_for_priority_error(response, validated_priority)
+        self._raise_for_status(url, response.status)
+        response_json = await response.json(content_type=None)
 
         try:
             return uuid.UUID(response_json["request_id"])
@@ -1487,6 +1523,8 @@ class Werk24Client:
         logger.debug("Listening for responses from the server")
         completed = False
         hit_cap = True
+        # (message, download task or None), in receive order.
+        pending: deque = deque()
         try:
             for _ in range(max_messages_per_session):
                 try:
@@ -1513,33 +1551,57 @@ class Werk24Client:
                     message.message_subtype,
                 )
 
-                # If there's a payload URL, download the associated payload
+                # Start the payload download, but do not wait for it here.
+                #
+                # Downloading inline blocked receipt of the next ASK message
+                # for the whole transfer, so a three-ask read paid three
+                # downloads strictly in series with the messages that carry
+                # them. The server sends each ASK as its result becomes ready,
+                # usually seconds apart, so a download started now has almost
+                # always finished before the next message arrives.
+                #
+                # Messages are still yielded in order and still carry their
+                # ``payload_bytes`` when they are yielded: only the waiting
+                # moves. ``pending`` holds at most one message back, which is
+                # what creates the overlap.
                 if message.payload_url:
                     logger.debug(
                         "Downloading payload from URL: %s", message.payload_url
                     )
-                    try:
-                        message.payload_bytes = await self.download_payload(
+                    task = asyncio.ensure_future(
+                        self.download_payload(
                             message.payload_url,
                             client_private_key_pem,
                             client_private_key_passphrase,
                         )
-                        logger.debug("Payload successfully downloaded")
-                    except Exception as e:
-                        logger.error("Failed to download payload: %s", e)
-                        raise
+                    )
+                else:
+                    task = None
+                pending.append((message, task))
 
-                # Yield the message for immediate consumption
-                yield message
+                is_completed = (
+                    message.message_type == TechreadMessageType.PROGRESS
+                    and message.message_subtype
+                    == TechreadMessageSubtype.PROGRESS_COMPLETED
+                )
+
+                # Keep one message in flight so its download overlaps the next
+                # receive; on completion there is no next receive, so drain.
+                while len(pending) > (0 if is_completed else 1):
+                    ready, ready_task = pending.popleft()
+                    if ready_task is not None:
+                        try:
+                            ready.payload_bytes = await ready_task
+                            logger.debug("Payload successfully downloaded")
+                        except Exception as e:
+                            logger.error("Failed to download payload: %s", e)
+                            raise
+                    yield ready
 
                 # Stop once the server signals that the read has completed,
                 # rather than relying on a fixed message count (which would
                 # silently truncate large results).
-                if (
-                    message.message_type == TechreadMessageType.PROGRESS
-                    and message.message_subtype
-                    == TechreadMessageSubtype.PROGRESS_COMPLETED
-                ):
+                if is_completed:
                     completed = True
                     hit_cap = False
                     break
@@ -1547,6 +1609,14 @@ class Werk24Client:
         except Exception as e:
             logger.error("Error occurred while processing responses: %s", e)
             raise
+        finally:
+            # Whatever is still queued - because the loop raised, because the
+            # caller stopped consuming, or because the message cap was hit -
+            # must not leave a download running against a session that is
+            # about to close. Cancelling a finished task is a no-op.
+            for _, orphan in pending:
+                if orphan is not None and not orphan.done():
+                    orphan.cancel()
 
         # Warn (never silently truncate) if the stream ended without an explicit
         # completion signal.
@@ -1647,15 +1717,15 @@ class Werk24Client:
 
         # Attempt to download the payload
         try:
-            async with self._make_https_session() as session:
-                logger.debug("Sending GET request to %s", payload_url)
-                response = await session.get(str(payload_url))
+            session = self._https_session()
+            logger.debug("Sending GET request to %s", payload_url)
+            response = await session.get(str(payload_url))
 
-                # Raise appropriate exceptions based on response status
-                self._raise_for_status(payload_url, response.status)
+            # Raise appropriate exceptions based on response status
+            self._raise_for_status(payload_url, response.status)
 
-                raw_payload = await response.content.read()
-                logger.info("Payload successfully downloaded from %s", payload_url)
+            raw_payload = await response.content.read()
+            logger.info("Payload successfully downloaded from %s", payload_url)
 
         except (
             UnauthorizedException,
