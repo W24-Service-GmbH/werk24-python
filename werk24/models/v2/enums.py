@@ -771,46 +771,91 @@ class IdentifierType(str, Enum):
     and manufacturing processes to uniquely identify components, documents,
     or stakeholders.
 
+    Where a drawing carries an identifier whose kind is not listed here, it is
+    returned as `NUMBER`, which keeps the caption and the value but not the
+    kind. That is why this list is kept as complete as the reader's own caption
+    vocabulary: a missing member is not an error anywhere, it is a generic
+    number in your output.
+
     Attributes:
     ----------
     - ASSEMBLY_NAME: Name of the assembly.
     - ASSEMBLY_NUMBER: Number associated with the assembly.
     - CAGE_CODE: Commercial and Government Entity (CAGE) code.
     - CONTRACT_NUMBER: Number associated with a specific contract.
+    - CUSTOMER_INDEX: Index a customer assigns alongside their own number.
     - CUSTOMER_NAME: Name of the customer.
     - CUSTOMER_NUMBER: Identifier assigned to the customer.
+    - DASH_NUMBER: Dash number distinguishing a variant of a base part number.
+    - DOCUMENT_CODE: Code classifying the document, as opposed to numbering it.
     - DOCUMENT_NUMBER: Identifier for a document.
     - DRAWING_NUMBER: Identifier for a drawing.
+    - EQUIPMENT_NUMBER: Identifier for a piece of equipment.
+    - ERP_CHANGE_NUMBER: Identifier of a change record in the ERP system.
     - ERP_NUMBER: Enterprise Resource Planning (ERP) identifier.
+    - FINANCIAL_SUPPLY_CHAIN_MANAGEMENT_NUMBER: FSCM identifier.
+    - GROUP_NUMBER: Identifier of the group the part belongs to.
     - IDENTIFICATION_NUMBER: General identification number.
     - ITEM_NUMBER: Number assigned to an item (corrected from "ITEM_NUMER").
+    - JOB_NUMBER: Identifier of the job or work order.
     - MANUFACTURER_NAME: Name of the manufacturer.
     - MANUFACTURER_NUMBER: Identifier assigned to the manufacturer.
+    - MATERIAL_NUMBER: Identifier of the material.
+    - MATERIAL_WAREHOUSE_NUMBER: Warehouse identifier for the material.
     - MISCELLANEOUS: Miscellaneous identifier.
-    - NUMBER: Generic number.
+    - MODEL: Model designation of the part or product.
+    - NUMBER: Generic number. Also what an identifier of an unlisted kind
+      falls back to.
     - ORDER_NAME: Name associated with an order.
     - ORDER_NUMBER: Number associated with an order.
+    - ORIGIN_DRAWING_NUMBER: Identifier of the drawing this one originates
+      from. Distinct from a former drawing number, which is the same drawing
+      under its previous identifier.
+    - PART_NUMBER: Identifier of the part.
+    - PRODUCT_GROUP: Identifier of the product group.
+    - PRODUCT_ID: Identifier of the product.
+    - PRODUCT_NAME: Name of the product.
+    - PRODUCT_NUMBER: Number of the product, as opposed to its name or id.
+    - PROFILE_NUMBER: Identifier of the profile or extrusion.
+    - PROJECT_NAME: Name of the project.
+    - PROJECT_NUMBER: Number of the project. Distinct from its name.
+    - PROTOTYPE_NUMBER: Identifier of the prototype.
+    - REFERENCE_DRAWING_NUMBER: Identifier of a referenced drawing.
     - REPLACED_BY: Identifier for the component that replaces another.
     - REPLACEMENT_FOR: Identifier for the component that is replaced by another.
+    - SERIAL_NUMBER: Serial number of the individual item.
+    - SETTING_PLAN_NUMBER: Identifier of the setting or setup plan.
+    - TOOL_NUMBER: Identifier of the tool.
+    - TYPE_NUMBER: Type designation number.
     """
 
     ASSEMBLY_NAME = "ASSEMBLY_NAME"
     ASSEMBLY_NUMBER = "ASSEMBLY_NUMBER"
     CAGE_CODE = "CAGE_CODE"
     CONTRACT_NUMBER = "CONTRACT_NUMBER"
+    CUSTOMER_INDEX = "CUSTOMER_INDEX"
     CUSTOMER_NAME = "CUSTOMER_NAME"
     CUSTOMER_NUMBER = "CUSTOMER_NUMBER"
+    DASH_NUMBER = "DASH_NUMBER"
+    DOCUMENT_CODE = "DOCUMENT_CODE"
     DOCUMENT_NUMBER = "DOCUMENT_NUMBER"
     DRAWING_NUMBER = "DRAWING_NUMBER"
     EQUIPMENT_NUMBER = "EQUIPMENT_NUMBER"
+    ERP_CHANGE_NUMBER = "ERP_CHANGE_NUMBER"
     ERP_NUMBER = "ERP_NUMBER"
+    FINANCIAL_SUPPLY_CHAIN_MANAGEMENT_NUMBER = (
+        "FINANCIAL_SUPPLY_CHAIN_MANAGEMENT_NUMBER"
+    )
+    GROUP_NUMBER = "GROUP_NUMBER"
     IDENTIFICATION_NUMBER = "IDENTIFICATION_NUMBER"
     ITEM_NUMBER = "ITEM_NUMBER"  # Corrected typo
+    JOB_NUMBER = "JOB_NUMBER"
     MANUFACTURER_NAME = "MANUFACTURER_NAME"
     MANUFACTURER_NUMBER = "MANUFACTURER_NUMBER"
     MATERIAL_NUMBER = "MATERIAL_NUMBER"
     MATERIAL_WAREHOUSE_NUMBER = "MATERIAL_WAREHOUSE_NUMBER"
     MISCELLANEOUS = "MISCELLANEOUS"
+    MODEL = "MODEL"
     NUMBER = "NUMBER"
     ORDER_NAME = "ORDER_NAME"
     ORDER_NUMBER = "ORDER_NUMBER"
@@ -818,10 +863,19 @@ class IdentifierType(str, Enum):
     PART_NUMBER = "PART_NUMBER"
     PRODUCT_GROUP = "PRODUCT_GROUP"
     PRODUCT_ID = "PRODUCT_ID"
+    PRODUCT_NAME = "PRODUCT_NAME"
+    PRODUCT_NUMBER = "PRODUCT_NUMBER"
+    PROFILE_NUMBER = "PROFILE_NUMBER"
     PROJECT_NAME = "PROJECT_NAME"
+    PROJECT_NUMBER = "PROJECT_NUMBER"
+    PROTOTYPE_NUMBER = "PROTOTYPE_NUMBER"
     REFERENCE_DRAWING_NUMBER = "REFERENCE_DRAWING_NUMBER"
     REPLACED_BY = "REPLACED_BY"
     REPLACEMENT_FOR = "REPLACEMENT_FOR"
+    SERIAL_NUMBER = "SERIAL_NUMBER"
+    SETTING_PLAN_NUMBER = "SETTING_PLAN_NUMBER"
+    TOOL_NUMBER = "TOOL_NUMBER"
+    TYPE_NUMBER = "TYPE_NUMBER"
 
 
 class IdentifierStakeholder(str, Enum):
