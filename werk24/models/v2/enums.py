@@ -258,6 +258,27 @@ class MaterialCategory2(str, Enum):
         return None
 
 
+class MaterialOrigin(str, Enum):
+    """
+    Where on the drawing a material specification was read.
+
+    Two drawings can list the same two materials and mean very different
+    things. "1.4301 or 1.4404" written in one canvas note is a choice the
+    designer offers; "1.4301" in the title block with "alternative material
+    1.4404" in a canvas note is a primary material with a fallback. Both
+    arrive as two entries in ``material_options``, so without the origin the
+    two cases are indistinguishable.
+
+    - ``TITLE_BLOCK``: read from a cell of the drawing's title block (or of
+      the frame band around the canvas).
+    - ``CANVAS_NOTE``: read from a note on the drawing canvas.
+    - ``BILL_OF_MATERIAL``: read from a row of a bill-of-material table.
+    """
+
+    TITLE_BLOCK = "TITLE_BLOCK"
+    CANVAS_NOTE = "CANVAS_NOTE"
+    BILL_OF_MATERIAL = "BILL_OF_MATERIAL"
+
 
 class MaterialCategory3(str, Enum):
     # FERROUS_ALLOY / STEEL
