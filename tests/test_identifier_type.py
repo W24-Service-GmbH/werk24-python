@@ -12,6 +12,7 @@ receive, so both want a deprecation cycle rather than an edit in passing.
 """
 
 import json
+import re
 
 import pytest
 
@@ -20,6 +21,12 @@ from werk24.models.v1.title_block import (
     W24IdentifierStakeholder,
     W24IdentifierType,
 )
+from werk24.models.v2.enums import IdentifierType
+
+#: v1 spells two members wrong and v2 already corrected both, so the two enums
+#: cannot be compared member-for-member without saying so here.
+_V1_ONLY = {"ITEM_NUMER"}
+_V2_ONLY = {"ITEM_NUMBER"}
 
 #: Added because the reader's caption assets already carry these dimensions.
 ADDED = (
@@ -113,3 +120,70 @@ def test_the_period_enum_is_untouched():
         "CURRENT",
         "FUTURE",
     }
+
+
+# ---------------------------------------------------------------------------
+# v2
+#
+# `IdentifierType` in `models/v2/enums.py` is the enum the v2 API returns AND
+# the one the public documentation renders: docs-v2's `api-reference/identifier`
+# page is `::: werk24.models.v2.models.Identifier`, so the docstring below the
+# class IS the published reference. Widening v1 alone would have left the v2
+# API unable to express the same kinds, and the docs describing a shorter list
+# than either.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("name", ADDED)
+def test_the_added_member_exists_in_v2(name):
+    assert hasattr(IdentifierType, name)
+
+
+@pytest.mark.parametrize("name", ADDED)
+def test_the_added_v2_member_value_matches_its_name(name):
+    assert IdentifierType[name].value == name
+
+
+def test_the_two_enums_carry_the_same_kinds():
+    # Apart from the one member v1 misspells, which v2 corrected.
+    v1 = {member.name for member in W24IdentifierType} - _V1_ONLY
+    v2 = {member.name for member in IdentifierType} - _V2_ONLY
+    assert v1 == v2
+
+
+def test_v2_corrected_both_v1_misspellings():
+    assert IdentifierType.ITEM_NUMBER.value == "ITEM_NUMBER"
+    assert IdentifierType.ASSEMBLY_NAME.value == "ASSEMBLY_NAME"
+
+
+def test_no_v2_value_has_stray_whitespace():
+    # v2 has no grandfathered exception, so this one is absolute.
+    offenders = sorted(
+        member.name
+        for member in IdentifierType
+        if member.value != member.value.strip()
+    )
+    assert offenders == []
+
+
+def test_every_v2_value_is_unique():
+    values = [member.value for member in IdentifierType]
+    assert len(values) == len(set(values))
+
+
+def test_the_v2_members_are_sorted():
+    names = [member.name for member in IdentifierType]
+    assert names == sorted(names)
+
+
+def test_the_docstring_documents_every_member():
+    """The class docstring is the published API reference, so a member missing
+    from it is a member missing from the docs.
+
+    This is not hypothetical: before this change the list was nine members
+    short of the enum, including `PART_NUMBER` and `PROJECT_NAME`.
+    """
+    documented = set(re.findall(r"^\s*- ([A-Z][A-Z_]*):", IdentifierType.__doc__, re.M))
+    declared = {member.name for member in IdentifierType}
+    assert declared - documented == set(), "undocumented members"
+    assert documented - declared == set(), "documented members that do not exist"
