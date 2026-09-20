@@ -32,6 +32,7 @@ from .enums import (
     MaterialCategory1,
     MaterialCategory2,
     MaterialCategory3,
+    MaterialOrigin,
     NoteType,
     PrimaryProcessType,
     ProjectionMethodType,
@@ -1024,6 +1025,16 @@ class Material(BaseModel):
     ] = Field(
         ...,
         description="Hierarchical Material category.",
+    )
+    origin: Optional[MaterialOrigin] = Field(
+        None,
+        description=(
+            "Where on the drawing this material was read: the title block, a "
+            "canvas note, or a bill-of-material row. None when the reader "
+            "could not attribute it. Two materials listed as alternatives can "
+            "have different origins."
+        ),
+        examples=[MaterialOrigin.TITLE_BLOCK, MaterialOrigin.CANVAS_NOTE],
     )
 
 
