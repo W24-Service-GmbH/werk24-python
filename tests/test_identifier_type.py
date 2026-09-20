@@ -71,7 +71,13 @@ def test_project_number_is_distinct_from_project_name():
 
 
 def test_every_value_is_unique():
-    values = [member.value for member in W24IdentifierType]
+    # `__members__`, not iteration. Iterating an Enum SKIPS aliases, so a
+    # `NEW_KIND = "NUMBER"` added by mistake would silently become an alias of
+    # `NUMBER`, never appear in the loop, and pass this check vacuously — while
+    # `W24IdentifierType.NEW_KIND` quietly returned `NUMBER` to a caller.
+    # `__members__` includes the alias name and maps it to the same member, so
+    # its value shows up twice and the duplicate is caught.
+    values = [member.value for member in W24IdentifierType.__members__.values()]
     assert len(values) == len(set(values))
 
 
@@ -95,8 +101,9 @@ def test_the_two_known_misspellings_are_unchanged():
 
 def test_the_members_are_sorted():
     # The list is maintained alphabetically; an out-of-order insert is how a
-    # duplicate slips in unnoticed.
-    names = [member.name for member in W24IdentifierType]
+    # duplicate slips in unnoticed. Alias names count here too, so this reads
+    # `__members__` as well.
+    names = list(W24IdentifierType.__members__)
     assert names == sorted(names)
 
 
@@ -167,13 +174,69 @@ def test_no_v2_value_has_stray_whitespace():
 
 
 def test_every_v2_value_is_unique():
-    values = [member.value for member in IdentifierType]
+    # `__members__` for the same reason as the v1 check above.
+    values = [member.value for member in IdentifierType.__members__.values()]
     assert len(values) == len(set(values))
 
 
 def test_the_v2_members_are_sorted():
-    names = [member.name for member in IdentifierType]
+    names = list(IdentifierType.__members__)
     assert names == sorted(names)
+
+
+def _metadata_message(identifier_type: str):
+    """A v2 AskMetaData response carrying one identifier of *identifier_type*."""
+    import uuid
+
+    from werk24.models.v2.internal import TechreadMessage
+
+    return TechreadMessage.model_validate_json(
+        json.dumps(
+            {
+                "request_id": str(uuid.uuid4()),
+                "message_type": "ASK",
+                "message_subtype": "META_DATA",
+                "payload_dict": {
+                    "ask_version": "v2",
+                    "ask_type": "META_DATA",
+                    "page_type": "COMPONENT_DRAWING",
+                    "identifiers": [
+                        {
+                            "identifier_type": identifier_type,
+                            "value": "P-1234",
+                            "language": "ENG",
+                            "reference_id": 0,
+                        }
+                    ],
+                },
+            }
+        )
+    )
+
+
+@pytest.mark.parametrize("name", ADDED)
+def test_a_response_carrying_an_added_type_stays_typed(name):
+    """The consequence that makes the v2 half of this necessary.
+
+    `TechreadMessage` deserializes a v2 payload under `suppress(ValidationError)`
+    and falls through to returning the RAW DICT when nothing validates. So an
+    identifier whose type the v2 enum did not know did not merely lose its
+    type: it failed `List[Identifier]` validation, which failed the whole
+    `ResponseMetaDataComponentDrawing`, and the caller got an untyped dict
+    instead of the entire metadata response. Silently, because the exception is
+    suppressed by design.
+    """
+    message = _metadata_message(name)
+    assert type(message.payload_dict).__name__ == "ResponseMetaDataComponentDrawing"
+    assert message.payload_dict.identifiers[0].identifier_type is IdentifierType[name]
+
+
+def test_an_unknown_type_still_degrades_to_a_dict():
+    # Pins the behaviour above so the next person to read this test knows the
+    # fallback is real and what it costs, rather than discovering it from a
+    # customer report.
+    message = _metadata_message("NOT_A_REAL_IDENTIFIER_KIND")
+    assert isinstance(message.payload_dict, dict)
 
 
 def test_the_docstring_documents_every_member():
