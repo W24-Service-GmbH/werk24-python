@@ -33,6 +33,7 @@ from .enums import (
     MaterialCategory2,
     MaterialCategory3,
     NoteType,
+    PageType,
     PrimaryProcessType,
     ProjectionMethodType,
     RedactionZoneType,
@@ -1160,6 +1161,38 @@ class UnitSystem(Reference):
     """
 
     unit_system_type: UnitSystemType
+
+
+class PageAssessment(BaseModel):
+    """What one page turned out to be, and whether it shows welding.
+
+    Two answers from a single look at the page, kept in one object because
+    they were made together and kept as separate fields because they are
+    independent: a page nobody could categorise may still plainly carry weld
+    callouts, so an unhelpful `page_type` says nothing about
+    `has_welding_symbols`.
+    """
+
+    page_type: PageType = Field(
+        PageType.MISCELLANEOUS,
+        description=(
+            "What kind of page this is. COMPONENT_DRAWING and "
+            "ASSEMBLY_DRAWING are interpreted; the others are recognised so "
+            "you learn early that the rest of your asks will come back empty. "
+            "MISCELLANEOUS also covers a page we looked at and could not "
+            "place."
+        ),
+    )
+    has_welding_symbols: bool = Field(
+        False,
+        description=(
+            "Whether the page carries welding callouts. Presence only, never "
+            "which weld: the symbol's flag and its lettering are too small to "
+            "read reliably at the resolution this is judged at, while the "
+            "callout as a whole is not. Answered False when unsure, so a True "
+            "is worth more than a False."
+        ),
+    )
 
 
 class ProcessingTimeEstimate(BaseModel):
