@@ -50,25 +50,53 @@ class W24CaptionValuePair(BaseModel):
 
 
 class W24IdentifierType(str, Enum):
-    """List of Identifier Types supported by Werk24"""
+    """List of Identifier Types supported by Werk24.
+
+    Every member corresponds to a caption dimension the reader already
+    recognises (`IDENTIFIER/<MEMBER>`), so this list is what the reader is
+    able to SAY about a title-block identifier. Where a dimension has no
+    member here, the reader has to fall back to `NUMBER`, which keeps the
+    caption and the value but loses the kind.
+
+    Adding a member is additive: this is a `str` Enum, so an existing consumer
+    keeps matching the values it already knows. Widening it here is therefore
+    the cheap half; the reader still needs the type in its own prompt
+    vocabulary before it will ever be emitted.
+
+    Two members are misspelled and are left alone deliberately, because
+    correcting either changes a value that already goes out to customers:
+    `ITEM_NUMER` is missing its `B`, and `ASSEMBLY_NAME`'s value carries a
+    trailing space (`"ASSEMBLY_NAME "`). Both want a deprecation cycle rather
+    than an edit in passing.
+    """
 
     ASSEMBLY_NAME = "ASSEMBLY_NAME "
     ASSEMBLY_NUMBER = "ASSEMBLY_NUMBER"
     CAGE_CODE = "CAGE_CODE"
     CONTRACT_NUMBER = "CONTRACT_NUMBER"
+    CUSTOMER_INDEX = "CUSTOMER_INDEX"
     CUSTOMER_NAME = "CUSTOMER_NAME"
     CUSTOMER_NUMBER = "CUSTOMER_NUMBER"
+    DASH_NUMBER = "DASH_NUMBER"
+    DOCUMENT_CODE = "DOCUMENT_CODE"
     DOCUMENT_NUMBER = "DOCUMENT_NUMBER"
     DRAWING_NUMBER = "DRAWING_NUMBER"
     EQUIPMENT_NUMBER = "EQUIPMENT_NUMBER"
+    ERP_CHANGE_NUMBER = "ERP_CHANGE_NUMBER"
     ERP_NUMBER = "ERP_NUMBER"
+    FINANCIAL_SUPPLY_CHAIN_MANAGEMENT_NUMBER = (
+        "FINANCIAL_SUPPLY_CHAIN_MANAGEMENT_NUMBER"
+    )
+    GROUP_NUMBER = "GROUP_NUMBER"
     IDENTIFICATION_NUMBER = "IDENTIFICATION_NUMBER"
     ITEM_NUMER = "ITEM_NUMER"
+    JOB_NUMBER = "JOB_NUMBER"
     MANUFACTURER_NAME = "MANUFACTURER_NAME"
     MANUFACTURER_NUMBER = "MANUFACTURER_NUMBER"
     MATERIAL_NUMBER = "MATERIAL_NUMBER"
     MATERIAL_WAREHOUSE_NUMBER = "MATERIAL_WAREHOUSE_NUMBER"
     MISCELLANEOUS = "MISCELLANEOUS"
+    MODEL = "MODEL"
     NUMBER = "NUMBER"
     ORDER_NAME = "ORDER_NAME"
     ORDER_NUMBER = "ORDER_NUMBER"
@@ -76,10 +104,19 @@ class W24IdentifierType(str, Enum):
     PART_NUMBER = "PART_NUMBER"
     PRODUCT_GROUP = "PRODUCT_GROUP"
     PRODUCT_ID = "PRODUCT_ID"
+    PRODUCT_NAME = "PRODUCT_NAME"
+    PRODUCT_NUMBER = "PRODUCT_NUMBER"
+    PROFILE_NUMBER = "PROFILE_NUMBER"
     PROJECT_NAME = "PROJECT_NAME"
+    PROJECT_NUMBER = "PROJECT_NUMBER"
+    PROTOTYPE_NUMBER = "PROTOTYPE_NUMBER"
     REFERENCE_DRAWING_NUMBER = "REFERENCE_DRAWING_NUMBER"
     REPLACED_BY = "REPLACED_BY"
     REPLACEMENT_FOR = "REPLACEMENT_FOR"
+    SERIAL_NUMBER = "SERIAL_NUMBER"
+    SETTING_PLAN_NUMBER = "SETTING_PLAN_NUMBER"
+    TOOL_NUMBER = "TOOL_NUMBER"
+    TYPE_NUMBER = "TYPE_NUMBER"
 
 
 class W24IdentifierStakeholder(str, Enum):
