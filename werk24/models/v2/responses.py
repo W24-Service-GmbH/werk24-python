@@ -19,6 +19,7 @@ from .models import (
     Language,
     MaterialCombination,
     Note,
+    PageAssessment,
     PrimaryProcessUnion,
     ProcessingTimeEstimate,
     ProjectionMethod,
@@ -64,29 +65,20 @@ class ResponseCustom(Response):
 
 class ResponseDocumentProfile(Response):
     """
-    The document's profile: what kind of drawing it is, and how long it is
-    likely to take to read.
+    The document's shape: how big it is, and how long it is likely to take.
 
-    Answered from the file's shape before any interpretation begins, so it
-    arrives well ahead of the other responses. Two things it is good for:
-    telling a waiting user how long they have to wait, and finding out early
-    that the document is not one Werk24 interprets.
+    Read off the file itself, before any interpretation begins and without
+    asking a model anything, so it arrives in milliseconds rather than
+    seconds. Use it to tell a waiting user how long they are waiting.
 
-    Note that `page_type` describes the FIRST page. A multi-page document is
-    profiled by the page the reader leads with; `page_count` tells you whether
-    there are others.
+    **What kind of page this is is no longer here.** It costs a vision call,
+    which is thousands of times slower than everything in this response, so
+    keeping the two together meant the fast answer waited for the slow one.
+    Ask `AskPageAssessment` for it, and for whether the pages carry welding.
     """
 
     ask_type: Literal[AskType.DOCUMENT_PROFILE] = AskType.DOCUMENT_PROFILE
 
-    page_type: PageType = Field(
-        PageType.MISCELLANEOUS,
-        description=(
-            "The kind of document this is. COMPONENT_DRAWING and "
-            "ASSEMBLY_DRAWING are interpreted; the others are recognised so "
-            "you learn early that the rest of your asks will come back empty."
-        ),
-    )
     page_count: int = Field(
         ...,
         ge=1,
@@ -115,6 +107,35 @@ class ResponseDocumentProfile(Response):
             "How long this document is likely to take. None when the shape is "
             "too unusual to compare against anything we have measured; treat "
             "that as 'no estimate' rather than 'fast'."
+        ),
+    )
+
+
+class ResponsePageAssessment(Response):
+    """
+    What each page of the document is, and whether it shows welding.
+
+    One entry per page **we were asked to read**, in the order we read them,
+    which is not necessarily the order they appear in the file: a request that
+    names particular pages gets those pages, and a page limit truncates the
+    rest. `ResponseDocumentProfile.page_count` reports the length of the whole
+    document, so the two legitimately disagree.
+
+    A `None` entry means that page could not be assessed, which is not the
+    same as a page assessed as ordinary. Do not read it as "no welding".
+
+    This response waits on a model, so it arrives well after
+    `ResponseDocumentProfile` and roughly alongside the extraction results.
+    """
+
+    ask_type: Literal[AskType.PAGE_ASSESSMENT] = AskType.PAGE_ASSESSMENT
+
+    pages: List[Optional[PageAssessment]] = Field(
+        default_factory=list,
+        description=(
+            "One entry per page read, in reading order. None where the page "
+            "could not be assessed at all, which is distinct from a page "
+            "assessed as MISCELLANEOUS with no welding."
         ),
     )
 
