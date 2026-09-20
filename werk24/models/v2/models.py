@@ -1193,6 +1193,24 @@ class PageAssessment(BaseModel):
             "is worth more than a False."
         ),
     )
+    description: str = Field(
+        "",
+        description=(
+            "One short sentence saying what this page shows, in plain "
+            "language. Most useful when `page_type` is MISCELLANEOUS, which "
+            "on its own tells you only that the page is not one of the "
+            "categories: the sentence is what tells you whether you sent a "
+            "cover sheet, a specification, a photograph or something we "
+            "simply have no name for yet. Empty when no description was "
+            "produced. Written from a downscaled image, so it describes what "
+            "the page IS and never quotes a dimension or a tolerance off it."
+        ),
+        examples=[
+            "A dimensioned drawing of a turned shaft with a keyway.",
+            "A cover sheet listing the drawings in this package.",
+            "A photograph of a printed drawing, taken at an angle.",
+        ],
+    )
 
 
 class ProcessingTimeEstimate(BaseModel):
