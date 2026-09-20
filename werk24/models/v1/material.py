@@ -11,29 +11,6 @@ from .property.glass_homogeneity import W24PropertyGlassHomogeneityType
 from .typed_model import W24TypedModel
 
 
-class W24MaterialOrigin(str, Enum):
-    """Where on the drawing a material specification was read.
-
-    Mirrors :class:`werk24.models.v2.enums.MaterialOrigin`. The v2 enum is
-    deliberately a separate definition rather than a reuse, following the
-    same rule as the other paired enums: the v1 models must not import from
-    v2, and the two versions have to be able to drift apart.
-
-    Attributes:
-    ----------
-    TITLE_BLOCK: read from a cell of the title block (or of the frame band
-        around the canvas).
-
-    CANVAS_NOTE: read from a note on the drawing canvas.
-
-    BILL_OF_MATERIAL: read from a row of a bill-of-material table.
-    """
-
-    TITLE_BLOCK = "TITLE_BLOCK"
-    CANVAS_NOTE = "CANVAS_NOTE"
-    BILL_OF_MATERIAL = "BILL_OF_MATERIAL"
-
-
 class W24MaterialCategory1(str, Enum):
     FERROUS_ALLOY = "FERROUS_ALLOY"
     NONFERROUS_ALLOY = "NONFERROUS_ALLOY"
@@ -646,15 +623,6 @@ class W24Material(W24BaseFeatureModel):
         The conditions are specific to the material category
         and can be used to further specify the material
         properties.
-
-    origin: Where on the drawing this material was read -
-        the title block, a canvas note, or a bill-of-material
-        row. None when the reader could not attribute it.
-        Two materials offered as alternatives to one another
-        can have different origins: "1.4301 or 1.4404" in a
-        single canvas note is not the same specification as
-        "1.4301" in the title block with "alternative material
-        1.4404" in a note.
     """
 
     blurb: str
@@ -667,7 +635,6 @@ class W24Material(W24BaseFeatureModel):
         Optional[W24MaterialCategory3],
     ]
     material_conditions: list[W24MaterialCondition] = []
-    origin: Optional[W24MaterialOrigin] = None
 
     # Deprecated since 1.4.0. Set to default=None to avoid breaking changes
     material_standard: Optional[Any] = None
