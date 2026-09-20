@@ -15,7 +15,6 @@ import pytest
 
 from werk24 import Material, MaterialCombination
 from werk24.models import MaterialOrigin
-from werk24.models.v1.material import W24Material, W24MaterialOrigin
 
 
 def _material(designation: str, origin: MaterialOrigin | None = None) -> Material:
@@ -105,23 +104,17 @@ def test_materials_of_one_combination_may_disagree():
     ]
 
 
-def test_v1_and_v2_origins_share_their_values():
-    """core-reader reads into the v1 model and exports the v2 one.
+def test_the_origin_is_the_only_new_field():
+    """A producer that predates the field keeps validating.
 
-    The v1 enum is a separate definition because v1 must not import from v2,
-    so nothing but a test stops the two from drifting apart.
+    core-reader installs this package from main, so the field has to be
+    additive in both merge orders: optional here, ignored there.
     """
-    assert {o.name for o in W24MaterialOrigin} == {o.name for o in MaterialOrigin}
-    assert {o.value for o in W24MaterialOrigin} == {o.value for o in MaterialOrigin}
+    payload = {
+        "raw_ocr": "1.4301",
+        "standard": "EN 10088-3",
+        "designation": "X5CrNi18-10",
+        "material_category": [None, None, None],
+    }
 
-
-def test_v1_origin_defaults_to_none():
-    material = W24Material(
-        blurb="X5CrNi18-10",
-        raw_ocr_blurb="1.4301",
-        standard="EN 10088-3",
-        designation="X5CrNi18-10",
-        material_category=(None, None, None),
-    )
-
-    assert material.origin is None
+    assert Material.model_validate(payload).origin is None
