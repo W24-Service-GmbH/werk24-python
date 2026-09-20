@@ -49,11 +49,13 @@ class AskCustom(AskV2):
 class AskDocumentProfile(AskV2):
     """Represents a request for the document's profile.
 
-    What kind of document it is, and how long it is likely to take. Answered
-    from the file's shape before any interpretation begins, so it arrives
-    almost immediately and costs nothing extra: use it to decide whether to
-    keep waiting, what to show a user, and whether the document is one Werk24
-    interprets at all.
+    Fast metadata about the document and how long it is likely to take.
+    Answered from the file's shape before any interpretation begins, so it
+    arrives almost immediately and costs nothing extra: use it to decide
+    whether to keep waiting and what to show a user.
+
+    Page classification is intentionally not part of this ask; request
+    `AskPageAssessment` when you need page type and welding presence.
     """
 
     ask_type: Literal[AskType.DOCUMENT_PROFILE] = AskType.DOCUMENT_PROFILE
