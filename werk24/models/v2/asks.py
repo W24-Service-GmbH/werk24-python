@@ -83,6 +83,22 @@ class AskMetaData(AskV2):
     ask_type: Literal[AskType.META_DATA] = AskType.META_DATA
 
 
+class AskPageAssessment(AskV2):
+    """Represents a request for what the pages of the document are.
+
+    One vision call per page, answering two independent questions: what kind
+    of page it is, and whether it carries welding callouts.
+
+    Kept apart from `AskDocumentProfile` because the two cost completely
+    different things. The profile is read off the file and arrives in
+    milliseconds; this waits on a model. Asking for both gets you the profile
+    straight away and this one later, rather than making the cheap answer wait
+    for the expensive one.
+    """
+
+    ask_type: Literal[AskType.PAGE_ASSESSMENT] = AskType.PAGE_ASSESSMENT
+
+
 class AskRedaction(AskV2):
     """
     A class that represents a request for redaction from the server.
