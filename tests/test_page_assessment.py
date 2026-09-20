@@ -66,6 +66,32 @@ class TestPageAssessment:
         assert assessment.page_type is PageType.MISCELLANEOUS
         assert assessment.has_welding_symbols is False
 
+    def test_it_carries_a_plain_sentence(self):
+        assessment = PageAssessment(
+            page_type=PageType.MISCELLANEOUS,
+            description="A cover sheet listing the drawings in this package.",
+        )
+        assert assessment.description.startswith("A cover sheet")
+
+    def test_the_description_defaults_to_empty_not_none(self):
+        # An empty string means "no sentence was produced". None would make
+        # every caller reaching for `.description` handle a second case for
+        # no gain, and there is no third state to express.
+        assert PageAssessment().description == ""
+
+    def test_the_description_is_what_rescues_miscellaneous(self):
+        """MISCELLANEOUS on its own says only "not one of the categories".
+
+        Two pages that are nothing alike get the same label, and the sentence
+        is the only thing that tells them apart. This is the case the field
+        was added for.
+        """
+        cover = PageAssessment(description="A cover sheet.")
+        photo = PageAssessment(description="A photograph of a printed drawing.")
+
+        assert cover.page_type is photo.page_type is PageType.MISCELLANEOUS
+        assert cover.description != photo.description
+
     def test_an_unknown_page_type_degrades_rather_than_raising(self):
         # A category the server learns to recognise before this client knows
         # its name must not break a caller's pipeline on a real drawing.
