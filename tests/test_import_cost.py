@@ -218,6 +218,111 @@ class TestTheUnitRegistryIsBuiltOnFirstUse:
         )
         assert result.returncode == 0, result.stderr
 
+    def test_a_star_import_still_exports_ureg(self):
+        """``import *`` does not consult ``__getattr__`` without ``__all__``.
+
+        This is the regression the lazy attribute creates and it is silent:
+        ``ureg`` is a plain module global on main, so a star import exported
+        it; once it moved behind ``__getattr__`` it was simply absent, with
+        no error anywhere. Verified against main before fixing -- a star
+        import there returns it, and without ``__all__`` here it does not.
+        """
+        result = _run(
+            "ns = {}\n"
+            "exec('from werk24.models.v1.value import *', ns)\n"
+            "assert 'ureg' in ns, 'star import lost ureg'\n"
+            "from werk24.models.v1.value import get_unit_registry\n"
+            "assert ns['ureg'] is get_unit_registry()\n"
+        )
+        assert result.returncode == 0, result.stderr
+
+    def test_concurrent_first_use_builds_exactly_one_registry(self):
+        """Two threads reaching a quantity at once must not get two registries.
+
+        Not a theoretical race. The construction is 182ms, which is a wide
+        window, and the first quantity validations in a process are precisely
+        the ones that arrive together. Two registries do not interoperate:
+        combining their quantities raises ``ValueError: Cannot operate with
+        Quantity and Quantity of different registries``.
+
+        The eager ``ureg = UnitRegistry()`` on main had no such window --
+        the import lock was the guard, and deferring the work removed it.
+
+        Forced rather than hoped for: ``UnitRegistry`` is replaced with a
+        constructor that sleeps, so every thread is inside the window at
+        once. Without the lock this fails with 8 registries, not
+        occasionally with 2.
+        """
+        result = _run(
+            "import threading, time\n"
+            "from werk24.models.v1 import value\n"
+            "\n"
+            "built = []\n"
+            "\n"
+            "class SlowRegistry:\n"
+            "    def __init__(self):\n"
+            "        built.append(self)\n"
+            "        time.sleep(0.2)\n"
+            "\n"
+            "value.UnitRegistry = SlowRegistry\n"
+            "value._unit_registry = None\n"
+            "\n"
+            "seen = []\n"
+            "start = threading.Barrier(8)\n"
+            "\n"
+            "def worker():\n"
+            "    start.wait()\n"
+            "    seen.append(value.get_unit_registry())\n"
+            "\n"
+            "threads = [threading.Thread(target=worker) for _ in range(8)]\n"
+            "for t in threads:\n"
+            "    t.start()\n"
+            "for t in threads:\n"
+            "    t.join()\n"
+            "\n"
+            "assert len(built) == 1, f'{len(built)} registries built, expected 1'\n"
+            "assert len(seen) == 8, seen\n"
+            "assert all(r is seen[0] for r in seen), 'threads got different registries'\n"
+        )
+        assert result.returncode == 0, result.stderr
+
+    def test_the_published_schema_carries_the_example_unchanged(self):
+        """The literals have to survive into the JSON schema, not just the field.
+
+        ``model_fields[...].examples`` is what this module set; the schema is
+        what consumers read. pydantic passes ``examples`` through its own
+        serialization on the way, so the two are not the same assertion --
+        and the schema is the artefact the change promised to leave alone.
+        """
+        result = _run(
+            "from werk24.models.v1.property.glass_homogeneity import W24Iso10110Limits\n"
+            "from werk24.models.v1.property.bubbles_and_inclusions import (\n"
+            "    W24PropertyBubblesAndInclusionsIso10110Limits as Bubbles,\n"
+            ")\n"
+            "from werk24.models.v1.property.stress_birefringence import (\n"
+            "    W24PropertyStressBirefringenceIso10110Value as Stress,\n"
+            ")\n"
+            "\n"
+            "limits = W24Iso10110Limits.model_json_schema()['properties']\n"
+            "assert limits['striae_wavefront_deviation_tolerance_limit']['examples'] == [\n"
+            "    {'blurb': '15nm', 'value': '15 nanometer', 'tolerance': None}\n"
+            "], limits['striae_wavefront_deviation_tolerance_limit'].get('examples')\n"
+            "\n"
+            "bubbles = Bubbles.model_json_schema()['properties']\n"
+            "assert bubbles['total_cross_section']['examples'] == [\n"
+            "    {'blurb': '0.1mm2', 'value': '0.1 millimeter ** 2', 'tolerance': None}\n"
+            "], bubbles['total_cross_section'].get('examples')\n"
+            "assert bubbles['test_volume']['examples'] == [\n"
+            "    {'blurb': '100cm3', 'value': '100 centimeter ** 3', 'tolerance': None}\n"
+            "], bubbles['test_volume'].get('examples')\n"
+            "\n"
+            "stress = Stress.model_json_schema()['properties']\n"
+            "assert stress['value']['examples'] == [\n"
+            "    {'blurb': '8nm/cm', 'value': '8.0 nanometer / centimeter', 'tolerance': None}\n"
+            "], stress['value'].get('examples')\n"
+        )
+        assert result.returncode == 0, result.stderr
+
     def test_an_unknown_attribute_on_value_raises_attribute_error(self):
         result = _run(
             "from werk24.models.v1 import value\n"
