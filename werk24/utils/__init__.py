@@ -7,8 +7,10 @@ from .exceptions import InsufficientCreditsException as InsufficientCreditsExcep
 from .exceptions import InvalidLicenseException as InvalidLicenseException
 from .exceptions import InvalidPriorityError as InvalidPriorityError
 from .exceptions import PriorityTooHighError as PriorityTooHighError
+from .exceptions import ReadTimeoutError as ReadTimeoutError
 from .exceptions import RequestTooLargeException as RequestTooLargeException
 from .exceptions import ResourceNotFoundException as ResourceNotFoundException
+from .exceptions import RetryableServerError as RetryableServerError
 from .exceptions import ServerException as ServerException
 from .exceptions import SSLCertificateError as SSLCertificateError
 from .exceptions import TechreadException as TechreadException
