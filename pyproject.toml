@@ -127,4 +127,5 @@ markers = [
   "requires_api: mark test as requiring API credentials (W24TECHREAD_AUTH_TOKEN)",
   "slow: mark test as slow (execution time > 10 seconds)",
   "concurrent: mark test as testing concurrent behavior",
+  "callback_e2e: mark test as an end-to-end callback delivery check (costs a billable read and needs a public tunnel; run by .github/workflows/callback-check.yml)",
 ]

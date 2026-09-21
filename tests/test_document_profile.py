@@ -1,9 +1,12 @@
 """Tests for the document profile ask and response.
 
-The profile answers two questions before any interpretation begins: what kind
-of document this is, and how long it is likely to take. Both are useful only
-if they arrive early and are honest about what they do not know, which is what
-these tests pin.
+The profile answers one question before any interpretation begins: how long
+this is likely to take. That is useful only if it arrives early and is honest
+about what it does not know, which is what these tests pin.
+
+What kind of page it is used to live here too and now does not: it costs a
+vision call, and pairing it with an answer read straight off the file meant
+the fast one waited for the slow one. See test_page_assessment.py.
 """
 
 import pytest
@@ -75,19 +78,12 @@ class TestResponse:
         assert response.paper_size is None
         assert response.processing_time is None
 
-    def test_an_unclassified_page_is_miscellaneous_not_a_component_drawing(self):
-        # The important default. Every other response in this API hardcodes
-        # `Literal[PageType.COMPONENT_DRAWING]`, so defaulting to it here would
-        # assert something we did not determine.
-        assert ResponseDocumentProfile(page_count=1).page_type is PageType.MISCELLANEOUS
-
-    def test_it_can_name_a_document_we_do_not_interpret(self):
-        # The whole point of the extra members: telling a caller their P&ID is
-        # a P&ID is a better answer than an empty component drawing.
-        response = ResponseDocumentProfile(
-            page_count=1, page_type=PageType.PID_DRAWING
-        )
-        assert response.page_type is PageType.PID_DRAWING
+    def test_the_profile_no_longer_carries_a_page_type(self):
+        # It moved to AskPageAssessment. Pinned rather than merely deleted:
+        # the point of the split is that nothing in this response may need a
+        # model call, and a page type quietly reappearing here would put the
+        # vision call back on the fast path without anyone noticing.
+        assert "page_type" not in ResponseDocumentProfile.model_fields
 
     def test_a_raster_has_no_paper_size_rather_than_a_guessed_one(self):
         response = ResponseDocumentProfile(page_count=1, paper_size=None)
@@ -126,7 +122,6 @@ class TestResponse:
     def test_it_round_trips_through_json(self):
         response = ResponseDocumentProfile(
             page_count=3,
-            page_type=PageType.ASSEMBLY_DRAWING,
             paper_size=PaperSize.ANSI_D,
             processing_time=ProcessingTimeEstimate(seconds_p50=34.9, seconds_p95=120.0),
         )
@@ -158,12 +153,10 @@ class TestForwardCompatibility:
         response = ResponseDocumentProfile.model_validate(
             {
                 "page_count": 2,
-                "page_type": "SOME_FUTURE_TYPE",
                 "paper_size": "ARCH_F",
                 "processing_time": {"seconds_p50": 20.0, "seconds_p95": 45.0},
             }
         )
-        assert response.page_type is PageType.MISCELLANEOUS
         assert response.paper_size is PaperSize.CUSTOM
         assert response.processing_time.seconds_p50 == 20.0
 
