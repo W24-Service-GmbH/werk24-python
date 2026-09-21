@@ -29,8 +29,9 @@ X25519_KDF_INFO = b"werk24-drawing-encryption-v1"
 def derive_x25519_key(shared_secret: bytes) -> bytes:
     """The AES-256 key for an X25519 package, from the raw shared secret.
 
-    HKDF rather than the raw X25519 output: the exchange returns a point with
-    structure, not a uniformly random string, and AES keys must be the
+    HKDF rather than the raw X25519 output. The exchange returns a point with
+    algebraic structure, and an AES key must be indistinguishable from
+    uniformly random bytes; HKDF-SHA256 is what turns the first into the
     second. Both sides call this, so it is defined once.
     """
     return HKDF(

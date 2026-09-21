@@ -16,6 +16,10 @@ getting it wrong is not an exception anyone sees quickly -- it is a customer's
 drawing encrypted to a key nobody can use.
 """
 
+import asyncio
+import hashlib
+import hmac
+import json
 import unittest
 
 from cryptography.hazmat.primitives import serialization
@@ -29,11 +33,19 @@ from werk24.models.v2.internal import (
 )
 from werk24.utils.crypt import (
     X25519_EPHEMERAL_KEY_BYTES,
+    X25519_KDF_INFO,
     decrypt_with_private_key,
     derive_x25519_key,
     encrypt_with_public_key,
     generate_new_key_pair,
 )
+
+class _StopAfterSend(Exception):
+    """Ends init_request once the command has been captured.
+
+    The client would otherwise wait on a websocket that does not exist.
+    """
+
 
 PASSPHRASE = b"a-master-key"
 DRAWING = b"%PDF-1.7\n" + b"a drawing" * 5000
@@ -101,10 +113,29 @@ class TestTheX25519Format(unittest.TestCase):
     def test_the_derived_key_is_an_aes_256_key(self):
         self.assertEqual(len(derive_x25519_key(b"\x01" * 32)), 32)
 
-    def test_the_derivation_is_deterministic(self):
-        """Both sides derive it independently from the same shared secret."""
-        secret = b"\x02" * 32
-        self.assertEqual(derive_x25519_key(secret), derive_x25519_key(secret))
+    def test_the_derivation_matches_an_independent_hkdf(self):
+        """Pinned against RFC 5869 worked by hand, not against itself.
+
+        Calling `derive_x25519_key` twice and comparing proves only that it
+        is a function. This is the wire-format contract with core-reader and
+        with every drawing already encrypted under it: a changed hash, salt
+        or `info` would silently make old packages undecryptable, and a
+        self-comparison would pass through all three.
+
+        So the expected value is computed here from `hmac` and `hashlib`
+        alone -- HKDF-Extract then HKDF-Expand, RFC 5869 section 2 -- which
+        shares no code with `cryptography`'s implementation.
+        """
+        secret = bytes(range(32))
+
+        # HKDF-Extract: PRK = HMAC(salt, IKM), salt absent => HashLen zeros.
+        prk = hmac.new(b"\x00" * hashlib.sha256().digest_size, secret, hashlib.sha256)
+        # HKDF-Expand for one 32-byte block: T(1) = HMAC(PRK, info || 0x01).
+        expected = hmac.new(
+            prk.digest(), X25519_KDF_INFO + b"\x01", hashlib.sha256
+        ).digest()
+
+        self.assertEqual(derive_x25519_key(secret), expected)
 
 
 class TestTheRsaFormatIsUntouched(unittest.TestCase):
@@ -143,13 +174,32 @@ class TestTheCapabilityIsDeclaredNotAssumed(unittest.TestCase):
         self.assertEqual(request.supported_key_exchanges, [])
 
     def test_this_client_sends_the_declaration(self):
-        """Set at the call site in init_request, not on the model."""
-        import inspect
+        """The serialized command, not the source.
 
+        Reading the source proves the keyword is written; it would still
+        pass if the value were an empty list, or if the field failed to
+        serialize. What the server acts on is the JSON, so assert on that.
+        """
         from werk24 import techread
 
-        source = inspect.getsource(techread.Werk24Client.init_request)
-        self.assertIn("supported_key_exchanges=", source)
+        client = techread.Werk24Client(token="t", region="r")
+        sent = {}
+
+        async def capture_command(action, message="{}"):
+            sent["action"] = action
+            sent["message"] = message
+            raise _StopAfterSend()
+
+        client._send_command = capture_command
+
+        with self.assertRaises(_StopAfterSend):
+            asyncio.run(client.init_request(asks=[], max_pages=1))
+
+        payload = json.loads(sent["message"])
+        self.assertEqual(
+            payload["supported_key_exchanges"],
+            [KEY_EXCHANGE_X25519, KEY_EXCHANGE_RSA_OAEP],
+        )
 
 
 if __name__ == "__main__":
