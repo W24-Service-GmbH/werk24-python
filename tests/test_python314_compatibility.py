@@ -9,6 +9,7 @@ deferred annotation evaluation (PEP 649). The tests verify that:
 3. Type annotations work correctly with deferred evaluation
 """
 
+import decimal
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -252,6 +253,130 @@ class TestPydanticModelValidationWithDeferredAnnotations:
         assert system_status.components == []
 
 
+def _is_not_an_integer(value: str) -> bool:
+    """Whether pydantic will refuse *value* for an ``int`` field.
+
+    The filters here used to be ``not value.isdigit()``, which is not the
+    same question. ``str.isdigit()`` is False for every negative number, for
+    ``"+5"``, for anything with surrounding whitespace and for ``"1_0"`` --
+    all of which pydantic accepts -- so hypothesis was free to offer a
+    perfectly valid integer as an "invalid" one and the test failed with DID
+    NOT RAISE. Issue #572 met that as ``"-0"``.
+
+    Both branches are needed: pydantic's lax mode also takes a float string
+    with nothing after the point, so ``"3.0"`` is a valid ``int`` payload
+    while ``int("3.0")`` raises.
+    """
+    try:
+        int(value)
+        return False
+    except ValueError:
+        pass
+    try:
+        return not float(value).is_integer()
+    except (ValueError, OverflowError):
+        return True
+
+
+def _is_not_a_decimal(value: str) -> bool:
+    """Whether pydantic will refuse *value* for ``Quantity.value``.
+
+    Same defect as ``_is_not_an_integer``, one layer out: the old filter was
+    ``not value.replace(".", "").replace("-", "").isdigit()``, which still
+    offered ``"+5"``, ``" 1 "`` and ``"1_0"``. It also offered ``"INFINITY"``,
+    which is what actually broke a run -- ``Quantity.value`` is declared
+    ``allow_inf_nan=True``, so the model was right to accept it and the test
+    was wrong to demand a refusal.
+
+    Deciding this with ``Decimal`` itself rather than by inspecting
+    characters is the point: the oracle is then the same rule pydantic
+    applies, instead of an approximation of it that drifts.
+    """
+    try:
+        decimal.Decimal(value.strip())
+        return False
+    except (decimal.InvalidOperation, ValueError):
+        return True
+
+
+def _is_not_a_finite_decimal(value: str) -> bool:
+    """Whether pydantic will refuse *value* for ``Confidence.score``.
+
+    ``Confidence.score`` is a plain ``Decimal`` and ``Quantity.value`` is a
+    ``Decimal`` with ``allow_inf_nan=True``, so the two fields do not accept
+    the same set of strings and one shared filter cannot serve both:
+    ``Confidence(score="NaN")`` raises ``finite_number`` where
+    ``Quantity(value="NaN")`` is fine. Infinities and NaN are therefore
+    invalid here and must stay in the strategy.
+    """
+    if _is_not_a_decimal(value):
+        return True
+    return not decimal.Decimal(value.strip()).is_finite()
+
+
+class TestTheInvalidStrategiesAgreeWithTheModels:
+    """The filters above must not offer a value the model accepts.
+
+    Without this, a wrong filter only shows up when hypothesis happens to
+    generate the offending string -- and then it is replayed from
+    ``.hypothesis/`` in that checkout forever while a clean checkout stays
+    green, which is how issue #572 presented: "the suite broke on my branch".
+    These cases pin the specific strings that broke it, plus the ones the
+    old ``isdigit`` filters would have offered for the same reason.
+    """
+
+    # Each of these is a valid payload, so the strategies must NOT offer it.
+    VALID_INTEGERS = ["-0", "-1", "+5", " 1 ", "1_0", "\n2\t", "3.0", "+3.0"]
+    # Accepted by both Decimal fields.
+    VALID_DECIMALS = ["-0", "+5", " 1 ", " 2.5 ", "+3.0"]
+    # Accepted by Quantity.value (allow_inf_nan=True) but not Confidence.score.
+    VALID_FOR_QUANTITY_ONLY = ["INFINITY", "-Infinity", "NaN"]
+
+    @pytest.mark.parametrize("value", VALID_INTEGERS)
+    def test_integer_strategy_does_not_offer_a_valid_integer(self, value):
+        assert not _is_not_an_integer(value), (
+            f"{value!r} would be offered as an invalid reference_id"
+        )
+        Reference(reference_id=value)
+
+    @pytest.mark.parametrize("value", VALID_DECIMALS)
+    def test_decimal_strategy_does_not_offer_a_valid_decimal(self, value):
+        assert not _is_not_a_decimal(value), (
+            f"{value!r} would be offered as an invalid Quantity.value"
+        )
+        assert not _is_not_a_finite_decimal(value), (
+            f"{value!r} would be offered as an invalid Confidence.score"
+        )
+        Confidence(score=value)
+        Quantity(value=value, unit="mm")
+
+    @pytest.mark.parametrize("value", VALID_FOR_QUANTITY_ONLY)
+    def test_the_two_decimal_fields_do_not_share_one_oracle(self, value):
+        """allow_inf_nan=True on Quantity.value and not on Confidence.score.
+
+        One filter for both would be wrong in one direction or the other:
+        too loose and Quantity's test demands a refusal the model will not
+        give, too strict and Confidence's test stops covering inf/NaN.
+        """
+        assert not _is_not_a_decimal(value)
+        assert _is_not_a_finite_decimal(value)
+        Quantity(value=value, unit="mm")
+        with pytest.raises(ValidationError):
+            Confidence(score=value)
+
+    # And the converse: the strategies must still offer genuine rubbish,
+    # or the tests they feed would pass vacuously.
+    @pytest.mark.parametrize("value", ["", "abc", "1.2.3", "--1", "1e", "0x10"])
+    def test_the_strategies_still_offer_genuine_rubbish(self, value):
+        assert _is_not_an_integer(value)
+        assert _is_not_a_decimal(value)
+        assert _is_not_a_finite_decimal(value)
+        with pytest.raises(ValidationError):
+            Reference(reference_id=value)
+        with pytest.raises(ValidationError):
+            Confidence(score=value)
+
+
 class TestPydanticModelValidationRejectsInvalidData:
     """Tests that Pydantic models correctly reject invalid data.
 
@@ -261,9 +386,7 @@ class TestPydanticModelValidationRejectsInvalidData:
     @settings(max_examples=100)
     @given(
         invalid_score=st.one_of(
-            st.text(min_size=1).filter(
-                lambda x: not x.replace(".", "").replace("-", "").isdigit()
-            ),
+            st.text(min_size=1).filter(_is_not_a_finite_decimal),
             st.lists(st.integers(), min_size=1),
         )
     )
@@ -281,9 +404,7 @@ class TestPydanticModelValidationRejectsInvalidData:
     @settings(max_examples=100)
     @given(
         invalid_value=st.one_of(
-            st.text(min_size=1).filter(
-                lambda x: not x.replace(".", "").replace("-", "").isdigit()
-            ),
+            st.text(min_size=1).filter(_is_not_a_decimal),
             st.lists(st.integers(), min_size=1),
         )
     )
@@ -301,7 +422,7 @@ class TestPydanticModelValidationRejectsInvalidData:
     @settings(max_examples=100)
     @given(
         invalid_reference_id=st.one_of(
-            st.text(min_size=1).filter(lambda x: not x.isdigit()),
+            st.text(min_size=1).filter(_is_not_an_integer),
             st.floats(allow_nan=True, allow_infinity=True).filter(
                 lambda x: (
                     x != int(x) if not (x != x or abs(x) == float("inf")) else True
