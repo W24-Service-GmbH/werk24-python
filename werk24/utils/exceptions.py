@@ -104,6 +104,41 @@ class ServerException(TechreadException):
     )
 
 
+class RetryableServerError(ServerException):
+    """A server-side failure that resending may resolve: 5xx.
+
+    A subclass of :class:`ServerException` so every existing
+    ``except ServerException`` keeps catching it. It exists because
+    ``ServerException`` is also what 3xx and 416-499 map to, and those must
+    not be retried - resending a request the server rejected as malformed
+    only sends it again.
+    """
+
+    cli_message_header: str = "Server Error"
+    cli_message_body: str = (
+        "A Server Error occurred while processing your request.\n\n"
+        "The Werk24 service team has been notified and will investigate the "
+        "issue. Please try again later."
+    )
+
+
+class ReadTimeoutError(TechreadException):
+    """Raised when a read exceeds its deadline or goes quiet.
+
+    Distinct from a connection failure: the socket is fine, the server simply
+    has not delivered ``PROGRESS_COMPLETED`` - or anything at all - within the
+    time allowed. Callers that retry should treat it as a server-side stall
+    rather than as a transport problem.
+    """
+
+    cli_message_header: str = "Read Timed Out"
+    cli_message_body: str = (
+        "The read did not finish within the time allowed.\n\n"
+        "The drawing may be unusually large, or the service may be degraded. "
+        "Please try again; if it persists, contact the Werk24 team."
+    )
+
+
 class InsufficientCreditsException(ServerException):
     """Raised when the user has insufficient credits for an action."""
 
