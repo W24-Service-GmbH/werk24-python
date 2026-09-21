@@ -26,8 +26,9 @@ kinds of place, and neither runs at import any more:
   ``property/stress_birefringence`` and ``property/glass_homogeneity``, which
   used to build a ``W24PhysicalQuantity`` at import to show one example value.
   Those carry the serialized form directly now, which is what the JSON schema
-  always contained -- ``tests/test_lazy_unit_registry.py`` pins both halves:
-  the schemas are unchanged, and no registry exists after ``import werk24``.
+  always contained -- ``tests/test_import_cost.py`` pins both halves: the
+  published schemas are unchanged, and no registry exists after
+  ``import werk24``.
 
 ``pint`` itself is still imported here, because ``PintQuantity`` is the
 annotated type and pydantic needs the real class when it builds the core
@@ -37,8 +38,11 @@ change; this one is confined to the object the module constructs.
 ``ureg`` remains readable as a module attribute (PEP 562), so
 ``from werk24.models.v1.value import ureg`` still works and still returns the
 one shared registry -- it just builds it at that moment rather than at import.
+``__all__`` below is what keeps that true for ``import *``, which does not
+consult ``__getattr__`` unless a name is listed.
 """
 
+import threading
 from decimal import Decimal
 from typing import Annotated, Optional
 
@@ -55,26 +59,71 @@ from pydantic import (
 
 from .tolerance import W24Tolerance
 
+#: What ``from werk24.models.v1.value import *`` gives you.
+#:
+#: Required rather than stylistic. ``import *`` copies what is already in
+#: ``globals()``, and ``ureg`` is deliberately not there until something asks
+#: for it -- so without ``__all__`` a star import silently stopped exporting
+#: it the moment the registry went lazy. Listing it makes the import machinery
+#: call ``getattr``, which reaches ``__getattr__`` below.
+#:
+#: The other change here is deliberate: ``BaseModel``, ``Decimal``,
+#: ``Optional``, ``Annotated`` and the rest of this module's own imports used
+#: to ride a star import too, because nothing restricted it. They do not now.
+#: That surface was leakage rather than API -- nothing in the five
+#: repositories that install this package star-imports this module at all.
+__all__ = [
+    "Quantity",
+    "W24PhysicalQuantity",
+    "W24Value",
+    "get_unit_registry",
+    "ureg",
+]
+
 #: The process-wide registry, once something has asked for one.
 #:
 #: Module-level rather than an ``lru_cache`` so that ``ureg`` below and every
 #: caller of :func:`get_unit_registry` share one registry. Two pint registries
 #: in a process do not interoperate: a ``Quantity`` from one raises
-#: ``ValueError`` when combined with a ``Quantity`` from the other, so the
+#: ``ValueError: Cannot operate with Quantity and Quantity of different
+#: registries`` when combined with a ``Quantity`` from the other, so the
 #: identity here is a correctness property, not a saving.
 _unit_registry: Optional[UnitRegistry] = None
+
+#: Held only while the registry is being built, so two threads reaching a
+#: quantity field at the same moment cannot each build one.
+#:
+#: This matters precisely because the construction is slow -- 182ms is a wide
+#: window for a second thread to enter, and the first quantity validations in
+#: a process are exactly the ones that arrive together. The old eager
+#: ``ureg = UnitRegistry()`` had no such window: the import lock served as the
+#: guard, and deferring the work is what takes it away.
+_unit_registry_lock = threading.Lock()
 
 
 def get_unit_registry() -> UnitRegistry:
     """The shared pint registry, built on first call.
 
+    Thread-safe: the registry is built at most once per process, and every
+    caller gets that same object. A losing thread waits for the winner rather
+    than building its own, because two registries would hand out quantities
+    that raise ``ValueError`` when combined.
+
     Returns:
         UnitRegistry: The one registry this process uses for every quantity.
     """
     global _unit_registry
-    if _unit_registry is None:
-        _unit_registry = UnitRegistry()
-    return _unit_registry
+    # Read once, unlocked, for the overwhelmingly common already-built case:
+    # a local binding cannot be cleared between the test and the return.
+    registry = _unit_registry
+    if registry is not None:
+        return registry
+    with _unit_registry_lock:
+        # Re-checked inside the lock: another thread may have built it while
+        # this one waited, and returning a second registry is the bug.
+        if _unit_registry is None:
+            _unit_registry = UnitRegistry()
+        return _unit_registry
 
 
 def _parse_quantity(value: object) -> object:

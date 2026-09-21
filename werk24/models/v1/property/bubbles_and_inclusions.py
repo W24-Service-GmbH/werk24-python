@@ -41,7 +41,7 @@ class W24PropertyBubblesAndInclusionsIso10110Limits(W24PropertyBubblesAndInclusi
     # Serialized form rather than a constructed W24PhysicalQuantity: building
     # one here would touch the pint registry at import. See
     # ``werk24.models.v1.value`` for the 182ms that costs, and
-    # ``tests/test_lazy_unit_registry.py`` for the schemas this keeps equal.
+    # ``tests/test_import_cost.py`` for the schemas this keeps equal.
     total_cross_section: W24PhysicalQuantity = Field(
         examples=[
             {"blurb": "0.1mm2", "value": "0.1 millimeter ** 2", "tolerance": None}
