@@ -3,7 +3,7 @@ from typing import Literal, Optional, Union
 
 from pydantic import Field
 
-from ..value import W24PhysicalQuantity, ureg
+from ..value import W24PhysicalQuantity
 from .base import W24Property
 
 
@@ -38,11 +38,19 @@ class W24PropertyBubblesAndInclusionsIso10110Limits(W24PropertyBubblesAndInclusi
     number_of_largest_permissible_bubbles: Optional[int] = Field(
         examples=[30], default=None
     )
+    # Serialized form rather than a constructed W24PhysicalQuantity: building
+    # one here would touch the pint registry at import. See
+    # ``werk24.models.v1.value`` for the 182ms that costs, and
+    # ``tests/test_import_cost.py`` for the schemas this keeps equal.
     total_cross_section: W24PhysicalQuantity = Field(
-        examples=[W24PhysicalQuantity(blurb="0.1mm2", value=0.1 * ureg.mm**2)]
+        examples=[
+            {"blurb": "0.1mm2", "value": "0.1 millimeter ** 2", "tolerance": None}
+        ]
     )
     test_volume: W24PhysicalQuantity = Field(
-        examples=[W24PhysicalQuantity(blurb="100cm3", value=100 * ureg.cm**3)]
+        examples=[
+            {"blurb": "100cm3", "value": "100 centimeter ** 3", "tolerance": None}
+        ]
     )
 
 

@@ -3,7 +3,7 @@ from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from ..value import W24PhysicalQuantity, ureg
+from ..value import W24PhysicalQuantity
 from .base import W24Property
 
 
@@ -25,8 +25,12 @@ class W24Iso10110Limits(BaseModel):
 
     blurb: str = Field(examples=["5* 10^-6; <15nm"])
     tolerance_limit: Decimal = Field(examples=[Decimal(str("50e-6"))])
+    # Serialized form; see the note in ``bubbles_and_inclusions``.
     striae_wavefront_deviation_tolerance_limit: Optional[W24PhysicalQuantity] = Field(
-        examples=[W24PhysicalQuantity(blurb="15nm", value=15 * ureg.nm)], default=None
+        examples=[
+            {"blurb": "15nm", "value": "15 nanometer", "tolerance": None}
+        ],
+        default=None,
     )
 
 
