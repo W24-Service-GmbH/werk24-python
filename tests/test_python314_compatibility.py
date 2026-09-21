@@ -313,6 +313,30 @@ def _is_not_an_integer(value: str) -> bool:
     return number != int(number)
 
 
+#: The string shapes that have caught one of these filters out, and their
+#: neighbours from mapping the boundary. Module-level and shared, because the
+#: characterisation tests and the soundness guards below assert opposite sides
+#: of the SAME facts -- two copies would let them drift apart, and the pair
+#: only means anything while they agree (Copilot caught the duplication).
+#:
+#: ``str.isdigit()`` is False for every one of these and pydantic coerces them
+#: all, which is what made the original filters unsound.
+COERCED_BY_BOTH = ["-0", "+5", " 1", "1 ", "1_0", "\t7", "0042"]
+
+#: ``int()`` raises on these and pydantic still accepts them, because
+#: ``reference_id`` is reached through a float. This is the set that makes an
+#: ``int()``-only predicate unsound too.
+COERCED_BY_REFERENCE_ONLY = ["1.0", "2.00", "-3.0", "-0.0", "  2.0  "]
+
+#: The decimal fields take these; ``Reference`` does not.
+COERCED_BY_DECIMAL_ONLY = ["5e3", "1.5", "+1.5", "1e2", "-0.5"]
+
+#: Refused by both, so a filter that admits nothing would fail on them. A
+#: predicate can be trivially "sound" by never admitting anything; these are
+#: what stop that passing for correct.
+REFUSED_BY_BOTH = ["abc", "--1", ".", "-", "1,5", "0x10", ""]
+
+
 class TestPydanticModelValidationRejectsInvalidData:
     """Tests that Pydantic models correctly reject invalid data.
 
@@ -391,18 +415,13 @@ class TestPydanticModelValidationRejectsInvalidData:
     # This is a characterisation test: it pins what pydantic does today, not
     # what the library requires. If a future pydantic tightens coercion, the
     # right response is to update these and the predicates together.
-    @pytest.mark.parametrize(
-        "coercible",
-        ["-0", "+5", " 1", "1 ", "1_0", "\t7", "0042"],
-        ids=repr,
-    )
+    @pytest.mark.parametrize("coercible", COERCED_BY_BOTH, ids=repr)
     def test_strings_isdigit_calls_invalid_are_coerced_not_rejected(self, coercible):
         assert Reference(reference_id=coercible).reference_id == int(coercible)
         # Decimal fields take the same set, plus exponent and decimal forms.
         assert Confidence(score=coercible).score == Decimal(coercible)
 
-    @pytest.mark.parametrize("coercible", ["1.0", "2.00", "-3.0", "-0.0", "  2.0  "],
-                             ids=repr)
+    @pytest.mark.parametrize("coercible", COERCED_BY_REFERENCE_ONLY, ids=repr)
     def test_reference_takes_integral_floats_written_as_strings(self, coercible):
         """`int()` raises on all of these and pydantic accepts every one.
 
@@ -413,8 +432,11 @@ class TestPydanticModelValidationRejectsInvalidData:
         """
         assert Reference(reference_id=coercible).reference_id == int(float(coercible))
 
-    @pytest.mark.parametrize("refused", ["5e3", "1.5", "+1.5", "1.", "0.", "inf", "nan"],
-                             ids=repr)
+    @pytest.mark.parametrize(
+        "refused",
+        ["5e3", "1.5", "+1.5", "1.", "0.", "inf", "nan"],
+        ids=repr,
+    )
     def test_reference_refuses_what_decimal_fields_accept(self, refused):
         """`Reference` refuses these; the decimal fields take most of them.
 
@@ -425,7 +447,7 @@ class TestPydanticModelValidationRejectsInvalidData:
         with pytest.raises(ValidationError):
             Reference(reference_id=refused)
 
-    @pytest.mark.parametrize("coercible", ["5e3", "1.5", "+1.5"], ids=repr)
+    @pytest.mark.parametrize("coercible", COERCED_BY_DECIMAL_ONLY, ids=repr)
     def test_decimal_fields_take_forms_reference_does_not(self, coercible):
         assert Confidence(score=coercible).score == Decimal(coercible)
         assert Quantity(value=coercible, unit="mm").value == Decimal(coercible)
@@ -446,16 +468,6 @@ class TestTheFiltersAreSound:
     also refuses costs coverage and is fine. The reverse is the defect.
     """
 
-    #: Every string shape that has caught one of these filters out, plus the
-    #: neighbours found while mapping the boundary. `str.isdigit()` is False
-    #: for all of them and pydantic coerces every one.
-    COERCED_BY_BOTH = ["-0", "+5", " 1", "1 ", "1_0", "\t7", "0042"]
-    #: `int()` raises on these and pydantic still accepts them, because
-    #: `reference_id` is reached through a float.
-    COERCED_BY_REFERENCE_ONLY = ["1.0", "2.00", "-3.0", "-0.0", "  2.0  "]
-    #: Decimal fields take these; `Reference` does not.
-    COERCED_BY_DECIMAL_ONLY = ["5e3", "1.5", "+1.5", "1e2", "-0.5"]
-
     @pytest.mark.parametrize(
         "accepted", COERCED_BY_BOTH + COERCED_BY_REFERENCE_ONLY, ids=repr
     )
@@ -475,7 +487,7 @@ class TestTheFiltersAreSound:
         Quantity(value=accepted, unit="mm")
         assert not _is_not_a_decimal(accepted)
 
-    @pytest.mark.parametrize("refused", ["abc", "--1", ".", "-", "1,5", "0x10", ""])
+    @pytest.mark.parametrize("refused", REFUSED_BY_BOTH, ids=repr)
     def test_the_filters_still_admit_genuinely_bad_strings(self, refused):
         """The other direction: a filter that admitted nothing would also be
         'sound' and would test nothing at all."""
