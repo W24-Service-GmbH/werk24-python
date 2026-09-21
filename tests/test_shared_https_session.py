@@ -130,15 +130,26 @@ class TestDownloadsDoNotBlockTheReceiveLoop:
         The first message's download is started, then the loop goes back for
         the next message. If the download were awaited inline, the recv would
         not begin until it finished.
+
+        Each recv is labelled, because the claim is about the SECOND one. An
+        implementation that received both messages and only then started the
+        download would satisfy an assertion that names "recv" alone.
         """
         client = _client()
         order = []
 
-        started = asyncio.Event()
+        # Released by the second recv. The download cannot finish until then,
+        # so "download-end" after "recv-1" is the overlap. Bounded, so an
+        # inline implementation fails the assertions rather than hanging the
+        # suite waiting for an event nothing will set.
+        second_recv = asyncio.Event()
 
         async def slow_download(*_args, **_kwargs):
             order.append("download-start")
-            await started.wait()
+            try:
+                await asyncio.wait_for(second_recv.wait(), timeout=2.0)
+            except asyncio.TimeoutError:
+                order.append("download-gave-up")
             order.append("download-end")
             return b"payload"
 
@@ -147,12 +158,21 @@ class TestDownloadsDoNotBlockTheReceiveLoop:
             self._message(subtype=TechreadMessageSubtype.PROGRESS_COMPLETED),
         ]
 
+        recvs = {"n": 0}
+
         async def fake_recv():
-            if order.count("recv") == 0:
-                order.append("recv")
+            index = recvs["n"]
+            recvs["n"] += 1
+            if index == 0:
+                order.append("recv-0")
                 return "raw-0"
-            order.append("recv")
-            started.set()
+            # Give the download task a chance to be scheduled before this
+            # recv is recorded, so "download-start" precedes "recv-1" and the
+            # ordering below is about the overlap rather than about which
+            # coroutine the loop happened to run first.
+            await asyncio.sleep(0)
+            order.append("recv-1")
+            second_recv.set()
             return "raw-1"
 
         client._wss_session = type("S", (), {"recv": staticmethod(fake_recv)})()
@@ -169,10 +189,17 @@ class TestDownloadsDoNotBlockTheReceiveLoop:
         received = [m async for m in client._send_command_read()]
 
         assert len(received) == 2
-        # The second recv happened while the first download was still running.
-        assert order.index("recv") < order.index("download-start")
-        assert order.index("download-start") < order.index("download-end")
-        assert order[-1] == "download-end" or "recv" in order[order.index("download-start") :]
+        # The download never gave up waiting, so the second recv did happen
+        # while it was still running.
+        assert "download-gave-up" not in order
+        # And in order: message 1 arrives, its download starts, message 2
+        # arrives while that download is still in flight, then it finishes.
+        assert (
+            order.index("recv-0")
+            < order.index("download-start")
+            < order.index("recv-1")
+            < order.index("download-end")
+        )
 
     @pytest.mark.asyncio
     async def test_messages_still_arrive_in_order_with_their_payloads(
@@ -432,3 +459,92 @@ class TestNormalTerminationLosesNothing:
             assert task.done()
             # Retrieving it here must not raise "never retrieved" later.
             assert task.cancelled() or task.exception() is not None
+
+
+class TestTheSessionIsClosedOnEveryPath:
+    """A pooled session needs someone to close it.
+
+    Pooling it for the client's lifetime is right inside `async with`, where
+    `__aexit__` closes it. But `read_drawing_with_callback` and
+    `download_payload` are documented as usable on a bare client, and that
+    caller never reaches `__aexit__`. Before pooling, each of those calls
+    built and closed its own session; after pooling, nothing would close it
+    and aiohttp warns about it when the client is collected.
+    """
+
+    @pytest.mark.asyncio
+    async def test_a_standalone_call_closes_the_session(self, monkeypatch):
+        client = _client()
+        session = FakeSession()
+        monkeypatch.setattr(client, "_make_https_session", lambda: session)
+
+        assert client._entered is False
+        client._https_session()
+        await client._release_https_if_standalone()
+
+        assert session.closed is True
+        assert client._shared_https_session is None
+
+    @pytest.mark.asyncio
+    async def test_inside_the_context_the_session_survives_a_call(self, monkeypatch):
+        client = _client()
+        session = FakeSession()
+        monkeypatch.setattr(client, "_make_https_session", lambda: session)
+        client._entered = True
+
+        client._https_session()
+        await client._release_https_if_standalone()
+
+        # Still pooled: closing it per call is exactly what this change was
+        # about not doing.
+        assert session.closed is False
+        assert client._shared_https_session is session
+
+    @pytest.mark.asyncio
+    async def test_the_standalone_methods_carry_the_release(self):
+        # The decorator, not a hand-written try/finally at each site.
+        for name in ("read_drawing_with_callback", "download_payload"):
+            method = getattr(Werk24Client, name)
+            assert getattr(method, "__wrapped__", None) is not None, name
+
+    @pytest.mark.asyncio
+    async def test_close_is_public_and_idempotent(self, monkeypatch):
+        client = _client()
+        session = FakeSession()
+        monkeypatch.setattr(client, "_make_https_session", lambda: session)
+        client._https_session()
+
+        await client.close()
+        assert session.closed is True
+
+        # Again, on a client that now holds nothing.
+        await client.close()
+
+    @pytest.mark.asyncio
+    async def test_a_close_that_raises_does_not_fail_the_call(self, monkeypatch):
+        """Releasing a connection must never be why a read fails."""
+        client = _client()
+
+        class _Angry(FakeSession):
+            async def close(self):
+                raise RuntimeError("connector already gone")
+
+        monkeypatch.setattr(client, "_make_https_session", lambda: _Angry())
+        client._https_session()
+
+        await client._release_https_if_standalone()
+        assert client._shared_https_session is None
+
+    @pytest.mark.asyncio
+    async def test_entering_and_leaving_tracks_the_flag(self, monkeypatch):
+        client = _client()
+
+        async def _noop(*_a, **_k):
+            return None
+
+        monkeypatch.setattr(client, "_connect_with_retry", _noop)
+        monkeypatch.setattr(client, "_graceful_shutdown", _noop)
+
+        async with client:
+            assert client._entered is True
+        assert client._entered is False

@@ -32,7 +32,9 @@ from .enums import (
     MaterialCategory1,
     MaterialCategory2,
     MaterialCategory3,
+    MaterialOrigin,
     NoteType,
+    PageType,
     PrimaryProcessType,
     ProjectionMethodType,
     RedactionZoneType,
@@ -1025,6 +1027,16 @@ class Material(BaseModel):
         ...,
         description="Hierarchical Material category.",
     )
+    origin: Optional[MaterialOrigin] = Field(
+        None,
+        description=(
+            "Where on the drawing this material was read: the title block, a "
+            "canvas note, or a bill-of-material row. None when the reader "
+            "could not attribute it. Two materials listed as alternatives can "
+            "have different origins."
+        ),
+        examples=[MaterialOrigin.TITLE_BLOCK, MaterialOrigin.CANVAS_NOTE],
+    )
 
 
 class MaterialCombination(Reference):
@@ -1160,6 +1172,56 @@ class UnitSystem(Reference):
     """
 
     unit_system_type: UnitSystemType
+
+
+class PageAssessment(BaseModel):
+    """What one page turned out to be, and whether it shows welding.
+
+    Two answers from a single look at the page, kept in one object because
+    they were made together and kept as separate fields because they are
+    independent: a page nobody could categorise may still plainly carry weld
+    callouts, so an unhelpful `page_type` says nothing about
+    `has_welding_symbols`.
+    """
+
+    page_type: PageType = Field(
+        PageType.MISCELLANEOUS,
+        description=(
+            "What kind of page this is. COMPONENT_DRAWING and "
+            "ASSEMBLY_DRAWING are interpreted; the others are recognised so "
+            "you learn early that the rest of your asks will come back empty. "
+            "MISCELLANEOUS also covers a page we looked at and could not "
+            "place."
+        ),
+    )
+    has_welding_symbols: bool = Field(
+        False,
+        description=(
+            "Whether the page carries welding callouts. Presence only, never "
+            "which weld: the symbol's flag and its lettering are too small to "
+            "read reliably at the resolution this is judged at, while the "
+            "callout as a whole is not. Answered False when unsure, so a True "
+            "is worth more than a False."
+        ),
+    )
+    description: str = Field(
+        "",
+        description=(
+            "One short sentence saying what this page shows, in plain "
+            "language. Most useful when `page_type` is MISCELLANEOUS, which "
+            "on its own tells you only that the page is not one of the "
+            "categories: the sentence is what tells you whether you sent a "
+            "cover sheet, a specification, a photograph or something we "
+            "simply have no name for yet. Empty when no description was "
+            "produced. Written from a downscaled image, so it describes what "
+            "the page IS and never quotes a dimension or a tolerance off it."
+        ),
+        examples=[
+            "A dimensioned drawing of a turned shaft with a keyway.",
+            "A cover sheet listing the drawings in this package.",
+            "A photograph of a printed drawing, taken at an angle.",
+        ],
+    )
 
 
 class ProcessingTimeEstimate(BaseModel):

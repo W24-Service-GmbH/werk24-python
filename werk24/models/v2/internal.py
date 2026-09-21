@@ -55,10 +55,50 @@ class TechreadMessageSubtype(str, Enum):
     ERROR_INTERNAL = "INTERNAL"
 
 
+#: Key-exchange formats this client can ENCRYPT A DRAWING TO.
+#:
+#: The server generates a key pair per end-to-end request and sends the public
+#: half; this client encrypts the drawing to it and the server's reader
+#: decrypts with the private half. So a name here says "I can encrypt to a
+#: public key of this kind", and naming one the client cannot use means a
+#: drawing it cannot send.
+#:
+#: Declared rather than inferred from ``client_version``, because the version
+#: only identifies THIS client. There are others -- crew-api has seen a
+#: ``node22-werk24-client/1.0.0`` -- and a server that read the Python
+#: version string would hand an X25519 key to a JavaScript client that cannot
+#: use one. A capability list says what the sender can actually do, in any
+#: language, and an old client that sends none is served RSA as before.
+KEY_EXCHANGE_RSA_OAEP = "rsa-oaep"
+KEY_EXCHANGE_X25519 = "x25519"
+
+#: What this client supports, best first. RSA stays in the list: the server
+#: chooses, and until every consumer of the private half understands X25519
+#: it may still choose RSA.
+SUPPORTED_KEY_EXCHANGES = [KEY_EXCHANGE_X25519, KEY_EXCHANGE_RSA_OAEP]
+
+
 class TechreadRequest(BaseModel):
     asks: List[AskUnion] = Field(..., description="List of asks")
     client_version: str = Field(default=__version__, description="Client version")
     max_pages: int = Field(..., ge=1, description="Maximum number of pages to process")
+    supported_key_exchanges: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Key-exchange formats this client can use for the end-to-end "
+            "encryption key the server returns. Absent on older clients, "
+            "which the server must read as RSA-OAEP only."
+        ),
+    )
+    """Empty by default, and that default is load-bearing.
+
+    The server parses this same model out of the client's JSON. Defaulting to
+    ``SUPPORTED_KEY_EXCHANGES`` would make every request from a client too old
+    to send the field claim support for everything in it, which is precisely
+    backwards: the absent field means "this client predates the capability".
+    The client fills it in at the call site (see ``init_request``), where the
+    claim is true.
+    """
 
 
 class TechreadAction(str, Enum):

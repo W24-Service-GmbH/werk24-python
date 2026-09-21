@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import io
 import ipaddress
 import json
@@ -41,6 +42,7 @@ from werk24 import (
     TechreadWithCallbackPayload,
 )
 from werk24._version import __version__
+from werk24.models.v2.internal import SUPPORTED_KEY_EXCHANGES
 from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
@@ -144,6 +146,29 @@ except ImportError:
     )
 
 
+def _closes_standalone_session(method):
+    """Close the pooled HTTPS session when the call was made on a bare client.
+
+    The HTTPS-only methods are documented as usable without
+    ``async with Werk24Client()``, and such a caller never reaches
+    ``__aexit__``. Before pooling, each of those calls built and closed its own
+    session; after pooling, nothing would close it and aiohttp warns about the
+    unclosed session when the client is collected.
+
+    Inside the context this is a no-op and the session stays pooled across
+    every call, which is the whole point of pooling it.
+    """
+
+    @functools.wraps(method)
+    async def _wrapper(self, *args, **kwargs):
+        try:
+            return await method(self, *args, **kwargs)
+        finally:
+            await self._release_https_if_standalone()
+
+    return _wrapper
+
+
 class Werk24Client:
 
     def __init__(
@@ -171,6 +196,15 @@ class Werk24Client:
         # use by _https_session(), closed by _graceful_shutdown(). See that
         # method for why it is not one session per call.
         self._shared_https_session: Optional[aiohttp.ClientSession] = None
+
+        # Whether the caller is inside ``async with``. The HTTPS-only methods
+        # (read_drawing_with_callback, download_payload, get_system_status)
+        # are documented as usable on a bare client, and such a caller never
+        # reaches __aexit__ - so nothing would close the pooled session and
+        # aiohttp would warn about it on collection. Outside the context the
+        # session is closed when the call that built it returns, which is the
+        # per-call behaviour those methods had before pooling.
+        self._entered = False
 
         # WebSocket connection management
         self._ping_interval = ping_interval
@@ -314,6 +348,7 @@ class Werk24Client:
             raise
 
     async def __aenter__(self):
+        self._entered = True
         await self._connect_with_retry()
         return self
 
@@ -394,7 +429,43 @@ class Werk24Client:
                 await asyncio.sleep(delay)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
+        self._entered = False
         await self._graceful_shutdown()
+
+    async def close(self) -> None:
+        """Release everything this client holds.
+
+        ``async with Werk24Client()`` does this on the way out, so most
+        callers never need it. It exists for the caller who uses only the
+        HTTPS-only methods on a bare client and wants to close explicitly
+        rather than rely on the per-call release those methods do.
+
+        Idempotent: closing a client that holds nothing is a no-op.
+        """
+        await self._graceful_shutdown()
+
+    async def _close_https_session(self) -> None:
+        """Close the pooled HTTPS session, if one was built."""
+        if self._shared_https_session is None:
+            return
+        try:
+            await self._shared_https_session.close()
+        except Exception as exc:  # noqa: BLE001 - a close never fails a call
+            logger.warning("Error during HTTPS session close: %s", exc)
+        finally:
+            self._shared_https_session = None
+
+    async def _release_https_if_standalone(self) -> None:
+        """Close the pooled session when there is no context to close it.
+
+        Called from the HTTPS-only public methods. Inside ``async with`` this
+        does nothing and the session stays pooled across every call, which is
+        the point of pooling it. Outside it, there is no ``__aexit__`` coming,
+        so the session is closed here rather than left for aiohttp to
+        complain about.
+        """
+        if not self._entered:
+            await self._close_https_session()
 
     async def _graceful_shutdown(self):
         """
@@ -418,13 +489,7 @@ class Werk24Client:
         # Close the pooled HTTPS session. Leaving it open would leak the
         # connector and emit aiohttp's "Unclosed client session" warning for
         # every client the caller discards.
-        if self._shared_https_session is not None:
-            try:
-                await self._shared_https_session.close()
-            except Exception as exc:
-                logger.warning("Error during HTTPS session close: %s", exc)
-            finally:
-                self._shared_https_session = None
+        await self._close_https_session()
 
     async def read_drawing_with_hooks(
         self,
@@ -674,10 +739,17 @@ class Werk24Client:
         """
         logger.debug("API method init_request() called")
 
-        # Construct the techread request
+        # Construct the techread request.
+        #
+        # ``supported_key_exchanges`` is set HERE rather than defaulted on the
+        # model, because the server parses the same model out of this JSON: a
+        # default would make a request from a client too old to send the field
+        # claim support for everything in it. Filled in at the one place the
+        # claim is actually true.
         request = TechreadRequest(
             asks=asks,
             max_pages=max_pages,
+            supported_key_exchanges=list(SUPPORTED_KEY_EXCHANGES),
         )
 
         # Send the initialization command to the server
@@ -1021,12 +1093,19 @@ class Werk24Client:
 
         async def _attempt():
             session = self._https_session()
-            response = await session.post(str(presigned_post.url), data=_form())
-            self._raise_for_status(
-                str(presigned_post.url),
-                response.status,
-                details=await self._s3_error_detail(response),
-            )
+            # The response is context-managed. With a per-call session the
+            # session's own close released it; with a pooled one an
+            # unreleased response holds its connector slot until the garbage
+            # collector gets to it, which is the pooling #564 is for.
+            # _s3_error_detail returns immediately for a 2xx without touching
+            # the body, so nothing else would release it -- and a retry makes
+            # that worse, because each attempt would leak another slot.
+            async with session.post(str(presigned_post.url), data=_form()) as response:
+                self._raise_for_status(
+                    str(presigned_post.url),
+                    response.status,
+                    details=await self._s3_error_detail(response),
+                )
 
         try:
             logger.debug("Uploading file to the server: %s", str(presigned_post.url))
@@ -1245,6 +1324,7 @@ class Werk24Client:
             )
             raise
 
+    @_closes_standalone_session
     async def read_drawing_with_callback(
         self,
         drawing: Union[BufferedReader, bytes],
@@ -1331,10 +1411,12 @@ class Werk24Client:
         headers = self._get_auth_headers()
         url = self._make_https_url("/techread/read-with-callback")
         session = self._https_session()
-        response = await session.post(url, data=data, headers=headers)
-        await self._raise_for_priority_error(response, validated_priority)
-        self._raise_for_status(url, response.status)
-        response_json = await response.json(content_type=None)
+        # Context-managed for the same reason as the upload above: a pooled
+        # session only pools if each response gives its connection back.
+        async with session.post(url, data=data, headers=headers) as response:
+            await self._raise_for_priority_error(response, validated_priority)
+            self._raise_for_status(url, response.status)
+            response_json = await response.json(content_type=None)
 
         try:
             return uuid.UUID(response_json["request_id"])
@@ -1838,6 +1920,7 @@ class Werk24Client:
                 f"Refusing to download payload from non-public address: {payload_url}"
             )
 
+    @_closes_standalone_session
     async def download_payload(
         self,
         payload_url: HttpUrl,
@@ -1876,12 +1959,15 @@ class Werk24Client:
         async def _attempt() -> bytes:
             session = self._https_session()
             logger.debug("Sending GET request to %s", payload_url)
-            response = await session.get(str(payload_url))
+            async with session.get(str(payload_url)) as response:
+                # Raise appropriate exceptions based on response status
+                self._raise_for_status(payload_url, response.status)
 
-            # Raise appropriate exceptions based on response status
-            self._raise_for_status(payload_url, response.status)
-
-            return await response.content.read()
+                # Read inside the context manager. The body must be consumed
+                # before the response is released, and on a retry an
+                # unreleased response would hold a connector slot per
+                # attempt rather than just once.
+                return await response.content.read()
 
         try:
             raw_payload = await self._with_https_retries(
