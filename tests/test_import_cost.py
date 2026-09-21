@@ -13,6 +13,15 @@ Measured on python 3.13 with the pinned requirements, three runs each:
 
     import werk24    784ms  ->  608ms
 
+The second cut is pint's unit registry, which ``werk24.models.v1.value`` used
+to build at module scope. ``UnitRegistry()`` parses pint's whole default
+definition file and costs 182ms on its own, and every consumer paid it whether
+or not it ever handled a quantity, because ``v2.asks`` needs ``W24Ask`` for
+``AskUnion``, ``v1.ask`` pulls ``material``, and ``material`` reaches ``value``
+through ``property.glass_homogeneity``. Five runs each:
+
+    import werk24    701-763ms  ->  557-577ms
+
 The rest is pydantic building the models, which a consumer that imports a
 model does need.
 
@@ -126,6 +135,164 @@ class TestTheClientIsNotImportedUntilItIsAsked:
         # Werk24Client, so a lost name raises AttributeError or ImportError
         # and the subprocess exits non-zero.
         result = _run(statement)
+        assert result.returncode == 0, result.stderr
+
+
+#: Spies on ``UnitRegistry.__init__`` before werk24 is imported at all.
+#:
+#: Patching the class rather than counting ``sys.modules`` because ``pint``
+#: itself is still imported eagerly -- ``PintQuantity`` is the annotated type
+#: and pydantic needs the real class to build the core schema. What must not
+#: happen is the *registry* being constructed, and that is an object rather
+#: than a module, so only a spy can see it.
+_REGISTRY_SPY = """
+import pint
+
+_built = []
+_original = pint.UnitRegistry.__init__
+
+
+def _spy(self, *args, **kwargs):
+    _built.append(1)
+    return _original(self, *args, **kwargs)
+
+
+pint.UnitRegistry.__init__ = _spy
+"""
+
+
+class TestTheUnitRegistryIsBuiltOnFirstUse:
+    """``import werk24`` must not parse pint's unit database.
+
+    182ms of the import, for an object most consumers never touch. The three
+    crew-api handlers that made this worth doing validate a payload and never
+    look at a quantity at all.
+    """
+
+    def test_a_plain_import_builds_no_unit_registry(self):
+        result = _run(
+            _REGISTRY_SPY + "import werk24\n"
+            "assert not _built, f'{len(_built)} registries built during import'\n"
+        )
+        assert result.returncode == 0, result.stderr
+
+    def test_parsing_a_quantity_does_build_one(self):
+        """The other half, so the test above cannot pass by doing nothing.
+
+        A lazy accessor that never resolved would satisfy the first test
+        perfectly and break every quantity field in the library.
+        """
+        result = _run(
+            _REGISTRY_SPY + "from werk24.models.v1.value import W24PhysicalQuantity\n"
+            "assert not _built, 'importing the model built one'\n"
+            "q = W24PhysicalQuantity(blurb='3mm', value='3 mm')\n"
+            "assert _built, 'parsing a quantity built no registry'\n"
+            "assert str(q.value) == '3 millimeter', str(q.value)\n"
+        )
+        assert result.returncode == 0, result.stderr
+
+    def test_ureg_is_still_importable_and_is_the_shared_registry(self):
+        """``ureg`` is the spelling three modules in this package used.
+
+        Two pint registries in one process do not interoperate -- a
+        ``Quantity`` from one raises ``ValueError`` when combined with a
+        ``Quantity`` from the other -- so the identity here is correctness,
+        not a saving.
+        """
+        result = _run(
+            "from werk24.models.v1.value import ureg, get_unit_registry\n"
+            "assert get_unit_registry() is ureg\n"
+            "from werk24.models.v1 import value\n"
+            "assert value.ureg is ureg\n"
+            "assert str(3 * ureg.mm) == '3 millimeter'\n"
+        )
+        assert result.returncode == 0, result.stderr
+
+    def test_dir_lists_ureg_before_it_is_touched(self):
+        """Same reasoning as ``techread`` above: after the first access, any
+        ``__dir__`` would report it, so only the untouched module is a test."""
+        result = _run(
+            _REGISTRY_SPY + "from werk24.models.v1 import value\n"
+            "assert 'ureg' in dir(value), 'dir() lost ureg'\n"
+            "assert not _built, 'dir() built the registry'\n"
+        )
+        assert result.returncode == 0, result.stderr
+
+    def test_an_unknown_attribute_on_value_raises_attribute_error(self):
+        result = _run(
+            "from werk24.models.v1 import value\n"
+            "try:\n"
+            "    value.NoSuchName\n"
+            "except AttributeError:\n"
+            "    pass\n"
+            "else:\n"
+            "    raise SystemExit('expected AttributeError')\n"
+        )
+        assert result.returncode == 0, result.stderr
+
+    @pytest.mark.parametrize(
+        ("module", "model", "field", "blurb", "quantity"),
+        [
+            (
+                "bubbles_and_inclusions",
+                "W24PropertyBubblesAndInclusionsIso10110Limits",
+                "total_cross_section",
+                "0.1mm2",
+                "0.1 * ureg.mm**2",
+            ),
+            (
+                "bubbles_and_inclusions",
+                "W24PropertyBubblesAndInclusionsIso10110Limits",
+                "test_volume",
+                "100cm3",
+                "100 * ureg.cm**3",
+            ),
+            (
+                "stress_birefringence",
+                "W24PropertyStressBirefringenceIso10110Value",
+                "value",
+                "8nm/cm",
+                "8 * ureg.nm / ureg.cm",
+            ),
+            (
+                "glass_homogeneity",
+                "W24Iso10110Limits",
+                "striae_wavefront_deviation_tolerance_limit",
+                "15nm",
+                "15 * ureg.nm",
+            ),
+        ],
+        ids=["cross-section", "test-volume", "birefringence", "striae"],
+    )
+    def test_a_serialized_example_says_what_the_registry_would_say(
+        self, module, model, field, blurb, quantity
+    ):
+        """The literals in those ``examples=`` must not drift from pint.
+
+        Those four fields used to build a ``W24PhysicalQuantity`` at import
+        purely to show one example value, which is what dragged the registry
+        into the import. They carry the serialized form now -- exactly what
+        the JSON schema always contained, since ``Quantity`` serializes with
+        ``str``.
+
+        Hard-coding it that way trades an import cost for a transcription
+        risk, and a wrong example is the kind of thing nobody notices for a
+        year. So this builds the quantity the old code built and holds the
+        literal against it: if pint's formatting changes, or somebody mistypes
+        a unit, this fails with both strings rather than shipping a schema
+        that lies.
+        """
+        result = _run(
+            "import json\n"
+            f"from werk24.models.v1.property.{module} import {model}\n"
+            "from werk24.models.v1.value import W24PhysicalQuantity, ureg\n"
+            f"expected = W24PhysicalQuantity(blurb={blurb!r}, value={quantity})\n"
+            f"shipped = {model}.model_fields[{field!r}].examples\n"
+            "assert len(shipped) == 1, shipped\n"
+            "assert shipped[0] == expected.model_dump(mode='json'), (\n"
+            "    f'shipped={shipped[0]!r} expected={expected.model_dump(mode=\"json\")!r}'\n"
+            ")\n"
+        )
         assert result.returncode == 0, result.stderr
 
 
