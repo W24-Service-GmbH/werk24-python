@@ -9,3 +9,11 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+
+  # The workflows' actions were not watched by anything, which is how they sat
+  # on the Node 20 runtime until GitHub deprecated it. Weekly, because a major
+  # bump here is a workflow change to read rather than a lockfile line.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
