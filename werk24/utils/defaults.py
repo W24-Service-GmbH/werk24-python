@@ -63,7 +63,32 @@ class Settings(BaseSettings):
     """Logging level. Valid values: DEBUG, INFO, WARNING, ERROR, CRITICAL."""
 
     max_https_retries: int = Field(3, ge=0)
-    """Maximum retries for HTTPS requests. Must be greater than or equal to 0."""
+    """Maximum retries for HTTPS requests. Must be greater than or equal to 0.
+
+    Applies to the drawing upload and payload downloads only, and only to 5xx
+    and connection errors. A 4xx is never retried: the request is wrong and
+    resending it will not make it right. 429 in particular maps to
+    ``InsufficientCreditsException``, so retrying it would turn a quota
+    refusal into a retry storm against an account that has already run out.
+    """
+
+    read_total_timeout: float = Field(180.0, gt=0)
+    """Seconds a single ``read_drawing`` may take before it is abandoned.
+
+    The WebSocket keepalive detects a *dead* socket. It cannot detect a live
+    socket that will never deliver ``PROGRESS_COMPLETED``, and nothing else
+    bounded the wait, so a stalled server hung the caller until
+    ``wss_close_timeout`` (600s) - or, for an SDK user, indefinitely.
+    """
+
+    read_idle_timeout: float = Field(90.0, gt=0)
+    """Seconds to wait for the next message before giving up on a read.
+
+    Shorter than ``read_total_timeout`` because it bounds the gap between
+    messages rather than the whole read: a long read still makes progress,
+    while a server that has stopped talking is detected without waiting out
+    the total.
+    """
 
     VALID_LOG_LEVELS: ClassVar[Set[str]] = {
         "DEBUG",
