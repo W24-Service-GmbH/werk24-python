@@ -3,16 +3,29 @@
 # When installing werk24 as a library, pip will use the flexible constraints from pyproject.toml.
 # This file is used in CI/CD pipelines and local development to ensure consistent test environments.
 # Update these versions periodically after running the full test suite to verify compatibility.
+#
+# Where a pin is split by marker, it is because the newest release dropped a
+# Python the matrix still covers -- not because the older one is preferred.
+# Each branch is the newest release installable on that interpreter, so the
+# combination a user actually gets from pyproject.toml's floors is the
+# combination CI runs.
 
-aiohttp==3.14.1
-certifi==2026.6.17
-cryptography==49.0.0
-packaging==26.2
-pint==0.25.3; python_version > "3.10"
-pint==0.24.4; python_version <= "3.10"
+aiohttp==3.14.3
+certifi==2026.7.22
+cryptography==50.0.1
+packaging==26.3
+
+# pint 0.25 requires >=3.11, 0.26 requires >=3.12.
+pint==0.26.1; python_version >= "3.12"
+pint==0.25.3; python_version == "3.11"
+pint==0.24.4; python_version < "3.11"
+
 pydantic-extra-types==2.11.1
-pydantic==2.13.4
-pydantic-settings==2.14.2
-python-dotenv==1.2.2
-typer==0.26.8
-websockets==16.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+python-dotenv==1.2.3
+typer==0.27.2
+
+# websockets 17 requires >=3.11.
+websockets==17.1; python_version >= "3.11"
+websockets==16.1.1; python_version < "3.11"
