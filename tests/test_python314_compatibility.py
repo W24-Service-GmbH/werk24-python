@@ -375,6 +375,127 @@ class TestTheInvalidStrategiesAgreeWithTheModels:
             Reference(reference_id=value)
         with pytest.raises(ValidationError):
             Confidence(score=value)
+class TestWhereReferenceAndTheDecimalFieldsDiverge:
+    """The int field and the decimal fields do not accept the same strings.
+
+    The class above covers the divergence between the two DECIMAL fields
+    (``allow_inf_nan``). This one covers the other axis, which is what made
+    a single shared "looks numeric" helper the original mistake in #572:
+    ``Reference.reference_id`` is an ``int``, and pydantic reaches it through
+    a float, so the sets overlap without either containing the other.
+
+    Measured against the models rather than reasoned about:
+
+    ======================  =========  ==========  ========
+    value                   Reference  Confidence  Quantity
+    ======================  =========  ==========  ========
+    ``"+5"``, ``"1_0"``     accept     accept      accept
+    ``"2.00"``, ``"-0.0"``  accept     accept      accept
+    ``"5e3"``, ``"1.5"``    refuse     accept      accept
+    ``"1."``, ``"0."``      refuse     accept      accept
+    ``"inf"``, ``"NaN"``    refuse     refuse      accept
+    ======================  =========  ==========  ========
+
+    These are characterisation tests: they pin what pydantic does today, not
+    what the library requires. If a future pydantic tightens coercion, the
+    right response is to update these and the predicates together -- which
+    is the point of having them, since the predicates are written to match
+    pydantic and nothing else would notice the drift.
+    """
+
+    #: Every field takes these. ``str.isdigit()`` is False for all of them,
+    #: which is exactly how #572's filters came to offer them as "invalid".
+    ACCEPTED_EVERYWHERE = ["-0", "+5", " 1", "1 ", "1_0", "\t7", "0042"]
+
+    #: ``int()`` raises on every one of these and ``Reference`` takes them
+    #: all, because the annotation is reached through a float. This is the
+    #: hole in the obvious fix for #572 -- filtering on ``int()`` alone
+    #: swaps one unsound oracle for another.
+    INTEGRAL_FLOATS = ["1.0", "2.00", "-3.0", "-0.0", "  2.0  "]
+
+    #: A fractional part, an exponent or a trailing dot: the decimal fields
+    #: take these and ``Reference`` does not.
+    DECIMAL_FIELDS_ONLY = ["5e3", "1e2", "1.5", "+1.5", "-0.5", "1.", "0."]
+
+    @pytest.mark.parametrize(
+        "value", ACCEPTED_EVERYWHERE + INTEGRAL_FLOATS, ids=repr
+    )
+    def test_reference_accepts_and_the_oracle_does_not_offer_it(self, value):
+        """Accepted by the int field, so the strategy must not call it invalid.
+
+        The model call comes first on purpose: if pydantic ever stops
+        accepting one of these, this fails on the premise rather than on the
+        oracle, and the message points at the right half.
+        """
+        Reference(reference_id=value)
+        assert not _is_not_an_integer(value), (
+            f"{value!r} would be offered as an invalid reference_id"
+        )
+
+    @pytest.mark.parametrize(
+        "value", ACCEPTED_EVERYWHERE + INTEGRAL_FLOATS + DECIMAL_FIELDS_ONLY,
+        ids=repr,
+    )
+    def test_both_decimal_fields_accept_and_neither_oracle_offers_it(self, value):
+        Confidence(score=value)
+        Quantity(value=value, unit="mm")
+        assert not _is_not_a_decimal(value)
+        assert not _is_not_a_finite_decimal(value)
+
+    @pytest.mark.parametrize("value", DECIMAL_FIELDS_ONLY, ids=repr)
+    def test_reference_refuses_what_the_decimal_fields_take(self, value):
+        """The divergence itself.
+
+        Not asserted on ``_is_not_an_integer`` here: a value the int oracle
+        excludes while pydantic refuses it costs coverage and cannot cause a
+        false failure, and it does exclude ``"5e3"`` and ``"1."`` for
+        exactly that harmless reason. Soundness is the direction that
+        matters, and it is asserted above.
+        """
+        with pytest.raises(ValidationError):
+            Reference(reference_id=value)
+
+
+class TestTheOraclesAreSoundUnderSearch:
+    """The parametrised cases pin the shapes that have bitten; this is general.
+
+    Every known counterexample was found by a run happening to draw it, so a
+    fixed list of them is a list of what has already gone wrong. The property
+    that has to hold is the one direction: if an oracle calls a value
+    invalid, the model must refuse it. The converse is deliberately NOT
+    asserted -- these oracles are sound rather than complete, and excluding a
+    value pydantic also refuses only costs coverage.
+    """
+
+    @settings(max_examples=300)
+    @given(value=st.text(min_size=1))
+    def test_the_integer_oracle_never_offers_something_reference_accepts(
+        self, value
+    ):
+        if not _is_not_an_integer(value):
+            return
+        with pytest.raises(ValidationError):
+            Reference(reference_id=value)
+
+    @settings(max_examples=300)
+    @given(value=st.text(min_size=1))
+    def test_the_decimal_oracle_never_offers_something_quantity_accepts(
+        self, value
+    ):
+        if not _is_not_a_decimal(value):
+            return
+        with pytest.raises(ValidationError):
+            Quantity(value=value, unit="mm")
+
+    @settings(max_examples=300)
+    @given(value=st.text(min_size=1))
+    def test_the_finite_oracle_never_offers_something_confidence_accepts(
+        self, value
+    ):
+        if not _is_not_a_finite_decimal(value):
+            return
+        with pytest.raises(ValidationError):
+            Confidence(score=value)
 
 
 class TestPydanticModelValidationRejectsInvalidData:
