@@ -202,3 +202,28 @@ class TestThePublicSurfaceIsUnchanged:
         """Tab completion and ``dir()`` should not lose it."""
         result = _run("import werk24; assert 'Werk24Client' in dir(werk24)")
         assert result.returncode == 0, result.stderr
+
+    def test_dir_lists_the_lazy_submodule_before_it_is_touched(self):
+        """``dir(werk24)`` listed ``techread`` on main, so it must here too.
+
+        The "before it is touched" is the whole test: resolving the
+        attribute puts it in ``globals()``, after which any ``__dir__``
+        reports it. The regression is only visible on a plain ``import
+        werk24``, which is also the only moment tab completion matters.
+        """
+        result = _run(
+            "import werk24\n"
+            "assert 'techread' in dir(werk24), 'dir() lost the techread submodule'\n"
+            "import sys\n"
+            "assert 'werk24.techread' not in sys.modules, 'dir() imported it'\n"
+        )
+        assert result.returncode == 0, result.stderr
+
+    def test_dir_does_not_promise_a_name_that_does_not_resolve(self):
+        """Everything ``dir()`` advertises must actually be gettable."""
+        result = _run(
+            "import werk24\n"
+            "for name in dir(werk24):\n"
+            "    getattr(werk24, name)\n"
+        )
+        assert result.returncode == 0, result.stderr

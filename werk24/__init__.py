@@ -112,5 +112,20 @@ def __getattr__(name: str):
 
 
 def __dir__() -> list:
-    """Keep the lazy names visible to ``dir()`` and to tab completion."""
-    return sorted(set(globals()) | set(__all__))
+    """Keep the lazy names visible to ``dir()`` and to tab completion.
+
+    ``_LAZY_SUBMODULES`` has to be in here as well as ``__all__``, and the
+    two lists are not the same list. On main, ``werk24/__init__.py``
+    imported ``werk24.techread``, so ``techread`` was bound on this package
+    and ``dir(werk24)`` listed it; deferring the import took it out of
+    ``globals()``, and without this it would reappear in ``dir()`` only
+    after someone had already touched the attribute -- which is precisely
+    when they no longer need completion to find it.
+
+    It is deliberately NOT added to ``__all__`` instead. ``__all__`` drives
+    ``from werk24 import *``, which would then have to import the submodule
+    to bind the name, undoing the change for every star importer, and would
+    put a module object back into the star surface that this file filters
+    out on purpose.
+    """
+    return sorted(set(globals()) | set(__all__) | _LAZY_SUBMODULES)
