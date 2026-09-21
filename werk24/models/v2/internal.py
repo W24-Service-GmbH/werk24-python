@@ -55,7 +55,13 @@ class TechreadMessageSubtype(str, Enum):
     ERROR_INTERNAL = "INTERNAL"
 
 
-#: Key-exchange formats this client can decrypt a server public key into.
+#: Key-exchange formats this client can ENCRYPT A DRAWING TO.
+#:
+#: The server generates a key pair per end-to-end request and sends the public
+#: half; this client encrypts the drawing to it and the server's reader
+#: decrypts with the private half. So a name here says "I can encrypt to a
+#: public key of this kind", and naming one the client cannot use means a
+#: drawing it cannot send.
 #:
 #: Declared rather than inferred from ``client_version``, because the version
 #: only identifies THIS client. There are others -- crew-api has seen a
