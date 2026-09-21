@@ -3,7 +3,7 @@ from typing import Literal, Union
 from pydantic import Field
 
 from ..property.base import W24Property
-from ..value import W24PhysicalQuantity, ureg
+from ..value import W24PhysicalQuantity
 
 
 class W24PropertyStressBirefringence(W24Property):
@@ -17,8 +17,15 @@ class W24PropertyStressBirefringenceIso10110Value(W24PropertyStressBirefringence
 
     property_subtype: Literal["ISO_10110_VALUE"] = "ISO_10110_VALUE"
     blurb: str = Field(examples=["0/8"])
+    # Serialized form; see the note in ``bubbles_and_inclusions``.
     value: W24PhysicalQuantity = Field(
-        examples=[W24PhysicalQuantity(blurb="8nm/cm", value=8 * ureg.nm / ureg.cm)]
+        examples=[
+            {
+                "blurb": "8nm/cm",
+                "value": "8.0 nanometer / centimeter",
+                "tolerance": None,
+            }
+        ]
     )
 
 
