@@ -38,6 +38,7 @@ from werk24 import (
     TechreadWithCallbackPayload,
 )
 from werk24._version import __version__
+from werk24.models.v2.internal import SUPPORTED_KEY_EXCHANGES
 from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
@@ -627,10 +628,17 @@ class Werk24Client:
         """
         logger.debug("API method init_request() called")
 
-        # Construct the techread request
+        # Construct the techread request.
+        #
+        # ``supported_key_exchanges`` is set HERE rather than defaulted on the
+        # model, because the server parses the same model out of this JSON: a
+        # default would make a request from a client too old to send the field
+        # claim support for everything in it. Filled in at the one place the
+        # claim is actually true.
         request = TechreadRequest(
             asks=asks,
             max_pages=max_pages,
+            supported_key_exchanges=list(SUPPORTED_KEY_EXCHANGES),
         )
 
         # Send the initialization command to the server
