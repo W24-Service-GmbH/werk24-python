@@ -96,3 +96,52 @@ push rather than on the next paid run.
 3.14 on every push. The floor is real: `pyproject.toml` declares
 `requires-python = ">=3.10"` and carries version-marked pins (`pint` splits at
 3.11), so a 3.10-only failure is a genuine break, not a CI quirk.
+
+## Questions for the owner in every pull request
+
+Every pull request body here ends with a section headed **Questions for the
+owner**, even when all it says is "None". The owner decides from that section
+without reading the diff, so a question buried in the middle of a description
+is a question nobody answers. It is the same rule in every repository in the
+group (core-reader#2436); the list on core-reader#2427
+(https://github.com/W24-Service-GmbH/core-reader/pull/2427#issuecomment-5816887140)
+is the one to match:
+
+- **One opening line**: how many questions, and whether any blocks the merge.
+- **Numbered questions, each in bold**, asked as yes/no or as a choice between
+  named options.
+- **One to three plain sentences under each**: what happens either way, with
+  numbers where they exist.
+- **`*Recommendation:*`** with the answer you would give.
+- **Answerable without the diff.** Say what a customer or the owner would
+  notice, not which function changed, and explain an internal name in one line
+  the first time it appears.
+- **Actions are not questions.** Things to do or watch after the deploy go in
+  a short "Not questions, for after the deploy" list at the end.
+
+When the owner asks "what do I need to decide?", answer in the same shape. When
+a question is answered in the thread, write the answer into the body under it
+(`*Answer:*`, with a link to the comment), so the body stays the record of what
+was decided.
+
+Trimmed from core-reader#2427:
+
+```markdown
+## Questions for the owner
+
+Two questions. None blocks the merge; each has a recommendation.
+
+1. **Turn on the page-OCR fallback for unread labels (`LABEL_PAGE_OCR_FALLBACK`)?**
+   - It fills a label Textract could not read from the page's own OCR. It is off.
+   - Switching it on wants a check of about 100 unread label crops first.
+   - *Recommendation:* keep it off until that check is done.
+
+2. **Add a Sentry alert when pages fail inside a read?**
+   - This PR starts counting failed pages. An alert per release would catch a
+     release that breaks pages.
+   - *Recommendation:* yes.
+   - *Answer:* yes (https://github.com/W24-Service-GmbH/core-reader/pull/2427#issuecomment-5817008111).
+
+**Not questions, for after the deploy:**
+- Watch memory on multi-page A0 reads; revert core-reader#2378 if it gets close to the limit.
+```
