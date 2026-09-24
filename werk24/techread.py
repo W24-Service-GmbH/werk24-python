@@ -31,7 +31,6 @@ from werk24 import (
     SystemStatus,
     TechreadAction,
     TechreadCommand,
-    TechreadException,
     TechreadExceptionLevel,
     TechreadExceptionType,
     TechreadInitResponse,
@@ -42,7 +41,14 @@ from werk24 import (
     TechreadWithCallbackPayload,
 )
 from werk24._version import __version__
-from werk24.models.v2.internal import SUPPORTED_KEY_EXCHANGES
+
+# TechreadException is the pydantic model, so it comes from its own module.
+# ``from werk24 import TechreadException`` names the exception class in
+# werk24.utils.exceptions: werk24/__init__.py star-imports utils after models,
+# and since this module is imported lazily (9c99d32) it only ever sees the
+# package after both. _trigger_asks_exception then raised TypeError on every
+# refused upload instead of reporting the refusal per ask.
+from werk24.models.v2.internal import SUPPORTED_KEY_EXCHANGES, TechreadException
 from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
