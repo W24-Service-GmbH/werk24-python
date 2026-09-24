@@ -93,6 +93,11 @@ class CallbackDrawingTooLargeException(RequestTooLargeException):
             f"at most {max_drawing_bytes} bytes."
         )
 
+    def __reduce__(self):
+        # The default rebuilds an exception from its message alone, which
+        # this signature does not take (pickling across a process pool).
+        return (type(self), (self.drawing_bytes, self.max_drawing_bytes))
+
 
 class UnsupportedMediaType(TechreadException):
     """Exception raised for unsupported file formats."""
