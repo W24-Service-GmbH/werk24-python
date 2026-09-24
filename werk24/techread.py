@@ -48,6 +48,7 @@ from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
     BadRequestException,
     CallbackDrawingTooLargeException,
+    CallbackFieldsTooLargeException,
     EncryptionException,
     InsufficientCreditsException,
     InvalidPriorityError,
@@ -200,11 +201,10 @@ def _check_callback_body_size(
 
     Raises:
     ------
+    - CallbackFieldsTooLargeException: The fields alone leave no room for
+      a drawing.
     - CallbackDrawingTooLargeException: The body would not fit.
     """
-    drawing_bytes = _remaining_size(drawing)
-    if drawing_bytes is None:
-        return
     fields_bytes = _MULTIPART_PART_OVERHEAD_BYTES + _filename_header_bytes(
         drawing_filename
     )
@@ -214,7 +214,17 @@ def _check_callback_body_size(
             + len(key.encode("utf-8"))
             + len(value.encode("utf-8"))
         )
-    max_drawing_bytes = max(CALLBACK_MAX_BODY_BYTES - fields_bytes, 0)
+    # Checked before the drawing is measured: it holds whatever the drawing
+    # is, including a stream whose size is unknowable or an empty one, and
+    # blaming the drawing would point the caller at the wrong fix.
+    if fields_bytes >= CALLBACK_MAX_BODY_BYTES:
+        raise CallbackFieldsTooLargeException(
+            fields_bytes=fields_bytes, max_body_bytes=CALLBACK_MAX_BODY_BYTES
+        )
+    drawing_bytes = _remaining_size(drawing)
+    if drawing_bytes is None:
+        return
+    max_drawing_bytes = CALLBACK_MAX_BODY_BYTES - fields_bytes
     if drawing_bytes > max_drawing_bytes:
         raise CallbackDrawingTooLargeException(
             drawing_bytes=drawing_bytes, max_drawing_bytes=max_drawing_bytes
@@ -1472,6 +1482,10 @@ class Werk24Client:
           in the request body, which is limited to 6 MiB after base64
           encoding, so about 4.6 MB of drawing; ``read_drawing`` uploads
           separately and allows 10 MiB. A subclass of
+          RequestTooLargeException.
+        - CallbackFieldsTooLargeException: Raised before sending when the
+          other fields (callback_headers, public_key, the asks, the
+          filename) fill that same request on their own. Also a subclass of
           RequestTooLargeException.
         - ServerException: Raised for any other server-side failure that is not
           one of the typed exceptions above.

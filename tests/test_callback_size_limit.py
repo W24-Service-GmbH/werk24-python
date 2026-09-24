@@ -28,6 +28,7 @@ from werk24.techread import (
 )
 from werk24.utils.exceptions import (
     CallbackDrawingTooLargeException,
+    CallbackFieldsTooLargeException,
     RequestTooLargeException,
 )
 
@@ -69,6 +70,16 @@ class _Session:
 
 def _drawing(size: int) -> bytes:
     return _PDF_HEADER + b"0" * (size - len(_PDF_HEADER))
+
+
+class _Pipe(io.RawIOBase):
+    """A stream that cannot seek, so its size is unknowable up front."""
+
+    def readable(self):
+        return True
+
+    def readinto(self, b):
+        return 0
 
 
 async def _submit(drawing, **kwargs):
@@ -136,16 +147,41 @@ class TestReadDrawingWithCallback:
             assert fh.tell() == 0
 
     async def test_a_stream_that_cannot_seek_is_left_to_the_server(self):
-        class _Pipe(io.RawIOBase):
-            def readable(self):
-                return True
-
-            def readinto(self, b):
-                return 0
-
         stream = io.BufferedReader(_Pipe())
         assert _remaining_size(stream) is None
         assert await _submit(stream) == 1
+
+    @pytest.mark.parametrize(
+        "make_drawing",
+        [
+            pytest.param(lambda: _drawing(1000), id="small"),
+            pytest.param(lambda: b"", id="empty"),
+            pytest.param(lambda: io.BufferedReader(_Pipe()), id="unseekable"),
+        ],
+    )
+    async def test_fields_that_fill_the_body_are_named_not_the_drawing(
+        self, make_drawing
+    ):
+        """With no room left for any drawing, the drawing is not what to fix.
+
+        That holds for a drawing of any size, including one whose size is
+        unknowable, so none of them may be sent or blamed for it.
+        """
+        headers = {f"X-Blob-{i}": "a" * 4000 for i in range(1200)}
+        client = Werk24Client(token="t", region="r")
+        session = _Session()
+        with mock.patch.object(client, "_make_https_session", return_value=session):
+            with pytest.raises(CallbackFieldsTooLargeException) as caught:
+                await client.read_drawing_with_callback(
+                    make_drawing(),
+                    asks=[AskMetaData()],
+                    callback_url="https://example.com/webhook",
+                    callback_headers=headers,
+                )
+        assert session.posts == 0
+        assert caught.value.fields_bytes >= CALLBACK_MAX_BODY_BYTES
+        assert isinstance(caught.value, RequestTooLargeException)
+        assert "callback_headers" in str(caught.value)
 
 
 def test_a_file_counts_only_what_is_left_to_read():
@@ -217,3 +253,7 @@ def test_the_exception_survives_pickling():
     again = pickle.loads(pickle.dumps(CallbackDrawingTooLargeException(10, 5)))
     assert (again.drawing_bytes, again.max_drawing_bytes) == (10, 5)
     assert str(again) == str(CallbackDrawingTooLargeException(10, 5))
+
+    again = pickle.loads(pickle.dumps(CallbackFieldsTooLargeException(10, 5)))
+    assert (again.fields_bytes, again.max_body_bytes) == (10, 5)
+    assert str(again) == str(CallbackFieldsTooLargeException(10, 5))

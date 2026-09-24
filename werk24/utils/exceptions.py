@@ -99,6 +99,47 @@ class CallbackDrawingTooLargeException(RequestTooLargeException):
         return (type(self), (self.drawing_bytes, self.max_drawing_bytes))
 
 
+class CallbackFieldsTooLargeException(RequestTooLargeException):
+    """Raised before sending when a callback read's other fields fill its request.
+
+    ``callback_headers``, ``public_key``, the asks and the drawing's filename
+    travel in the same request body as the drawing (see
+    :class:`CallbackDrawingTooLargeException`). When they take all of it on
+    their own, no drawing fits, and a smaller one or ``read_drawing`` is not
+    the way out: those fields are.
+
+    A subclass of :class:`RequestTooLargeException`, so an existing
+    ``except RequestTooLargeException`` keeps catching it.
+
+    Attributes:
+    ----------
+    - fields_bytes (int): What the request takes before any drawing.
+    - max_body_bytes (int): The most the request body can take.
+    """
+
+    cli_message_header: str = "Callback Request Fields Too Large"
+    cli_message_body: str = (
+        "The fields sent with read_drawing_with_callback (callback_headers, "
+        "public_key, the asks and the drawing's filename) fill its request "
+        "on their own, which is at most 6 MiB after base64 encoding. No "
+        "drawing fits beside them.\n\n"
+        "Send fewer or shorter callback_headers, or a shorter filename.\n\n"
+        "For more information, visit:\nhttps://v2.docs.werk24.io"
+    )
+
+    def __init__(self, fields_bytes: int, max_body_bytes: int):
+        self.fields_bytes = fields_bytes
+        self.max_body_bytes = max_body_bytes
+        super().__init__(
+            f"The fields take {fields_bytes} bytes before the drawing; this "
+            f"request can carry at most {max_body_bytes} bytes."
+        )
+
+    def __reduce__(self):
+        # See CallbackDrawingTooLargeException.__reduce__.
+        return (type(self), (self.fields_bytes, self.max_body_bytes))
+
+
 class UnsupportedMediaType(TechreadException):
     """Exception raised for unsupported file formats."""
 
