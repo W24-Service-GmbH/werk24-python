@@ -96,3 +96,51 @@ push rather than on the next paid run.
 3.14 on every push. The floor is real: `pyproject.toml` declares
 `requires-python = ">=3.10"` and carries version-marked pins (`pint` splits at
 3.11), so a 3.10-only failure is a genuine break, not a CI quirk.
+
+## Questions for the owner in every pull request
+
+Every pull request body here ends with a section headed **Questions for the
+owner**, even when all it says is "None". The owner decides from that section
+without reading the diff, so a question buried in the middle of a description
+is a question nobody answers. It is the same rule in every repository in the
+group (core-reader#2436); the list on core-reader#2427
+(https://github.com/W24-Service-GmbH/core-reader/pull/2427#issuecomment-5816887140)
+is the one to match:
+
+- **One opening line**: how many questions, and whether any blocks the merge.
+- **Numbered questions, each in bold**, asked as yes/no or as a choice between
+  named options.
+- **One to three plain sentences under each**: what happens either way, with
+  numbers where they exist.
+- **`*Recommendation:*`** with the answer you would give.
+- **Answerable without the diff.** Say what a customer or the owner would
+  notice, not which function changed, and explain an internal name in one line
+  the first time it appears.
+- **Actions are not questions.** Things to do or watch after the deploy go in
+  a short "Not questions, for after the deploy" list at the end.
+
+When the owner asks "what do I need to decide?", answer in the same shape. When
+a question is answered in the thread, write the answer into the body under it
+(`*Answer:*`, with a link to the comment), so the body stays the record of what
+was decided.
+
+This repository is public, so the example is an illustration rather than a
+real decision from another repository:
+
+```markdown
+## Questions for the owner
+
+One question. It does not block the merge.
+
+1. **Release this as 2.5.0 or as 3.0.0?**
+   - It removes a field from `TechreadMessage`, so code that reads that field
+     breaks on upgrade.
+   - 3.0.0 says so to everyone installing from PyPI; 2.5.0 reaches every
+     `werk24>=2` install without warning.
+   - *Recommendation:* 3.0.0.
+   - *Answer:* 3.0.0 (<link to the owner's comment>).
+
+**Not questions, for after the deploy:**
+- core-reader, crew-api, crew-watchdog, werkflow and docs-v2 install from main
+  and pick this up on their next build.
+```
