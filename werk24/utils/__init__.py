@@ -5,6 +5,9 @@ from .exceptions import BadRequestException as BadRequestException
 from .exceptions import (
     CallbackDrawingTooLargeException as CallbackDrawingTooLargeException,
 )
+from .exceptions import (
+    CallbackFieldsTooLargeException as CallbackFieldsTooLargeException,
+)
 from .exceptions import EncryptionException as EncryptionException
 from .exceptions import InsufficientCreditsException as InsufficientCreditsException
 from .exceptions import InvalidLicenseException as InvalidLicenseException
