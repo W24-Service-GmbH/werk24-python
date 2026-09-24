@@ -124,24 +124,23 @@ a question is answered in the thread, write the answer into the body under it
 (`*Answer:*`, with a link to the comment), so the body stays the record of what
 was decided.
 
-Trimmed from an internal change:
+This repository is public, so the example is an illustration rather than a
+real decision from another repository:
 
 ```markdown
 ## Questions for the owner
 
-Two questions. None blocks the merge; each has a recommendation.
+One question. It does not block the merge.
 
-1. **Turn on the page-OCR fallback for unread labels (`LABEL_FALLBACK`)?**
-   - It fills a label Textract could not read from the page's own OCR. It is off.
-   - Switching it on wants a check of about 100 unread label crops first.
-   - *Recommendation:* keep it off until that check is done.
-
-2. **Add a Sentry alert when pages fail inside a read?**
-   - This PR starts counting failed pages. An alert per release would catch a
-     release that breaks pages.
-   - *Recommendation:* yes.
-   - *Answer:* yes ((internal link)).
+1. **Release this as 2.5.0 or as 3.0.0?**
+   - It removes a field from `TechreadMessage`, so code that reads that field
+     breaks on upgrade.
+   - 3.0.0 says so to everyone installing from PyPI; 2.5.0 reaches every
+     `werk24>=2` install without warning.
+   - *Recommendation:* 3.0.0.
+   - *Answer:* 3.0.0 (<link to the owner's comment>).
 
 **Not questions, for after the deploy:**
-- Watch memory on multi-page A0 reads; revert an internal change if it gets close to the limit.
+- the server, the API, the status monitor, the studio and the documentation site install from main
+  and pick this up on their next build.
 ```
