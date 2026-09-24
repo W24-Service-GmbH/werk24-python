@@ -162,7 +162,19 @@ def test_bytes_like_drawings_are_measured():
 
 
 @pytest.mark.asyncio
-async def test_the_estimate_is_not_below_what_aiohttp_actually_sends():
+@pytest.mark.parametrize(
+    "drawing_filename",
+    [
+        "Zeichnung-\u00fc.pdf",
+        # aiohttp percent-encodes the filename, so each of these 2000 UTF-8
+        # bytes takes three on the wire.
+        "\u00fc" * 1000 + ".pdf",
+    ],
+    ids=["short-non-ascii", "long-non-ascii"],
+)
+async def test_the_estimate_is_not_below_what_aiohttp_actually_sends(
+    drawing_filename,
+):
     """The check estimates the multipart framing; aiohttp must not exceed it.
 
     If it did, a body the check accepted could still be refused at the
@@ -171,7 +183,7 @@ async def test_the_estimate_is_not_below_what_aiohttp_actually_sends():
     """
     kwargs = dict(
         callback_headers={"Authorization": "Bearer x"},
-        drawing_filename="Zeichnung-\u00fc.pdf",
+        drawing_filename=drawing_filename,
     )
     with pytest.raises(CallbackDrawingTooLargeException) as caught:
         await _submit(_drawing(CALLBACK_MAX_BODY_BYTES), **kwargs)
