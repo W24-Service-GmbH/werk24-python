@@ -9,14 +9,15 @@ would have broken deserialization in every consumer, because
 
 So: a WARNING level and a READ_INCOMPLETE type that ride on a COMPLETED
 message, ``is_successful`` that counts only ERROR as fatal, and lenient
-parsing so the next new level or type the server adds does not fail the
-whole message.
+parsing so the next new type the server adds does not fail the whole
+message.
 """
 
 import json
 from uuid import uuid4
 
-from pydantic import BaseModel
+import pytest
+from pydantic import BaseModel, ValidationError
 
 from werk24.models.v2.enums import TechreadExceptionLevel
 from werk24.models.v2.internal import (
@@ -101,14 +102,16 @@ def test_an_unknown_type_is_kept_rather_than_failing_the_message():
     assert message.is_successful
 
 
-def test_an_unknown_level_is_kept_and_counts_as_fatal():
-    """This client cannot tell whether an unknown level stopped the read."""
-    message = _completed(
-        {"exception_level": "SOMETHING_NEW", "exception_type": "READ_INCOMPLETE"}
-    )
-    (exception,) = message.exceptions
-    assert exception.exception_level == "SOMETHING_NEW"
-    assert not message.is_successful
+def test_an_unknown_level_is_still_refused():
+    """The level decides ``is_successful``, so it is not guessed at.
+
+    core-reader also relies on this to refuse a request-cache manifest it
+    could not replay faithfully.
+    """
+    with pytest.raises(ValidationError):
+        TechreadException.model_validate(
+            {"exception_level": "FATAL", "exception_type": "READ_INCOMPLETE"}
+        )
 
 
 def test_known_values_still_come_back_as_enum_members():
@@ -151,3 +154,35 @@ def test_the_warning_round_trips():
     again = TechreadException.model_validate_json(exception.model_dump_json())
     assert again == exception
     assert again.ask_type == "BALLOONS"
+
+
+def test_an_exception_without_the_new_fields_dumps_as_it_did_before():
+    """Unset ``ask_type`` and ``reason`` stay off the wire and out of dumps.
+
+    core-reader dumps exceptions into its callbacks and its request cache and
+    compares the dicts, so two ``None`` keys appearing in every existing
+    exception would change what it stores and sends without anyone asking.
+    """
+    exception = TechreadException(
+        exception_level=TechreadExceptionLevel.INFO,
+        exception_type=TechreadExceptionType.DRAWING_RESOLUTION_TOO_LOW,
+    )
+    expected = {
+        "exception_level": "INFO",
+        "exception_type": "DRAWING_RESOLUTION_TOO_LOW",
+    }
+    assert exception.model_dump(mode="json") == expected
+    assert json.loads(exception.model_dump_json()) == expected
+
+
+def test_a_set_field_is_dumped():
+    exception = TechreadException(
+        exception_level=TechreadExceptionLevel.WARNING,
+        exception_type=TechreadExceptionType.READ_INCOMPLETE,
+        reason="timeout",
+    )
+    assert exception.model_dump(mode="json") == {
+        "exception_level": "WARNING",
+        "exception_type": "READ_INCOMPLETE",
+        "reason": "timeout",
+    }

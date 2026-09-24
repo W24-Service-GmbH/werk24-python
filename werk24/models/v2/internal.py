@@ -214,20 +214,24 @@ class TechreadException(BaseModel):
     - reason (Optional[str]): A short, machine-readable code for what
         happened (for example ``"timeout"``). The set of codes may grow.
 
-    A level or type this client does not know is kept as its plain string
-    rather than refused. The server adds both over time, and every consumer
-    that installs this package would otherwise fail to parse the whole
-    message, results included, the day it starts sending a new one.
+    A type this client does not know is kept as its plain string rather
+    than refused. The server adds types over time, and every consumer that
+    installs this package would otherwise fail to parse the whole message,
+    results included, the day it starts sending a new one. The level stays
+    strict: it decides ``is_successful``, and core-reader validates what it
+    replays from its request cache against it.
     """
 
-    exception_level: Union[TechreadExceptionLevel, str] = Field(
-        ..., union_mode="left_to_right"
-    )
+    exception_level: TechreadExceptionLevel
     exception_type: Union[TechreadExceptionType, str] = Field(
         ..., union_mode="left_to_right"
     )
-    ask_type: Optional[str] = None
-    reason: Optional[str] = None
+    # Left out of a dump while unset, so every exception that does not use
+    # them serializes exactly as it did before they existed. core-reader
+    # dumps these into its callbacks and its request cache, and consumers
+    # compare the dicts.
+    ask_type: Optional[str] = Field(default=None, exclude_if=lambda v: v is None)
+    reason: Optional[str] = Field(default=None, exclude_if=lambda v: v is None)
 
 
 #: Exception levels that leave the results of a message standing.
@@ -256,8 +260,6 @@ class TechreadBaseResponse(BaseModel):
 
         INFO and WARNING do not count: they ride on a message whose results
         stand, such as a COMPLETED read with a ``READ_INCOMPLETE`` warning.
-        A level this client does not know does count, because it cannot
-        tell whether the processing stopped.
 
         Returns:
         -------
