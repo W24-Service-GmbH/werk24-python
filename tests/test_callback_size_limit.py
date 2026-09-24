@@ -11,6 +11,7 @@ error that named neither the limit nor the drawing (werk24-python#585).
 import io
 import json
 import math
+import pickle
 import uuid
 from unittest import mock
 
@@ -198,3 +199,10 @@ async def test_the_estimate_is_not_below_what_aiohttp_actually_sends():
     sink = _Collect()
     await data().write(sink)
     assert sink.size <= CALLBACK_MAX_BODY_BYTES
+
+
+def test_the_exception_survives_pickling():
+    """So it can cross a process pool, as the other exceptions here can."""
+    again = pickle.loads(pickle.dumps(CallbackDrawingTooLargeException(10, 5)))
+    assert (again.drawing_bytes, again.max_drawing_bytes) == (10, 5)
+    assert str(again) == str(CallbackDrawingTooLargeException(10, 5))
