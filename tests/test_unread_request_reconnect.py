@@ -364,3 +364,88 @@ async def test_a_client_that_was_never_entered_does_not_start_connecting():
 
     h.connect.assert_not_awaited()
     assert h.connections == []
+
+
+def _after_initialize(h, then):
+    """Run *then* on the first connection right after it takes an INITIALIZE."""
+    first = h.connections[0]
+    original = first.send
+
+    async def send(raw: str) -> None:
+        await original(raw)
+        if json.loads(raw)["action"] == "INITIALIZE":
+            await then(first)
+
+    first.send = send
+
+
+async def _init_answer_lost(h):
+    # The server took the request and the connection went before it answered.
+    async def drop_answer_and_close(connection):
+        connection._outbox.get_nowait()
+        await connection.close()
+
+    _after_initialize(h, drop_answer_and_close)
+    with pytest.raises(ServerException):
+        await h.read_all()
+
+
+async def _init_answer_invalid(h):
+    # The server took the request and answered with something that is not an
+    # init response. The connection stays up with the request unread on it.
+    async def replace_answer(connection):
+        connection._outbox.get_nowait()
+        connection._outbox.put_nowait(
+            _message(connection.unread[-1], "PROGRESS", "INITIALIZATION_SUCCESS", {})
+        )
+
+    _after_initialize(h, replace_answer)
+    with pytest.raises(ServerException, match="Unexpected server response"):
+        await h.read_all()
+
+
+async def _init_send_fails(h):
+    # INITIALIZE never got out whole, so the client cannot know whether the
+    # server holds the request.
+    first = h.connections[0]
+    original = first.send
+    calls = []
+
+    async def send(raw: str) -> None:
+        calls.append(raw)
+        if len(calls) == 1:
+            raise OSError("network unreachable")
+        await original(raw)
+
+    first.send = send
+    with pytest.raises(OSError):
+        await h.read_all()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "fail_initialize",
+    [_init_answer_lost, _init_answer_invalid, _init_send_fails],
+    ids=["answer-lost", "answer-invalid", "send-fails"],
+)
+async def test_a_failed_initialize_leaves_the_next_read_on_a_fresh_connection(
+    fail_initialize,
+):
+    """init_request() marks the request open before INITIALIZE goes out, so
+    every failure inside it leaves the flag set and the next read reconnects
+    first. The invalid answer is the case that matters most: the connection
+    is still up and still carries the unread request, so reusing it would get
+    the next READ refused."""
+    h = _Harness()
+
+    with h.patched():
+        async with h.client:
+            await fail_initialize(h)
+            second = await h.read_all()
+
+    assert not any(c.refused for c in h.connections)
+    assert len(_completed(second)) == 1
+    assert h.connect.await_count == 2
+    first, fresh = h.connections
+    assert first.closed
+    assert fresh.sent == ["INITIALIZE", "READ"]
