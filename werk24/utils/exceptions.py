@@ -56,6 +56,44 @@ class RequestTooLargeException(TechreadException):
     )
 
 
+class CallbackDrawingTooLargeException(RequestTooLargeException):
+    """Raised before sending when a callback read cannot fit its request.
+
+    ``read_drawing_with_callback`` carries the drawing in the body of one
+    HTTPS request, which the API hands to a synchronous Lambda invoke. That
+    invoke takes at most 6 MiB, and the body arrives base64-encoded, so the
+    drawing has to stay under about 4.6 MB there. ``read_drawing`` uploads
+    to storage instead and allows 10 MiB.
+
+    A subclass of :class:`RequestTooLargeException`, so an existing
+    ``except RequestTooLargeException`` keeps catching it.
+
+    Attributes:
+    ----------
+    - drawing_bytes (int): Size of the drawing that was refused.
+    - max_drawing_bytes (int): The largest drawing this request could carry,
+      after the other form fields.
+    """
+
+    cli_message_header: str = "Drawing Too Large For A Callback Read"
+    cli_message_body: str = (
+        "The drawing is too large to be sent with read_drawing_with_callback, "
+        "which carries it inside a single request of at most 6 MiB after "
+        "base64 encoding (about 4.6 MB of drawing).\n\n"
+        "Use read_drawing instead, which uploads the drawing separately and "
+        "allows up to 10 MiB, or reduce the file size.\n\n"
+        "For more information, visit:\nhttps://v2.docs.werk24.io"
+    )
+
+    def __init__(self, drawing_bytes: int, max_drawing_bytes: int):
+        self.drawing_bytes = drawing_bytes
+        self.max_drawing_bytes = max_drawing_bytes
+        super().__init__(
+            f"The drawing is {drawing_bytes} bytes; this request can carry "
+            f"at most {max_drawing_bytes} bytes."
+        )
+
+
 class UnsupportedMediaType(TechreadException):
     """Exception raised for unsupported file formats."""
 
