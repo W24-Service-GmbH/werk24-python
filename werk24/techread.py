@@ -31,7 +31,6 @@ from werk24 import (
     SystemStatus,
     TechreadAction,
     TechreadCommand,
-    TechreadException,
     TechreadExceptionLevel,
     TechreadExceptionType,
     TechreadInitResponse,
@@ -42,7 +41,14 @@ from werk24 import (
     TechreadWithCallbackPayload,
 )
 from werk24._version import __version__
-from werk24.models.v2.internal import SUPPORTED_KEY_EXCHANGES
+
+# TechreadException is the pydantic model, so it comes from its own module.
+# ``from werk24 import TechreadException`` names the exception class in
+# werk24.utils.exceptions: werk24/__init__.py star-imports utils after models,
+# and since this module is imported lazily (9c99d32) it only ever sees the
+# package after both. _trigger_asks_exception then raised TypeError on every
+# refused upload instead of reporting the refusal per ask.
+from werk24.models.v2.internal import SUPPORTED_KEY_EXCHANGES, TechreadException
 from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
@@ -214,6 +220,24 @@ class Werk24Client:
         self._is_shutting_down = False
         self._reconnect_attempts = 0
 
+        # Whether the current WebSocket connection carries a request that was
+        # INITIALIZEd and never read to the end. Set just before INITIALIZE is
+        # sent, cleared only when the read's PROGRESS_COMPLETED arrives.
+        #
+        # crew-api refuses a READ while more than one request on a connection
+        # is unread (MultipleOpenRequests, crew-api#213), and closes the
+        # connection. So a request left behind - an upload that failed, an
+        # exception or a cancellation before READ, a caller that stopped
+        # iterating - would get the NEXT read on this connection refused. It
+        # also leaves the old read's remaining messages on the socket, where
+        # the next INITIALIZE would receive them as its answer.
+        #
+        # init_request() therefore replaces the connection first whenever this
+        # is set. It is set on entry rather than on each failure path so that
+        # no path can be missed, including an abandoned generator, whose
+        # cleanup runs only when the event loop gets round to finalizing it.
+        self._exchange_open = False
+
     @staticmethod
     def validate_asks(asks: List[AskV2]) -> None:
         """
@@ -347,8 +371,45 @@ class Werk24Client:
             logger.error("Failed to reconnect: %s", exc)
             raise
 
+    async def _drop_unfinished_exchange(self) -> None:
+        """Start the next request on a connection that carries no other.
+
+        If the previous request on this connection was INITIALIZEd and never
+        read to the end (see ``_exchange_open``), the connection is closed and
+        a new one opened. There is no message that abandons a request, and a
+        new connection is what the server scopes requests to, so this is the
+        only way to leave the old one behind.
+
+        A read that finished costs nothing here: the flag is clear and the
+        connection is reused, as it always was.
+
+        If the reconnect fails, the flag stays set and the exception
+        propagates, so the next call tries again rather than reusing the old
+        connection.
+        """
+        if not self._exchange_open:
+            return
+        if self._wss_session is None:
+            # Never connected, so nothing carries the request. Connecting here
+            # would open a socket outside ``async with`` that nobody closes;
+            # _send_command raises for this case as it always did.
+            self._exchange_open = False
+            return
+        logger.info(
+            "The previous request on this connection was never read to the "
+            "end; reconnecting before INITIALIZE so it is not left open."
+        )
+        await self._reconnect()
+        self._exchange_open = False
+
     async def __aenter__(self):
         self._entered = True
+        # A client can be entered again after it was exited. The shutdown
+        # flag from that exit would otherwise stay set for the new connection
+        # and turn every _reconnect() on it into a no-op, including the one
+        # that drops an unfinished request. The new connection carries none.
+        self._is_shutting_down = False
+        self._exchange_open = False
         await self._connect_with_retry()
         return self
 
@@ -578,7 +639,16 @@ class Werk24Client:
         - BadRequestException: If the request is malformed or ask types are invalid.
         - RequestTooLargeException: If the drawing exceeds the maximum size limit.
         - InvalidPriorityError: If the priority value is invalid.
+        - RuntimeError: If another read on the same client replaced the
+            connection between this read's INITIALIZE and READ. Reads on one
+            client must not overlap.
         - Any other exceptions encountered will be logged and re-raised.
+
+        A read that does not run to PROGRESS_COMPLETED (a refused upload, an
+        exception, a cancellation, a caller that stops iterating) leaves its
+        request unread on the connection. The next read on this client then
+        opens a new connection first, because the server refuses a READ while
+        more than one request on a connection is unread.
         """
         # Run the preflight checks
         self.run_preflight_checks(drawing)
@@ -591,6 +661,9 @@ class Werk24Client:
 
         # Initiate the request
         init_message, init_response = await self.init_request(asks, max_pages)
+        # The connection the request is bound to. crew-api scopes a request to
+        # the connection that INITIALIZEd it, so READ must go out on this one.
+        initialized_on = self._wss_session
         yield init_message
         logger.debug("Initialization request sent and response received.")
 
@@ -619,10 +692,26 @@ class Werk24Client:
             )
             logger.debug("Drawing file uploaded successfully.")
         except (BadRequestException, RequestTooLargeException) as exc:
+            # No READ follows, so the request stays unread on this
+            # connection. _exchange_open is still set, and the next
+            # init_request() reconnects before it INITIALIZEs.
             logger.error("Error during drawing upload: %s", exc)
             async for message in self._trigger_asks_exception(asks, exc):
                 yield message
             return
+
+        # Something else replaced the connection since INITIALIZE. Within one
+        # read nothing does, so this is another read_drawing on the same
+        # client that found this request open and reconnected. This request
+        # died with the old connection. A READ sent on the new one would take
+        # THAT read's request as its own and return its results here.
+        if self._wss_session is not initialized_on:
+            raise RuntimeError(
+                "The connection this request was initialized on was replaced "
+                "before READ, most likely by an overlapping read_drawing call "
+                "on the same client. Reads on one Werk24Client must not "
+                "overlap; use one client per concurrent read."
+            )
 
         # Notify the server to start reading the drawing
         try:
@@ -751,6 +840,13 @@ class Werk24Client:
             max_pages=max_pages,
             supported_key_exchanges=list(SUPPORTED_KEY_EXCHANGES),
         )
+
+        # Never INITIALIZE next to an unread request: crew-api would refuse
+        # the READ that follows. Then mark this one open before sending, so
+        # every way out between here and PROGRESS_COMPLETED leaves the flag
+        # set without having to be caught.
+        await self._drop_unfinished_exchange()
+        self._exchange_open = True
 
         # Send the initialization command to the server
         await self._send_command(
@@ -1809,6 +1905,14 @@ class Werk24Client:
                     and message.message_subtype
                     == TechreadMessageSubtype.PROGRESS_COMPLETED
                 )
+
+                # The server has nothing more to send for this request, so
+                # the connection is clean and the next read can reuse it.
+                # Cleared here, before the drain below yields, so a caller
+                # that stops iterating at PROGRESS_COMPLETED does not cost
+                # the next read a reconnect.
+                if is_completed:
+                    self._exchange_open = False
 
                 # Keep one message in flight so its download overlaps the next
                 # receive; on completion there is no next receive, so drain.
