@@ -95,8 +95,9 @@ CALLBACK_MAX_BODY_BYTES = (
 )
 
 #: Per-part multipart framing: the boundary line, Content-Disposition with
-#: the field name (and filename), Content-Type and the blank lines. aiohttp
-#: writes well under this for the fields this client sends.
+#: the field name, Content-Type and the blank lines. aiohttp writes well
+#: under this for the fields this client sends. The drawing's filename is
+#: not in it: see ``_filename_header_bytes``.
 _MULTIPART_PART_OVERHEAD_BYTES = 256
 
 HTTP_EXCEPTION_CLASSES = {
@@ -171,6 +172,22 @@ def _remaining_size(drawing: Any) -> Optional[int]:
         return None
 
 
+def _filename_header_bytes(filename: str) -> int:
+    """Return how many bytes aiohttp writes for *filename* in a part header.
+
+    Not its UTF-8 length: aiohttp percent-encodes the filename in the
+    part's Content-Disposition, so a non-ASCII byte costs three bytes there
+    and ``"\u00fc" * 1000`` takes 6000, not 2000. Rather than re-derive that
+    quoting here, let aiohttp build the header the same way ``FormData``
+    does and measure it. The few bytes of ``form-data; filename=""`` around
+    the name are also in the per-part overhead; counting them twice errs on
+    the safe side.
+    """
+    part = aiohttp.BytesPayload(b"")
+    part.set_content_disposition("form-data", filename=filename)
+    return len(part.headers[aiohttp.hdrs.CONTENT_DISPOSITION].encode("utf-8"))
+
+
 def _check_callback_body_size(
     drawing: Any, drawing_filename: str, fields: Dict[str, str]
 ) -> None:
@@ -188,8 +205,8 @@ def _check_callback_body_size(
     drawing_bytes = _remaining_size(drawing)
     if drawing_bytes is None:
         return
-    fields_bytes = _MULTIPART_PART_OVERHEAD_BYTES + len(
-        drawing_filename.encode("utf-8")
+    fields_bytes = _MULTIPART_PART_OVERHEAD_BYTES + _filename_header_bytes(
+        drawing_filename
     )
     for key, value in fields.items():
         fields_bytes += (
