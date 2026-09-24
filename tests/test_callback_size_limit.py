@@ -9,7 +9,6 @@ error that named neither the limit nor the drawing (werk24-python#585).
 """
 
 import io
-import json
 import math
 import pickle
 import uuid
@@ -53,9 +52,11 @@ class _ResponseContext:
 class _Session:
     def __init__(self):
         self.posts = 0
+        self.data = None
 
     def post(self, url, data=None, headers=None):
         self.posts += 1
+        self.data = data
         return _ResponseContext()
 
     async def close(self):
@@ -165,29 +166,27 @@ async def test_the_estimate_is_not_below_what_aiohttp_actually_sends():
     """The check estimates the multipart framing; aiohttp must not exceed it.
 
     If it did, a body the check accepted could still be refused at the
-    gateway. Build the form exactly as ``read_drawing_with_callback`` does,
-    at the largest drawing the check accepts, and measure what goes out.
+    gateway. Find the largest drawing the method accepts, let the method
+    build and post its form, and measure what aiohttp would put on the wire.
     """
-    fields = {
-        "asks": json.dumps([AskMetaData().model_dump(mode="json")]),
-        "callback_url": json.dumps("https://example.com/webhook"),
-        "callback_headers": json.dumps({"Authorization": "Bearer x"}),
-        "max_pages": json.dumps(5),
-        "client_version": json.dumps("2.9.9"),
-        "public_key": json.dumps(None),
-        "priority": json.dumps(None),
-    }
+    kwargs = dict(
+        callback_headers={"Authorization": "Bearer x"},
+        drawing_filename="Zeichnung-\u00fc.pdf",
+    )
     with pytest.raises(CallbackDrawingTooLargeException) as caught:
-        _check_callback_body_size(
-            _drawing(CALLBACK_MAX_BODY_BYTES), "drawing.pdf", fields
-        )
-    largest = _drawing(caught.value.max_drawing_bytes)
-    _check_callback_body_size(largest, "drawing.pdf", fields)
+        await _submit(_drawing(CALLBACK_MAX_BODY_BYTES), **kwargs)
+    largest = caught.value.max_drawing_bytes
 
-    data = aiohttp.FormData()
-    data.add_field("drawing", largest, filename="drawing.pdf")
-    for key, value in fields.items():
-        data.add_field(key, value)
+    client = Werk24Client(token="t", region="r")
+    session = _Session()
+    with mock.patch.object(client, "_make_https_session", return_value=session):
+        await client.read_drawing_with_callback(
+            _drawing(largest),
+            asks=[AskMetaData()],
+            callback_url="https://example.com/webhook",
+            **kwargs,
+        )
+    assert session.posts == 1
 
     class _Collect:
         def __init__(self):
@@ -197,7 +196,7 @@ async def test_the_estimate_is_not_below_what_aiohttp_actually_sends():
             self.size += len(chunk)
 
     sink = _Collect()
-    await data().write(sink)
+    await session.data().write(sink)
     assert sink.size <= CALLBACK_MAX_BODY_BYTES
 
 

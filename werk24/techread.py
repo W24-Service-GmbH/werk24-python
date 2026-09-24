@@ -81,9 +81,10 @@ _S3_ERROR_BODY_LIMIT = 4096
 #: the gateway, with an error that named neither the limit nor the drawing.
 CALLBACK_INVOKE_LIMIT_BYTES = 6 * 1024 * 1024
 
-#: Room left in the invoke for the rest of the event around the body:
-#: headers (which API Gateway repeats as ``multiValueHeaders``, and caps at
-#: 10 KiB), the request context and the JSON framing. Generous on purpose.
+#: Room left in the invoke for the rest of the event around the body: the
+#: HTTP API's payload format 2.0 adds the request headers (capped at 10 KiB
+#: by the gateway), the request context and the JSON framing. Generous on
+#: purpose.
 #: Refusing a drawing that would have been read is a regression; letting one
 #: through that fails at the gateway is only what happened before.
 _CALLBACK_EVENT_RESERVE_BYTES = 64 * 1024
