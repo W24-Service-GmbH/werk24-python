@@ -1561,6 +1561,14 @@ class TechreadExceptionLevel(str, Enum):
     be deprecated)
     """
 
+    WARNING = "WARNING"
+    """ Set when the process completed and the results were
+    delivered, but the server knows part of them is missing
+    or incomplete (see ``READ_INCOMPLETE``). The message keeps
+    its status: a COMPLETED message with a WARNING is still
+    COMPLETED, and ``is_successful`` stays True.
+    """
+
 
 class AskType(str, Enum):
     """The type of request to be sent to the server."""
