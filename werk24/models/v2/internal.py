@@ -189,6 +189,14 @@ class TechreadExceptionType(str, Enum):
     that must cover the whole document (e.g. redaction).
     """
 
+    READ_INCOMPLETE = "READ_INCOMPLETE"
+    """ The read completed, but the server knows part of the result is
+    missing: a stage timed out or failed, or a region could not be read.
+    Sent at the WARNING level, so the results that were delivered stand.
+    ``ask_type`` names the affected ask when it is known, and ``reason``
+    says what went wrong.
+    """
+
 
 class TechreadException(BaseModel):
     """
@@ -197,12 +205,39 @@ class TechreadException(BaseModel):
 
     Attributes:
     ----------
+    - exception_level (TechreadExceptionLevel): How severe it is. Only
+        ERROR means the processing stopped.
     - exception_type (TechreadExceptionType): Error Type that allows the
         API-user to translate the message to a user-info.
+    - ask_type (Optional[str]): The ask the exception concerns, when it
+        concerns one. Set on a ``READ_INCOMPLETE`` warning.
+    - reason (Optional[str]): A short, machine-readable code for what
+        happened (for example ``"timeout"``). The set of codes may grow.
+
+    A type this client does not know is kept as its plain string rather
+    than refused. The server adds types over time, and every consumer that
+    installs this package would otherwise fail to parse the whole message,
+    results included, the day it starts sending a new one. The level stays
+    strict: it decides ``is_successful``, and core-reader validates what it
+    replays from its request cache against it.
     """
 
     exception_level: TechreadExceptionLevel
-    exception_type: TechreadExceptionType
+    exception_type: Union[TechreadExceptionType, str] = Field(
+        ..., union_mode="left_to_right"
+    )
+    # Left out of a dump while unset, so every exception that does not use
+    # them serializes exactly as it did before they existed. core-reader
+    # dumps these into its callbacks and its request cache, and consumers
+    # compare the dicts.
+    ask_type: Optional[str] = Field(default=None, exclude_if=lambda v: v is None)
+    reason: Optional[str] = Field(default=None, exclude_if=lambda v: v is None)
+
+
+#: Exception levels that leave the results of a message standing.
+_NON_FATAL_LEVELS = frozenset(
+    {TechreadExceptionLevel.INFO, TechreadExceptionLevel.WARNING}
+)
 
 
 class TechreadBaseResponse(BaseModel):
@@ -223,11 +258,16 @@ class TechreadBaseResponse(BaseModel):
 
         Otherwise return True.
 
+        INFO and WARNING do not count: they ride on a message whose results
+        stand, such as a COMPLETED read with a ``READ_INCOMPLETE`` warning.
+
         Returns:
         -------
-        - True if no exceptions occured,False otherwise.
+        - True if no exception stopped the processing, False otherwise.
         """
-        return not self.exceptions
+        return not any(
+            e.exception_level not in _NON_FATAL_LEVELS for e in self.exceptions
+        )
 
 
 class PresignedPost(BaseModel):
