@@ -53,6 +53,8 @@ from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
     BadRequestException,
+    CallbackDrawingTooLargeException,
+    CallbackFieldsTooLargeException,
     EncryptionException,
     InsufficientCreditsException,
     InvalidPriorityError,
@@ -76,6 +78,34 @@ from werk24.utils.priority import validate_priority
 #: This bounds the read itself, not just the search, so a body that is large
 #: or never ends costs one bounded allocation and no wait for EOF.
 _S3_ERROR_BODY_LIMIT = 4096
+
+#: The most a synchronous Lambda invoke accepts, in bytes.
+#:
+#: ``read_drawing_with_callback`` posts the drawing inside a multipart body
+#: that API Gateway base64-encodes into the event of a synchronous invoke, so
+#: this - not the 10 MiB that ``read_drawing``'s presigned upload allows - is
+#: what bounds the drawing on the callback path. A request over it failed at
+#: the gateway, with an error that named neither the limit nor the drawing.
+CALLBACK_INVOKE_LIMIT_BYTES = 6 * 1024 * 1024
+
+#: Room left in the invoke for the rest of the event around the body: the
+#: HTTP API's payload format 2.0 adds the request headers (capped at 10 KiB
+#: by the gateway), the request context and the JSON framing. Generous on
+#: purpose.
+#: Refusing a drawing that would have been read is a regression; letting one
+#: through that fails at the gateway is only what happened before.
+_CALLBACK_EVENT_RESERVE_BYTES = 64 * 1024
+
+#: The largest multipart body that fits, before base64: about 4.67 MB.
+CALLBACK_MAX_BODY_BYTES = (
+    (CALLBACK_INVOKE_LIMIT_BYTES - _CALLBACK_EVENT_RESERVE_BYTES) // 4 * 3
+)
+
+#: Per-part multipart framing: the boundary line, Content-Disposition with
+#: the field name, Content-Type and the blank lines. aiohttp writes well
+#: under this for the fields this client sends. The drawing's filename is
+#: not in it: see ``_filename_header_bytes``.
+_MULTIPART_PART_OVERHEAD_BYTES = 256
 
 HTTP_EXCEPTION_CLASSES = {
     range(200, 300): None,
@@ -126,6 +156,85 @@ def _all_valid_ask_types() -> frozenset:
     return frozenset(ask_type.value for ask_type in W24AskType) | frozenset(
         ask_type.value for ask_type in AskType
     )
+
+
+def _remaining_size(drawing: Any) -> Optional[int]:
+    """Return how many bytes aiohttp will read from *drawing*, if knowable.
+
+    Bytes-like objects answer with their length. A file answers with what is
+    left from its current position, which is where aiohttp starts reading,
+    and is put back where it was. A stream that cannot seek (a pipe, a
+    socket) returns None: its size is unknowable without consuming it, and
+    the server remains the judge.
+    """
+    if isinstance(drawing, (bytes, bytearray, memoryview)):
+        return memoryview(drawing).nbytes
+    try:
+        position = drawing.tell()
+        end = drawing.seek(0, io.SEEK_END)
+        drawing.seek(position)
+        return max(end - position, 0)
+    except (AttributeError, OSError, TypeError, ValueError):
+        # io.UnsupportedOperation is both an OSError and a ValueError.
+        return None
+
+
+def _filename_header_bytes(filename: str) -> int:
+    """Return how many bytes aiohttp writes for *filename* in a part header.
+
+    Not its UTF-8 length: aiohttp percent-encodes the filename in the
+    part's Content-Disposition, so a non-ASCII byte costs three bytes there
+    and ``"\u00fc" * 1000`` takes 6000, not 2000. Rather than re-derive that
+    quoting here, let aiohttp build the header the same way ``FormData``
+    does and measure it. The few bytes of ``form-data; filename=""`` around
+    the name are also in the per-part overhead; counting them twice errs on
+    the safe side.
+    """
+    part = aiohttp.BytesPayload(b"")
+    part.set_content_disposition("form-data", filename=filename)
+    return len(part.headers[aiohttp.hdrs.CONTENT_DISPOSITION].encode("utf-8"))
+
+
+def _check_callback_body_size(
+    drawing: Any, drawing_filename: str, fields: Dict[str, str]
+) -> None:
+    """Refuse a callback read whose request cannot reach the reader.
+
+    See ``CALLBACK_INVOKE_LIMIT_BYTES``. The form fields count against the
+    same body as the drawing, and ``callback_headers`` or ``public_key`` can
+    make them large, so the limit is on the whole body rather than on the
+    drawing alone.
+
+    Raises:
+    ------
+    - CallbackFieldsTooLargeException: The fields alone leave no room for
+      a drawing.
+    - CallbackDrawingTooLargeException: The body would not fit.
+    """
+    fields_bytes = _MULTIPART_PART_OVERHEAD_BYTES + _filename_header_bytes(
+        drawing_filename
+    )
+    for key, value in fields.items():
+        fields_bytes += (
+            _MULTIPART_PART_OVERHEAD_BYTES
+            + len(key.encode("utf-8"))
+            + len(value.encode("utf-8"))
+        )
+    # Checked before the drawing is measured: it holds whatever the drawing
+    # is, including a stream whose size is unknowable or an empty one, and
+    # blaming the drawing would point the caller at the wrong fix.
+    if fields_bytes >= CALLBACK_MAX_BODY_BYTES:
+        raise CallbackFieldsTooLargeException(
+            fields_bytes=fields_bytes, max_body_bytes=CALLBACK_MAX_BODY_BYTES
+        )
+    drawing_bytes = _remaining_size(drawing)
+    if drawing_bytes is None:
+        return
+    max_drawing_bytes = CALLBACK_MAX_BODY_BYTES - fields_bytes
+    if drawing_bytes > max_drawing_bytes:
+        raise CallbackDrawingTooLargeException(
+            drawing_bytes=drawing_bytes, max_drawing_bytes=max_drawing_bytes
+        )
 
 
 # Determine if the websockets library supports the `extra_headers` parameter.
@@ -637,7 +746,8 @@ class Werk24Client:
         Raises:
         ------
         - BadRequestException: If the request is malformed or ask types are invalid.
-        - RequestTooLargeException: If the drawing exceeds the maximum size limit.
+        - RequestTooLargeException: If the drawing exceeds the maximum size limit
+          (10 MiB for this upload; read_drawing_with_callback allows less).
         - InvalidPriorityError: If the priority value is invalid.
         - RuntimeError: If another read on the same client replaced the
             connection between this read's INITIALIZE and READ. Reads on one
@@ -1463,6 +1573,16 @@ class Werk24Client:
           by this client before sending or by the API (400).
         - PriorityTooHighError: Raised when the requested priority exceeds the
           account tier (403).
+        - CallbackDrawingTooLargeException: Raised before sending when the
+          request would exceed what this endpoint accepts. The drawing travels
+          in the request body, which is limited to 6 MiB after base64
+          encoding, so about 4.6 MB of drawing; ``read_drawing`` uploads
+          separately and allows 10 MiB. A subclass of
+          RequestTooLargeException.
+        - CallbackFieldsTooLargeException: Raised before sending when the
+          other fields (callback_headers, public_key, the asks, the
+          filename) fill that same request on their own. Also a subclass of
+          RequestTooLargeException.
         - ServerException: Raised for any other server-side failure that is not
           one of the typed exceptions above.
         - ValueError: Raised if the drawing or callback_url is invalid.
@@ -1497,11 +1617,21 @@ class Werk24Client:
             priority=validated_priority,
         )
 
+        fields = {
+            key: json.dumps(value)
+            for key, value in payload.model_dump(mode="json").items()
+        }
+
+        # The whole body travels through a synchronous Lambda invoke, so it
+        # has a lower ceiling than read_drawing's upload. Say so here, by
+        # name, rather than let the gateway refuse it anonymously.
+        _check_callback_body_size(drawing, drawing_filename, fields)
+
         # create the form data
         data = aiohttp.FormData()
         data.add_field("drawing", drawing, filename=drawing_filename)
-        for key, value in payload.model_dump(mode="json").items():
-            data.add_field(key, json.dumps(value))
+        for key, value in fields.items():
+            data.add_field(key, value)
 
         # send the request
         headers = self._get_auth_headers()
