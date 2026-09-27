@@ -8,6 +8,7 @@ from .exceptions import (
 from .exceptions import (
     CallbackFieldsTooLargeException as CallbackFieldsTooLargeException,
 )
+from .exceptions import DrawingTooLargeException as DrawingTooLargeException
 from .exceptions import EncryptionException as EncryptionException
 from .exceptions import InsufficientCreditsException as InsufficientCreditsException
 from .exceptions import InvalidLicenseException as InvalidLicenseException

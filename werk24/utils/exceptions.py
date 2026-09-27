@@ -1,3 +1,7 @@
+#: The documentation page on how large a drawing can be.
+FILE_SIZE_DOCS_URL = "https://v2.docs.werk24.io/limitations/file-size/"
+
+
 class TechreadException(Exception):
     """
     Base exception for all exceptions raised by the Techread functionality.
@@ -54,6 +58,54 @@ class RequestTooLargeException(TechreadException):
         "The request size exceeds the maximum allowed size of 10MB.\n\n"
         "For more information, visit:\nhttps://v2.docs.werk24.io"
     )
+
+
+class DrawingTooLargeException(RequestTooLargeException):
+    """Raised when a drawing is larger than ``read_drawing`` can upload.
+
+    ``read_drawing`` uploads the drawing through a presigned upload that
+    accepts at most 10 MiB (10,485,760 bytes; a drawing of exactly that
+    size is accepted). ``Werk24Client.check_drawing_size`` raises this
+    before anything is sent when the drawing is over that limit. It is also
+    raised when storage refuses an upload as ``EntityTooLarge``.
+
+    ``drawing_bytes`` is the size as it would be uploaded. When the server
+    asks for end-to-end encryption, that includes the encryption overhead,
+    so a drawing just under the limit can end up over it.
+
+    A subclass of :class:`RequestTooLargeException`, so an existing
+    ``except RequestTooLargeException`` keeps catching it.
+
+    ``read_drawing`` itself does not raise it: it reports
+    ``DRAWING_FILE_SIZE_TOO_LARGE`` on each ask instead, as documented.
+
+    Attributes:
+    ----------
+    - drawing_bytes (int): Size of the drawing that was refused.
+    - max_drawing_bytes (int): The largest drawing the upload accepts.
+    """
+
+    cli_message_header: str = "Drawing Too Large"
+    cli_message_body: str = (
+        "The drawing is larger than read_drawing can upload.\n\n"
+        "Reduce the file size, for example by lowering the resolution of a "
+        "scanned drawing or compressing the images inside a PDF, and submit "
+        "it again.\n\n"
+        "For more information, visit:\n" + FILE_SIZE_DOCS_URL
+    )
+
+    def __init__(self, drawing_bytes: int, max_drawing_bytes: int):
+        self.drawing_bytes = drawing_bytes
+        self.max_drawing_bytes = max_drawing_bytes
+        super().__init__(
+            f"The drawing is {drawing_bytes} bytes; read_drawing can upload "
+            f"at most {max_drawing_bytes} bytes."
+        )
+
+    def __reduce__(self):
+        # The default rebuilds an exception from its message alone, which
+        # this signature does not take (pickling across a process pool).
+        return (type(self), (self.drawing_bytes, self.max_drawing_bytes))
 
 
 class CallbackDrawingTooLargeException(RequestTooLargeException):
