@@ -356,10 +356,14 @@ class ReadTimeoutError(TechreadException):
 class InsufficientCreditsException(ServerException):
     """Raised when the account's request quota is used up.
 
-    The API refuses the request (HTTP 429, or a refusal on the WebSocket at
-    INITIALIZE or READ). A subclass of ServerException, so existing handlers
-    keep catching it, but not a RetryableServerError: waiting does not reset
-    the quota, so it is never retried.
+    The API refuses the request with HTTP 429, or with the same refusal on
+    the WebSocket at INITIALIZE or READ. The quota does not reset by
+    waiting, so sending the request again does not help; top up the account
+    first.
+
+    A subclass of :class:`ServerException`, so existing handlers keep
+    catching it, and deliberately not of :class:`RetryableServerError`, so
+    the client's own retries skip it.
     """
 
     cli_message_header: str = "Insufficient Credits"
@@ -523,11 +527,16 @@ class LicenseNotFoundException(InvalidLicenseException):
 
 
 class W24AuthenticationError(TechreadException):
-    """Exception raised when authentication fails (401 responses).
+    """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    This exception is raised when the API returns a 401 status code,
-    indicating that the authentication credentials are invalid, expired,
-    or missing.
+    The client reports a refused API key as :class:`ApiKeyRejectedException`,
+    a subclass of :class:`UnauthorizedException` (a 403 when the connection
+    opens, or a 401 from ``read_drawing_with_callback``); other 401 and 403
+    answers as :class:`UnauthorizedException`, or as
+    :class:`PriorityTooHighError` when they refuse the requested priority;
+    and a missing or unusable key as :class:`InvalidLicenseException`. An
+    ``except W24AuthenticationError`` never matches an error from this
+    client; catch those classes instead.
 
     Attributes:
         error_code: The specific error code from the API response
@@ -567,11 +576,14 @@ class W24AuthenticationError(TechreadException):
 
 
 class W24ValidationError(TechreadException):
-    """Exception raised when request validation fails (400 responses).
+    """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    This exception is raised when the API returns a 400 status code,
-    indicating that the request contains invalid data, malformed input,
-    or violates validation rules.
+    The client reports a malformed request as :class:`BadRequestException`
+    (for example an unknown ask type), an invalid priority as
+    :class:`InvalidPriorityError`, and a drawing of the wrong type or a
+    refused file format as :class:`UnsupportedMediaType`. An
+    ``except W24ValidationError`` never matches an error from this client;
+    catch those classes instead.
 
     Attributes:
         error_code: The specific error code from the API response
@@ -637,11 +649,13 @@ class W24ValidationError(TechreadException):
 
 
 class W24RateLimitError(TechreadException):
-    """Exception raised when rate limit is exceeded (429 responses).
+    """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    This exception is raised when the API returns a 429 status code,
-    indicating that the client has sent too many requests in a given
-    time period.
+    The client reports HTTP 429 as :class:`InsufficientCreditsException`:
+    the account's request quota is used up, and it does not reset by
+    waiting, so there is no ``retry_after`` to honour. Top up the account
+    instead. An ``except W24RateLimitError`` never matches an error from
+    this client.
 
     Attributes:
         error_code: The specific error code from the API response
@@ -698,11 +712,13 @@ class W24RateLimitError(TechreadException):
 
 
 class W24ServerError(TechreadException):
-    """Exception raised for server errors (500/503 responses).
+    """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    This exception is raised when the API returns a 500 (Internal Server Error)
-    or 503 (Service Unavailable) status code, indicating a problem on the
-    server side.
+    The client reports a server error (5xx) that outlasts its own retries
+    as :class:`RetryableServerError`, a read that runs out of time as
+    :class:`ReadTimeoutError`, and any other server-side failure as
+    :class:`ServerException`. An ``except W24ServerError`` never matches an
+    error from this client; catch those classes instead.
 
     Attributes:
         error_code: The specific error code from the API response

@@ -830,15 +830,39 @@ class Werk24Client:
 
         Raises:
         ------
-        - BadRequestException: If the request is malformed or ask types are invalid.
+        - UnsupportedMediaType: If the drawing is not bytes, a BytesIO or a
+            binary file.
+        - BadRequestException: If an ask type is invalid, or the server
+            refuses to initialize the request.
         - InvalidPriorityError: If the priority value is invalid.
+        - PriorityTooHighError: If the requested priority is above the
+            account's tier.
         - InsufficientCreditsException: If the account's request quota is
             used up, whether the API refuses at initialization or at READ. A
             subclass of ServerException; never retried.
+        - ApiKeyRejectedException: If the API refuses the API key (403) when
+            this read has to open a new connection. A subclass of
+            UnauthorizedException.
+        - UnauthorizedException: If the server refuses an action as
+            forbidden, or an upload or download link is refused (401 to 403).
+        - ReadTimeoutError: If the read does not finish within
+            ``total_timeout``, or the server sends nothing for the idle
+            timeout.
+        - RetryableServerError: If the upload or a result download keeps
+            failing with a 5xx after the client's own retries. A subclass of
+            ServerException.
+        - ServerException: For any other server-side failure, such as the
+            connection closing during the read.
+        - SSLCertificateError: If the certificate of the upload cannot be
+            verified.
         - RuntimeError: If another read on the same client replaced the
             connection between this read's INITIALIZE and READ. Reads on one
             client must not overlap.
         - Any other exceptions encountered will be logged and re-raised.
+
+        A drawing the upload refuses as too large or malformed is not
+        raised: every requested ask is answered with an ASK message whose
+        ``exceptions`` carry ``DRAWING_FILE_SIZE_TOO_LARGE``.
 
         A drawing larger than ``DRAWING_UPLOAD_LIMIT_BYTES`` (10 MiB) is not
         sent, and no request is created on the server. The stream then
@@ -1942,9 +1966,12 @@ class Werk24Client:
         ------
         - ApiKeyRejectedException: Raised when the API refuses the API key
           (401). A subclass of UnauthorizedException.
+        - UnauthorizedException: Raised for a 403 that does not refuse the
+          requested priority.
         - BadRequestException: Raised when ask types are invalid.
-        - InsufficientCreditsException: Raised when the user lacks sufficient credits
-          for the request.
+        - InsufficientCreditsException: Raised on HTTP 429: the account's
+          request quota is used up. It does not reset by waiting, so do not
+          retry; top up first.
         - InvalidPriorityError: Raised if the priority value is invalid, either
           by this client before sending or by the API (400).
         - PriorityTooHighError: Raised when the requested priority exceeds the
@@ -1959,6 +1986,8 @@ class Werk24Client:
           other fields (callback_headers, public_key, the asks, the
           filename) fill that same request on their own. Also a subclass of
           RequestTooLargeException.
+        - RetryableServerError: Raised for a 5xx; the client does not retry
+          this call.
         - ServerException: Raised for any other server-side failure that is not
           one of the typed exceptions above.
         - ValueError: Raised if the drawing or callback_url is invalid.
@@ -2176,7 +2205,8 @@ class Werk24Client:
         - UnauthorizedException: When the token or requested file has expired.
         - ResourceNotFoundException: When the endpoint does not exist.
         - RequestTooLargeException: When the request exceeds the size limit (413).
-        - UnsupportedMediaTypeException: When the file's media type is not supported.
+        - UnsupportedMediaType: When the file's media type is not supported.
+        - RetryableServerError: For a 5xx (a ServerException subclass).
         - ServerException: For all other non-2xx status codes.
         - InsufficientCreditsException: When the user does not have enough credits.
         """
@@ -2562,8 +2592,9 @@ class Werk24Client:
         - UnauthorizedException: Raised if the token or requested file has expired.
         - ResourceNotFoundException: Raised if the endpoint does not exist.
         - RequestTooLargeException: Raised if the payload exceeds size limits (status code 413).
-        - UnsupportedMediaTypeException: Raised if the file's media type is unsupported.
-        - ServerException: Raised for all other non-2xx status codes.
+        - ServerException: Raised for every other failure, including a 415
+          and a connection error that outlasts the client's retries. A 5xx
+          that outlasts them is a RetryableServerError, a subclass.
 
         Returns:
         -------
