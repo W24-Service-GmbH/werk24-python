@@ -20,6 +20,34 @@ class CurvatureType(str, Enum):
     PLANE = "PLANE"
 
 
+class UndercutType(str, Enum):
+    """Kinds of undercut a drawing specifies by standard.
+
+    - THREAD_UNDERCUT: the run-out groove at the end of a thread, e.g.
+      DIN 76 forms A to D. Its dimensions follow from the thread pitch.
+    - RELIEF_GROOVE: the relief groove at a shoulder of a turned or ground
+      part, e.g. DIN 509 forms E, F, G and H, given as ``E 0.8x0.3``
+      (form, radius x depth).
+    """
+
+    THREAD_UNDERCUT = "THREAD_UNDERCUT"
+    RELIEF_GROOVE = "RELIEF_GROOVE"
+
+
+class CenterHoleRequirement(str, Enum):
+    """Whether a center hole must remain on the finished part (ISO 6411).
+
+    - REQUIRED: the center hole is required on the finished part.
+    - PERMITTED: the center hole may remain, but is not required (often
+      written as "optional").
+    - NOT_PERMITTED: the center hole must not remain on the finished part.
+    """
+
+    REQUIRED = "REQUIRED"
+    PERMITTED = "PERMITTED"
+    NOT_PERMITTED = "NOT_PERMITTED"
+
+
 class Language(str, Enum):
     """
     Enumeration of supported Languages following
