@@ -168,14 +168,36 @@ Here's how you can use the Werk24 client to extract data from a technical drawin
 
 ```python
 import asyncio
-from werk24 import Werk24Client, AskMetaData, get_test_drawing
 
-async def read_drawing(asks):
-  fid = get_test_drawing()
-  async with Werk24Client() as client:
-      return [msg async for msg in client.read_drawing(fid, asks)]
+from werk24 import AskMetaData, TechreadMessageType, Werk24Client, get_test_drawing
 
-asyncio.run(read_drawing([AskMetaData()]))
+
+async def main():
+    with get_test_drawing() as drawing:
+        async with Werk24Client() as client:
+            async for message in client.read_drawing(drawing, [AskMetaData()]):
+                if message.message_type == TechreadMessageType.ASK:
+                    print(message.model_dump_json(
+                        include={"message_subtype", "payload_dict"}, indent=2
+                    ))
+
+
+asyncio.run(main())
+```
+
+In a Jupyter notebook a cell already runs an event loop, so `asyncio.run(main())`
+raises `RuntimeError: asyncio.run() cannot be called from a running event loop`.
+Run `await main()` in the cell instead.
+
+**Without async.** `read_drawing_sync` reads the drawing and returns the answers
+(the ASK messages) as a list:
+
+```python
+from werk24 import AskMetaData, get_test_drawing, read_drawing_sync
+
+with get_test_drawing() as drawing:
+    for message in read_drawing_sync(drawing, [AskMetaData()]):
+        print(message.model_dump_json(include={"message_subtype", "payload_dict"}, indent=2))
 ```
 
 ## Documentation
