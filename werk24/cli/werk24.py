@@ -18,7 +18,7 @@ from .commands.version import app as version_app
 settings = Settings()
 
 
-console = Console()
+console = Console(stderr=True)
 logger = get_logger()
 
 app = typer.Typer(pretty_exceptions_show_locals=False, no_args_is_help=True)
