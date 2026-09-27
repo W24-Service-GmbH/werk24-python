@@ -198,6 +198,19 @@ $> werk24 --help
 
 ```
 
+### Reading a drawing from the command line
+
+`werk24 techread` reads a drawing and prints one JSON object per line on stdout for every message that answers an ask. Each object has the fields of `TechreadMessage` (`request_id`, `message_type`, `message_subtype`, `page_number`, `payload_dict`, `payload_url`, `exceptions`). Binary results such as sheet images or the redacted file are not inlined; download them from `payload_url`.
+
+```bash
+werk24 techread drawing.pdf --ask-meta-data | jq .
+werk24 techread drawing.pdf --ask-meta-data --ask-redaction --pretty
+```
+
+Asks: `--ask-balloons`, `--ask-custom <custom_id>`, `--ask-document-profile`, `--ask-features`, `--ask-insights`, `--ask-meta-data`, `--ask-page-assessment`, `--ask-redaction`, `--ask-reference-positions`, `--ask-sheet-images`, `--ask-view-images`. `--pretty` indents each object. `--ask-sheet-images` and `--ask-view-images` also open each image in the default image viewer, which needs Pillow (`pip install pillow`).
+
+Exceptions reported by the server are written to stderr, one line each. The exit status is `0` when every ask was answered without an `ERROR`-level exception. It is `1` when an ask failed, when the read ended before the server reported it complete, or when the client raised an error. It is `2` for a usage error such as an unknown option.
+
 ## Community & Support
 
 - Website: [werk24.io](https://werk24.io/?utm_source=github&utm_medium=community_link)
