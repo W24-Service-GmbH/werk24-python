@@ -53,6 +53,7 @@ from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
     FILE_SIZE_DOCS_URL,
+    ApiKeyRejectedException,
     BadRequestException,
     CallbackDrawingTooLargeException,
     CallbackFieldsTooLargeException,
@@ -70,7 +71,8 @@ from werk24.utils.exceptions import (
     UnauthorizedException,
     UnsupportedMediaType,
 )
-from werk24.utils.license import find_license
+from werk24.utils.license import find_license  # noqa: F401 (kept importable here)
+from werk24.utils.license import locate_license, token_suffix
 from werk24.utils.logger import get_logger
 from werk24.utils.priority import validate_priority
 
@@ -331,7 +333,10 @@ class Werk24Client:
         max_reconnect_attempts: int = 3,
         reconnect_delay: float = 1.0,
     ):
-        self.license = find_license(token, region)
+        lookup = locate_license(token, region)
+        self.license = lookup.license
+        # Where the key came from, so a refusal can say which key to fix.
+        self._license_lookup = lookup
         self._wss_server = str(wss_server)
         self._https_server = str(https_server)
         self._wss_session = None
@@ -575,13 +580,58 @@ class Werk24Client:
             self._shared_https_session = self._make_https_session()
         return self._shared_https_session
 
+    def _key_rejected(self, status_code: int, url: str) -> ApiKeyRejectedException:
+        """Build the exception for a refused API key.
+
+        It names the key by its last four characters, says where the key was
+        read from and where to fix it. The full key is never included.
+
+        Args:
+        ----
+        - status_code (int): The HTTP status the server refused with.
+        - url (str): The URL that refused the key.
+
+        Returns:
+        -------
+        - ApiKeyRejectedException: The exception to raise.
+        """
+        lookup = getattr(self, "_license_lookup", None)
+        # A caller may have replaced client.license after construction; the
+        # lookup then describes a different key and must not be used.
+        if lookup is not None and lookup.license is not self.license:
+            lookup = None
+
+        details = []
+        if lookup is not None:
+            if lookup.source == "file":
+                if lookup.env_shadowed:
+                    details.append(
+                        "W24TECHREAD_AUTH_TOKEN is also set, to a different "
+                        f"key, and is ignored because {lookup.path} is read "
+                        "first. Correct or delete that file to use the variable."
+                    )
+                details.append(f"Replace the key in {lookup.path}.")
+            elif lookup.source == "environment":
+                details.append("Set W24TECHREAD_AUTH_TOKEN to an active key.")
+            elif lookup.source == "argument":
+                details.append("Pass an active key as token= to Werk24Client.")
+        details.append(f"Refused by {url}.")
+
+        return ApiKeyRejectedException(
+            "\n".join(details),
+            key_suffix=token_suffix(self.license.token),
+            key_source=lookup.describe() if lookup is not None else None,
+            status_code=status_code,
+        )
+
     async def _connect_with_retry(self):
         """
         Establish WebSocket connection with retry logic.
 
         Raises:
         ------
-        - UnauthorizedException: If authentication fails (403).
+        - ApiKeyRejectedException: If the server refuses the API key (403).
+          A subclass of UnauthorizedException.
         - ServerException: If connection fails after all retry attempts.
         """
         self._reconnect_attempts = 0
@@ -599,9 +649,10 @@ class Werk24Client:
             except InvalidStatus as exc:
                 match exc.response.status_code:
                     case 403:
-                        raise UnauthorizedException(
-                            "Invalid status when connecting to the server"
-                        ) from exc
+                        # The server answers a refused key with 403 at the
+                        # handshake. _reconnect comes through here too, so a
+                        # key revoked mid-session is reported the same way.
+                        raise self._key_rejected(403, self._wss_server) from exc
 
                     case _:
                         raise ServerException(
@@ -1889,6 +1940,8 @@ class Werk24Client:
 
         Raises:
         ------
+        - ApiKeyRejectedException: Raised when the API refuses the API key
+          (401). A subclass of UnauthorizedException.
         - BadRequestException: Raised when ask types are invalid.
         - InsufficientCreditsException: Raised when the user lacks sufficient credits
           for the request.
@@ -1964,6 +2017,11 @@ class Werk24Client:
         # session only pools if each response gives its connection back.
         async with session.post(url, data=data, headers=headers) as response:
             await self._raise_for_priority_error(response, validated_priority)
+            # This endpoint answers 401 for a missing, malformed or unknown
+            # key. This client always sends a well-formed Token header, so a
+            # 401 here means the key itself was refused.
+            if response.status == 401:
+                raise self._key_rejected(401, url)
             self._raise_for_status(url, response.status)
             response_json = await response.json(content_type=None)
 
