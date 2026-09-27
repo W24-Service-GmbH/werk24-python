@@ -4,6 +4,11 @@ from packaging.version import Version
 from pydantic import AnyUrl, Field, HttpUrl, field_validator
 from pydantic_settings import BaseSettings
 
+# Defined in werk24.utils.urls, which imports nothing, and kept importable
+# from here.
+from werk24.utils.urls import API_TOKENS_URL as API_TOKENS_URL
+from werk24.utils.urls import DEMO_URL as DEMO_URL
+
 
 class Settings(BaseSettings):
     """
@@ -11,8 +16,9 @@ class Settings(BaseSettings):
 
     Attributes:
     ----------
-    - signup_url (HttpUrl): URL to sign up and obtain a license token.
-      Default is "https://werk24.io/trial-license".
+    - signup_url (HttpUrl): Werk24 API signup page, printed by ``werk24 init``.
+      Default is the console signup page, https://studio.werk24.io/console/signup,
+      with attribution parameters.
     - wss_server (AnyUrl): WebSocket server URL for connecting to the Werk24 API.
       Default is "wss://ws-api.w24.co/v2".
     - wss_close_timeout (int): Timeout (in seconds) for WebSocket connections to
@@ -33,8 +39,15 @@ class Settings(BaseSettings):
 
     """
 
-    signup_url: HttpUrl = "https://werk24.io/trial-license"
-    """URL for signing up and obtaining a license token."""
+    signup_url: HttpUrl = (
+        "https://studio.werk24.io/console/signup"
+        "?product=console&plan=payg"
+        "&utm_source=werk24-python&utm_medium=cli&utm_campaign=init"
+    )
+    """Werk24 API signup page (pay as you go), printed by ``werk24 init``.
+
+    Override with the ``SIGNUP_URL`` environment variable.
+    """
 
     http_server: AnyUrl = "https://api.w24.co"
     wss_server: AnyUrl = "wss://ws-api.w24.co/v2"

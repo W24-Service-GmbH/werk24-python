@@ -52,9 +52,12 @@ from werk24.models.v2.internal import SUPPORTED_KEY_EXCHANGES, TechreadException
 from werk24.utils.crypt import decrypt_with_private_key, encrypt_with_public_key
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
+    FILE_SIZE_DOCS_URL,
+    ApiTokenRejectedException,
     BadRequestException,
     CallbackDrawingTooLargeException,
     CallbackFieldsTooLargeException,
+    DrawingTooLargeException,
     EncryptionException,
     InsufficientCreditsException,
     InvalidPriorityError,
@@ -68,7 +71,10 @@ from werk24.utils.exceptions import (
     UnauthorizedException,
     UnsupportedMediaType,
 )
-from werk24.utils.license import find_license
+# find_license is looked up through this module when a client is built, so a
+# test that patches werk24.techread.find_license gives every client its token.
+from werk24.utils.license import _ORIGINAL_FIND_LICENSE, find_license
+from werk24.utils.license import locate_license, token_suffix
 from werk24.utils.logger import get_logger
 from werk24.utils.priority import validate_priority
 
@@ -78,6 +84,28 @@ from werk24.utils.priority import validate_priority
 #: This bounds the read itself, not just the search, so a body that is large
 #: or never ends costs one bounded allocation and no wait for EOF.
 _S3_ERROR_BODY_LIMIT = 4096
+
+#: The ``MaxSizeAllowed`` element of a storage ``EntityTooLarge`` refusal.
+_S3_MAX_SIZE_ALLOWED = re.compile(
+    r"<MaxSizeAllowed>\s*(\d{1,15})\s*</MaxSizeAllowed>"
+)
+
+
+def _s3_max_size_allowed(excerpt: Optional[str]) -> Optional[int]:
+    """The limit a storage refusal names, or ``None`` when it names none."""
+    if not excerpt:
+        return None
+    match = _S3_MAX_SIZE_ALLOWED.search(excerpt)
+    return int(match.group(1)) if match else None
+
+
+#: The largest drawing ``read_drawing``'s presigned upload accepts, in bytes.
+#:
+#: The signed upload policy's content-length-range is inclusive, so a
+#: drawing of exactly this size is accepted. The constant mirrors the
+#: server's policy and has to move with it: a client refuses above it even
+#: if the server would accept more, until a release raises it.
+DRAWING_UPLOAD_LIMIT_BYTES = 10 * 1024 * 1024
 
 #: The most a synchronous Lambda invoke accepts, in bytes.
 #:
@@ -127,6 +155,16 @@ EXCEPTION_MAP = {
     RequestTooLargeException: TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
     BadRequestException: TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
 }
+
+#: The slug the API puts in an error envelope's ``details.error`` (older
+#: servers: top-level ``error``) when it refuses a request because the
+#: account's quota is used up.
+_QUOTA_EXHAUSTED_ERROR = "QUOTA_EXHAUSTED"
+
+#: The ``message`` in the payload of the PROGRESS_COMPLETED message the API
+#: sends in place of an init response when the quota is used up. Compared
+#: after strip() and lower().
+_INIT_QUOTA_REFUSAL_MESSAGE = "limit exceeded"
 
 settings = Settings()
 logger = get_logger(settings.log_level)
@@ -297,7 +335,17 @@ class Werk24Client:
         max_reconnect_attempts: int = 3,
         reconnect_delay: float = 1.0,
     ):
-        self.license = find_license(token, region)
+        if find_license is _ORIGINAL_FIND_LICENSE:
+            lookup = locate_license(token, region)
+            self.license = lookup.license
+        else:
+            # A caller replaced werk24.techread.find_license, typically a test
+            # that mocks the token. Use the replacement, as earlier releases
+            # did; where its token came from is then unknown.
+            self.license = find_license(token, region)
+            lookup = None
+        # Where the token came from, so a refusal can say which token to fix.
+        self._license_lookup = lookup
         self._wss_server = str(wss_server)
         self._https_server = str(https_server)
         self._wss_session = None
@@ -541,13 +589,58 @@ class Werk24Client:
             self._shared_https_session = self._make_https_session()
         return self._shared_https_session
 
+    def _token_rejected(self, status_code: int, url: str) -> ApiTokenRejectedException:
+        """Build the exception for a refused API token.
+
+        It names the token by its last four characters, says where the token was
+        read from and where to fix it. The full token is never included.
+
+        Args:
+        ----
+        - status_code (int): The HTTP status the server refused with.
+        - url (str): The URL that refused the token.
+
+        Returns:
+        -------
+        - ApiTokenRejectedException: The exception to raise.
+        """
+        lookup = getattr(self, "_license_lookup", None)
+        # A caller may have replaced client.license after construction; the
+        # lookup then describes a different token and must not be used.
+        if lookup is not None and lookup.license is not self.license:
+            lookup = None
+
+        details = []
+        if lookup is not None:
+            if lookup.source == "file":
+                if lookup.env_shadowed:
+                    details.append(
+                        "W24TECHREAD_AUTH_TOKEN is also set, to a different "
+                        f"token, and is ignored because {lookup.path} is read "
+                        "first. Correct or delete that file to use the variable."
+                    )
+                details.append(f"Replace the token in {lookup.path}.")
+            elif lookup.source == "environment":
+                details.append("Set W24TECHREAD_AUTH_TOKEN to an active token.")
+            elif lookup.source == "argument":
+                details.append("Pass an active token as token= to Werk24Client.")
+        details.append(f"Refused by {url}.")
+
+        return ApiTokenRejectedException(
+            "\n".join(details),
+            token_suffix=token_suffix(self.license.token),
+            token_source=lookup.describe() if lookup is not None else None,
+            status_code=status_code,
+        )
+
     async def _connect_with_retry(self):
         """
         Establish WebSocket connection with retry logic.
 
         Raises:
         ------
-        - UnauthorizedException: If authentication fails (403).
+        - ApiTokenRejectedException: If the server refuses the API token (403).
+          A subclass of UnauthorizedException.
         - ServerException: If connection fails after all retry attempts.
         """
         self._reconnect_attempts = 0
@@ -565,9 +658,10 @@ class Werk24Client:
             except InvalidStatus as exc:
                 match exc.response.status_code:
                     case 403:
-                        raise UnauthorizedException(
-                            "Invalid status when connecting to the server"
-                        ) from exc
+                        # The server answers a refused token with 403 at the
+                        # handshake. _reconnect comes through here too, so a
+                        # token revoked mid-session is reported the same way.
+                        raise self._token_rejected(403, self._wss_server) from exc
 
                     case _:
                         raise ServerException(
@@ -745,14 +839,49 @@ class Werk24Client:
 
         Raises:
         ------
-        - BadRequestException: If the request is malformed or ask types are invalid.
-        - RequestTooLargeException: If the drawing exceeds the maximum size limit
-          (10 MiB for this upload; read_drawing_with_callback allows less).
+        - UnsupportedMediaType: If the drawing is not bytes, a BytesIO or a
+            binary file.
+        - BadRequestException: If an ask type is invalid, or the server
+            refuses to initialize the request.
         - InvalidPriorityError: If the priority value is invalid.
+        - PriorityTooHighError: If the requested priority is above the
+            account's tier.
+        - InsufficientCreditsException: If the account's request quota is
+            used up, whether the API refuses at initialization or at READ. A
+            subclass of ServerException; never retried.
+        - ApiTokenRejectedException: If the API refuses the API token (403) when
+            this read has to open a new connection. A subclass of
+            UnauthorizedException.
+        - UnauthorizedException: If the server refuses an action as
+            forbidden, or an upload or download link is refused (401 to 403).
+        - ReadTimeoutError: If the read does not finish within
+            ``total_timeout``, or the server sends nothing for the idle
+            timeout.
+        - RetryableServerError: If the upload or a result download keeps
+            failing with a 5xx after the client's own retries. A subclass of
+            ServerException.
+        - ServerException: For any other server-side failure, such as the
+            connection closing during the read.
+        - SSLCertificateError: If the certificate of the upload cannot be
+            verified.
         - RuntimeError: If another read on the same client replaced the
             connection between this read's INITIALIZE and READ. Reads on one
             client must not overlap.
         - Any other exceptions encountered will be logged and re-raised.
+
+        A drawing the upload refuses as too large or malformed is not
+        raised: every requested ask is answered with an ASK message whose
+        ``exceptions`` carry ``DRAWING_FILE_SIZE_TOO_LARGE``.
+
+        A drawing larger than ``DRAWING_UPLOAD_LIMIT_BYTES`` (10 MiB) is not
+        sent, and no request is created on the server. The stream then
+        yields one PROGRESS message, whose request_id is generated by the
+        client because no request was created, followed by one ASK message
+        per ask carrying ``DRAWING_FILE_SIZE_TOO_LARGE``: the same shape as
+        an upload that storage refuses. Call
+        ``Werk24Client.check_drawing_size`` first to have
+        ``DrawingTooLargeException`` raised instead. (read_drawing_with_callback
+        carries the drawing differently and allows less.)
 
         A read that does not run to PROGRESS_COMPLETED (a refused upload, an
         exception, a cancellation, a caller that stops iterating) leaves its
@@ -768,6 +897,32 @@ class Werk24Client:
 
         # Validate priority before sending request
         validated_priority = validate_priority(priority)
+
+        # Refuse a drawing the upload cannot take before anything is sent.
+        # Without this the request was INITIALIZEd and the whole file
+        # uploaded, only for storage to refuse it. The stream keeps the
+        # shape of that refused upload: one PROGRESS message, then the
+        # refusal on every ask. No INITIALIZE goes out, so no request is
+        # left unread and the next read reuses the connection.
+        try:
+            self.check_drawing_size(drawing)
+        except DrawingTooLargeException as refusal:
+            logger.warning(
+                "Drawing not sent: it is %d bytes and read_drawing uploads at "
+                "most %d bytes. Each ask reports DRAWING_FILE_SIZE_TOO_LARGE. "
+                "See %s",
+                refusal.drawing_bytes,
+                refusal.max_drawing_bytes,
+                FILE_SIZE_DOCS_URL,
+            )
+            yield TechreadMessage(
+                request_id=uuid.uuid4(),
+                message_type=TechreadMessageType.PROGRESS,
+                message_subtype=TechreadMessageSubtype.PROGRESS_INITIALIZATION_SUCCESS,
+            )
+            async for message in self._trigger_asks_exception(asks, refusal):
+                yield message
+            return
 
         # Initiate the request
         init_message, init_response = await self.init_request(asks, max_pages)
@@ -805,7 +960,19 @@ class Werk24Client:
             # No READ follows, so the request stays unread on this
             # connection. _exchange_open is still set, and the next
             # init_request() reconnects before it INITIALIZEs.
-            logger.error("Error during drawing upload: %s", exc)
+            if isinstance(exc, DrawingTooLargeException):
+                # A size refusal is the caller's file, not a fault to report:
+                # one WARNING that says what to do about it.
+                logger.warning(
+                    "Drawing upload refused: it is %d bytes and the upload "
+                    "accepts at most %d bytes. Each ask reports "
+                    "DRAWING_FILE_SIZE_TOO_LARGE. See %s",
+                    exc.drawing_bytes,
+                    exc.max_drawing_bytes,
+                    FILE_SIZE_DOCS_URL,
+                )
+            else:
+                logger.error("Error during drawing upload: %s", exc)
             async for message in self._trigger_asks_exception(asks, exc):
                 yield message
             return
@@ -844,6 +1011,10 @@ class Werk24Client:
                 total_timeout=total_timeout,
             ):
                 yield message
+        except InsufficientCreditsException:
+            # Already logged at WARNING where it was recognised. A spent quota
+            # is the account's state, not a fault, so no ERROR line here.
+            raise
         except Exception as exc:
             logger.error("An error occurred while sending the read command: %s", exc)
             raise
@@ -872,18 +1043,26 @@ class Werk24Client:
         """
         logger.debug("API method _trigger_asks_exception() called")
 
-        # get the exception type from the MAP
-        try:
-            exception_type = EXCEPTION_MAP[type(exception_raw)]
+        # Get the exception type from the MAP. Walk the MRO rather than
+        # look the exact type up, so a subclass of a mapped exception (such
+        # as DrawingTooLargeException) is reported like its parent.
+        exception_type = next(
+            (
+                EXCEPTION_MAP[cls]
+                for cls in type(exception_raw).__mro__
+                if cls in EXCEPTION_MAP
+            ),
+            None,
+        )
 
         # if we see an exception that we were not supposed
         # to handle, there must have been a developer passing
         # a new exception type. Let's tell her by rasing
         # a runtime error
-        except KeyError as exception:
+        if exception_type is None:
             raise RuntimeError(
                 "Unknown exception type passed: %s" % type(exception_raw)
-            ) from exception
+            )
 
         # translate the exception into an official exception
         exception = TechreadException(
@@ -932,8 +1111,10 @@ class Werk24Client:
 
         Raises:
         ------
-        - ServerException: If the server returns an error response during
-          initialization.
+        - InsufficientCreditsException: the account's request quota is used
+          up.
+        - ServerException: the server answered INITIALIZE with something that
+          is not an init response.
 
         """
         logger.debug("API method init_request() called")
@@ -969,7 +1150,29 @@ class Werk24Client:
         message = await self._recv_message()
         logger.info("Received request_id %s", message.request_id)
         payload = message.payload_dict
-        payload = TechreadInitResponse.model_validate(payload)
+        if isinstance(payload, TechreadInitResponse):
+            return message, payload
+
+        # The API answers INITIALIZE with a PROGRESS_COMPLETED message instead
+        # of an init response when the account's quota is used up. The
+        # request stays marked open either way, so the next read reconnects.
+        refusal = self._init_quota_refusal(message)
+        if refusal is not None:
+            logger.warning(
+                "Request %s refused at initialization: the account's request "
+                "quota is used up.",
+                message.request_id,
+            )
+            raise refusal
+
+        try:
+            payload = TechreadInitResponse.model_validate(payload)
+        except ValidationError as exc:
+            raise ServerException(
+                "Unexpected response to INITIALIZE "
+                f"({message.message_type.value}/{message.message_subtype.value}): "
+                f"{payload!r:.500}"
+            ) from exc
 
         return message, payload
 
@@ -1139,6 +1342,113 @@ class Werk24Client:
 
         return None
 
+    @staticmethod
+    def _quota_exception(payload: Any) -> Optional[InsufficientCreditsException]:
+        """Return the typed exception for a spent request quota, or None.
+
+        The API refuses a request whose account has used up its quota with
+        the error envelope (``code``, ``message``, ``details``,
+        ``request_id``) and names the reason in ``details.error`` as
+        ``QUOTA_EXHAUSTED``. ``details`` may also carry a human-readable
+        ``message`` and the account's ``limit`` (a number, or
+        ``"unlimited"``).
+
+        The older top-level ``error`` form is still accepted, as it is for
+        the priority refusals.
+
+        The slug is required. A 429 alone is not enough: a rate-limit refusal
+        carries the same code, and it is not a spent quota.
+
+        Args:
+        ----
+        - payload (Any): The decoded error body. Anything that is not a
+          mapping is not a refusal we recognise.
+
+        Returns:
+        -------
+        - Optional[InsufficientCreditsException]: The exception to raise, or
+          None if this is not a quota refusal.
+        """
+        if not isinstance(payload, dict):
+            return None
+
+        details = payload.get("details")
+        if not isinstance(details, dict):
+            details = {}
+
+        if (
+            details.get("error") != _QUOTA_EXHAUSTED_ERROR
+            and payload.get("error") != _QUOTA_EXHAUSTED_ERROR
+        ):
+            return None
+
+        lines = [
+            str(
+                details.get("message")
+                or payload.get("message")
+                or "The request quota is used up."
+            )
+        ]
+        limit = details.get("limit")
+        # A limit of 0 is a real limit, so test the type and not the value.
+        if isinstance(limit, int) and not isinstance(limit, bool):
+            lines.append(f"Request limit: {limit}")
+        if payload.get("request_id"):
+            lines.append(f"Request ID: {payload['request_id']}")
+        return InsufficientCreditsException("\n".join(lines))
+
+    @staticmethod
+    def _init_quota_refusal(
+        message: TechreadMessage,
+    ) -> Optional[InsufficientCreditsException]:
+        """Return the typed exception if *message* refuses INITIALIZE for quota.
+
+        When the account's quota is used up, the API answers INITIALIZE with a
+        PROGRESS_COMPLETED message whose payload carries a ``message`` of
+        ``"Limit Exceeded"`` instead of an init response. A payload that
+        carries the ``QUOTA_EXHAUSTED`` slug of the error envelope is
+        recognised as well.
+
+        Args:
+        ----
+        - message (TechreadMessage): The answer to INITIALIZE.
+
+        Returns:
+        -------
+        - Optional[InsufficientCreditsException]: The exception to raise, or
+          None if the message is not a quota refusal.
+        """
+        if not (
+            message.message_type == TechreadMessageType.PROGRESS
+            and message.message_subtype == TechreadMessageSubtype.PROGRESS_COMPLETED
+        ):
+            return None
+
+        payload = message.payload_dict
+        if not isinstance(payload, dict):
+            return None
+
+        # The payload's own request_id wins when it names one. An empty or
+        # null one does not replace the message's.
+        envelope = dict(payload)
+        if not envelope.get("request_id"):
+            envelope["request_id"] = str(message.request_id)
+        quota = Werk24Client._quota_exception(envelope)
+        if quota is not None:
+            return quota
+
+        text = payload.get("message")
+        if (
+            isinstance(text, str)
+            and text.strip().lower() == _INIT_QUOTA_REFUSAL_MESSAGE
+        ):
+            return InsufficientCreditsException(
+                "The request was refused when it was initialized: "
+                f"{text.strip()}\nRequest ID: {message.request_id}"
+            )
+
+        return None
+
     @classmethod
     async def _raise_for_priority_error(
         cls,
@@ -1199,6 +1509,8 @@ class Werk24Client:
           account tier (403 PRIORITY_TOO_HIGH).
         - InvalidPriorityError: Raised when the priority value is invalid
           (400 INVALID_PRIORITY).
+        - InsufficientCreditsException: Raised when the account's request
+          quota is used up (details.error QUOTA_EXHAUSTED).
         - ServerException: Raised when the server's response is invalid or unexpected.
 
         Returns:
@@ -1236,6 +1548,16 @@ class Werk24Client:
                 logger.warning("Priority error received: %s", error_message)
                 raise priority_exception from exception
 
+            # A spent quota is the account's state, not a server fault: say
+            # so, instead of the generic ServerException below that tells the
+            # customer to try again later.
+            quota_exception = Werk24Client._quota_exception(response)
+            if quota_exception is not None:
+                logger.warning(
+                    "Request refused: the account's request quota is used up."
+                )
+                raise quota_exception from exception
+
             # Raise specific exceptions for known error messages
             if error_message == "Forbidden":
                 raise UnauthorizedException(
@@ -1252,6 +1574,8 @@ class Werk24Client:
         presigned_post: PresignedPost,
         content: Union[BufferedReader, bytes],
         public_server_key: Optional[bytes] = None,
+        *,
+        max_bytes: Optional[int] = None,
     ):
         """
         Upload the associated file (drawing) to the server.
@@ -1261,9 +1585,14 @@ class Werk24Client:
         - presigned_post (dict): The presigned POST URL and fields.
         - drawing (Union[BufferedReader, bytes]): The drawing to upload.
         - public_server_key (Optional[bytes], optional): The server's public key for encryption.
+        - max_bytes (Optional[int], optional): The most the upload accepts,
+          measured after encryption. Defaults to DRAWING_UPLOAD_LIMIT_BYTES.
 
         Raises:
         ------
+        - DrawingTooLargeException: If the upload, after encryption, is over
+          ``max_bytes`` (nothing is posted then), or if storage refuses it as
+          ``EntityTooLarge`` (not retried).
         - BadRequestException: If the request is malformed.
         - RequestTooLargeException: If the drawing exceeds the maximum size limit.
         - Any other exceptions encountered will be logged and re-raised.
@@ -1294,6 +1623,14 @@ class Werk24Client:
         # left at EOF, so its position is restored before rebuilding.
         payload = content.read() if hasattr(content, "read") else content
 
+        # The backstop behind read_drawing's own check. It runs on what is
+        # actually posted, so it also covers a stream that could not be
+        # measured before it was read, and the few hundred bytes end-to-end
+        # encryption adds. Nothing is posted for a drawing over the limit.
+        limit = DRAWING_UPLOAD_LIMIT_BYTES if max_bytes is None else max_bytes
+        if len(payload) > limit:
+            raise DrawingTooLargeException(len(payload), limit)
+
         def _form() -> aiohttp.FormData:
             return aiohttp.FormData({**presigned_post.fields, "file": payload})
 
@@ -1303,14 +1640,27 @@ class Werk24Client:
             # session's own close released it; with a pooled one an
             # unreleased response holds its connector slot until the garbage
             # collector gets to it, which is the pooling #564 is for.
-            # _s3_error_detail returns immediately for a 2xx without touching
+            # _s3_error_excerpt returns immediately for a 2xx without touching
             # the body, so nothing else would release it -- and a retry makes
             # that worse, because each attempt would leak another slot.
             async with session.post(str(presigned_post.url), data=_form()) as response:
+                excerpt = await self._s3_error_excerpt(response)
+                detail = self._s3_reason(excerpt)
+                # Storage names a size refusal. Type it, with the limit it
+                # gives, rather than leave it to the 400 mapping, which calls
+                # it a request the server could not interpret.
+                if (
+                    response.status == 400
+                    and detail is not None
+                    and detail.split(":", 1)[0].strip() == "EntityTooLarge"
+                ):
+                    raise DrawingTooLargeException(
+                        len(payload), _s3_max_size_allowed(excerpt) or limit
+                    )
                 self._raise_for_status(
                     str(presigned_post.url),
                     response.status,
-                    details=await self._s3_error_detail(response),
+                    details=detail,
                 )
 
         try:
@@ -1319,6 +1669,10 @@ class Werk24Client:
             logger.info("File uploaded successfully.")
         except aiohttp.ClientConnectorCertificateError as exc:
             raise SSLCertificateError("SSL certificate error occurred.") from exc
+        except DrawingTooLargeException:
+            # The drawing's size, not a fault in the upload: read_drawing
+            # logs it once as a WARNING and reports it on each ask.
+            raise
         except Exception as exc:
             logger.error("File upload failed: %s", exc)
             raise
@@ -1345,6 +1699,16 @@ class Werk24Client:
         message it had before rather than replacing one failure with
         another.
         """
+        return Werk24Client._s3_reason(await Werk24Client._s3_error_excerpt(response))
+
+    @staticmethod
+    async def _s3_error_excerpt(response: Any) -> Optional[str]:
+        """The start of a refused upload's body, decoded, or ``None``.
+
+        The reading half of ``_s3_error_detail``: nothing is read for a 2xx,
+        at most ``_S3_ERROR_BODY_LIMIT`` bytes otherwise, and anything that
+        goes wrong reading them is ``None``.
+        """
         if 200 <= response.status < 300:
             return None
 
@@ -1365,9 +1729,18 @@ class Werk24Client:
 
         # ``replace`` rather than a decode that can raise: a bounded read can
         # end mid-character, and a body that is not UTF-8 at all is a body
-        # with no reason in it, which is the empty answer below and not an
-        # error of its own.
-        excerpt = raw.decode("utf-8", errors="replace")
+        # with no reason in it, which _s3_reason answers with None, and not
+        # an error of its own.
+        return raw.decode("utf-8", errors="replace")
+
+    @staticmethod
+    def _s3_reason(excerpt: Optional[str]) -> Optional[str]:
+        """The ``Code: Message`` a refusal body names, or ``None``.
+
+        The parsing half of ``_s3_error_detail``.
+        """
+        if excerpt is None:
+            return None
 
         # Read, rather than parse: the body arrives from the network on an
         # error path, and a regex over a bounded slice cannot be talked into
@@ -1382,6 +1755,42 @@ class Werk24Client:
             for part in (code, message)
             if part is not None and part.group(1).strip()
         ) or None
+
+    @staticmethod
+    def check_drawing_size(drawing: Any) -> Optional[int]:
+        """Refuse a drawing that is larger than read_drawing can upload.
+
+        Measures what ``read_drawing`` would upload: the length of a
+        bytes-like drawing, or for a file the bytes left from its current
+        position, which is where the upload starts reading. The position is
+        restored afterwards. The method does not log.
+
+        ``read_drawing`` runs this check itself and reports a drawing that
+        is too large on each ask rather than raising. Call it first to have
+        the exception raised instead.
+
+        Args:
+        ----
+        - drawing: The drawing, as it would be passed to ``read_drawing``.
+
+        Returns:
+        -------
+        - Optional[int]: The drawing's size in bytes, or ``None`` for a
+          stream that cannot seek. Its size is unknown until it is read, and
+          ``read_drawing`` measures it again after reading it.
+
+        Raises:
+        ------
+        - DrawingTooLargeException: If the drawing is larger than
+          ``DRAWING_UPLOAD_LIMIT_BYTES``. A drawing of exactly that size is
+          accepted.
+        """
+        size = _remaining_size(drawing)
+        # Read at call time, so the limit follows the module constant.
+        limit = DRAWING_UPLOAD_LIMIT_BYTES
+        if size is not None and size > limit:
+            raise DrawingTooLargeException(size, limit)
+        return size
 
     @staticmethod
     def run_preflight_checks(drawing: Union[BufferedReader, bytes]):
@@ -1566,9 +1975,14 @@ class Werk24Client:
 
         Raises:
         ------
+        - ApiTokenRejectedException: Raised when the API refuses the API token
+          (401). A subclass of UnauthorizedException.
+        - UnauthorizedException: Raised for a 403 that does not refuse the
+          requested priority.
         - BadRequestException: Raised when ask types are invalid.
-        - InsufficientCreditsException: Raised when the user lacks sufficient credits
-          for the request.
+        - InsufficientCreditsException: Raised on HTTP 429: the account's
+          request quota is used up. It does not reset by waiting, so do not
+          retry; top up first.
         - InvalidPriorityError: Raised if the priority value is invalid, either
           by this client before sending or by the API (400).
         - PriorityTooHighError: Raised when the requested priority exceeds the
@@ -1583,6 +1997,8 @@ class Werk24Client:
           other fields (callback_headers, public_key, the asks, the
           filename) fill that same request on their own. Also a subclass of
           RequestTooLargeException.
+        - RetryableServerError: Raised for a 5xx; the client does not retry
+          this call.
         - ServerException: Raised for any other server-side failure that is not
           one of the typed exceptions above.
         - ValueError: Raised if the drawing or callback_url is invalid.
@@ -1641,6 +2057,11 @@ class Werk24Client:
         # session only pools if each response gives its connection back.
         async with session.post(url, data=data, headers=headers) as response:
             await self._raise_for_priority_error(response, validated_priority)
+            # This endpoint answers 401 for a missing, malformed or unknown
+            # token. This client always sends a well-formed Token header, so a
+            # 401 here means the token itself was refused.
+            if response.status == 401:
+                raise self._token_rejected(401, url)
             self._raise_for_status(url, response.status)
             response_json = await response.json(content_type=None)
 
@@ -1795,7 +2216,8 @@ class Werk24Client:
         - UnauthorizedException: When the token or requested file has expired.
         - ResourceNotFoundException: When the endpoint does not exist.
         - RequestTooLargeException: When the request exceeds the size limit (413).
-        - UnsupportedMediaTypeException: When the file's media type is not supported.
+        - UnsupportedMediaType: When the file's media type is not supported.
+        - RetryableServerError: For a 5xx (a ServerException subclass).
         - ServerException: For all other non-2xx status codes.
         - InsufficientCreditsException: When the user does not have enough credits.
         """
@@ -2069,6 +2491,10 @@ class Werk24Client:
             while pending:
                 yield await _resolve(pending.popleft())
 
+        except InsufficientCreditsException:
+            # Already logged at WARNING where it was recognised. A spent quota
+            # is the account's state, not a fault, so no ERROR line here.
+            raise
         except Exception as e:
             logger.error("Error occurred while processing responses: %s", e)
             raise
@@ -2177,8 +2603,9 @@ class Werk24Client:
         - UnauthorizedException: Raised if the token or requested file has expired.
         - ResourceNotFoundException: Raised if the endpoint does not exist.
         - RequestTooLargeException: Raised if the payload exceeds size limits (status code 413).
-        - UnsupportedMediaTypeException: Raised if the file's media type is unsupported.
-        - ServerException: Raised for all other non-2xx status codes.
+        - ServerException: Raised for every other failure, including a 415
+          and a connection error that outlasts the client's retries. A 5xx
+          that outlasts them is a RetryableServerError, a subclass.
 
         Returns:
         -------

@@ -136,10 +136,9 @@ def test_find_license_in_paths_and_envs(
 def test_save_license_file(valid_license, tmp_path):
     """Test saving a license file writes the token with owner-only permissions."""
     license_path = tmp_path / "license.txt"
-    with patch(
-        "werk24.utils.license.SEARCH_PATHS", [str(license_path)]
-    ):
-        save_license_file(valid_license)
+    saved = save_license_file(valid_license, path=str(license_path))
+
+    assert saved == os.path.abspath(str(license_path))  # nosec
 
     content = license_path.read_text()
     assert "W24TECHREAD_AUTH_TOKEN=valid_token\n" in content  # nosec

@@ -74,8 +74,36 @@ Pip installation
 
 ```bash
 pip install werk24    # install the library
-werk24 init           # obtain a trial license
+werk24 init           # paste your API token; it is saved to ~/.werk24 and found from any folder
 ```
+
+Calling the API needs an API token and is billed pay as you go. [Sign up for the Werk24 API](https://studio.werk24.io/console/signup?product=console&plan=payg&utm_source=github&utm_medium=install_signup), then create a token on the [API tokens page](https://studio.werk24.io/console/keys) of the Werk24 console. `werk24 init` asks for the token and stores it for the client. On a server or in CI, set the `W24TECHREAD_AUTH_TOKEN` environment variable instead.
+
+To see what Werk24 reads from a drawing before you sign up, try the free [browser demo](https://studio.werk24.io/demo?utm_source=github&utm_medium=install_demo).
+
+To let the CLI show the sheet and view images it receives (`werk24 techread --ask-sheet-images` / `--ask-view-images`), install the `images` extra, which adds Pillow:
+
+```bash
+pip install "werk24[images]"
+```
+
+Without it, those options do not show the images and still print the other results.
+
+### Where the client looks for your API token
+
+The client uses the first token it finds, in this order:
+
+1. The `token` argument: `Werk24Client(token="...")`.
+2. `.werk24` in the folder the script is started from.
+3. `~/.werk24` in your home folder. This is where `werk24 init` saves the token.
+4. `werk24_license.txt` in the folder the script is started from.
+5. `~/werk24_license.txt` in your home folder.
+6. The environment variable `W24TECHREAD_AUTH_TOKEN`.
+
+The environment variable suits CI jobs and containers, where no token file
+exists. On a machine that has a token file, the file is used instead. When no
+token is found, the error lists every place the client looked. `werk24
+health-check` shows which token is in use and where it was read from.
 
 ## Dependency Management
 
@@ -140,19 +168,41 @@ Here's how you can use the Werk24 client to extract data from a technical drawin
 
 ```python
 import asyncio
-from werk24 import Werk24Client, AskMetaData, get_test_drawing
 
-async def read_drawing(asks):
-  fid = get_test_drawing()
-  async with Werk24Client() as client:
-      return [msg async for msg in client.read_drawing(fid, asks)]
+from werk24 import AskMetaData, TechreadMessageType, Werk24Client, get_test_drawing
 
-asyncio.run(read_drawing([AskMetaData()]))
+
+async def main():
+    with get_test_drawing() as drawing:
+        async with Werk24Client() as client:
+            async for message in client.read_drawing(drawing, [AskMetaData()]):
+                if message.message_type == TechreadMessageType.ASK:
+                    print(message.model_dump_json(
+                        include={"message_subtype", "payload_dict"}, indent=2
+                    ))
+
+
+asyncio.run(main())
+```
+
+In a Jupyter notebook a cell already runs an event loop, so `asyncio.run(main())`
+raises `RuntimeError: asyncio.run() cannot be called from a running event loop`.
+Run `await main()` in the cell instead.
+
+**Without async.** `read_drawing_sync` reads the drawing and returns the answers
+(the ASK messages) as a list:
+
+```python
+from werk24 import AskMetaData, get_test_drawing, read_drawing_sync
+
+with get_test_drawing() as drawing:
+    for message in read_drawing_sync(drawing, [AskMetaData()]):
+        print(message.model_dump_json(include={"message_subtype", "payload_dict"}, indent=2))
 ```
 
 ## Documentation
 
-See [https://werk24.io/docs/index.html](https://werk24.io/docs/index.html)
+See [v2.docs.werk24.io](https://v2.docs.werk24.io).
 
 ## CLI
 
@@ -169,7 +219,7 @@ $> werk24 --help
 │ --help                            Show this message and exit.                             │
 ╰───────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ────────────────────────────────────────────────────────────────────────────────╮
-│ init           Initialize Werk24 by providing or creating a license.                      │
+│ init           Set up Werk24 with your API token.                                         │
 │ health-check   Run a comprehensive health check for the CLI.                              │
 │ techread       Read a drawing file and extract information.                               │
 │ version        Print the version of the Client.                                           │
@@ -177,6 +227,19 @@ $> werk24 --help
 ╰───────────────────────────────────────────────────────────────────────────────────────────╯
 
 ```
+
+### Reading a drawing from the command line
+
+`werk24 techread` reads a drawing and prints one JSON object per line on stdout for every message that answers an ask. Each object has the fields of `TechreadMessage` (`request_id`, `message_type`, `message_subtype`, `page_number`, `payload_dict`, `payload_url`, `exceptions`). Binary results such as sheet images or the redacted file are not inlined; download them from `payload_url`.
+
+```bash
+werk24 techread drawing.pdf --ask-meta-data | jq .
+werk24 techread drawing.pdf --ask-meta-data --ask-redaction --pretty
+```
+
+Asks: `--ask-balloons`, `--ask-custom <custom_id>`, `--ask-document-profile`, `--ask-features`, `--ask-insights`, `--ask-meta-data`, `--ask-page-assessment`, `--ask-redaction`, `--ask-reference-positions`, `--ask-sheet-images`, `--ask-view-images`. `--pretty` indents each object. `--ask-sheet-images` and `--ask-view-images` also open each image in the default image viewer, which needs Pillow from the `images` extra (`pip install "werk24[images]"`). Without Pillow, a read that asks for anything else as well warns once, does not show the images and prints every result; a read that asks only for images stops before it starts.
+
+Exceptions reported by the server are written to stderr, one line each. The exit status is `0` when every ask was answered without an `ERROR`-level exception. It is `1` when an ask failed, when the read ended before the server reported it complete, or when the client raised an error. It is `2` for a usage error such as an unknown option.
 
 ## Community & Support
 

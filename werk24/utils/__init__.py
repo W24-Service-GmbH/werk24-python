@@ -1,6 +1,7 @@
 from .assets import get_test_drawing as get_test_drawing
 from .assets import read_drawing_sync as read_drawing_sync
 from .assets import read_example_drawing as read_example_drawing
+from .exceptions import ApiTokenRejectedException as ApiTokenRejectedException
 from .exceptions import BadRequestException as BadRequestException
 from .exceptions import (
     CallbackDrawingTooLargeException as CallbackDrawingTooLargeException,
@@ -8,10 +9,13 @@ from .exceptions import (
 from .exceptions import (
     CallbackFieldsTooLargeException as CallbackFieldsTooLargeException,
 )
+from .exceptions import DrawingTooLargeException as DrawingTooLargeException
 from .exceptions import EncryptionException as EncryptionException
 from .exceptions import InsufficientCreditsException as InsufficientCreditsException
 from .exceptions import InvalidLicenseException as InvalidLicenseException
 from .exceptions import InvalidPriorityError as InvalidPriorityError
+from .exceptions import LicenseNotFoundException as LicenseNotFoundException
+from .exceptions import OptionalDependencyMissingError as OptionalDependencyMissingError
 from .exceptions import PriorityTooHighError as PriorityTooHighError
 from .exceptions import ReadTimeoutError as ReadTimeoutError
 from .exceptions import RequestTooLargeException as RequestTooLargeException

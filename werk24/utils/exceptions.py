@@ -1,3 +1,15 @@
+from typing import Optional, Sequence
+
+# The console page where API tokens are listed, created and deleted, kept
+# importable from here. It comes from werk24.utils.urls, which imports
+# nothing: the settings module would load pydantic_settings and dotenv into
+# every import of werk24, including those that only use the models.
+from werk24.utils.urls import API_TOKENS_URL as API_TOKENS_URL
+
+#: The documentation page on how large a drawing can be.
+FILE_SIZE_DOCS_URL = "https://v2.docs.werk24.io/limitations/file-size/"
+
+
 class TechreadException(Exception):
     """
     Base exception for all exceptions raised by the Techread functionality.
@@ -46,6 +58,78 @@ class UnauthorizedException(TechreadException):
     )
 
 
+class ApiTokenRejectedException(UnauthorizedException):
+    """Raised when the Werk24 API refuses the API token the client sent.
+
+    The server gives the same answer for a mistyped token, a deleted or revoked
+    token, and a token whose account is closed or suspended, and does not say
+    which. The message therefore names the token by its last four characters
+    (the same ones the console shows), says where the client read it from,
+    and points to the console page where tokens are managed. The full token is
+    never part of the message.
+
+    A subclass of :class:`UnauthorizedException`, so an existing
+    ``except UnauthorizedException`` keeps catching it.
+
+    Attributes:
+    ----------
+    - token_suffix (Optional[str]): The last four characters of the token, or
+      None when the token is too short to show any of it.
+    - token_source (Optional[str]): Where the token was read from: the token
+      argument, the ``W24TECHREAD_AUTH_TOKEN`` environment variable, or a
+      license file named by its path. None when it is not known.
+    - status_code (Optional[int]): The HTTP status the server refused with.
+    """
+
+    cli_message_header: str = "API Token Rejected"
+    cli_message_body: str = (
+        "The Werk24 API did not accept the API token this client sent.\n\n"
+        "The token may be mistyped, or it may no longer be active: a token stops "
+        "working when it is deleted, and when the account it belongs to is "
+        "closed or suspended.\n\n"
+        f"Check your tokens or create a new one at {API_TOKENS_URL}"
+    )
+
+    def __init__(
+        self,
+        details: str = "",
+        token_suffix: Optional[str] = None,
+        token_source: Optional[str] = None,
+        status_code: Optional[int] = None,
+    ):
+        """Initialize the exception with what is known about the refused token.
+
+        Args:
+        ----
+        - details (str): Additional details, appended after the token lines.
+        - token_suffix (Optional[str]): The last four characters of the token.
+        - token_source (Optional[str]): Where the token was read from.
+        - status_code (Optional[int]): The HTTP status of the refusal.
+        """
+        self.details = details
+        self.token_suffix = token_suffix
+        self.token_source = token_source
+        self.status_code = status_code
+
+        lines = []
+        if token_suffix:
+            lines.append(f"Token: ending in '{token_suffix}'")
+        if token_source:
+            lines.append(f"Read from: {token_source}")
+        if status_code:
+            lines.append(f"Server response: HTTP {status_code}")
+        if details:
+            lines.append(details)
+        super().__init__("\n".join(lines))
+
+    def __reduce__(self):
+        # See CallbackDrawingTooLargeException.__reduce__.
+        return (
+            type(self),
+            (self.details, self.token_suffix, self.token_source, self.status_code),
+        )
+
+
 class RequestTooLargeException(TechreadException):
     """Exception raised when the request size exceeds the allowed limit."""
 
@@ -54,6 +138,54 @@ class RequestTooLargeException(TechreadException):
         "The request size exceeds the maximum allowed size of 10MB.\n\n"
         "For more information, visit:\nhttps://v2.docs.werk24.io"
     )
+
+
+class DrawingTooLargeException(RequestTooLargeException):
+    """Raised when a drawing is larger than ``read_drawing`` can upload.
+
+    ``read_drawing`` uploads the drawing through a presigned upload that
+    accepts at most 10 MiB (10,485,760 bytes; a drawing of exactly that
+    size is accepted). ``Werk24Client.check_drawing_size`` raises this
+    before anything is sent when the drawing is over that limit. It is also
+    raised when storage refuses an upload as ``EntityTooLarge``.
+
+    ``drawing_bytes`` is the size as it would be uploaded. When the server
+    asks for end-to-end encryption, that includes the encryption overhead,
+    so a drawing just under the limit can end up over it.
+
+    A subclass of :class:`RequestTooLargeException`, so an existing
+    ``except RequestTooLargeException`` keeps catching it.
+
+    ``read_drawing`` itself does not raise it: it reports
+    ``DRAWING_FILE_SIZE_TOO_LARGE`` on each ask instead, as documented.
+
+    Attributes:
+    ----------
+    - drawing_bytes (int): Size of the drawing that was refused.
+    - max_drawing_bytes (int): The largest drawing the upload accepts.
+    """
+
+    cli_message_header: str = "Drawing Too Large"
+    cli_message_body: str = (
+        "The drawing is larger than read_drawing can upload.\n\n"
+        "Reduce the file size, for example by lowering the resolution of a "
+        "scanned drawing or compressing the images inside a PDF, and submit "
+        "it again.\n\n"
+        "For more information, visit:\n" + FILE_SIZE_DOCS_URL
+    )
+
+    def __init__(self, drawing_bytes: int, max_drawing_bytes: int):
+        self.drawing_bytes = drawing_bytes
+        self.max_drawing_bytes = max_drawing_bytes
+        super().__init__(
+            f"The drawing is {drawing_bytes} bytes; read_drawing can upload "
+            f"at most {max_drawing_bytes} bytes."
+        )
+
+    def __reduce__(self):
+        # The default rebuilds an exception from its message alone, which
+        # this signature does not take (pickling across a process pool).
+        return (type(self), (self.drawing_bytes, self.max_drawing_bytes))
 
 
 class CallbackDrawingTooLargeException(RequestTooLargeException):
@@ -224,12 +356,23 @@ class ReadTimeoutError(TechreadException):
 
 
 class InsufficientCreditsException(ServerException):
-    """Raised when the user has insufficient credits for an action."""
+    """Raised when the account's request quota is used up.
+
+    The API refuses the request with HTTP 429, or with the same refusal on
+    the WebSocket at INITIALIZE or READ. The quota does not reset by
+    waiting, so sending the request again does not help; top up the account
+    first.
+
+    A subclass of :class:`ServerException`, so existing handlers keep
+    catching it, and deliberately not of :class:`RetryableServerError`, so
+    the client's own retries skip it.
+    """
 
     cli_message_header: str = "Insufficient Credits"
     cli_message_body: str = (
-        "You do not have enough credits to perform the requested action.\n\n"
-        "Please check your account balance and top up if necessary."
+        "You do not have enough credits left for this request: your account's request quota is used up.\n\n"
+        "The quota does not reset by waiting, so retrying will not help. "
+        "Please top up your account, or contact your Werk24 account manager or support@werk24.io to raise the limit."
     )
 
 
@@ -242,8 +385,52 @@ class UserInputError(TechreadException):
     )
 
 
+class OptionalDependencyMissingError(UserInputError):
+    """Raised when an option needs a package that werk24 does not install.
+
+    werk24 keeps packages that only one CLI option uses out of its
+    dependencies, so that code importing the library does not install them.
+    Such a package is installed through an extra instead, and this error
+    names that extra.
+
+    A subclass of :class:`UserInputError`, which the CLI raised for this
+    before, so an existing ``except UserInputError`` keeps catching it.
+
+    Attributes:
+    ----------
+    - package (str): The package that could not be imported, e.g. "Pillow".
+    - extra (str): The werk24 extra that installs it, e.g. "images".
+    - details (str): What needed the package, e.g. the option that was set.
+    - install_command (str): The command that installs the extra.
+    """
+
+    cli_message_header: str = "Optional Dependency Missing"
+    cli_message_body: str = (
+        "This option needs a package that werk24 does not install by default."
+    )
+
+    def __init__(self, package: str, extra: str, details: str = ""):
+        self.package = package
+        self.extra = extra
+        self.details = details
+        self.install_command = f'pip install "werk24[{extra}]"'
+        text = f"{package} is not installed. Install it with: {self.install_command}"
+        super().__init__(f"{details} {text}" if details else text)
+
+    def __reduce__(self):
+        # See CallbackDrawingTooLargeException.__reduce__.
+        return (type(self), (self.package, self.extra, self.details))
+
+
 class InvalidLicenseException(TechreadException):
-    """Exception raised when the provided license is invalid."""
+    """Exception raised when the provided license is invalid.
+
+    Attributes:
+    ----------
+    - reason (str): Why the token cannot be used, in a few words, for a
+      message such as "That token cannot be used: <reason>". Empty when no
+      reason was given.
+    """
 
     cli_message_header: str = "Invalid License"
     cli_message_body: str = (
@@ -251,13 +438,107 @@ class InvalidLicenseException(TechreadException):
         "Please ensure that you provide a valid token."
     )
 
+    def __init__(self, details: str = ""):
+        """Initialize the exception.
+
+        Args:
+        ----
+        - details (str): Why the token cannot be used. Kept as ``reason`` and
+          appended to the message.
+        """
+        self.reason = details
+        super().__init__(details)
+
+    def __reduce__(self):
+        # The default rebuilds the exception from its full message, which
+        # would append the message to itself a second time.
+        return (type(self), (self.reason,))
+
+
+class LicenseNotFoundException(InvalidLicenseException):
+    """Raised when no API token is configured anywhere the client looks.
+
+    A subclass of :class:`InvalidLicenseException`, so an existing
+    ``except InvalidLicenseException`` keeps catching it. Its message lists
+    every place the client looked, what it found there, and how to set up a
+    token.
+
+    Attributes:
+    ----------
+    - searched (list[tuple[str, str]]): Each place the client looked, with
+      what it found there, for example ``("/home/me/.werk24", "not found")``.
+    - save_path (Optional[str]): Where ``werk24 init`` saves a token.
+    - tokens_url (str): The page where API tokens are created and managed.
+    """
+
+    cli_message_header: str = "No API Token Found"
+    cli_message_body: str = "No Werk24 API token was found."
+
+    def __init__(
+        self,
+        searched: Sequence[tuple[str, str]] = (),
+        save_path: Optional[str] = None,
+        tokens_url: Optional[str] = None,
+    ):
+        """Initialize the exception with where the client looked.
+
+        Args:
+        ----
+        - searched (Sequence[tuple[str, str]]): Each place the client looked
+          and what it found there.
+        - save_path (Optional[str]): Where ``werk24 init`` saves a token.
+        - tokens_url (Optional[str]): The page where API tokens are managed.
+          Defaults to the Werk24 console.
+        """
+        self.searched = [tuple(entry) for entry in searched]
+        self.save_path = save_path
+        self.tokens_url = tokens_url if tokens_url is not None else API_TOKENS_URL
+
+        sections = [type(self).cli_message_body]
+        if self.searched:
+            sections.append(
+                "Looked in:\n"
+                + "\n".join(
+                    f"  - {location}: {outcome}" for location, outcome in self.searched
+                )
+            )
+
+        init_hint = '  - Run "werk24 init" and paste your API token.'
+        if save_path:
+            init_hint += (
+                f" It is saved to {save_path}, where the client finds it from"
+                " any folder."
+            )
+        sections.append(
+            "To fix this, do one of the following:\n"
+            f"{init_hint}\n"
+            "  - Set the environment variable W24TECHREAD_AUTH_TOKEN to your"
+            " API token.\n"
+            '  - Pass the token to the client: Werk24Client(token="...").'
+        )
+        if self.tokens_url:
+            sections.append(f"You can create and manage API tokens at {self.tokens_url}")
+
+        self.cli_message_body = "\n\n".join(sections)
+        TechreadException.__init__(self)
+        self.reason = "no API token was found"
+
+    def __reduce__(self):
+        # See CallbackDrawingTooLargeException.__reduce__.
+        return (type(self), (self.searched, self.save_path, self.tokens_url))
+
 
 class W24AuthenticationError(TechreadException):
-    """Exception raised when authentication fails (401 responses).
+    """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    This exception is raised when the API returns a 401 status code,
-    indicating that the authentication credentials are invalid, expired,
-    or missing.
+    The client reports a refused API token as :class:`ApiTokenRejectedException`,
+    a subclass of :class:`UnauthorizedException` (a 403 when the connection
+    opens, or a 401 from ``read_drawing_with_callback``); other 401 and 403
+    answers as :class:`UnauthorizedException`, or as
+    :class:`PriorityTooHighError` when they refuse the requested priority;
+    and a missing or unusable token as :class:`InvalidLicenseException`. An
+    ``except W24AuthenticationError`` never matches an error from this
+    client; catch those classes instead.
 
     Attributes:
         error_code: The specific error code from the API response
@@ -297,11 +578,14 @@ class W24AuthenticationError(TechreadException):
 
 
 class W24ValidationError(TechreadException):
-    """Exception raised when request validation fails (400 responses).
+    """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    This exception is raised when the API returns a 400 status code,
-    indicating that the request contains invalid data, malformed input,
-    or violates validation rules.
+    The client reports a malformed request as :class:`BadRequestException`
+    (for example an unknown ask type), an invalid priority as
+    :class:`InvalidPriorityError`, and a drawing of the wrong type or a
+    refused file format as :class:`UnsupportedMediaType`. An
+    ``except W24ValidationError`` never matches an error from this client;
+    catch those classes instead.
 
     Attributes:
         error_code: The specific error code from the API response
@@ -367,11 +651,13 @@ class W24ValidationError(TechreadException):
 
 
 class W24RateLimitError(TechreadException):
-    """Exception raised when rate limit is exceeded (429 responses).
+    """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    This exception is raised when the API returns a 429 status code,
-    indicating that the client has sent too many requests in a given
-    time period.
+    The client reports HTTP 429 as :class:`InsufficientCreditsException`:
+    the account's request quota is used up, and it does not reset by
+    waiting, so there is no ``retry_after`` to honour. Top up the account
+    instead. An ``except W24RateLimitError`` never matches an error from
+    this client.
 
     Attributes:
         error_code: The specific error code from the API response
@@ -428,11 +714,13 @@ class W24RateLimitError(TechreadException):
 
 
 class W24ServerError(TechreadException):
-    """Exception raised for server errors (500/503 responses).
+    """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    This exception is raised when the API returns a 500 (Internal Server Error)
-    or 503 (Service Unavailable) status code, indicating a problem on the
-    server side.
+    The client reports a server error (5xx) that outlasts its own retries
+    as :class:`RetryableServerError`, a read that runs out of time as
+    :class:`ReadTimeoutError`, and any other server-side failure as
+    :class:`ServerException`. An ``except W24ServerError`` never matches an
+    error from this client; catch those classes instead.
 
     Attributes:
         error_code: The specific error code from the API response

@@ -1,19 +1,25 @@
 import asyncio
 import platform
 import sys
+from dataclasses import dataclass
+from typing import Optional
 
 import typer
 from packaging.version import Version
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
-from websockets.exceptions import InvalidStatus, InvalidStatusCode
 
 from werk24._version import __version__
 from werk24.techread import Werk24Client
 from werk24.utils.defaults import Settings
-from werk24.utils.exceptions import InvalidLicenseException
-from werk24.utils.license import find_license
+from werk24.utils.exceptions import (
+    ApiTokenRejectedException,
+    InvalidLicenseException,
+    LicenseNotFoundException,
+)
+from werk24.utils.license import LicenseLookup, locate_license, token_suffix
 
 # Initialize Typer app and Rich console
 app = typer.Typer()
@@ -21,14 +27,71 @@ console = Console()
 settings = Settings()
 
 
+@dataclass
+class ConnectionCheck:
+    """The outcome of opening a WebSocket connection with the configured token.
+
+    Attributes:
+    ----------
+    - outcome (str): "connected", "token_rejected", "failed" or "skipped"
+      (no token was found, so no connection was attempted).
+    - error (Optional[BaseException]): The exception, when there was one.
+    """
+
+    outcome: str
+    error: Optional[BaseException] = None
+
+
 @app.command()
 def health_check():
     """Run a comprehensive health check for the CLI."""
     console.print(Panel(f"[blue]Werk24 CLI Health Check v{__version__}[/blue]"))
     system_information()
-    license_information()
-    asyncio.run(network_information())
+
+    lookup_error: Optional[InvalidLicenseException] = None
+    try:
+        lookup: Optional[LicenseLookup] = locate_license()
+    except InvalidLicenseException as e:
+        lookup = None
+        lookup_error = e
+
+    check = (
+        asyncio.run(check_connection())
+        if lookup is not None
+        else ConnectionCheck("skipped")
+    )
+
+    license_information(lookup, check, lookup_error)
+    network_information(check)
+
+    # Informational only: the status page says how the service is doing, not
+    # whether this machine can use it.
     asyncio.run(status_information())
+
+    if check.outcome == "token_rejected":
+        e = check.error
+        console.print(
+            Panel(
+                f"[red]{e.cli_message_header}: {escape(e.cli_message_body)}[/red]",
+                expand=True,
+                border_style="red",
+                title="Error",
+            )
+        )
+
+    if lookup is None or check.outcome != "connected":
+        raise typer.Exit(code=1)
+
+
+async def check_connection() -> ConnectionCheck:
+    """Open a WebSocket connection with the configured token and report how it went."""
+    try:
+        async with Werk24Client():
+            return ConnectionCheck("connected")
+    except ApiTokenRejectedException as e:
+        return ConnectionCheck("token_rejected", e)
+    except Exception as e:
+        return ConnectionCheck("failed", e)
 
 
 def system_information():
@@ -57,76 +120,91 @@ def system_information():
     print_panel("System Information", system_info)
 
 
-def license_information():
+def license_information(
+    lookup: Optional[LicenseLookup],
+    check: ConnectionCheck,
+    error: Optional[InvalidLicenseException] = None,
+) -> None:
     """
     Display license information in a formatted panel.
+
+    Args:
+    ----
+    - lookup (Optional[LicenseLookup]): The token that was found and where, or
+      None when no token was found.
+    - check (ConnectionCheck): Whether the API accepted the token.
+    - error (Optional[InvalidLicenseException]): Why no token was found, when
+      it is known. A LicenseNotFoundException adds every place the client
+      looked, one line each.
     """
-    try:
-        find_license()
-        license_status = "[green]Found[/green]"
-    except InvalidLicenseException:
+    if lookup is None:
         license_status = (
             "[red]Not Found[/red] - Run [bold]werk24 init[/bold] to configure."
         )
-
-    license_info = [("License Status", license_status)]
-    print_panel("License Information", license_info)
-
-
-async def network_information():
-    """
-    Display network information and test WebSocket connections.
-    """
-    server_uri = str(settings.wss_server)
-    network_info = []
-
-    try:
-        async with Werk24Client() as _:
-            network_info.append(
-                (f"WebSocket Connection ({server_uri})", "[green]Successful[/green]")
-            )
-
-    except InvalidStatus as e:  # WebSocket >= 14.0
-        if e.response.status_code == 401:
-            network_info.append(
-                (
-                    f"WebSocket Connection ({server_uri})",
-                    "[yellow]Unauthorized (401)[/yellow]",
+        rows = [("License Status", license_status)]
+        if isinstance(error, LicenseNotFoundException):
+            if error.searched:
+                # One row, one line per place: a path in the caption column
+                # would be cut short on a narrow terminal.
+                looked_in = "\n".join(
+                    f"{location}: {outcome}" for location, outcome in error.searched
                 )
-            )
-        else:
-            network_info.append(
-                (
-                    f"WebSocket Connection ({server_uri})",
-                    f"[red]Error: {e.response.status_code}[/red]",
-                )
-            )
+                rows.append(("Looked In", escape(looked_in)))
+            if error.tokens_url:
+                rows.append(("API Tokens", escape(error.tokens_url)))
+        elif error is not None and error.reason:
+            rows.append(("Reason", escape(error.reason)))
+        print_panel("License Information", rows)
+        return
 
-    except InvalidStatusCode as e:  # WebSocket < 14.0
-        if e.status_code == 401:
-            network_info.append(
-                (
-                    f"WebSocket Connection ({server_uri})",
-                    "[yellow]Unauthorized (401)[/yellow]",
-                )
-            )
-        else:
-            network_info.append(
-                (
-                    f"WebSocket Connection ({server_uri})",
-                    f"[red]Error: {e.status_code}[/red]",
-                )
-            )
-
-    except Exception as e:
-        network_info.append(
+    suffix = token_suffix(lookup.license.token)
+    license_info = [
+        ("License Status", "[green]Found[/green]"),
+        ("Token", f"ending in {escape(suffix)}" if suffix else "(too short to show)"),
+        ("Source", escape(lookup.describe())),
+    ]
+    if lookup.env_shadowed:
+        license_info.append(
             (
-                f"WebSocket Connection ({server_uri})",
-                f"[red]Error: {type(e).__name__} - {e}[/red]",
+                "Note",
+                "[yellow]W24TECHREAD_AUTH_TOKEN is also set, to a different token, "
+                "and is ignored because this file is read first.[/yellow]",
             )
         )
 
-    print_panel("Network Information", network_info)
+    token_check = {
+        "connected": "[green]Accepted[/green]",
+        "token_rejected": "[red]Rejected by the Werk24 API[/red]",
+        "failed": "[yellow]Not checked (no connection)[/yellow]",
+    }.get(check.outcome)
+    if token_check is not None:
+        license_info.append(("Token Check", token_check))
+
+    print_panel("License Information", license_info)
+
+
+def network_information(check: ConnectionCheck) -> None:
+    """
+    Display the outcome of the WebSocket connection test.
+
+    Args:
+    ----
+    - check (ConnectionCheck): The outcome of the connection attempt.
+    """
+    server_uri = str(settings.wss_server)
+    if check.outcome == "connected":
+        status = "[green]Successful[/green]"
+    elif check.outcome == "token_rejected":
+        status = "[red]Refused: API token rejected[/red]"
+    elif check.outcome == "failed":
+        e = check.error
+        status = f"[red]Error: {type(e).__name__} - {escape(str(e))}[/red]"
+    else:
+        status = "[yellow]Skipped: no API token found[/yellow]"
+
+    print_panel(
+        "Network Information", [(f"WebSocket Connection ({server_uri})", status)]
+    )
 
 
 async def status_information():
@@ -152,6 +230,9 @@ def print_panel(title: str, rows: list[tuple[str, str]]) -> None:
         rows (list[tuple[str, str]]): A list of key-value pairs to display.
     """
     table = Table(show_header=False, box=None, pad_edge=False, expand=False)
+    table.add_column()
+    # Fold rather than cut a long path or URL, so all of it can be read.
+    table.add_column(overflow="fold")
     for caption, value in rows:
         table.add_row(f"[bold]{caption}[/bold]:", value)
     console.print(Panel(table, title=f"[bold blue]{title}[/bold blue]"))
