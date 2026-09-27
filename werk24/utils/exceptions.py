@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 #: The documentation page on how large a drawing can be.
 FILE_SIZE_DOCS_URL = "https://v2.docs.werk24.io/limitations/file-size/"
@@ -379,13 +379,109 @@ class UserInputError(TechreadException):
 
 
 class InvalidLicenseException(TechreadException):
-    """Exception raised when the provided license is invalid."""
+    """Exception raised when the provided license is invalid.
+
+    Attributes:
+    ----------
+    - reason (str): Why the key cannot be used, in a few words, for a
+      message such as "That key cannot be used: <reason>". Empty when no
+      reason was given.
+    """
 
     cli_message_header: str = "Invalid License"
     cli_message_body: str = (
         "The provided license is invalid or has expired.\n\n"
         "Please ensure that you provide a valid token."
     )
+
+    def __init__(self, details: str = ""):
+        """Initialize the exception.
+
+        Args:
+        ----
+        - details (str): Why the key cannot be used. Kept as ``reason`` and
+          appended to the message.
+        """
+        self.reason = details
+        super().__init__(details)
+
+    def __reduce__(self):
+        # The default rebuilds the exception from its full message, which
+        # would append the message to itself a second time.
+        return (type(self), (self.reason,))
+
+
+class LicenseNotFoundException(InvalidLicenseException):
+    """Raised when no API key is configured anywhere the client looks.
+
+    A subclass of :class:`InvalidLicenseException`, so an existing
+    ``except InvalidLicenseException`` keeps catching it. Its message lists
+    every place the client looked, what it found there, and how to set up a
+    key.
+
+    Attributes:
+    ----------
+    - searched (list[tuple[str, str]]): Each place the client looked, with
+      what it found there, for example ``("/home/me/.werk24", "not found")``.
+    - save_path (Optional[str]): Where ``werk24 init`` saves a key.
+    - keys_url (str): The page where API keys are created and managed.
+    """
+
+    cli_message_header: str = "No API Key Found"
+    cli_message_body: str = "No Werk24 API key was found."
+
+    def __init__(
+        self,
+        searched: Sequence[tuple[str, str]] = (),
+        save_path: Optional[str] = None,
+        keys_url: Optional[str] = None,
+    ):
+        """Initialize the exception with where the client looked.
+
+        Args:
+        ----
+        - searched (Sequence[tuple[str, str]]): Each place the client looked
+          and what it found there.
+        - save_path (Optional[str]): Where ``werk24 init`` saves a key.
+        - keys_url (Optional[str]): The page where API keys are managed.
+          Defaults to the Werk24 console.
+        """
+        self.searched = [tuple(entry) for entry in searched]
+        self.save_path = save_path
+        self.keys_url = keys_url if keys_url is not None else API_KEYS_URL
+
+        sections = [type(self).cli_message_body]
+        if self.searched:
+            sections.append(
+                "Looked in:\n"
+                + "\n".join(
+                    f"  - {location}: {outcome}" for location, outcome in self.searched
+                )
+            )
+
+        init_hint = '  - Run "werk24 init" and paste your API key.'
+        if save_path:
+            init_hint += (
+                f" It is saved to {save_path}, where the client finds it from"
+                " any folder."
+            )
+        sections.append(
+            "To fix this, do one of the following:\n"
+            f"{init_hint}\n"
+            "  - Set the environment variable W24TECHREAD_AUTH_TOKEN to your"
+            " API key.\n"
+            '  - Pass the key to the client: Werk24Client(token="...").'
+        )
+        if self.keys_url:
+            sections.append(f"You can create and manage API keys at {self.keys_url}")
+
+        self.cli_message_body = "\n\n".join(sections)
+        TechreadException.__init__(self)
+        self.reason = "no API key was found"
+
+    def __reduce__(self):
+        # See CallbackDrawingTooLargeException.__reduce__.
+        return (type(self), (self.searched, self.save_path, self.keys_url))
 
 
 class W24AuthenticationError(TechreadException):

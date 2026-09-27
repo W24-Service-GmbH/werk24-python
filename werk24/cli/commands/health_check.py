@@ -14,7 +14,11 @@ from rich.table import Table
 from werk24._version import __version__
 from werk24.techread import Werk24Client
 from werk24.utils.defaults import Settings
-from werk24.utils.exceptions import ApiKeyRejectedException, InvalidLicenseException
+from werk24.utils.exceptions import (
+    ApiKeyRejectedException,
+    InvalidLicenseException,
+    LicenseNotFoundException,
+)
 from werk24.utils.license import LicenseLookup, locate_license, token_suffix
 
 # Initialize Typer app and Rich console
@@ -44,10 +48,12 @@ def health_check():
     console.print(Panel(f"[blue]Werk24 CLI Health Check v{__version__}[/blue]"))
     system_information()
 
+    lookup_error: Optional[InvalidLicenseException] = None
     try:
         lookup: Optional[LicenseLookup] = locate_license()
-    except InvalidLicenseException:
+    except InvalidLicenseException as e:
         lookup = None
+        lookup_error = e
 
     check = (
         asyncio.run(check_connection())
@@ -55,7 +61,7 @@ def health_check():
         else ConnectionCheck("skipped")
     )
 
-    license_information(lookup, check)
+    license_information(lookup, check, lookup_error)
     network_information(check)
 
     # Informational only: the status page says how the service is doing, not
@@ -115,7 +121,9 @@ def system_information():
 
 
 def license_information(
-    lookup: Optional[LicenseLookup], check: ConnectionCheck
+    lookup: Optional[LicenseLookup],
+    check: ConnectionCheck,
+    error: Optional[InvalidLicenseException] = None,
 ) -> None:
     """
     Display license information in a formatted panel.
@@ -125,12 +133,28 @@ def license_information(
     - lookup (Optional[LicenseLookup]): The key that was found and where, or
       None when no key was found.
     - check (ConnectionCheck): Whether the API accepted the key.
+    - error (Optional[InvalidLicenseException]): Why no key was found, when
+      it is known. A LicenseNotFoundException adds every place the client
+      looked, one line each.
     """
     if lookup is None:
         license_status = (
             "[red]Not Found[/red] - Run [bold]werk24 init[/bold] to configure."
         )
-        print_panel("License Information", [("License Status", license_status)])
+        rows = [("License Status", license_status)]
+        if isinstance(error, LicenseNotFoundException):
+            if error.searched:
+                # One row, one line per place: a path in the caption column
+                # would be cut short on a narrow terminal.
+                looked_in = "\n".join(
+                    f"{location}: {outcome}" for location, outcome in error.searched
+                )
+                rows.append(("Looked In", escape(looked_in)))
+            if error.keys_url:
+                rows.append(("API Keys", escape(error.keys_url)))
+        elif error is not None and error.reason:
+            rows.append(("Reason", escape(error.reason)))
+        print_panel("License Information", rows)
         return
 
     suffix = token_suffix(lookup.license.token)
@@ -206,6 +230,9 @@ def print_panel(title: str, rows: list[tuple[str, str]]) -> None:
         rows (list[tuple[str, str]]): A list of key-value pairs to display.
     """
     table = Table(show_header=False, box=None, pad_edge=False, expand=False)
+    table.add_column()
+    # Fold rather than cut a long path or URL, so all of it can be read.
+    table.add_column(overflow="fold")
     for caption, value in rows:
         table.add_row(f"[bold]{caption}[/bold]:", value)
     console.print(Panel(table, title=f"[bold blue]{title}[/bold blue]"))
