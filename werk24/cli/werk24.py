@@ -3,6 +3,7 @@ from enum import Enum
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 
 from ..utils.defaults import Settings
@@ -61,9 +62,13 @@ def main() -> None:
     try:
         app()
     except TechreadException as exception:
+        # The message can carry paths and server text; a "[" in them must be
+        # printed, not read as markup.
+        header = escape(exception.cli_message_header)
+        body = escape(exception.cli_message_body)
         console.print(
             Panel(
-                f"[red]{exception.cli_message_header}: {exception.cli_message_body}[/red]",
+                f"[red]{header}: {body}[/red]",
                 expand=True,
                 border_style="red",
                 title="Error",
