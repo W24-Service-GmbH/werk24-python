@@ -4,11 +4,10 @@ from packaging.version import Version
 from pydantic import AnyUrl, Field, HttpUrl, field_validator
 from pydantic_settings import BaseSettings
 
-API_KEYS_URL = "https://studio.werk24.io/console/keys"
-"""Werk24 console page where a signed-up customer creates and manages API keys."""
-
-DEMO_URL = "https://studio.werk24.io/demo?utm_source=werk24-python&utm_medium=cli&utm_campaign=init"
-"""Free browser demo: read a drawing without an API key."""
+# Defined in werk24.utils.urls, which imports nothing, and kept importable
+# from here.
+from werk24.utils.urls import API_KEYS_URL as API_KEYS_URL
+from werk24.utils.urls import DEMO_URL as DEMO_URL
 
 
 class Settings(BaseSettings):

@@ -140,6 +140,20 @@ class TestTheExampleMatchesTheClient:
         advice = example.advice_for(LicenseNotFoundException())
         assert "W24TECHREAD_AUTH_TOKEN" in advice.splitlines()[0]
 
+    def test_a_missing_key_gets_its_own_advice(self):
+        missing = LicenseNotFoundException([("/home/me/.werk24", "not found")])
+        unusable = InvalidLicenseException("it is empty")
+
+        def advice_text(exception):
+            return next(
+                text for cls, text in example.ADVICE if isinstance(exception, cls)
+            )
+
+        assert advice_text(missing) != advice_text(unusable)
+        assert "werk24 init" in advice_text(missing)
+        assert "/home/me/.werk24: not found" in example.advice_for(missing)
+        assert "it is empty" in example.advice_for(unusable)
+
     @pytest.mark.parametrize(
         "exception,retryable",
         [

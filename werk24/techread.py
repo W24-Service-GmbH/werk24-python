@@ -1428,10 +1428,12 @@ class Werk24Client:
         if not isinstance(payload, dict):
             return None
 
-        # The payload's own request_id, if it names one, wins.
-        quota = Werk24Client._quota_exception(
-            {"request_id": str(message.request_id), **payload}
-        )
+        # The payload's own request_id wins when it names one. An empty or
+        # null one does not replace the message's.
+        envelope = dict(payload)
+        if not envelope.get("request_id"):
+            envelope["request_id"] = str(message.request_id)
+        quota = Werk24Client._quota_exception(envelope)
         if quota is not None:
             return quota
 

@@ -46,6 +46,7 @@ from werk24.utils.license import (
     find_license,
     find_license_in_envs,
     locate_license,
+    parse_license_file,
     parse_license_text,
     save_license_file,
     token_problem,
@@ -125,6 +126,22 @@ def captured(monkeypatch) -> io.StringIO:
     return buffer
 
 
+def _home_is(layout: Layout, monkeypatch) -> None:
+    """Make ``~`` expand to the test's home folder."""
+    monkeypatch.setenv("HOME", str(layout.home))
+    monkeypatch.setenv("USERPROFILE", str(layout.home))
+
+
+def _home_is_unresolvable(monkeypatch) -> None:
+    """Make ``~`` unexpandable, as it is when no home folder can be found.
+
+    ``os.path.expanduser`` then returns the path unchanged. Patched rather
+    than produced by unsetting ``HOME``, which on POSIX falls back to the
+    password database and would still find the real home folder.
+    """
+    monkeypatch.setattr(license_module.os.path, "expanduser", lambda path: path)
+
+
 def _init(captured: io.StringIO, answers: str):
     """Run ``werk24 init`` with these answers on stdin.
 
@@ -167,12 +184,25 @@ class TestSaving:
         assert not layout.home_key.exists()
         assert not layout.proj_key.exists()
 
+    def test_a_tilde_path_is_saved_in_the_home_folder(self, layout, monkeypatch):
+        _home_is(layout, monkeypatch)
+
+        saved = save_license_file(License(token="k"), path="~/key.txt")
+
+        assert saved == os.path.abspath(str(layout.home / "key.txt"))
+        assert (layout.home / "key.txt").read_text() == f"{TOKEN_ENV_KEY}=k\n"
+        assert not (layout.proj / "~").exists()
+
+    def test_a_tilde_path_is_read_from_the_home_folder(self, layout, monkeypatch):
+        _home_is(layout, monkeypatch)
+        (layout.home / "key.txt").write_text(f"{TOKEN_ENV_KEY}=k\n")
+
+        assert parse_license_file("~/key.txt") == License(token="k")
+
     def test_an_unresolvable_home_folder_is_refused(self, layout, monkeypatch):
-        monkeypatch.setattr(license_module, "USER_LICENSE_PATH", "~/.werk24")
+        _home_is_unresolvable(monkeypatch)
         with pytest.raises(InvalidLicenseException) as excinfo:
-            save_license_file(
-                License(token="k"), path=license_module.USER_LICENSE_PATH
-            )
+            save_license_file(License(token="k"), path="~/.werk24")
         assert TOKEN_ENV_KEY in excinfo.value.reason
         assert not (layout.proj / "~").exists()
 
@@ -180,6 +210,7 @@ class TestSaving:
         self, layout, captured, monkeypatch
     ):
         monkeypatch.setattr(license_module, "USER_LICENSE_PATH", "~/.werk24")
+        _home_is_unresolvable(monkeypatch)
 
         result, out = _init(captured, "1\nwk24_abcDEF123\n\n")
 

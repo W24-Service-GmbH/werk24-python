@@ -10,6 +10,7 @@ These tests run offline and need no credentials.
 
 import io
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -133,8 +134,21 @@ def test_package_and_readme_links():
 
     assert 'documentation = "https://v2.docs.werk24.io"' in pyproject
     assert "https://studio.werk24.io/console/signup" in pyproject
+    assert "https://studio.werk24.io/demo" in pyproject
     assert "werk24.io/docs" not in pyproject
     assert "werk24.io/docs" not in readme
     assert "https://studio.werk24.io/console/signup" in readme
     assert "https://studio.werk24.io/console/keys" in readme
+    assert "https://studio.werk24.io/demo" in readme
     assert "W24TECHREAD_AUTH_TOKEN" in readme
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="tomllib is new in 3.11")
+def test_the_package_urls_name_signup_and_demo():
+    import tomllib
+
+    with open(ROOT / "pyproject.toml", "rb") as file:
+        urls = tomllib.load(file)["project"]["urls"]
+
+    assert urls["signup"].startswith("https://studio.werk24.io/console/signup?")
+    assert urls["demo"].startswith("https://studio.werk24.io/demo?")

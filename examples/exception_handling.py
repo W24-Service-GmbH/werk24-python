@@ -84,6 +84,7 @@ from werk24.utils.exceptions import (
     InsufficientCreditsException,
     InvalidLicenseException,
     InvalidPriorityError,
+    LicenseNotFoundException,
     PriorityTooHighError,
     ReadTimeoutError,
     RequestTooLargeException,
@@ -109,9 +110,15 @@ RETRYABLE: Tuple[Type[TechreadException], ...] = (
 #: base class (InsufficientCreditsException before ServerException).
 ADVICE: Tuple[Tuple[Type[TechreadException], str], ...] = (
     (
+        LicenseNotFoundException,
+        "No API key is configured. Run 'werk24 init', set "
+        "W24TECHREAD_AUTH_TOKEN or pass token= to Werk24Client. Every place "
+        "the client looked is listed below.",
+    ),
+    (
         InvalidLicenseException,
-        "No usable API key was found. Pass token= to Werk24Client, set "
-        "W24TECHREAD_AUTH_TOKEN or run 'werk24 init'.",
+        "The API key cannot be used, for the reason below. Pass a valid key "
+        "with token=, set W24TECHREAD_AUTH_TOKEN or run 'werk24 init'.",
     ),
     (
         ApiKeyRejectedException,
