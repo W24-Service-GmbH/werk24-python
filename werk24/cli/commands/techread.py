@@ -76,6 +76,9 @@ def techread(
         raise UserInputError("No hooks selected. At least one hook must be enabled.")
 
     with open(file_path, "rb") as fid:
+        # A drawing the upload cannot take exits here, through main()'s
+        # error panel, before any connection is made.
+        Werk24Client.check_drawing_size(fid)
         asyncio.run(run(server, fid, hooks, max_pages))
 
 
