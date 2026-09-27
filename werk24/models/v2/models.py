@@ -11,6 +11,7 @@ from pydantic import (
 )
 
 from .enums import (
+    CenterHoleRequirement,
     CertificationType,
     CoordinateSpace,
     CurvatureType,
@@ -48,6 +49,7 @@ from .enums import (
     SizeType,
     ThreadHandedness,
     ThreadType,
+    UndercutType,
     UnitSystemType,
     VolumeEstimateType,
 )
@@ -1163,6 +1165,147 @@ class Radius(Feature):
     size: Size = Field(
         ...,
         description="Details about the size, including type, nominal value, tolerance, and unit.",
+    )
+
+
+class Undercut(Feature):
+    """
+    Represents an undercut specified by a standard: a thread undercut (e.g.
+    `DIN 76-B`) or a relief groove at a shoulder (e.g. `DIN 509-E0,8x0,3`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of undercuts or instances. Must be at least 1.",
+        examples=[1],
+    )
+    undercut_type: UndercutType = Field(
+        ...,
+        description="Whether this is a thread undercut or a relief groove.",
+        examples=[UndercutType.RELIEF_GROOVE],
+    )
+    standard: str = Field(
+        ...,
+        description="The standard the undercut is specified by, as written on the drawing.",
+        examples=["DIN 509"],
+    )
+    form: Optional[str] = Field(
+        None,
+        description="The form defined by the standard (e.g. `B` for DIN 76, `E` for DIN 509), if stated.",
+        examples=["E"],
+    )
+    radius: Optional[Size] = Field(
+        None,
+        description="The radius of the groove, if stated (e.g. `0.8` in `E0,8x0,3`).",
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("0.8"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    depth: Optional[Size] = Field(
+        None,
+        description="The depth of the groove, if stated (e.g. `0.3` in `E0,8x0,3`).",
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("0.3"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+
+
+class KeySlot(Feature):
+    """
+    Represents a slot (keyway) for a parallel key, also called a feather key,
+    specified by a standard (e.g. `DIN 6885 A 8x7x56`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of key slots or instances. Must be at least 1.",
+        examples=[1],
+    )
+    standard: str = Field(
+        ...,
+        description="The standard the key is specified by, as written on the drawing.",
+        examples=["DIN 6885"],
+    )
+    form: Optional[str] = Field(
+        None,
+        description="The form of the key defined by the standard (e.g. `A` for round ends), if stated.",
+        examples=["A"],
+    )
+    key_width: Size = Field(
+        ...,
+        description="The width of the key, and so of the slot (e.g. `8` in `8x7x56`).",
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("8"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    key_height: Optional[Size] = Field(
+        None,
+        description="The height of the key (e.g. `7` in `8x7x56`), if stated.",
+    )
+    key_length: Optional[Size] = Field(
+        None,
+        description="The length of the key, and so of the slot (e.g. `56` in `8x7x56`), if stated.",
+    )
+
+
+class CenterHole(Feature):
+    """
+    Represents a center hole specified by a standard (e.g.
+    `DIN 332-A 2,5x5,3`, `ISO 6411-A 2/4.25`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of center holes or instances. Must be at least 1.",
+        examples=[2],
+    )
+    standard: str = Field(
+        ...,
+        description="The standard the center hole is specified by, as written on the drawing.",
+        examples=["DIN 332"],
+    )
+    form: Optional[str] = Field(
+        None,
+        description="The form defined by the standard (e.g. `A`, `B`, `R`), if stated.",
+        examples=["A"],
+    )
+    pilot_diameter: Optional[Size] = Field(
+        None,
+        description="The diameter of the pilot hole (e.g. `2.5` in `A 2,5x5,3`), if stated.",
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("2.5"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    outer_diameter: Optional[Size] = Field(
+        None,
+        description="The outer diameter of the countersink (e.g. `5.3` in `A 2,5x5,3`), if stated.",
+    )
+    requirement: Optional[CenterHoleRequirement] = Field(
+        None,
+        description="Whether the center hole must, may or must not remain on the finished part, if stated.",
     )
 
 

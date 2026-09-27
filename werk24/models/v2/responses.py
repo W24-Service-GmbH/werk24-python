@@ -9,6 +9,7 @@ from .models import (
     BillOfMaterial,
     Bore,
     BoundingDimensions,
+    CenterHole,
     Certification,
     Chamfer,
     Dimension,
@@ -16,6 +17,7 @@ from .models import (
     GDnT,
     GeneralTolerances,
     Identifier,
+    KeySlot,
     Language,
     MaterialCombination,
     Note,
@@ -29,6 +31,7 @@ from .models import (
     Roughness,
     SecondaryProcess,
     ThreadUnion,
+    Undercut,
     UnitSystem,
     VolumeEstimate,
     Weight,
@@ -176,6 +179,18 @@ class ResponseFeaturesComponentDrawing(Response):
     threads: List[ThreadUnion] = Field(
         default_factory=list,
         description="Thread specifications for the component (e.g., `M5×0.8—6g/6H`, `0.25—20 UNC—2A`).",
+    )
+    undercuts: List[Undercut] = Field(
+        default_factory=list,
+        description="Thread undercuts and relief grooves specified by standard (e.g., `DIN 76-B`, `DIN 509-E0,8x0,3`).",
+    )
+    key_slots: List[KeySlot] = Field(
+        default_factory=list,
+        description="Slots for parallel (feather) keys specified by standard (e.g., `DIN 6885 A 8x7x56`).",
+    )
+    center_holes: List[CenterHole] = Field(
+        default_factory=list,
+        description="Center holes specified by standard (e.g., `DIN 332-A 2,5x5,3`).",
     )
 
 
