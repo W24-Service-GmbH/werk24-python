@@ -117,6 +117,7 @@ images = ["pillow>=12.3.0"]
 [project.urls]
 homepage = "https://werk24.io"
 signup = "https://studio.werk24.io/console/signup?product=console&plan=payg&utm_source=pypi&utm_medium=project_urls"
+demo = "https://studio.werk24.io/demo?utm_source=pypi&utm_medium=project_urls"
 repository = "https://github.com/W24-Service-GmbH/werk24-python"
 documentation = "https://v2.docs.werk24.io"
 changelog = "https://github.com/W24-Service-GmbH/werk24-python/releases"

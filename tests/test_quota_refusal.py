@@ -186,6 +186,30 @@ class TestTheInitializeRefusal:
         assert f"Request ID: {request_id}" in str(excinfo.value)
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("empty", [None, ""], ids=["null", "empty-string"])
+    async def test_an_empty_payload_request_id_keeps_the_messages(self, empty):
+        client, request_id = _client_answering_initialize(
+            {"error": "QUOTA_EXHAUSTED", "message": "x", "request_id": empty}
+        )
+
+        with pytest.raises(InsufficientCreditsException) as excinfo:
+            await client.init_request([AskMetaData()], 1)
+
+        assert f"Request ID: {request_id}" in str(excinfo.value)
+
+    @pytest.mark.asyncio
+    async def test_the_payloads_own_request_id_wins(self):
+        client, request_id = _client_answering_initialize(
+            {"error": "QUOTA_EXHAUSTED", "message": "x", "request_id": "req-9"}
+        )
+
+        with pytest.raises(InsufficientCreditsException) as excinfo:
+            await client.init_request([AskMetaData()], 1)
+
+        assert "Request ID: req-9" in str(excinfo.value)
+        assert request_id not in str(excinfo.value)
+
+    @pytest.mark.asyncio
     async def test_it_is_logged_once_at_warning_and_never_at_error(self, caplog):
         caplog.set_level(logging.DEBUG, logger="werk24")
         client, _ = _client_answering_initialize({"message": "Limit Exceeded"})
