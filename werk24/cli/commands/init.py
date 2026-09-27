@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 import werk24.utils.license as license_module
-from werk24.utils.defaults import API_KEYS_URL, DEMO_URL, Settings
+from werk24.utils.defaults import API_TOKENS_URL, DEMO_URL, Settings
 from werk24.utils.exceptions import InvalidLicenseException
 from werk24.utils.license import (
     LicenseLookup,
@@ -25,66 +25,66 @@ settings = Settings()
 
 @app.command()
 def init():
-    """Set up Werk24 with your API key."""
+    """Set up Werk24 with your API token."""
     try:
         lookup: Optional[LicenseLookup] = locate_license()
     except InvalidLicenseException:
-        lookup = None  # Continue to ask the user for a key
+        lookup = None  # Continue to ask the user for a token
 
-    if lookup is not None and not confirm_replacing_the_key(lookup):
-        console.print("Kept the existing key.")
+    if lookup is not None and not confirm_replacing_the_token(lookup):
+        console.print("Kept the existing token.")
         return
     ask_user_to_create_license()
 
 
 def _save_path() -> str:
-    """The absolute path ``werk24 init`` saves the key to."""
+    """The absolute path ``werk24 init`` saves the token to."""
     return os.path.abspath(license_module.USER_LICENSE_PATH)
 
 
-def confirm_replacing_the_key(lookup: LicenseLookup) -> bool:
-    """Say where the current key is read from and ask whether to save a new one.
+def confirm_replacing_the_token(lookup: LicenseLookup) -> bool:
+    """Say where the current token is read from and ask whether to save a new one.
 
     Args:
     ----
-    - lookup (LicenseLookup): The key that is set up now, and its source.
+    - lookup (LicenseLookup): The token that is set up now, and its source.
 
     Returns:
     -------
-    - bool: True to go on and save a new key. No answer (the end of the
-      input) keeps the existing key.
+    - bool: True to go on and save a new token. No answer (the end of the
+      input) keeps the existing token.
     """
     console.print(
         Panel(
-            "[bold green]An API key is already set up. It is read from "
+            "[bold green]An API token is already set up. It is read from "
             f"{escape(lookup.describe())}.[/bold green]"
         )
     )
     save_path = _save_path()
     if lookup.source == "environment":
         console.print(
-            "[yellow]Key files are read before the environment variable "
-            f"W24TECHREAD_AUTH_TOKEN, so a key saved to {escape(save_path)} "
-            "would be used instead of the variable's key in every script on "
+            "[yellow]Token files are read before the environment variable "
+            f"W24TECHREAD_AUTH_TOKEN, so a token saved to {escape(save_path)} "
+            "would be used instead of the variable's token in every script on "
             "this computer.[/yellow]"
         )
     try:
-        return typer.confirm(f"Save a new key to {save_path}?", default=False)
+        return typer.confirm(f"Save a new token to {save_path}?", default=False)
     except typer.Abort:
         return False
 
 
 def ask_user_to_create_license():
-    """Ask for an API key, or point the user to the API signup page."""
+    """Ask for an API token, or point the user to the API signup page."""
     CREATE_A_LICENSE_FILE_TEXT = """
-    To use the Werk24 API, you need an API key.
-    You create API keys in the Werk24 console after signing up.
+    To use the Werk24 API, you need an API token.
+    You create API tokens in the Werk24 console after signing up.
     """
     console.print(
-        Panel(Text(CREATE_A_LICENSE_FILE_TEXT, style="bold red"), title="API Key Setup")
+        Panel(Text(CREATE_A_LICENSE_FILE_TEXT, style="bold red"), title="API Token Setup")
     )
     console.print("[blue]Choose an option:[/blue]")
-    console.print("[yellow]1.[/yellow] Paste an API key")
+    console.print("[yellow]1.[/yellow] Paste an API token")
     console.print("[yellow]2.[/yellow] Sign up for the Werk24 API")
 
     while True:
@@ -141,8 +141,8 @@ def accept_license_from_terminal():
         try:
             license = parse_license_text(license_text)
         except InvalidLicenseException as exc:
-            # Nothing has been written: a refused paste never replaces a key.
-            message = f"That key cannot be used: {escape(exc.reason)}."
+            # Nothing has been written: a refused paste never replaces a token.
+            message = f"That token cannot be used: {escape(exc.reason)}."
             if attempt < max_attempts:
                 console.print(f"[red]{message} Please try again.[/red]")
                 continue
@@ -152,15 +152,15 @@ def accept_license_from_terminal():
         try:
             path = save_license_file(license, path=license_module.USER_LICENSE_PATH)
         except InvalidLicenseException as exc:
-            # Pasting again would not help: the key is fine, the file is not.
-            console.print(f"[red]The key was not saved: {escape(exc.reason)}.[/red]")
+            # Pasting again would not help: the token is fine, the file is not.
+            console.print(f"[red]The token was not saved: {escape(exc.reason)}.[/red]")
             raise typer.Exit(code=1)  # noqa: B904
 
         console.print(
             Panel(
-                f"[bold green]API key saved to {escape(path)}.[/bold green]\n"
+                f"[bold green]API token saved to {escape(path)}.[/bold green]\n"
                 "Scripts started from any folder on this computer will find it. "
-                "To use a different key for one process or a CI job, set the "
+                "To use a different token for one process or a CI job, set the "
                 "environment variable W24TECHREAD_AUTH_TOKEN instead."
             )
         )
@@ -169,48 +169,48 @@ def accept_license_from_terminal():
 
 
 def _warn_if_shadowed(path: str) -> None:
-    """Warn when the key just saved is not the one the client will use here.
+    """Warn when the token just saved is not the one the client will use here.
 
-    A leftover ``.werk24`` in the current folder is read before the key in the
+    A leftover ``.werk24`` in the current folder is read before the token in the
     home folder. It is the user's file, so it is named, never deleted.
 
     Args:
     ----
-    - path (str): The absolute path the new key was saved to.
+    - path (str): The absolute path the new token was saved to.
     """
     try:
         lookup = locate_license()
     except InvalidLicenseException:
         console.print(
             f"[yellow]The client does not read {escape(path)}, so it will not "
-            "find the new key. Set the environment variable "
+            "find the new token. Set the environment variable "
             "W24TECHREAD_AUTH_TOKEN instead.[/yellow]"
         )
         return
     if lookup.source == "file" and lookup.path == path:
         return
     console.print(
-        "[yellow]In this folder the key is still read from "
+        "[yellow]In this folder the token is still read from "
         f"{escape(lookup.describe())}, which takes precedence over "
-        f"{escape(path)}. Remove or update it to use the new key here.[/yellow]"
+        f"{escape(path)}. Remove or update it to use the new token here.[/yellow]"
     )
 
 
 def sign_up_for_license():
-    """Point the user to the API signup page, then accept the key they create."""
+    """Point the user to the API signup page, then accept the token they create."""
     # soft_wrap keeps each URL on one line: Rich would otherwise break a URL
     # longer than the terminal is wide, and the copied URL would not work.
     # Text() prints an overridden URL as it is, never as Rich markup.
     console.print("[blue]Sign up for the Werk24 API (billed pay as you go) at:[/blue]")
     console.print(Text(str(settings.signup_url), style="bold cyan"), soft_wrap=True)
-    console.print("[blue]Then create an API key in the Werk24 console:[/blue]")
-    console.print(Text(API_KEYS_URL, style="bold cyan"), soft_wrap=True)
+    console.print("[blue]Then create an API token in the Werk24 console:[/blue]")
+    console.print(Text(API_TOKENS_URL, style="bold cyan"), soft_wrap=True)
     console.print(
         "[blue]To try Werk24 on a drawing before signing up, "
         "the browser demo is free:[/blue]"
     )
     console.print(Text(DEMO_URL, style="bold cyan"), soft_wrap=True)
-    console.print("[blue]Once you have your API key, paste it below.[/blue]")
+    console.print("[blue]Once you have your API token, paste it below.[/blue]")
     accept_license_from_terminal()
 
 

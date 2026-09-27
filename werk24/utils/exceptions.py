@@ -1,10 +1,10 @@
 from typing import Optional, Sequence
 
-# The console page where API keys are listed, created and deleted, kept
+# The console page where API tokens are listed, created and deleted, kept
 # importable from here. It comes from werk24.utils.urls, which imports
 # nothing: the settings module would load pydantic_settings and dotenv into
 # every import of werk24, including those that only use the models.
-from werk24.utils.urls import API_KEYS_URL as API_KEYS_URL
+from werk24.utils.urls import API_TOKENS_URL as API_TOKENS_URL
 
 #: The documentation page on how large a drawing can be.
 FILE_SIZE_DOCS_URL = "https://v2.docs.werk24.io/limitations/file-size/"
@@ -58,14 +58,14 @@ class UnauthorizedException(TechreadException):
     )
 
 
-class ApiKeyRejectedException(UnauthorizedException):
-    """Raised when the Werk24 API refuses the API key the client sent.
+class ApiTokenRejectedException(UnauthorizedException):
+    """Raised when the Werk24 API refuses the API token the client sent.
 
-    The server gives the same answer for a mistyped key, a deleted or revoked
-    key, and a key whose account is closed or suspended, and does not say
-    which. The message therefore names the key by its last four characters
+    The server gives the same answer for a mistyped token, a deleted or revoked
+    token, and a token whose account is closed or suspended, and does not say
+    which. The message therefore names the token by its last four characters
     (the same ones the console shows), says where the client read it from,
-    and points to the console page where keys are managed. The full key is
+    and points to the console page where tokens are managed. The full token is
     never part of the message.
 
     A subclass of :class:`UnauthorizedException`, so an existing
@@ -73,49 +73,49 @@ class ApiKeyRejectedException(UnauthorizedException):
 
     Attributes:
     ----------
-    - key_suffix (Optional[str]): The last four characters of the key, or
-      None when the key is too short to show any of it.
-    - key_source (Optional[str]): Where the key was read from: the token
+    - token_suffix (Optional[str]): The last four characters of the token, or
+      None when the token is too short to show any of it.
+    - token_source (Optional[str]): Where the token was read from: the token
       argument, the ``W24TECHREAD_AUTH_TOKEN`` environment variable, or a
       license file named by its path. None when it is not known.
     - status_code (Optional[int]): The HTTP status the server refused with.
     """
 
-    cli_message_header: str = "API Key Rejected"
+    cli_message_header: str = "API Token Rejected"
     cli_message_body: str = (
-        "The Werk24 API did not accept the API key this client sent.\n\n"
-        "The key may be mistyped, or it may no longer be active: a key stops "
+        "The Werk24 API did not accept the API token this client sent.\n\n"
+        "The token may be mistyped, or it may no longer be active: a token stops "
         "working when it is deleted, and when the account it belongs to is "
         "closed or suspended.\n\n"
-        f"Check your keys or create a new one at {API_KEYS_URL}"
+        f"Check your tokens or create a new one at {API_TOKENS_URL}"
     )
 
     def __init__(
         self,
         details: str = "",
-        key_suffix: Optional[str] = None,
-        key_source: Optional[str] = None,
+        token_suffix: Optional[str] = None,
+        token_source: Optional[str] = None,
         status_code: Optional[int] = None,
     ):
-        """Initialize the exception with what is known about the refused key.
+        """Initialize the exception with what is known about the refused token.
 
         Args:
         ----
-        - details (str): Additional details, appended after the key lines.
-        - key_suffix (Optional[str]): The last four characters of the key.
-        - key_source (Optional[str]): Where the key was read from.
+        - details (str): Additional details, appended after the token lines.
+        - token_suffix (Optional[str]): The last four characters of the token.
+        - token_source (Optional[str]): Where the token was read from.
         - status_code (Optional[int]): The HTTP status of the refusal.
         """
         self.details = details
-        self.key_suffix = key_suffix
-        self.key_source = key_source
+        self.token_suffix = token_suffix
+        self.token_source = token_source
         self.status_code = status_code
 
         lines = []
-        if key_suffix:
-            lines.append(f"Key: ending in '{key_suffix}'")
-        if key_source:
-            lines.append(f"Read from: {key_source}")
+        if token_suffix:
+            lines.append(f"Token: ending in '{token_suffix}'")
+        if token_source:
+            lines.append(f"Read from: {token_source}")
         if status_code:
             lines.append(f"Server response: HTTP {status_code}")
         if details:
@@ -126,7 +126,7 @@ class ApiKeyRejectedException(UnauthorizedException):
         # See CallbackDrawingTooLargeException.__reduce__.
         return (
             type(self),
-            (self.details, self.key_suffix, self.key_source, self.status_code),
+            (self.details, self.token_suffix, self.token_source, self.status_code),
         )
 
 
@@ -427,8 +427,8 @@ class InvalidLicenseException(TechreadException):
 
     Attributes:
     ----------
-    - reason (str): Why the key cannot be used, in a few words, for a
-      message such as "That key cannot be used: <reason>". Empty when no
+    - reason (str): Why the token cannot be used, in a few words, for a
+      message such as "That token cannot be used: <reason>". Empty when no
       reason was given.
     """
 
@@ -443,7 +443,7 @@ class InvalidLicenseException(TechreadException):
 
         Args:
         ----
-        - details (str): Why the key cannot be used. Kept as ``reason`` and
+        - details (str): Why the token cannot be used. Kept as ``reason`` and
           appended to the message.
         """
         self.reason = details
@@ -456,29 +456,29 @@ class InvalidLicenseException(TechreadException):
 
 
 class LicenseNotFoundException(InvalidLicenseException):
-    """Raised when no API key is configured anywhere the client looks.
+    """Raised when no API token is configured anywhere the client looks.
 
     A subclass of :class:`InvalidLicenseException`, so an existing
     ``except InvalidLicenseException`` keeps catching it. Its message lists
     every place the client looked, what it found there, and how to set up a
-    key.
+    token.
 
     Attributes:
     ----------
     - searched (list[tuple[str, str]]): Each place the client looked, with
       what it found there, for example ``("/home/me/.werk24", "not found")``.
-    - save_path (Optional[str]): Where ``werk24 init`` saves a key.
-    - keys_url (str): The page where API keys are created and managed.
+    - save_path (Optional[str]): Where ``werk24 init`` saves a token.
+    - tokens_url (str): The page where API tokens are created and managed.
     """
 
-    cli_message_header: str = "No API Key Found"
-    cli_message_body: str = "No Werk24 API key was found."
+    cli_message_header: str = "No API Token Found"
+    cli_message_body: str = "No Werk24 API token was found."
 
     def __init__(
         self,
         searched: Sequence[tuple[str, str]] = (),
         save_path: Optional[str] = None,
-        keys_url: Optional[str] = None,
+        tokens_url: Optional[str] = None,
     ):
         """Initialize the exception with where the client looked.
 
@@ -486,13 +486,13 @@ class LicenseNotFoundException(InvalidLicenseException):
         ----
         - searched (Sequence[tuple[str, str]]): Each place the client looked
           and what it found there.
-        - save_path (Optional[str]): Where ``werk24 init`` saves a key.
-        - keys_url (Optional[str]): The page where API keys are managed.
+        - save_path (Optional[str]): Where ``werk24 init`` saves a token.
+        - tokens_url (Optional[str]): The page where API tokens are managed.
           Defaults to the Werk24 console.
         """
         self.searched = [tuple(entry) for entry in searched]
         self.save_path = save_path
-        self.keys_url = keys_url if keys_url is not None else API_KEYS_URL
+        self.tokens_url = tokens_url if tokens_url is not None else API_TOKENS_URL
 
         sections = [type(self).cli_message_body]
         if self.searched:
@@ -503,7 +503,7 @@ class LicenseNotFoundException(InvalidLicenseException):
                 )
             )
 
-        init_hint = '  - Run "werk24 init" and paste your API key.'
+        init_hint = '  - Run "werk24 init" and paste your API token.'
         if save_path:
             init_hint += (
                 f" It is saved to {save_path}, where the client finds it from"
@@ -513,30 +513,30 @@ class LicenseNotFoundException(InvalidLicenseException):
             "To fix this, do one of the following:\n"
             f"{init_hint}\n"
             "  - Set the environment variable W24TECHREAD_AUTH_TOKEN to your"
-            " API key.\n"
-            '  - Pass the key to the client: Werk24Client(token="...").'
+            " API token.\n"
+            '  - Pass the token to the client: Werk24Client(token="...").'
         )
-        if self.keys_url:
-            sections.append(f"You can create and manage API keys at {self.keys_url}")
+        if self.tokens_url:
+            sections.append(f"You can create and manage API tokens at {self.tokens_url}")
 
         self.cli_message_body = "\n\n".join(sections)
         TechreadException.__init__(self)
-        self.reason = "no API key was found"
+        self.reason = "no API token was found"
 
     def __reduce__(self):
         # See CallbackDrawingTooLargeException.__reduce__.
-        return (type(self), (self.searched, self.save_path, self.keys_url))
+        return (type(self), (self.searched, self.save_path, self.tokens_url))
 
 
 class W24AuthenticationError(TechreadException):
     """Not raised by ``Werk24Client``; kept so existing imports keep working.
 
-    The client reports a refused API key as :class:`ApiKeyRejectedException`,
+    The client reports a refused API token as :class:`ApiTokenRejectedException`,
     a subclass of :class:`UnauthorizedException` (a 403 when the connection
     opens, or a 401 from ``read_drawing_with_callback``); other 401 and 403
     answers as :class:`UnauthorizedException`, or as
     :class:`PriorityTooHighError` when they refuse the requested priority;
-    and a missing or unusable key as :class:`InvalidLicenseException`. An
+    and a missing or unusable token as :class:`InvalidLicenseException`. An
     ``except W24AuthenticationError`` never matches an error from this
     client; catch those classes instead.
 

@@ -15,7 +15,7 @@ from werk24._version import __version__
 from werk24.techread import Werk24Client
 from werk24.utils.defaults import Settings
 from werk24.utils.exceptions import (
-    ApiKeyRejectedException,
+    ApiTokenRejectedException,
     InvalidLicenseException,
     LicenseNotFoundException,
 )
@@ -29,12 +29,12 @@ settings = Settings()
 
 @dataclass
 class ConnectionCheck:
-    """The outcome of opening a WebSocket connection with the configured key.
+    """The outcome of opening a WebSocket connection with the configured token.
 
     Attributes:
     ----------
-    - outcome (str): "connected", "key_rejected", "failed" or "skipped"
-      (no key was found, so no connection was attempted).
+    - outcome (str): "connected", "token_rejected", "failed" or "skipped"
+      (no token was found, so no connection was attempted).
     - error (Optional[BaseException]): The exception, when there was one.
     """
 
@@ -68,7 +68,7 @@ def health_check():
     # whether this machine can use it.
     asyncio.run(status_information())
 
-    if check.outcome == "key_rejected":
+    if check.outcome == "token_rejected":
         e = check.error
         console.print(
             Panel(
@@ -84,12 +84,12 @@ def health_check():
 
 
 async def check_connection() -> ConnectionCheck:
-    """Open a WebSocket connection with the configured key and report how it went."""
+    """Open a WebSocket connection with the configured token and report how it went."""
     try:
         async with Werk24Client():
             return ConnectionCheck("connected")
-    except ApiKeyRejectedException as e:
-        return ConnectionCheck("key_rejected", e)
+    except ApiTokenRejectedException as e:
+        return ConnectionCheck("token_rejected", e)
     except Exception as e:
         return ConnectionCheck("failed", e)
 
@@ -130,10 +130,10 @@ def license_information(
 
     Args:
     ----
-    - lookup (Optional[LicenseLookup]): The key that was found and where, or
-      None when no key was found.
-    - check (ConnectionCheck): Whether the API accepted the key.
-    - error (Optional[InvalidLicenseException]): Why no key was found, when
+    - lookup (Optional[LicenseLookup]): The token that was found and where, or
+      None when no token was found.
+    - check (ConnectionCheck): Whether the API accepted the token.
+    - error (Optional[InvalidLicenseException]): Why no token was found, when
       it is known. A LicenseNotFoundException adds every place the client
       looked, one line each.
     """
@@ -150,8 +150,8 @@ def license_information(
                     f"{location}: {outcome}" for location, outcome in error.searched
                 )
                 rows.append(("Looked In", escape(looked_in)))
-            if error.keys_url:
-                rows.append(("API Keys", escape(error.keys_url)))
+            if error.tokens_url:
+                rows.append(("API Tokens", escape(error.tokens_url)))
         elif error is not None and error.reason:
             rows.append(("Reason", escape(error.reason)))
         print_panel("License Information", rows)
@@ -160,25 +160,25 @@ def license_information(
     suffix = token_suffix(lookup.license.token)
     license_info = [
         ("License Status", "[green]Found[/green]"),
-        ("Key", f"ending in {escape(suffix)}" if suffix else "(too short to show)"),
+        ("Token", f"ending in {escape(suffix)}" if suffix else "(too short to show)"),
         ("Source", escape(lookup.describe())),
     ]
     if lookup.env_shadowed:
         license_info.append(
             (
                 "Note",
-                "[yellow]W24TECHREAD_AUTH_TOKEN is also set, to a different key, "
+                "[yellow]W24TECHREAD_AUTH_TOKEN is also set, to a different token, "
                 "and is ignored because this file is read first.[/yellow]",
             )
         )
 
-    key_check = {
+    token_check = {
         "connected": "[green]Accepted[/green]",
-        "key_rejected": "[red]Rejected by the Werk24 API[/red]",
+        "token_rejected": "[red]Rejected by the Werk24 API[/red]",
         "failed": "[yellow]Not checked (no connection)[/yellow]",
     }.get(check.outcome)
-    if key_check is not None:
-        license_info.append(("Key Check", key_check))
+    if token_check is not None:
+        license_info.append(("Token Check", token_check))
 
     print_panel("License Information", license_info)
 
@@ -194,13 +194,13 @@ def network_information(check: ConnectionCheck) -> None:
     server_uri = str(settings.wss_server)
     if check.outcome == "connected":
         status = "[green]Successful[/green]"
-    elif check.outcome == "key_rejected":
-        status = "[red]Refused: API key rejected[/red]"
+    elif check.outcome == "token_rejected":
+        status = "[red]Refused: API token rejected[/red]"
     elif check.outcome == "failed":
         e = check.error
         status = f"[red]Error: {type(e).__name__} - {escape(str(e))}[/red]"
     else:
-        status = "[yellow]Skipped: no API key found[/yellow]"
+        status = "[yellow]Skipped: no API token found[/yellow]"
 
     print_panel(
         "Network Information", [(f"WebSocket Connection ({server_uri})", status)]
