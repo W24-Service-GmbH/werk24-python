@@ -81,6 +81,14 @@ Calling the API needs an API key and is billed pay as you go. [Sign up for the W
 
 To see what Werk24 reads from a drawing before you sign up, try the free [browser demo](https://studio.werk24.io/demo?utm_source=github&utm_medium=install_demo).
 
+To let the CLI show the sheet and view images it receives (`werk24 techread --ask-sheet-images` / `--ask-view-images`), install the `images` extra, which adds Pillow:
+
+```bash
+pip install "werk24[images]"
+```
+
+Without it, those options do not show the images and still print the other results.
+
 ### Where the client looks for your API key
 
 The client uses the first key it finds, in this order:
@@ -207,7 +215,7 @@ werk24 techread drawing.pdf --ask-meta-data | jq .
 werk24 techread drawing.pdf --ask-meta-data --ask-redaction --pretty
 ```
 
-Asks: `--ask-balloons`, `--ask-custom <custom_id>`, `--ask-document-profile`, `--ask-features`, `--ask-insights`, `--ask-meta-data`, `--ask-page-assessment`, `--ask-redaction`, `--ask-reference-positions`, `--ask-sheet-images`, `--ask-view-images`. `--pretty` indents each object. `--ask-sheet-images` and `--ask-view-images` also open each image in the default image viewer, which needs Pillow (`pip install pillow`).
+Asks: `--ask-balloons`, `--ask-custom <custom_id>`, `--ask-document-profile`, `--ask-features`, `--ask-insights`, `--ask-meta-data`, `--ask-page-assessment`, `--ask-redaction`, `--ask-reference-positions`, `--ask-sheet-images`, `--ask-view-images`. `--pretty` indents each object. `--ask-sheet-images` and `--ask-view-images` also open each image in the default image viewer, which needs Pillow from the `images` extra (`pip install "werk24[images]"`). Without Pillow, a read that asks for anything else as well warns once, does not show the images and prints every result; a read that asks only for images stops before it starts.
 
 Exceptions reported by the server are written to stderr, one line each. The exit status is `0` when every ask was answered without an `ERROR`-level exception. It is `1` when an ask failed, when the read ended before the server reported it complete, or when the client raised an error. It is `2` for a usage error such as an unknown option.
 
