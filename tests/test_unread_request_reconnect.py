@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import uuid
 from unittest.mock import AsyncMock, patch
 
@@ -33,6 +34,7 @@ from werk24.techread import Werk24Client
 from werk24.utils.exceptions import (
     BadRequestException,
     EncryptionException,
+    InsufficientCreditsException,
     RequestTooLargeException,
     ServerException,
 )
@@ -404,6 +406,28 @@ async def _init_answer_invalid(h):
         await h.read_all()
 
 
+async def _init_answer_quota(h):
+    # The account's request quota is used up. The API answers INITIALIZE with
+    # a PROGRESS_COMPLETED message instead of an init response; the request
+    # it created stays unread on the connection.
+    async def refuse(connection):
+        connection._outbox.get_nowait()
+        connection._outbox.put_nowait(
+            _message(
+                connection.unread[-1],
+                "PROGRESS",
+                "COMPLETED",
+                {"message": "Limit Exceeded"},
+            )
+        )
+
+    _after_initialize(h, refuse)
+    with pytest.raises(InsufficientCreditsException):
+        await h.read_all()
+    # Refused before the upload: nothing was sent.
+    h.upload.assert_not_awaited()
+
+
 async def _init_send_fails(h):
     # INITIALIZE never got out whole, so the client cannot know whether the
     # server holds the request.
@@ -425,8 +449,8 @@ async def _init_send_fails(h):
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "fail_initialize",
-    [_init_answer_lost, _init_answer_invalid, _init_send_fails],
-    ids=["answer-lost", "answer-invalid", "send-fails"],
+    [_init_answer_lost, _init_answer_invalid, _init_answer_quota, _init_send_fails],
+    ids=["answer-lost", "answer-invalid", "quota-refused", "send-fails"],
 )
 async def test_a_failed_initialize_leaves_the_next_read_on_a_fresh_connection(
     fail_initialize,
@@ -449,3 +473,53 @@ async def test_a_failed_initialize_leaves_the_next_read_on_a_fresh_connection(
     first, fresh = h.connections
     assert first.closed
     assert fresh.sent == ["INITIALIZE", "READ"]
+
+
+@pytest.mark.asyncio
+async def test_a_quota_refusal_at_read_raises_insufficient_credits(caplog):
+    """The API answers READ with its error envelope when the quota is used
+    up. The read raises InsufficientCreditsException instead of the generic
+    ServerException, and logs it once, at WARNING."""
+    caplog.set_level(logging.DEBUG, logger="werk24")
+    envelope = json.dumps(
+        {
+            "code": "429",
+            "message": "Insufficient credits for this request.",
+            "details": {
+                "error": "QUOTA_EXHAUSTED",
+                "message": "Your request quota is exhausted.",
+                "limit": 3,
+            },
+            "request_id": None,
+        }
+    )
+    h = _Harness()
+
+    with h.patched():
+        async with h.client:
+            first = h.connections[0]
+            original = first.send
+
+            async def send(raw: str) -> None:
+                if json.loads(raw)["action"] != "READ":
+                    await original(raw)
+                    return
+                first.sent.append("READ")
+                first.unread.pop()
+                first._outbox.put_nowait(envelope)
+
+            first.send = send
+
+            with pytest.raises(InsufficientCreditsException):
+                await h.read_all()
+
+    h.upload.assert_awaited_once()
+    assert first.sent == ["INITIALIZE", "READ"]
+    werk24_records = [r for r in caplog.records if r.name.startswith("werk24")]
+    assert not [r for r in werk24_records if r.levelno >= logging.ERROR]
+    quota_warnings = [
+        r
+        for r in werk24_records
+        if r.levelno == logging.WARNING and "quota" in r.getMessage()
+    ]
+    assert len(quota_warnings) == 1
