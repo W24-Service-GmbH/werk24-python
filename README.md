@@ -74,8 +74,24 @@ Pip installation
 
 ```bash
 pip install werk24    # install the library
-werk24 init           # obtain a trial license
+werk24 init           # paste your API key; it is saved to ~/.werk24 and found from any folder
 ```
+
+### Where the client looks for your API key
+
+The client uses the first key it finds, in this order:
+
+1. The `token` argument: `Werk24Client(token="...")`.
+2. `.werk24` in the folder the script is started from.
+3. `~/.werk24` in your home folder. This is where `werk24 init` saves the key.
+4. `werk24_license.txt` in the folder the script is started from.
+5. `~/werk24_license.txt` in your home folder.
+6. The environment variable `W24TECHREAD_AUTH_TOKEN`.
+
+The environment variable suits CI jobs and containers, where no key file
+exists. On a machine that has a key file, the file is used instead. When no
+key is found, the error lists every place the client looked. `werk24
+health-check` shows which key is in use and where it was read from.
 
 ## Dependency Management
 
