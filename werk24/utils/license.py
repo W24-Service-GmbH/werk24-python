@@ -387,7 +387,8 @@ def parse_license_file(path: str) -> License:
 
     Args:
     ----
-    - path (str): Path to the license file.
+    - path (str): Path to the license file. A leading ``~`` is expanded to
+      the home folder.
 
     Returns:
     -------
@@ -398,6 +399,8 @@ def parse_license_file(path: str) -> License:
     - InvalidLicenseException: If the license file is invalid or cannot be
       read. Its ``reason`` says which.
     """
+    # A path such as "~/.werk24" names the home folder, as it does in a shell.
+    path = os.path.expanduser(path)
     logger.debug(f"Attempting to parse license file at {path}")
     try:
         # utf-8-sig also reads a file an editor saved with a byte order mark.
@@ -524,6 +527,7 @@ def save_license_file(license: License, path: Optional[str] = None) -> str:
       the current working folder (the first of ``SEARCH_PATHS``), as in
       earlier releases. ``werk24 init`` passes ``USER_LICENSE_PATH``
       (``~/.werk24``) instead, where the client finds it from any folder.
+      A leading ``~`` is expanded to the home folder.
 
     Returns:
     -------
@@ -535,8 +539,9 @@ def save_license_file(license: License, path: Optional[str] = None) -> str:
       names the path.
     """
     # Read the module global at call time, not as a default argument, so it
-    # can be changed after import.
-    license_path = path if path is not None else SEARCH_PATHS[0]
+    # can be changed after import. A path such as "~/.werk24" names the home
+    # folder, as it does in a shell.
+    license_path = os.path.expanduser(path if path is not None else SEARCH_PATHS[0])
     if license_path.startswith("~"):
         # expanduser leaves the path unchanged when it cannot find the home
         # folder. Writing it as is would create a folder named "~".
