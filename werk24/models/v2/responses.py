@@ -14,6 +14,7 @@ from .models import (
     Chamfer,
     Dimension,
     Entry,
+    Fastener,
     GDnT,
     GeneralTolerances,
     Identifier,
@@ -191,6 +192,10 @@ class ResponseFeaturesComponentDrawing(Response):
     center_holes: List[CenterHole] = Field(
         default_factory=list,
         description="Center holes specified by standard (e.g., `DIN 332-A 2,5x5,3`).",
+    )
+    fasteners: List[Fastener] = Field(
+        default_factory=list,
+        description="Fasteners the drawing specifies, such as press-in nuts, weld nuts, weld studs and screws (e.g., `3x PEM CLS-M4-2`, `4x DIN 929 M12`).",
     )
 
 
