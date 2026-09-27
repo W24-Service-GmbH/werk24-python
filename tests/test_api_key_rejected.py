@@ -17,6 +17,9 @@ from __future__ import annotations
 import logging
 import os
 import pickle
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -205,6 +208,77 @@ class TestLocateLicense:
         no_license.write_text(f"{TOKEN}\n")
         assert find_license() == License(token=TOKEN)
         assert find_license(TOKEN, "r") == License(token=TOKEN, region="r")
+
+
+class TestAReplacedFindLicense:
+    """A test suite that mocks the key through ``werk24.techread.find_license``.
+
+    Earlier releases built every client's license through that name, so
+    replacing it was how a test gave a bare ``Werk24Client()`` a key. The
+    client has to keep calling the replacement rather than searching for a
+    key itself. ``no_license`` makes sure a search would find nothing.
+    """
+
+    def test_a_bare_client_uses_the_replacement(self, no_license):
+        mocked = License(token=TOKEN)
+        with patch("werk24.techread.find_license", return_value=mocked) as replaced:
+            client = Werk24Client()
+
+        assert client.license is mocked
+        replaced.assert_called_once_with(None, None)
+
+    def test_the_arguments_reach_the_replacement(self, no_license):
+        mocked = License(token=TOKEN, region="r")
+        with patch("werk24.techread.find_license", return_value=mocked) as replaced:
+            client = Werk24Client(token=OTHER_TOKEN, region="r")
+
+        assert client.license is mocked
+        replaced.assert_called_once_with(OTHER_TOKEN, "r")
+
+    def test_a_refusal_names_the_key_but_no_source(self, no_license):
+        with patch(
+            "werk24.techread.find_license", return_value=License(token=TOKEN)
+        ):
+            client = Werk24Client()
+
+        exc = client._key_rejected(403, "wss://example.invalid")
+
+        assert exc.key_suffix == "WXYZ"
+        assert exc.key_source is None
+        assert TOKEN not in str(exc)
+
+    def test_without_a_replacement_the_source_is_recorded(self, no_license):
+        no_license.write_text(f"{TOKEN}\n")
+        client = Werk24Client()
+
+        assert client.license == License(token=TOKEN)
+        assert client._license_lookup.source == "file"
+        assert client._license_lookup.path == os.path.abspath(str(no_license))
+
+    def test_a_replacement_in_place_when_the_client_is_first_imported(self):
+        # Checked in a fresh interpreter: the client module has to be imported
+        # for the first time while werk24.utils.license.find_license is
+        # replaced, so that werk24.techread binds the replacement.
+        code = (
+            "from unittest.mock import patch;"
+            "import werk24.utils.license as m;"
+            f"lic = m.License(token={TOKEN!r});"
+            "p = patch('werk24.utils.license.find_license', return_value=lic);"
+            "p.start();"
+            "from werk24.techread import Werk24Client;"
+            "assert Werk24Client().license is lic;"
+            "p.stop();"
+            "assert Werk24Client().license is lic;"
+            "print('ok')"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=str(Path(__file__).resolve().parent.parent),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert result.stdout.strip() == "ok", result.stderr
 
 
 @pytest.mark.asyncio

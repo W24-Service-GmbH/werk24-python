@@ -71,7 +71,9 @@ from werk24.utils.exceptions import (
     UnauthorizedException,
     UnsupportedMediaType,
 )
-from werk24.utils.license import find_license  # noqa: F401 (kept importable here)
+# find_license is looked up through this module when a client is built, so a
+# test that patches werk24.techread.find_license gives every client its key.
+from werk24.utils.license import _ORIGINAL_FIND_LICENSE, find_license
 from werk24.utils.license import locate_license, token_suffix
 from werk24.utils.logger import get_logger
 from werk24.utils.priority import validate_priority
@@ -333,8 +335,15 @@ class Werk24Client:
         max_reconnect_attempts: int = 3,
         reconnect_delay: float = 1.0,
     ):
-        lookup = locate_license(token, region)
-        self.license = lookup.license
+        if find_license is _ORIGINAL_FIND_LICENSE:
+            lookup = locate_license(token, region)
+            self.license = lookup.license
+        else:
+            # A caller replaced werk24.techread.find_license, typically a test
+            # that mocks the key. Use the replacement, as earlier releases
+            # did; where its key came from is then unknown.
+            self.license = find_license(token, region)
+            lookup = None
         # Where the key came from, so a refusal can say which key to fix.
         self._license_lookup = lookup
         self._wss_server = str(wss_server)
