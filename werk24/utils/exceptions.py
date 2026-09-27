@@ -276,12 +276,19 @@ class ReadTimeoutError(TechreadException):
 
 
 class InsufficientCreditsException(ServerException):
-    """Raised when the user has insufficient credits for an action."""
+    """Raised when the account's request quota is used up.
+
+    The API refuses the request (HTTP 429, or a refusal on the WebSocket at
+    INITIALIZE or READ). A subclass of ServerException, so existing handlers
+    keep catching it, but not a RetryableServerError: waiting does not reset
+    the quota, so it is never retried.
+    """
 
     cli_message_header: str = "Insufficient Credits"
     cli_message_body: str = (
-        "You do not have enough credits to perform the requested action.\n\n"
-        "Please check your account balance and top up if necessary."
+        "You do not have enough credits left for this request: your account's request quota is used up.\n\n"
+        "The quota does not reset by waiting, so retrying will not help. "
+        "Please top up your account, or contact your Werk24 account manager or support@werk24.io to raise the limit."
     )
 
 

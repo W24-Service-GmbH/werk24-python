@@ -152,6 +152,16 @@ EXCEPTION_MAP = {
     BadRequestException: TechreadExceptionType.DRAWING_FILE_SIZE_TOO_LARGE,
 }
 
+#: The slug the API puts in an error envelope's ``details.error`` (older
+#: servers: top-level ``error``) when it refuses a request because the
+#: account's quota is used up.
+_QUOTA_EXHAUSTED_ERROR = "QUOTA_EXHAUSTED"
+
+#: The ``message`` in the payload of the PROGRESS_COMPLETED message the API
+#: sends in place of an init response when the quota is used up. Compared
+#: after strip() and lower().
+_INIT_QUOTA_REFUSAL_MESSAGE = "limit exceeded"
+
 settings = Settings()
 logger = get_logger(settings.log_level)
 
@@ -771,6 +781,9 @@ class Werk24Client:
         ------
         - BadRequestException: If the request is malformed or ask types are invalid.
         - InvalidPriorityError: If the priority value is invalid.
+        - InsufficientCreditsException: If the account's request quota is
+            used up, whether the API refuses at initialization or at READ. A
+            subclass of ServerException; never retried.
         - RuntimeError: If another read on the same client replaced the
             connection between this read's INITIALIZE and READ. Reads on one
             client must not overlap.
@@ -914,6 +927,10 @@ class Werk24Client:
                 total_timeout=total_timeout,
             ):
                 yield message
+        except InsufficientCreditsException:
+            # Already logged at WARNING where it was recognised. A spent quota
+            # is the account's state, not a fault, so no ERROR line here.
+            raise
         except Exception as exc:
             logger.error("An error occurred while sending the read command: %s", exc)
             raise
@@ -1010,8 +1027,10 @@ class Werk24Client:
 
         Raises:
         ------
-        - ServerException: If the server returns an error response during
-          initialization.
+        - InsufficientCreditsException: the account's request quota is used
+          up.
+        - ServerException: the server answered INITIALIZE with something that
+          is not an init response.
 
         """
         logger.debug("API method init_request() called")
@@ -1047,7 +1066,29 @@ class Werk24Client:
         message = await self._recv_message()
         logger.info("Received request_id %s", message.request_id)
         payload = message.payload_dict
-        payload = TechreadInitResponse.model_validate(payload)
+        if isinstance(payload, TechreadInitResponse):
+            return message, payload
+
+        # The API answers INITIALIZE with a PROGRESS_COMPLETED message instead
+        # of an init response when the account's quota is used up. The
+        # request stays marked open either way, so the next read reconnects.
+        refusal = self._init_quota_refusal(message)
+        if refusal is not None:
+            logger.warning(
+                "Request %s refused at initialization: the account's request "
+                "quota is used up.",
+                message.request_id,
+            )
+            raise refusal
+
+        try:
+            payload = TechreadInitResponse.model_validate(payload)
+        except ValidationError as exc:
+            raise ServerException(
+                "Unexpected response to INITIALIZE "
+                f"({message.message_type.value}/{message.message_subtype.value}): "
+                f"{payload!r:.500}"
+            ) from exc
 
         return message, payload
 
@@ -1217,6 +1258,111 @@ class Werk24Client:
 
         return None
 
+    @staticmethod
+    def _quota_exception(payload: Any) -> Optional[InsufficientCreditsException]:
+        """Return the typed exception for a spent request quota, or None.
+
+        The API refuses a request whose account has used up its quota with
+        the error envelope (``code``, ``message``, ``details``,
+        ``request_id``) and names the reason in ``details.error`` as
+        ``QUOTA_EXHAUSTED``. ``details`` may also carry a human-readable
+        ``message`` and the account's ``limit`` (a number, or
+        ``"unlimited"``).
+
+        The older top-level ``error`` form is still accepted, as it is for
+        the priority refusals.
+
+        The slug is required. A 429 alone is not enough: a rate-limit refusal
+        carries the same code, and it is not a spent quota.
+
+        Args:
+        ----
+        - payload (Any): The decoded error body. Anything that is not a
+          mapping is not a refusal we recognise.
+
+        Returns:
+        -------
+        - Optional[InsufficientCreditsException]: The exception to raise, or
+          None if this is not a quota refusal.
+        """
+        if not isinstance(payload, dict):
+            return None
+
+        details = payload.get("details")
+        if not isinstance(details, dict):
+            details = {}
+
+        if (
+            details.get("error") != _QUOTA_EXHAUSTED_ERROR
+            and payload.get("error") != _QUOTA_EXHAUSTED_ERROR
+        ):
+            return None
+
+        lines = [
+            str(
+                details.get("message")
+                or payload.get("message")
+                or "The request quota is used up."
+            )
+        ]
+        limit = details.get("limit")
+        # A limit of 0 is a real limit, so test the type and not the value.
+        if isinstance(limit, int) and not isinstance(limit, bool):
+            lines.append(f"Request limit: {limit}")
+        if payload.get("request_id"):
+            lines.append(f"Request ID: {payload['request_id']}")
+        return InsufficientCreditsException("\n".join(lines))
+
+    @staticmethod
+    def _init_quota_refusal(
+        message: TechreadMessage,
+    ) -> Optional[InsufficientCreditsException]:
+        """Return the typed exception if *message* refuses INITIALIZE for quota.
+
+        When the account's quota is used up, the API answers INITIALIZE with a
+        PROGRESS_COMPLETED message whose payload carries a ``message`` of
+        ``"Limit Exceeded"`` instead of an init response. A payload that
+        carries the ``QUOTA_EXHAUSTED`` slug of the error envelope is
+        recognised as well.
+
+        Args:
+        ----
+        - message (TechreadMessage): The answer to INITIALIZE.
+
+        Returns:
+        -------
+        - Optional[InsufficientCreditsException]: The exception to raise, or
+          None if the message is not a quota refusal.
+        """
+        if not (
+            message.message_type == TechreadMessageType.PROGRESS
+            and message.message_subtype == TechreadMessageSubtype.PROGRESS_COMPLETED
+        ):
+            return None
+
+        payload = message.payload_dict
+        if not isinstance(payload, dict):
+            return None
+
+        # The payload's own request_id, if it names one, wins.
+        quota = Werk24Client._quota_exception(
+            {"request_id": str(message.request_id), **payload}
+        )
+        if quota is not None:
+            return quota
+
+        text = payload.get("message")
+        if (
+            isinstance(text, str)
+            and text.strip().lower() == _INIT_QUOTA_REFUSAL_MESSAGE
+        ):
+            return InsufficientCreditsException(
+                "The request was refused when it was initialized: "
+                f"{text.strip()}\nRequest ID: {message.request_id}"
+            )
+
+        return None
+
     @classmethod
     async def _raise_for_priority_error(
         cls,
@@ -1277,6 +1423,8 @@ class Werk24Client:
           account tier (403 PRIORITY_TOO_HIGH).
         - InvalidPriorityError: Raised when the priority value is invalid
           (400 INVALID_PRIORITY).
+        - InsufficientCreditsException: Raised when the account's request
+          quota is used up (details.error QUOTA_EXHAUSTED).
         - ServerException: Raised when the server's response is invalid or unexpected.
 
         Returns:
@@ -1313,6 +1461,16 @@ class Werk24Client:
             if priority_exception is not None:
                 logger.warning("Priority error received: %s", error_message)
                 raise priority_exception from exception
+
+            # A spent quota is the account's state, not a server fault: say
+            # so, instead of the generic ServerException below that tells the
+            # customer to try again later.
+            quota_exception = Werk24Client._quota_exception(response)
+            if quota_exception is not None:
+                logger.warning(
+                    "Request refused: the account's request quota is used up."
+                )
+                raise quota_exception from exception
 
             # Raise specific exceptions for known error messages
             if error_message == "Forbidden":
@@ -2234,6 +2392,10 @@ class Werk24Client:
             while pending:
                 yield await _resolve(pending.popleft())
 
+        except InsufficientCreditsException:
+            # Already logged at WARNING where it was recognised. A spent quota
+            # is the account's state, not a fault, so no ERROR line here.
+            raise
         except Exception as e:
             logger.error("Error occurred while processing responses: %s", e)
             raise
