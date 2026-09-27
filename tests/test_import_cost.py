@@ -111,14 +111,14 @@ class TestTheClientIsNotImportedUntilItIsAsked:
         [
             "import werk24",
             "from werk24 import TechreadWithCallbackPayload  # noqa: F401",
-            "from werk24.utils.exceptions import API_KEYS_URL  # noqa: F401",
+            "from werk24.utils.exceptions import API_TOKENS_URL  # noqa: F401",
         ],
         ids=["package", "model", "exceptions"],
     )
     def test_the_exceptions_do_not_load_the_settings(self, statement):
         """The exceptions are imported by every consumer, the models' too.
 
-        Their messages name the API keys page. Taking that URL from the
+        Their messages name the API tokens page. Taking that URL from the
         settings module would load pydantic_settings and dotenv with them,
         which only the client and the CLI need.
         """
@@ -129,11 +129,11 @@ class TestTheClientIsNotImportedUntilItIsAsked:
         assert "pydantic_settings" not in loaded
         assert "dotenv" not in loaded
 
-    def test_the_api_keys_url_is_the_same_from_every_module(self):
+    def test_the_api_tokens_url_is_the_same_from_every_module(self):
         result = _run(
-            "from werk24.utils.defaults import API_KEYS_URL as a, DEMO_URL as d\n"
-            "from werk24.utils.exceptions import API_KEYS_URL as b\n"
-            "from werk24.utils.urls import API_KEYS_URL as c, DEMO_URL as e\n"
+            "from werk24.utils.defaults import API_TOKENS_URL as a, DEMO_URL as d\n"
+            "from werk24.utils.exceptions import API_TOKENS_URL as b\n"
+            "from werk24.utils.urls import API_TOKENS_URL as c, DEMO_URL as e\n"
             "assert a == b == c == 'https://studio.werk24.io/console/keys', (a, b, c)\n"
             "assert d == e and d.startswith('https://studio.werk24.io/demo'), (d, e)\n"
         )

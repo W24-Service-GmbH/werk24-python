@@ -1,15 +1,15 @@
-"""A refused API key has to say which key it was and where it came from.
+"""A refused API token has to say which token it was and where it came from.
 
-When the API refuses the key (mistyped, deleted, revoked, or its account
+When the API refuses the token (mistyped, deleted, revoked, or its account
 closed or suspended), the client used to raise a plain UnauthorizedException
-whose message named neither the key nor where it was read from. A license
+whose message named neither the token nor where it was read from. A license
 file that silently took precedence over W24TECHREAD_AUTH_TOKEN made that
 especially hard to find.
 
-Now the refusal raises ApiKeyRejectedException, a subclass of
-UnauthorizedException. It names the key by its last four characters, says
-where it was read from and where keys are managed, and never contains the
-full key. Refusals that are not about the key keep their old classes.
+Now the refusal raises ApiTokenRejectedException, a subclass of
+UnauthorizedException. It names the token by its last four characters, says
+where it was read from and where tokens are managed, and never contains the
+full token. Refusals that are not about the token keep their old classes.
 """
 
 from __future__ import annotations
@@ -30,8 +30,8 @@ from websockets.http11 import Response
 import werk24.utils.license as license_module
 from werk24.techread import Werk24Client
 from werk24.utils.exceptions import (
-    API_KEYS_URL,
-    ApiKeyRejectedException,
+    API_TOKENS_URL,
+    ApiTokenRejectedException,
     PriorityTooHighError,
     ServerException,
     TechreadException,
@@ -89,33 +89,33 @@ def _shadow_warnings(caplog) -> list:
 
 class TestTheExceptionClass:
     def test_it_is_an_unauthorized_exception(self):
-        assert issubclass(ApiKeyRejectedException, UnauthorizedException)
-        assert issubclass(ApiKeyRejectedException, TechreadException)
+        assert issubclass(ApiTokenRejectedException, UnauthorizedException)
+        assert issubclass(ApiTokenRejectedException, TechreadException)
 
     def test_it_is_exported_from_the_package(self):
-        from werk24 import ApiKeyRejectedException as exported
+        from werk24 import ApiTokenRejectedException as exported
 
-        assert exported is ApiKeyRejectedException
+        assert exported is ApiTokenRejectedException
 
     def test_it_builds_without_arguments_and_names_the_keys_page(self):
-        exc = ApiKeyRejectedException()
-        assert API_KEYS_URL in str(exc)
-        assert exc.key_suffix is None
-        assert exc.key_source is None
+        exc = ApiTokenRejectedException()
+        assert API_TOKENS_URL in str(exc)
+        assert exc.token_suffix is None
+        assert exc.token_source is None
         assert exc.status_code is None
 
     def test_details_stays_the_first_positional_argument(self):
-        exc = ApiKeyRejectedException("x")
+        exc = ApiTokenRejectedException("x")
         assert "x" in str(exc)
         assert exc.details == "x"
 
     def test_the_lines_come_in_order(self):
-        exc = ApiKeyRejectedException(
-            "more", key_suffix="WXYZ", key_source="the token argument", status_code=403
+        exc = ApiTokenRejectedException(
+            "more", token_suffix="WXYZ", token_source="the token argument", status_code=403
         )
         text = str(exc)
         positions = [
-            text.index("Key: ending in 'WXYZ'"),
+            text.index("Token: ending in 'WXYZ'"),
             text.index("Read from: the token argument"),
             text.index("Server response: HTTP 403"),
             text.index("more"),
@@ -124,16 +124,16 @@ class TestTheExceptionClass:
         assert text == exc.cli_message_body
 
     def test_it_survives_a_pickle_round_trip(self):
-        exc = ApiKeyRejectedException(
+        exc = ApiTokenRejectedException(
             "details",
-            key_suffix="WXYZ",
-            key_source="the token argument",
+            token_suffix="WXYZ",
+            token_source="the token argument",
             status_code=401,
         )
         copy = pickle.loads(pickle.dumps(exc))
-        assert type(copy) is ApiKeyRejectedException
-        assert copy.key_suffix == "WXYZ"
-        assert copy.key_source == "the token argument"
+        assert type(copy) is ApiTokenRejectedException
+        assert copy.token_suffix == "WXYZ"
+        assert copy.token_source == "the token argument"
         assert copy.status_code == 401
         assert str(copy) == str(exc)
 
@@ -211,12 +211,12 @@ class TestLocateLicense:
 
 
 class TestAReplacedFindLicense:
-    """A test suite that mocks the key through ``werk24.techread.find_license``.
+    """A test suite that mocks the token through ``werk24.techread.find_license``.
 
     Earlier releases built every client's license through that name, so
-    replacing it was how a test gave a bare ``Werk24Client()`` a key. The
+    replacing it was how a test gave a bare ``Werk24Client()`` a token. The
     client has to keep calling the replacement rather than searching for a
-    key itself. ``no_license`` makes sure a search would find nothing.
+    token itself. ``no_license`` makes sure a search would find nothing.
     """
 
     def test_a_bare_client_uses_the_replacement(self, no_license):
@@ -241,10 +241,10 @@ class TestAReplacedFindLicense:
         ):
             client = Werk24Client()
 
-        exc = client._key_rejected(403, "wss://example.invalid")
+        exc = client._token_rejected(403, "wss://example.invalid")
 
-        assert exc.key_suffix == "WXYZ"
-        assert exc.key_source is None
+        assert exc.token_suffix == "WXYZ"
+        assert exc.token_source is None
         assert TOKEN not in str(exc)
 
     def test_without_a_replacement_the_source_is_recorded(self, no_license):
@@ -288,20 +288,20 @@ class TestTheConnectRefusal:
         with patch.object(
             Werk24Client, "_create_websocket_session", side_effect=_refuse(403)
         ) as create:
-            with pytest.raises(ApiKeyRejectedException) as excinfo:
+            with pytest.raises(ApiTokenRejectedException) as excinfo:
                 async with client:
                     pass
 
         exc = excinfo.value
-        assert exc.key_suffix == "WXYZ"
+        assert exc.token_suffix == "WXYZ"
         assert exc.status_code == 403
-        assert "token argument" in exc.key_source
+        assert "token argument" in exc.token_source
         text = str(exc)
-        assert API_KEYS_URL in text
+        assert API_TOKENS_URL in text
         assert client._wss_server in text
-        assert "Pass an active key as token= to Werk24Client." in text
+        assert "Pass an active token as token= to Werk24Client." in text
         assert TOKEN not in text
-        # A refused key is not a transient failure: it is not retried.
+        # A refused token is not a transient failure: it is not retried.
         assert create.call_count == 1
 
     async def test_existing_handlers_still_catch_it(self, no_license):
@@ -317,21 +317,21 @@ class TestTheConnectRefusal:
     ):
         no_license.write_text(f"{TOKEN}\n")
         monkeypatch.setenv(TOKEN_ENV_KEY, OTHER_TOKEN)
-        # No token argument: the key has to come from the file. The fixture
+        # No token argument: the token has to come from the file. The fixture
         # makes the lookup independent of the machine.
         client = Werk24Client(region="r")
         with patch.object(
             Werk24Client, "_create_websocket_session", side_effect=_refuse(403)
         ):
-            with pytest.raises(ApiKeyRejectedException) as excinfo:
+            with pytest.raises(ApiTokenRejectedException) as excinfo:
                 async with client:
                     pass
 
         path = os.path.abspath(str(no_license))
         text = str(excinfo.value)
-        assert excinfo.value.key_source == f"the file {path}"
-        assert f"Replace the key in {path}." in text
-        assert "W24TECHREAD_AUTH_TOKEN is also set, to a different key" in text
+        assert excinfo.value.token_source == f"the file {path}"
+        assert f"Replace the token in {path}." in text
+        assert "W24TECHREAD_AUTH_TOKEN is also set, to a different token" in text
         assert "is ignored" in text
         assert TOKEN not in text
         assert OTHER_TOKEN not in text
@@ -344,26 +344,26 @@ class TestTheConnectRefusal:
         with patch.object(
             Werk24Client, "_create_websocket_session", side_effect=_refuse(403)
         ):
-            with pytest.raises(ApiKeyRejectedException) as excinfo:
+            with pytest.raises(ApiTokenRejectedException) as excinfo:
                 async with client:
                     pass
 
         text = str(excinfo.value)
         assert "W24TECHREAD_AUTH_TOKEN environment variable" in text
-        assert "Set W24TECHREAD_AUTH_TOKEN to an active key." in text
+        assert "Set W24TECHREAD_AUTH_TOKEN to an active token." in text
         assert TOKEN not in text
 
     async def test_a_short_key_is_not_shown_at_all(self, no_license):
         with patch.object(
             Werk24Client, "_create_websocket_session", side_effect=_refuse(403)
         ):
-            with pytest.raises(ApiKeyRejectedException) as excinfo:
+            with pytest.raises(ApiTokenRejectedException) as excinfo:
                 async with Werk24Client(token="short", region="r"):
                     pass
 
         text = str(excinfo.value)
-        assert excinfo.value.key_suffix is None
-        assert "Key: ending" not in text
+        assert excinfo.value.token_suffix is None
+        assert "Token: ending" not in text
         assert "short" not in text
 
     async def test_a_reassigned_license_is_not_given_the_old_source(self, no_license):
@@ -372,12 +372,12 @@ class TestTheConnectRefusal:
         with patch.object(
             Werk24Client, "_create_websocket_session", side_effect=_refuse(403)
         ):
-            with pytest.raises(ApiKeyRejectedException) as excinfo:
+            with pytest.raises(ApiTokenRejectedException) as excinfo:
                 async with client:
                     pass
 
-        assert excinfo.value.key_suffix == "ABCD"
-        assert excinfo.value.key_source is None
+        assert excinfo.value.token_suffix == "ABCD"
+        assert excinfo.value.token_source is None
         assert "token argument" not in str(excinfo.value)
 
     async def test_a_key_revoked_mid_session_is_reported_on_reconnect(self, no_license):
@@ -385,7 +385,7 @@ class TestTheConnectRefusal:
         with patch.object(
             Werk24Client, "_create_websocket_session", side_effect=_refuse(403)
         ):
-            with pytest.raises(ApiKeyRejectedException) as excinfo:
+            with pytest.raises(ApiTokenRejectedException) as excinfo:
                 await client._reconnect()
 
         assert excinfo.value.status_code == 403
@@ -399,7 +399,7 @@ class TestTheConnectRefusal:
                 async with Werk24Client(token=TOKEN, region="r"):
                     pass
 
-        assert not isinstance(excinfo.value, ApiKeyRejectedException)
+        assert not isinstance(excinfo.value, ApiTokenRejectedException)
 
 
 @pytest.mark.asyncio
@@ -407,12 +407,12 @@ class TestTheCallbackRefusal:
     async def test_a_401_is_a_rejected_key(self, no_license):
         client = Werk24Client(token=TOKEN, region="r")
         response = _FakeResponse(401, {"message": "Unauthorized"})
-        with pytest.raises(ApiKeyRejectedException) as excinfo:
+        with pytest.raises(ApiTokenRejectedException) as excinfo:
             await _call_with_callback(client, response, "PRIO3")
 
         exc = excinfo.value
         assert exc.status_code == 401
-        assert exc.key_suffix == "WXYZ"
+        assert exc.token_suffix == "WXYZ"
         assert "read-with-callback" in str(exc)
         assert TOKEN not in str(exc)
         assert response.released is True
@@ -423,7 +423,7 @@ class TestTheCallbackRefusal:
         with pytest.raises(UnauthorizedException) as excinfo:
             await _call_with_callback(client, response, "PRIO3")
 
-        assert type(excinfo.value) is not ApiKeyRejectedException
+        assert type(excinfo.value) is not ApiTokenRejectedException
 
     async def test_a_priority_refusal_is_still_a_priority_error(self, no_license):
         client = Werk24Client(token=TOKEN, region="r")
@@ -434,7 +434,7 @@ class TestTheCallbackRefusal:
 
 class TestPresignedUrlsAreNotKeys:
     def test_a_403_from_storage_is_plain_unauthorized(self):
-        """An expired presigned URL is not a problem with the API key."""
+        """An expired presigned URL is not a problem with the API token."""
         with pytest.raises(UnauthorizedException) as excinfo:
             Werk24Client._raise_for_status("https://bucket.example/x", 403)
 

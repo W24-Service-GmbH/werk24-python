@@ -74,10 +74,10 @@ Pip installation
 
 ```bash
 pip install werk24    # install the library
-werk24 init           # paste your API key; it is saved to ~/.werk24 and found from any folder
+werk24 init           # paste your API token; it is saved to ~/.werk24 and found from any folder
 ```
 
-Calling the API needs an API key and is billed pay as you go. [Sign up for the Werk24 API](https://studio.werk24.io/console/signup?product=console&plan=payg&utm_source=github&utm_medium=install_signup), then create a key on the [API keys page](https://studio.werk24.io/console/keys) of the Werk24 console. `werk24 init` asks for the key and stores it for the client. On a server or in CI, set the `W24TECHREAD_AUTH_TOKEN` environment variable instead.
+Calling the API needs an API token and is billed pay as you go. [Sign up for the Werk24 API](https://studio.werk24.io/console/signup?product=console&plan=payg&utm_source=github&utm_medium=install_signup), then create a token on the [API tokens page](https://studio.werk24.io/console/keys) of the Werk24 console. `werk24 init` asks for the token and stores it for the client. On a server or in CI, set the `W24TECHREAD_AUTH_TOKEN` environment variable instead.
 
 To see what Werk24 reads from a drawing before you sign up, try the free [browser demo](https://studio.werk24.io/demo?utm_source=github&utm_medium=install_demo).
 
@@ -89,21 +89,21 @@ pip install "werk24[images]"
 
 Without it, those options do not show the images and still print the other results.
 
-### Where the client looks for your API key
+### Where the client looks for your API token
 
-The client uses the first key it finds, in this order:
+The client uses the first token it finds, in this order:
 
 1. The `token` argument: `Werk24Client(token="...")`.
 2. `.werk24` in the folder the script is started from.
-3. `~/.werk24` in your home folder. This is where `werk24 init` saves the key.
+3. `~/.werk24` in your home folder. This is where `werk24 init` saves the token.
 4. `werk24_license.txt` in the folder the script is started from.
 5. `~/werk24_license.txt` in your home folder.
 6. The environment variable `W24TECHREAD_AUTH_TOKEN`.
 
-The environment variable suits CI jobs and containers, where no key file
-exists. On a machine that has a key file, the file is used instead. When no
-key is found, the error lists every place the client looked. `werk24
-health-check` shows which key is in use and where it was read from.
+The environment variable suits CI jobs and containers, where no token file
+exists. On a machine that has a token file, the file is used instead. When no
+token is found, the error lists every place the client looked. `werk24
+health-check` shows which token is in use and where it was read from.
 
 ## Dependency Management
 
@@ -219,7 +219,7 @@ $> werk24 --help
 │ --help                            Show this message and exit.                             │
 ╰───────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ────────────────────────────────────────────────────────────────────────────────╮
-│ init           Set up Werk24 with your API key.                                           │
+│ init           Set up Werk24 with your API token.                                         │
 │ health-check   Run a comprehensive health check for the CLI.                              │
 │ techread       Read a drawing file and extract information.                               │
 │ version        Print the version of the Client.                                           │

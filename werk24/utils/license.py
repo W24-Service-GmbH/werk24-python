@@ -7,7 +7,7 @@ import dotenv
 from pydantic import BaseModel, field_validator
 
 from werk24.utils.exceptions import (
-    API_KEYS_URL,
+    API_TOKENS_URL,
     InvalidLicenseException,
     LicenseNotFoundException,
 )
@@ -25,9 +25,9 @@ _RAW_SEARCH_PATHS = [
 # Expand user paths once at import time
 SEARCH_PATHS = [os.path.expanduser(p) for p in _RAW_SEARCH_PATHS]
 
-# Where ``werk24 init`` saves the key: the home folder, so a script finds it
+# Where ``werk24 init`` saves the token: the home folder, so a script finds it
 # whatever folder it is started from. It must stay in SEARCH_PATHS. Every
-# earlier release also reads it, so a key saved here works with older client
+# earlier release also reads it, so a token saved here works with older client
 # versions installed in other environments too.
 USER_LICENSE_PATH = os.path.expanduser("~/.werk24")
 
@@ -37,15 +37,15 @@ TOKEN_ENV_KEY = "W24TECHREAD_AUTH_TOKEN"
 # Name of the environment variable / dotenv key that holds the (legacy) region.
 REGION_ENV_KEY = "W24TECHREAD_AUTH_REGION"
 
-# Characters a key list uses to shorten a key it shows. A key containing one
-# of them was copied from such a list, not from where the full key was shown.
+# Characters a token list uses to shorten a token it shows. A token containing one
+# of them was copied from such a list, not from where the full token was shown.
 _MASK_CHARACTERS = ("\u2022", "\u00b7", "\u2026", "\u25cf", "...", "***")
 
 # How the environment variable is named where the client lists what it checked.
 _ENV_LOCATION = f"environment variable {TOKEN_ENV_KEY}"
 
-# Only keys at least this long are shown by their last four characters in an
-# error message. Below it, four characters are too large a share of the key.
+# Only tokens at least this long are shown by their last four characters in an
+# error message. Below it, four characters are too large a share of the token.
 MIN_MASKABLE_TOKEN_LENGTH = 12
 
 # Initialize logger
@@ -70,8 +70,8 @@ class License(BaseModel):
     def _token_must_not_be_empty(cls, value: str) -> str:
         if not value or not value.strip():
             raise ValueError("The license token must not be empty.")
-        # A backstop: the functions that read a key check it first, so they
-        # can say why it was refused. A key refused here could never have
+        # A backstop: the functions that read a token check it first, so they
+        # can say why it was refused. A token refused here could never have
         # been accepted by the API.
         problem = token_problem(value)
         if problem:
@@ -81,12 +81,12 @@ class License(BaseModel):
 
 def token_problem(token: Optional[str]) -> Optional[str]:
     """
-    Say why a value cannot be an API key, or return None when it can be.
+    Say why a value cannot be an API token, or return None when it can be.
 
     Catches what a paste most often gets wrong: an empty value, the
-    shortened key a key list shows (for example ``wk24_\u2022\u2022\u2022\u2022wxyz``),
+    shortened token a token list shows (for example ``wk24_\u2022\u2022\u2022\u2022wxyz``),
     a prefix such as ``Token``, and characters that cannot be sent in an
-    HTTP header at all. It does not say whether the API accepts the key;
+    HTTP header at all. It does not say whether the API accepts the token;
     only the API can.
 
     Args:
@@ -97,20 +97,20 @@ def token_problem(token: Optional[str]) -> Optional[str]:
     Returns:
     -------
     - Optional[str]: The reason, in lower case without a trailing period,
-      or None when the value may be a key.
+      or None when the value may be a token.
     """
     value = (token or "").strip()
     if not value:
         return "it is empty"
     if any(mark in value for mark in _MASK_CHARACTERS):
-        return "it looks like the shortened key shown in a key list, not the full key"
+        return "it looks like the shortened token shown in a token list, not the full token"
     if any(character.isspace() for character in value):
         return (
-            "it contains spaces; use the key on its own, without a prefix "
+            "it contains spaces; use the token on its own, without a prefix "
             "such as 'Token'"
         )
     if not value.isascii() or not value.isprintable():
-        return "it contains characters that never appear in an API key"
+        return "it contains characters that never appear in an API token"
     return None
 
 
@@ -118,7 +118,7 @@ def token_suffix(token: str) -> Optional[str]:
     """
     Return the last four characters of a token, for naming it in a message.
 
-    The console shows the same four characters when it masks a key, so a user
+    The console shows the same four characters when it masks a token, so a user
     can match the two. A token shorter than ``MIN_MASKABLE_TOKEN_LENGTH``
     gives None: four characters would be too large a share of it.
 
@@ -150,7 +150,7 @@ class LicenseLookup:
     - path (Optional[str]): The absolute path of the file, when the source is
       "file".
     - env_shadowed (bool): True when the license came from a file while
-      ``W24TECHREAD_AUTH_TOKEN`` is set to a different key, which is then
+      ``W24TECHREAD_AUTH_TOKEN`` is set to a different token, which is then
       ignored.
     """
 
@@ -160,7 +160,7 @@ class LicenseLookup:
     env_shadowed: bool = False
 
     def describe(self) -> str:
-        """Say where the key was read from, for a message."""
+        """Say where the token was read from, for a message."""
         if self.source == "argument":
             return "the token argument"
         if self.source == "environment":
@@ -176,7 +176,7 @@ def locate_license(
 
     Searches in the same order as ``find_license``: the token argument, then
     the license files in ``SEARCH_PATHS``, then the environment variables.
-    A file or variable that holds something that cannot be a key is skipped
+    A file or variable that holds something that cannot be a token is skipped
     with a WARNING that says why, and the search goes on.
 
     Args:
@@ -190,7 +190,7 @@ def locate_license(
 
     Raises:
     ------
-    - InvalidLicenseException: If the token argument cannot be a key.
+    - InvalidLicenseException: If the token argument cannot be an API token.
     - LicenseNotFoundException: If no valid license is found. A subclass of
       InvalidLicenseException; its message lists every place the client
       looked and what it found there.
@@ -234,8 +234,8 @@ def locate_license(
         if env_shadowed and abs_path not in _SHADOW_WARNED:
             _SHADOW_WARNED.add(abs_path)
             logger.warning(
-                f"Using the API key in {abs_path}. {TOKEN_ENV_KEY} is also set, "
-                "to a different key, and is ignored because license files are "
+                f"Using the API token in {abs_path}. {TOKEN_ENV_KEY} is also set, "
+                "to a different token, and is ignored because license files are "
                 f"read first. Correct or delete {abs_path} to use the variable."
             )
         return LicenseLookup(license, "file", abs_path, env_shadowed)
@@ -254,7 +254,7 @@ def locate_license(
     raise LicenseNotFoundException(
         searched,
         save_path=None if save_path.startswith("~") else os.path.abspath(save_path),
-        keys_url=API_KEYS_URL,
+        tokens_url=API_TOKENS_URL,
     )
 
 
@@ -281,7 +281,7 @@ def find_license(token: Optional[str] = None, region: Optional[str] = None) -> L
 #: ``find_license`` as defined above. ``Werk24Client`` compares the name it
 #: would call against this one. When they differ, a caller replaced it (for
 #: example a test patching ``werk24.techread.find_license``), and the client
-#: calls the replacement instead of searching for a key itself.
+#: calls the replacement instead of searching for a token itself.
 _ORIGINAL_FIND_LICENSE = find_license
 
 
@@ -334,7 +334,7 @@ def _check_license_env() -> tuple[Optional[License], str]:
             logger.debug("License found in environment variables.")
             return license, "found"
 
-    # Never log the value itself: it may be a working key with a typo.
+    # Never log the value itself: it may be a working token with a typo.
     logger.warning(f"Ignoring the environment variable {TOKEN_ENV_KEY}: {problem}.")
     return None, f"set, but not usable: {problem}"
 
@@ -344,9 +344,9 @@ def find_license_in_paths() -> Optional[License]:
     Search for a license file in predefined paths.
 
     ``find_license`` and ``Werk24Client`` no longer call this function; they
-    go through ``locate_license``, which also records where the key was
-    found. Replacing this function therefore does not change which key the
-    client uses. To give a client a key in a test, patch
+    go through ``locate_license``, which also records where the token was
+    found. Replacing this function therefore does not change which token the
+    client uses. To give a client a token in a test, patch
     ``werk24.techread.find_license`` or pass ``token=`` to ``Werk24Client``.
 
     Returns:
@@ -366,16 +366,16 @@ def find_license_in_envs() -> Optional[License]:
     Search for a license in environment variables.
 
     ``find_license`` and ``Werk24Client`` no longer call this function; they
-    go through ``locate_license``, which also records where the key was
-    found. Replacing this function therefore does not change which key the
-    client uses. To give a client a key in a test, patch
+    go through ``locate_license``, which also records where the token was
+    found. Replacing this function therefore does not change which token the
+    client uses. To give a client a token in a test, patch
     ``werk24.techread.find_license`` or pass ``token=`` to ``Werk24Client``.
 
     Returns:
     -------
     - License: A valid License object if found.
       None: If the variable is not set, or holds something that cannot be a
-      key (logged as a WARNING).
+      token (logged as a WARNING).
     """
     license, _ = _check_license_env()
     return license
@@ -480,7 +480,7 @@ def parse_license_text(text: str) -> License:
     token = next((line.strip() for line in text.splitlines() if line.strip()), "")
     if "=" in token:
         logger.debug("The license text is not a token.")
-        raise InvalidLicenseException("it is not an API key")
+        raise InvalidLicenseException("it is not an API token")
 
     license = _make_license(token, None)
     logger.debug("License text parsed successfully (bare token).")
@@ -502,7 +502,7 @@ def _make_license(token: str, region: Optional[str]) -> License:
 
     Raises:
     ------
-    - InvalidLicenseException: If the token cannot be a key.
+    - InvalidLicenseException: If the value cannot be an API token.
     """
     problem = token_problem(token)
     if problem:
@@ -546,7 +546,7 @@ def save_license_file(license: License, path: Optional[str] = None) -> str:
         # expanduser leaves the path unchanged when it cannot find the home
         # folder. Writing it as is would create a folder named "~".
         raise InvalidLicenseException(
-            "could not find your home folder to save the key in; set the "
+            "could not find your home folder to save the token in; set the "
             f"environment variable {TOKEN_ENV_KEY} instead"
         )
     abs_path = os.path.abspath(license_path)
@@ -577,6 +577,6 @@ def save_license_file(license: License, path: Optional[str] = None) -> str:
     except Exception as e:
         logger.error(f"Error saving license file: {e}")
         raise InvalidLicenseException(
-            f"could not save the key to {abs_path}: {e}"
+            f"could not save the token to {abs_path}: {e}"
         ) from e
     return abs_path
