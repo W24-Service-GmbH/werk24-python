@@ -11,10 +11,12 @@ from pydantic import (
 )
 
 from .enums import (
+    CenterHoleRequirement,
     CertificationType,
     CoordinateSpace,
     CurvatureType,
     DepthType,
+    FastenerType,
     GDnTAssociatedFeature,
     GDnTCharacteristic,
     GDnTDerivedFeature,
@@ -48,6 +50,7 @@ from .enums import (
     SizeType,
     ThreadHandedness,
     ThreadType,
+    UndercutType,
     UnitSystemType,
     VolumeEstimateType,
 )
@@ -1039,6 +1042,92 @@ class Material(BaseModel):
     )
 
 
+class FastenerSpecification(BaseModel):
+    """
+    Describes a fastener: a press-in nut (e.g. `PEM CLS-M4-2`), a weld nut
+    (e.g. `DIN 929 M12`), a weld stud (e.g. `M6x15`), a screw (e.g.
+    `ISO 4762 M6x20`) and the like.
+
+    The same description is used for a fastener callout on the drawing
+    (`Fastener`) and for a row of the bill of material that lists the
+    fastener (`BillOfMaterialRow.fastener`), so the two can be matched.
+    """
+
+    fastener_type: FastenerType = Field(
+        ...,
+        description="The kind of fastener, by how it is joined.",
+        examples=[FastenerType.PRESS_IN_NUT],
+    )
+    designation: Optional[str] = Field(
+        None,
+        description=(
+            "The designation of the fastener as written on the drawing, with "
+            "spacing normalized (e.g. `PEM CLS-M4-2`, `DIN 929 M12`, "
+            "`ISO 4762 M6x20`). None when the drawing names only the kind of "
+            "fastener and its thread (e.g. `Einpressmutter M5`)."
+        ),
+        examples=["PEM CLS-M4-2"],
+    )
+    standard: Optional[str] = Field(
+        None,
+        description="The standard the fastener is specified by, if one is named.",
+        examples=["DIN 929"],
+    )
+    manufacturer: Optional[str] = Field(
+        None,
+        description="The manufacturer, if the designation names one.",
+        examples=["PEM"],
+    )
+    thread: Optional[ThreadUnion] = Field(
+        None,
+        description=(
+            "The thread of one piece of the fastener (e.g. `M4` for "
+            "`PEM CLS-M4-2`), if it has one. A pitch that is not written is "
+            "the standard coarse pitch."
+        ),
+    )
+    length: Optional[Size] = Field(
+        None,
+        description=(
+            "The length of the fastener, if stated (e.g. `15` in a weld stud "
+            "`M6x15`, `20` in `ISO 4762 M6x20`). A manufacturer's code that is "
+            "not a length, such as the shank code `2` in `PEM CLS-M4-2`, is "
+            "not reported here."
+        ),
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("15"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+
+
+class Fastener(FastenerSpecification, Feature):
+    """
+    Represents a fastener as a callout on the drawing specifies it (e.g.
+    `3x PEM CLS-M4-2`, `4x DIN 929 M12`, `6x weld stud M6x15`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of pieces. Must be at least 1.",
+        examples=[3],
+    )
+    note: Optional[str] = Field(
+        None,
+        description=(
+            "Placement text the callout adds, as written (e.g. `pointing "
+            "inward`), if any. It says on which side or in which direction the "
+            "fastener is fitted, which matters to the manufacturing step."
+        ),
+        examples=["pointing inward"],
+    )
+
+
 class MaterialCombination(Reference):
     """
     List of Materials that need to be combined
@@ -1079,6 +1168,15 @@ class BillOfMaterialRow(BaseModel):
     )
     unit_weight: Optional[Quantity] = Field(
         None, description="Unit Weight of the parts listed in the bill of material."
+    )
+    fastener: Optional[FastenerSpecification] = Field(
+        None,
+        description=(
+            "The fastener the row lists (e.g. a press-in nut `PEM CLS-M4-2`, "
+            "a weld nut `DIN 929 M12` or a screw `ISO 4762 M6x20`), when its "
+            "designation, part number or standard reads as one. None for "
+            "every other row."
+        ),
     )
 
 
@@ -1163,6 +1261,147 @@ class Radius(Feature):
     size: Size = Field(
         ...,
         description="Details about the size, including type, nominal value, tolerance, and unit.",
+    )
+
+
+class Undercut(Feature):
+    """
+    Represents an undercut specified by a standard: a thread undercut (e.g.
+    `DIN 76-B`) or a relief groove at a shoulder (e.g. `DIN 509-E0,8x0,3`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of undercuts or instances. Must be at least 1.",
+        examples=[1],
+    )
+    undercut_type: UndercutType = Field(
+        ...,
+        description="Whether this is a thread undercut or a relief groove.",
+        examples=[UndercutType.RELIEF_GROOVE],
+    )
+    standard: str = Field(
+        ...,
+        description="The standard the undercut is specified by, as written on the drawing.",
+        examples=["DIN 509"],
+    )
+    form: Optional[str] = Field(
+        None,
+        description="The form defined by the standard (e.g. `B` for DIN 76, `E` for DIN 509), if stated.",
+        examples=["E"],
+    )
+    radius: Optional[Size] = Field(
+        None,
+        description="The radius of the groove, if stated (e.g. `0.8` in `E0,8x0,3`).",
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("0.8"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    depth: Optional[Size] = Field(
+        None,
+        description="The depth of the groove, if stated (e.g. `0.3` in `E0,8x0,3`).",
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("0.3"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+
+
+class KeySlot(Feature):
+    """
+    Represents a slot (keyway) for a parallel key, also called a feather key,
+    specified by a standard (e.g. `DIN 6885 A 8x7x56`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of key slots or instances. Must be at least 1.",
+        examples=[1],
+    )
+    standard: str = Field(
+        ...,
+        description="The standard the key is specified by, as written on the drawing.",
+        examples=["DIN 6885"],
+    )
+    form: Optional[str] = Field(
+        None,
+        description="The form of the key defined by the standard (e.g. `A` for round ends), if stated.",
+        examples=["A"],
+    )
+    key_width: Size = Field(
+        ...,
+        description="The width of the key, and so of the slot (e.g. `8` in `8x7x56`).",
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("8"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    key_height: Optional[Size] = Field(
+        None,
+        description="The height of the key (e.g. `7` in `8x7x56`), if stated.",
+    )
+    key_length: Optional[Size] = Field(
+        None,
+        description="The length of the key, and so of the slot (e.g. `56` in `8x7x56`), if stated.",
+    )
+
+
+class CenterHole(Feature):
+    """
+    Represents a center hole specified by a standard (e.g.
+    `DIN 332-A 2,5x5,3`, `ISO 6411-A 2/4.25`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of center holes or instances. Must be at least 1.",
+        examples=[2],
+    )
+    standard: str = Field(
+        ...,
+        description="The standard the center hole is specified by, as written on the drawing.",
+        examples=["DIN 332"],
+    )
+    form: Optional[str] = Field(
+        None,
+        description="The form defined by the standard (e.g. `A`, `B`, `R`), if stated.",
+        examples=["A"],
+    )
+    pilot_diameter: Optional[Size] = Field(
+        None,
+        description="The diameter of the pilot hole (e.g. `2.5` in `A 2,5x5,3`), if stated.",
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("2.5"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    outer_diameter: Optional[Size] = Field(
+        None,
+        description="The outer diameter of the countersink (e.g. `5.3` in `A 2,5x5,3`), if stated.",
+    )
+    requirement: Optional[CenterHoleRequirement] = Field(
+        None,
+        description="Whether the center hole must, may or must not remain on the finished part, if stated.",
     )
 
 
