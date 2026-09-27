@@ -15,6 +15,7 @@ from .exceptions import InsufficientCreditsException as InsufficientCreditsExcep
 from .exceptions import InvalidLicenseException as InvalidLicenseException
 from .exceptions import InvalidPriorityError as InvalidPriorityError
 from .exceptions import LicenseNotFoundException as LicenseNotFoundException
+from .exceptions import OptionalDependencyMissingError as OptionalDependencyMissingError
 from .exceptions import PriorityTooHighError as PriorityTooHighError
 from .exceptions import ReadTimeoutError as ReadTimeoutError
 from .exceptions import RequestTooLargeException as RequestTooLargeException
