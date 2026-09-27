@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 import werk24.utils.license as license_module
-from werk24.utils.defaults import Settings
+from werk24.utils.defaults import API_KEYS_URL, DEMO_URL, Settings
 from werk24.utils.exceptions import InvalidLicenseException
 from werk24.utils.license import (
     LicenseLookup,
@@ -25,7 +25,7 @@ settings = Settings()
 
 @app.command()
 def init():
-    """Initialize Werk24 by providing or creating a license token."""
+    """Set up Werk24 with your API key."""
     try:
         lookup: Optional[LicenseLookup] = locate_license()
     except InvalidLicenseException:
@@ -75,17 +75,17 @@ def confirm_replacing_the_key(lookup: LicenseLookup) -> bool:
 
 
 def ask_user_to_create_license():
-    """Guide the user to provide or create a license token."""
+    """Ask for an API key, or point the user to the API signup page."""
     CREATE_A_LICENSE_FILE_TEXT = """
-    To use Werk24, you need a valid token.
-    If you don't have one, you can sign up to get a license.
+    To use the Werk24 API, you need an API key.
+    You create API keys in the Werk24 console after signing up.
     """
     console.print(
-        Panel(Text(CREATE_A_LICENSE_FILE_TEXT, style="bold red"), title="License Setup")
+        Panel(Text(CREATE_A_LICENSE_FILE_TEXT, style="bold red"), title="API Key Setup")
     )
     console.print("[blue]Choose an option:[/blue]")
-    console.print("[yellow]1.[/yellow] Provide a token")
-    console.print("[yellow]2.[/yellow] Sign up to get a license")
+    console.print("[yellow]1.[/yellow] Paste an API key")
+    console.print("[yellow]2.[/yellow] Sign up for the Werk24 API")
 
     while True:
         try:
@@ -146,9 +146,7 @@ def accept_license_from_terminal():
             if attempt < max_attempts:
                 console.print(f"[red]{message} Please try again.[/red]")
                 continue
-            console.print(
-                f"[red]{message} Maximum number of attempts reached.[/red]"
-            )
+            console.print(f"[red]{message} Maximum number of attempts reached.[/red]")
             raise typer.Exit(code=1)  # noqa: B904
 
         try:
@@ -199,10 +197,20 @@ def _warn_if_shadowed(path: str) -> None:
 
 
 def sign_up_for_license():
-    """Guide the user to sign up for a license and obtain a token."""
-    console.print("[blue]To sign up for a license, visit the following URL:[/blue]")
-    console.print(f"[bold cyan]{settings.signup_url}[/bold cyan]")
-    console.print("[blue]Once you have your token, paste it below.[/blue]")
+    """Point the user to the API signup page, then accept the key they create."""
+    # soft_wrap keeps each URL on one line: Rich would otherwise break a URL
+    # longer than the terminal is wide, and the copied URL would not work.
+    # Text() prints an overridden URL as it is, never as Rich markup.
+    console.print("[blue]Sign up for the Werk24 API (billed pay as you go) at:[/blue]")
+    console.print(Text(str(settings.signup_url), style="bold cyan"), soft_wrap=True)
+    console.print("[blue]Then create an API key in the Werk24 console:[/blue]")
+    console.print(Text(API_KEYS_URL, style="bold cyan"), soft_wrap=True)
+    console.print(
+        "[blue]To try Werk24 on a drawing before signing up, "
+        "the browser demo is free:[/blue]"
+    )
+    console.print(Text(DEMO_URL, style="bold cyan"), soft_wrap=True)
+    console.print("[blue]Once you have your API key, paste it below.[/blue]")
     accept_license_from_terminal()
 
 

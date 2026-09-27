@@ -1,10 +1,11 @@
 from typing import Optional, Sequence
 
+# The console page where API keys are listed, created and deleted. Defined
+# once, in the settings module, and kept importable from here.
+from werk24.utils.defaults import API_KEYS_URL as API_KEYS_URL
+
 #: The documentation page on how large a drawing can be.
 FILE_SIZE_DOCS_URL = "https://v2.docs.werk24.io/limitations/file-size/"
-
-#: The console page where API keys are listed, created and deleted.
-API_KEYS_URL = "https://studio.werk24.io/console/keys"
 
 
 class TechreadException(Exception):
