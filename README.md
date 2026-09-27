@@ -34,8 +34,8 @@ Werk24 provides AI-powered solutions for extracting and interpreting technical d
 This Python client enables easy interaction with the Werk24 API for processing technical drawings efficiently.
 The API gives you access to the following structured data:
 
-- **Meta Data**: Drawing ID, Part ID, Designation, General Tolerances, General Roughness, Material, Weight, Bill of Material, Revision Table, Languages and Notes.
-- **Features**: Dimensions incl. Tolerances, Threads, Bores, Chamfers, Roughnesses, GDnTs, Radii.
+- **Meta Data**: Drawing ID, Part ID, Designation, General Tolerances, General Roughness, Material, Weight, Bill of Material (incl. Fasteners), Revision Table, Languages and Notes.
+- **Features**: Dimensions incl. Tolerances, Threads, Bores, Chamfers, Roughnesses, GDnTs, Radii, Undercuts, Key Slots, Center Holes, Fasteners.
 - **Insights**: Manufacturing Method, Postprocesses, Input Geometry, Output Geometry.
 - **Redaction**: Redact information from Technical Drawings.
 

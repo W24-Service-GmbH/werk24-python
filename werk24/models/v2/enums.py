@@ -20,6 +20,81 @@ class CurvatureType(str, Enum):
     PLANE = "PLANE"
 
 
+class UndercutType(str, Enum):
+    """Kinds of undercut a drawing specifies by standard.
+
+    - THREAD_UNDERCUT: the run-out groove at the end of a thread, e.g.
+      DIN 76 forms A to D. Its dimensions follow from the thread pitch.
+    - RELIEF_GROOVE: the relief groove at a shoulder of a turned or ground
+      part, e.g. DIN 509 forms E, F, G and H, given as ``E 0.8x0.3``
+      (form, radius x depth).
+    """
+
+    THREAD_UNDERCUT = "THREAD_UNDERCUT"
+    RELIEF_GROOVE = "RELIEF_GROOVE"
+
+
+class CenterHoleRequirement(str, Enum):
+    """Whether a center hole must remain on the finished part (ISO 6411).
+
+    - REQUIRED: the center hole is required on the finished part.
+    - PERMITTED: the center hole may remain, but is not required (often
+      written as "optional").
+    - NOT_PERMITTED: the center hole must not remain on the finished part.
+    """
+
+    REQUIRED = "REQUIRED"
+    PERMITTED = "PERMITTED"
+    NOT_PERMITTED = "NOT_PERMITTED"
+
+
+class FastenerType(str, Enum):
+    """Kinds of fastener a drawing or a bill of material names.
+
+    Fastener is meant as in ISO 1891 ("Fasteners - Terminology"): the parts
+    that join other parts. The categories follow how the fastener is joined,
+    because that decides the manufacturing or assembly step.
+
+    Joined to the component while it is made:
+
+    - PRESS_IN_NUT: a self-clinching or broaching nut pressed into sheet
+      metal, e.g. PEM types S, CLS or SP (``PEM CLS-M4-2``), often written
+      "Einpressmutter".
+    - PRESS_IN_STUD: a self-clinching stud pressed into sheet metal, e.g.
+      PEM types FH or FHS (``PEM FH-M4-10``), often written "Einpressbolzen".
+    - PRESS_IN_STANDOFF: a self-clinching spacer with a thread or a through
+      hole, e.g. PEM types SO or BSO (``PEM SO-M3-8``).
+    - WELD_NUT: a nut welded onto the part, e.g. a hexagon weld nut to
+      DIN 929 or a square weld nut to DIN 928.
+    - WELD_STUD: a threaded stud or pin welded onto the part, e.g. a stud
+      for arc stud welding to ISO 13918.
+    - THREADED_INSERT: a thread insert set into a hole, e.g. a wire thread
+      insert to DIN 8140 or a threaded bushing.
+    - RIVET_NUT: a blind rivet nut, set from one side of the part.
+
+    Separate parts of an assembly, as a bill of material lists them:
+
+    - SCREW: a screw or bolt, e.g. ``ISO 4762 M6x20`` or ``ISO 4017 M8x30``.
+    - NUT: a nut that is screwed on, e.g. ``ISO 4032 M8``.
+    - WASHER: a washer, e.g. ``ISO 7089 8`` or ``DIN 125-A 6.4``.
+
+    - OTHER: a fastener that fits none of the above, such as a pin or a
+      rivet. ``designation`` says what it is.
+    """
+
+    PRESS_IN_NUT = "PRESS_IN_NUT"
+    PRESS_IN_STUD = "PRESS_IN_STUD"
+    PRESS_IN_STANDOFF = "PRESS_IN_STANDOFF"
+    WELD_NUT = "WELD_NUT"
+    WELD_STUD = "WELD_STUD"
+    THREADED_INSERT = "THREADED_INSERT"
+    RIVET_NUT = "RIVET_NUT"
+    SCREW = "SCREW"
+    NUT = "NUT"
+    WASHER = "WASHER"
+    OTHER = "OTHER"
+
+
 class Language(str, Enum):
     """
     Enumeration of supported Languages following
