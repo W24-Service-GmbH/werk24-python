@@ -1,5 +1,6 @@
 import io
 import os
+from dataclasses import dataclass
 from typing import Optional
 
 import dotenv
@@ -26,8 +27,16 @@ TOKEN_ENV_KEY = "W24TECHREAD_AUTH_TOKEN"
 # Name of the environment variable / dotenv key that holds the (legacy) region.
 REGION_ENV_KEY = "W24TECHREAD_AUTH_REGION"
 
+# Only keys at least this long are shown by their last four characters in an
+# error message. Below it, four characters are too large a share of the key.
+MIN_MASKABLE_TOKEN_LENGTH = 12
+
 # Initialize logger
 logger = get_logger()
+
+# License files for which the warning about a different
+# W24TECHREAD_AUTH_TOKEN has been logged in this process.
+_SHADOW_WARNED: set[str] = set()
 
 
 # Define License Model
@@ -47,6 +56,122 @@ class License(BaseModel):
         return value.strip()
 
 
+def token_suffix(token: str) -> Optional[str]:
+    """
+    Return the last four characters of a token, for naming it in a message.
+
+    The console shows the same four characters when it masks a key, so a user
+    can match the two. A token shorter than ``MIN_MASKABLE_TOKEN_LENGTH``
+    gives None: four characters would be too large a share of it.
+
+    Args:
+    ----
+    - token (str): The token to describe.
+
+    Returns:
+    -------
+    - Optional[str]: The last four characters, or None for a short token.
+    """
+    if len(token) >= MIN_MASKABLE_TOKEN_LENGTH:
+        return token[-4:]
+    return None
+
+
+@dataclass(frozen=True)
+class LicenseLookup:
+    """
+    A license together with where it was found.
+
+    Kept apart from ``License`` so that comparing two licenses with ``==``
+    still compares only the token and the region.
+
+    Attributes:
+    ----------
+    - license (License): The license that was found.
+    - source (str): "argument", "environment" or "file".
+    - path (Optional[str]): The absolute path of the file, when the source is
+      "file".
+    - env_shadowed (bool): True when the license came from a file while
+      ``W24TECHREAD_AUTH_TOKEN`` is set to a different key, which is then
+      ignored.
+    """
+
+    license: License
+    source: str
+    path: Optional[str] = None
+    env_shadowed: bool = False
+
+    def describe(self) -> str:
+        """Say where the key was read from, for a message."""
+        if self.source == "argument":
+            return "the token argument"
+        if self.source == "environment":
+            return f"the {TOKEN_ENV_KEY} environment variable"
+        return f"the file {self.path}"
+
+
+def locate_license(
+    token: Optional[str] = None, region: Optional[str] = None
+) -> LicenseLookup:
+    """
+    Find a valid license and say where it was found.
+
+    Searches in the same order as ``find_license``: the token argument, then
+    the license files in ``SEARCH_PATHS``, then the environment variables.
+
+    Args:
+    ----
+    - token (str): The license token to use if provided.
+    - region (str): The legacy region to use with the token.
+
+    Returns:
+    -------
+    - LicenseLookup: The license and its source.
+
+    Raises:
+    ------
+    - InvalidLicenseException: If no valid license is found.
+    """
+
+    # -----------------------------------------------------------
+    # Check if a token is provided (the region is optional)
+    # -----------------------------------------------------------
+    if token is not None:
+        try:
+            return LicenseLookup(License(token=token, region=region), "argument")
+        except ValueError as e:
+            raise InvalidLicenseException("The license requires a valid token") from e
+
+    # -----------------------------------------------------------
+    # If not provided, search for a valid license
+    # -----------------------------------------------------------
+    logger.info("Searching for a valid license...")
+    found = _find_license_file()
+    if found is not None:
+        license, path = found
+        abs_path = os.path.abspath(path)
+        env_token = os.environ.get(TOKEN_ENV_KEY, "").strip()
+        env_shadowed = bool(env_token) and env_token != license.token
+        if env_shadowed and abs_path not in _SHADOW_WARNED:
+            _SHADOW_WARNED.add(abs_path)
+            logger.warning(
+                f"Using the API key in {abs_path}. {TOKEN_ENV_KEY} is also set, "
+                "to a different key, and is ignored because license files are "
+                f"read first. Correct or delete {abs_path} to use the variable."
+            )
+        return LicenseLookup(license, "file", abs_path, env_shadowed)
+
+    license = find_license_in_envs()
+    if license:
+        return LicenseLookup(license, "environment")
+
+    # -----------------------------------------------------------
+    # If no valid license is found, raise an exception
+    # -----------------------------------------------------------
+    logger.error("No valid license found.")
+    raise InvalidLicenseException("No valid license could be found.")
+
+
 def find_license(token: Optional[str] = None, region: Optional[str] = None) -> License:
     """
     Find a valid license by searching predefined paths or environment variables.
@@ -63,29 +188,28 @@ def find_license(token: Optional[str] = None, region: Optional[str] = None) -> L
     ------
     - InvalidLicenseException: If no valid license is found.
     """
+    return locate_license(token, region).license
 
-    # -----------------------------------------------------------
-    # Check if a token is provided (the region is optional)
-    # -----------------------------------------------------------
-    if token is not None:
-        try:
-            return License(token=token, region=region)
-        except ValueError as e:
-            raise InvalidLicenseException("The license requires a valid token") from e
 
-    # -----------------------------------------------------------
-    # If not provided, search for a valid license
-    # -----------------------------------------------------------
-    logger.info("Searching for a valid license...")
-    license = find_license_in_paths() or find_license_in_envs()
-    if license:
-        return license
+def _find_license_file() -> Optional[tuple[License, str]]:
+    """
+    Search for a license file in predefined paths.
 
-    # -----------------------------------------------------------
-    # If no valid license is found, raise an exception
-    # -----------------------------------------------------------
-    logger.error("No valid license found.")
-    raise InvalidLicenseException("No valid license could be found.")
+    Returns:
+    -------
+    - tuple[License, str]: The license and the path it was read from.
+      None: If no valid license is found in the paths.
+    """
+    for path in SEARCH_PATHS:
+        logger.info(f"Looking for license file at {path}")
+        if os.path.exists(path):
+            try:
+                return parse_license_file(path), path
+            except InvalidLicenseException:
+                logger.debug(f"Invalid license at {path}")
+        else:
+            logger.debug(f"No license file found at {path}")
+    return None
 
 
 def find_license_in_paths() -> Optional[License]:
@@ -97,16 +221,8 @@ def find_license_in_paths() -> Optional[License]:
     - License: A valid License object if found.
       None: If no valid license is found in the paths.
     """
-    for path in SEARCH_PATHS:
-        logger.info(f"Looking for license file at {path}")
-        if os.path.exists(path):
-            try:
-                return parse_license_file(path)
-            except InvalidLicenseException:
-                logger.debug(f"Invalid license at {path}")
-        else:
-            logger.debug(f"No license file found at {path}")
-    return None
+    found = _find_license_file()
+    return found[0] if found is not None else None
 
 
 def find_license_in_envs() -> Optional[License]:

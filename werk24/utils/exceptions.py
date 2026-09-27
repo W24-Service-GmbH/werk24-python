@@ -1,5 +1,10 @@
+from typing import Optional
+
 #: The documentation page on how large a drawing can be.
 FILE_SIZE_DOCS_URL = "https://v2.docs.werk24.io/limitations/file-size/"
+
+#: The console page where API keys are listed, created and deleted.
+API_KEYS_URL = "https://studio.werk24.io/console/keys"
 
 
 class TechreadException(Exception):
@@ -48,6 +53,78 @@ class UnauthorizedException(TechreadException):
     cli_message_body: str = (
         "You are not authorized to perform this action. Please check your credentials."
     )
+
+
+class ApiKeyRejectedException(UnauthorizedException):
+    """Raised when the Werk24 API refuses the API key the client sent.
+
+    The server gives the same answer for a mistyped key, a deleted or revoked
+    key, and a key whose account is closed or suspended, and does not say
+    which. The message therefore names the key by its last four characters
+    (the same ones the console shows), says where the client read it from,
+    and points to the console page where keys are managed. The full key is
+    never part of the message.
+
+    A subclass of :class:`UnauthorizedException`, so an existing
+    ``except UnauthorizedException`` keeps catching it.
+
+    Attributes:
+    ----------
+    - key_suffix (Optional[str]): The last four characters of the key, or
+      None when the key is too short to show any of it.
+    - key_source (Optional[str]): Where the key was read from: the token
+      argument, the ``W24TECHREAD_AUTH_TOKEN`` environment variable, or a
+      license file named by its path. None when it is not known.
+    - status_code (Optional[int]): The HTTP status the server refused with.
+    """
+
+    cli_message_header: str = "API Key Rejected"
+    cli_message_body: str = (
+        "The Werk24 API did not accept the API key this client sent.\n\n"
+        "The key may be mistyped, or it may no longer be active: a key stops "
+        "working when it is deleted, and when the account it belongs to is "
+        "closed or suspended.\n\n"
+        f"Check your keys or create a new one at {API_KEYS_URL}"
+    )
+
+    def __init__(
+        self,
+        details: str = "",
+        key_suffix: Optional[str] = None,
+        key_source: Optional[str] = None,
+        status_code: Optional[int] = None,
+    ):
+        """Initialize the exception with what is known about the refused key.
+
+        Args:
+        ----
+        - details (str): Additional details, appended after the key lines.
+        - key_suffix (Optional[str]): The last four characters of the key.
+        - key_source (Optional[str]): Where the key was read from.
+        - status_code (Optional[int]): The HTTP status of the refusal.
+        """
+        self.details = details
+        self.key_suffix = key_suffix
+        self.key_source = key_source
+        self.status_code = status_code
+
+        lines = []
+        if key_suffix:
+            lines.append(f"Key: ending in '{key_suffix}'")
+        if key_source:
+            lines.append(f"Read from: {key_source}")
+        if status_code:
+            lines.append(f"Server response: HTTP {status_code}")
+        if details:
+            lines.append(details)
+        super().__init__("\n".join(lines))
+
+    def __reduce__(self):
+        # See CallbackDrawingTooLargeException.__reduce__.
+        return (
+            type(self),
+            (self.details, self.key_suffix, self.key_source, self.status_code),
+        )
 
 
 class RequestTooLargeException(TechreadException):
