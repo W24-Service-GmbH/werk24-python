@@ -278,6 +278,13 @@ def find_license(token: Optional[str] = None, region: Optional[str] = None) -> L
     return locate_license(token, region).license
 
 
+#: ``find_license`` as defined above. ``Werk24Client`` compares the name it
+#: would call against this one. When they differ, a caller replaced it (for
+#: example a test patching ``werk24.techread.find_license``), and the client
+#: calls the replacement instead of searching for a key itself.
+_ORIGINAL_FIND_LICENSE = find_license
+
+
 def _check_license_file(path: str) -> tuple[Optional[License], str]:
     """
     Read one license file.
@@ -336,6 +343,12 @@ def find_license_in_paths() -> Optional[License]:
     """
     Search for a license file in predefined paths.
 
+    ``find_license`` and ``Werk24Client`` no longer call this function; they
+    go through ``locate_license``, which also records where the key was
+    found. Replacing this function therefore does not change which key the
+    client uses. To give a client a key in a test, patch
+    ``werk24.techread.find_license`` or pass ``token=`` to ``Werk24Client``.
+
     Returns:
     -------
     - License: A valid License object if found.
@@ -351,6 +364,12 @@ def find_license_in_paths() -> Optional[License]:
 def find_license_in_envs() -> Optional[License]:
     """
     Search for a license in environment variables.
+
+    ``find_license`` and ``Werk24Client`` no longer call this function; they
+    go through ``locate_license``, which also records where the key was
+    found. Replacing this function therefore does not change which key the
+    client uses. To give a client a key in a test, patch
+    ``werk24.techread.find_license`` or pass ``token=`` to ``Werk24Client``.
 
     Returns:
     -------
@@ -501,9 +520,10 @@ def save_license_file(license: License, path: Optional[str] = None) -> str:
     Args:
     ----
     - license (License): A valid License object to save.
-    - path (Optional[str]): Where to save it. Defaults to
-      ``USER_LICENSE_PATH`` (``~/.werk24``), where the client finds it from
-      any folder.
+    - path (Optional[str]): Where to save it. Defaults to ``.werk24`` in
+      the current working folder (the first of ``SEARCH_PATHS``), as in
+      earlier releases. ``werk24 init`` passes ``USER_LICENSE_PATH``
+      (``~/.werk24``) instead, where the client finds it from any folder.
 
     Returns:
     -------
@@ -516,7 +536,7 @@ def save_license_file(license: License, path: Optional[str] = None) -> str:
     """
     # Read the module global at call time, not as a default argument, so it
     # can be changed after import.
-    license_path = path if path is not None else USER_LICENSE_PATH
+    license_path = path if path is not None else SEARCH_PATHS[0]
     if license_path.startswith("~"):
         # expanduser leaves the path unchanged when it cannot find the home
         # folder. Writing it as is would create a folder named "~".

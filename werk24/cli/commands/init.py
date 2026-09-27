@@ -150,7 +150,7 @@ def accept_license_from_terminal():
             raise typer.Exit(code=1)  # noqa: B904
 
         try:
-            path = save_license_file(license)
+            path = save_license_file(license, path=license_module.USER_LICENSE_PATH)
         except InvalidLicenseException as exc:
             # Pasting again would not help: the key is fine, the file is not.
             console.print(f"[red]The key was not saved: {escape(exc.reason)}.[/red]")

@@ -136,8 +136,21 @@ def _init(captured: io.StringIO, answers: str):
 
 
 class TestSaving:
-    def test_the_key_is_saved_in_the_home_folder(self, layout):
+    def test_the_library_default_is_still_the_working_folder(self, layout):
+        # Only ``werk24 init`` moved to the home folder. A script that calls
+        # save_license_file() itself still writes where it always did.
         saved = save_license_file(License(token="k"))
+
+        assert saved == os.path.abspath(str(layout.proj_key))
+        assert layout.proj_key.read_text() == f"{TOKEN_ENV_KEY}=k\n"
+        assert not layout.home_key.exists()
+        if os.name == "posix":
+            assert os.stat(layout.proj_key).st_mode & 0o777 == 0o600
+
+    def test_the_home_folder_path_is_saved_to_when_passed(self, layout):
+        saved = save_license_file(
+            License(token="k"), path=license_module.USER_LICENSE_PATH
+        )
 
         assert saved == os.path.abspath(str(layout.home_key))
         assert layout.home_key.exists()
@@ -152,12 +165,28 @@ class TestSaving:
         assert saved == os.path.abspath(str(target))
         assert target.read_text() == f"{TOKEN_ENV_KEY}=k\n"
         assert not layout.home_key.exists()
+        assert not layout.proj_key.exists()
 
     def test_an_unresolvable_home_folder_is_refused(self, layout, monkeypatch):
         monkeypatch.setattr(license_module, "USER_LICENSE_PATH", "~/.werk24")
         with pytest.raises(InvalidLicenseException) as excinfo:
-            save_license_file(License(token="k"))
+            save_license_file(
+                License(token="k"), path=license_module.USER_LICENSE_PATH
+            )
         assert TOKEN_ENV_KEY in excinfo.value.reason
+        assert not (layout.proj / "~").exists()
+
+    def test_init_says_so_when_the_home_folder_is_unresolvable(
+        self, layout, captured, monkeypatch
+    ):
+        monkeypatch.setattr(license_module, "USER_LICENSE_PATH", "~/.werk24")
+
+        result, out = _init(captured, "1\nwk24_abcDEF123\n\n")
+
+        assert result.exit_code == 1, out
+        assert "The key was not saved" in out
+        assert TOKEN_ENV_KEY in out
+        assert not layout.proj_key.exists()
         assert not (layout.proj / "~").exists()
 
 
