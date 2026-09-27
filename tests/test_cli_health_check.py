@@ -1,10 +1,10 @@
-"""``werk24 health-check`` has to report a rejected key, and fail on it.
+"""``werk24 health-check`` has to report a rejected token, and fail on it.
 
-It used to print "License Status: Found" for any key it could read, put a
+It used to print "License Status: Found" for any token it could read, put a
 refused connection under Network Information, and exit 0 whatever happened.
-Now the License panel says which key was found, where it came from and
-whether the API accepted it, and the command exits 1 when no key is found,
-the key is rejected or the connection fails. The System Status panel stays
+Now the License panel says which token was found, where it came from and
+whether the API accepted it, and the command exits 1 when no token is found,
+the token is rejected or the connection fails. The System Status panel stays
 informational.
 """
 
@@ -23,7 +23,7 @@ import werk24.utils.license as license_module
 from werk24 import SystemStatus
 from werk24.cli.commands import health_check
 from werk24.techread import Werk24Client
-from werk24.utils.exceptions import API_KEYS_URL, ServerException
+from werk24.utils.exceptions import API_TOKENS_URL, ServerException
 from werk24.utils.license import TOKEN_ENV_KEY
 
 TOKEN = "wk24_abcdefghijklmnopWXYZ"
@@ -74,7 +74,7 @@ def test_no_key_fails_without_connecting(license_file):
 
     assert result.exit_code == 1
     assert "Not Found" in result.stdout
-    assert "Skipped: no API key found" in result.stdout
+    assert "Skipped: no API token found" in result.stdout
     connect.assert_not_called()
 
 
@@ -92,9 +92,9 @@ def test_a_rejected_key_is_named_and_fails(license_file, monkeypatch):
     assert "ending in WXYZ" in out
     assert "W24TECHREAD_AUTH_TOKEN environment variable" in out
     assert "Rejected by the Werk24 API" in out
-    assert "Refused: API key rejected" in out
-    assert "API Key Rejected" in out
-    assert API_KEYS_URL in out
+    assert "Refused: API token rejected" in out
+    assert "API Token Rejected" in out
+    assert API_TOKENS_URL in out
     assert TOKEN not in out
 
 
@@ -110,7 +110,7 @@ def test_an_accepted_key_passes(license_file, monkeypatch):
     assert result.exit_code == 0
     assert "Successful" in result.stdout
     assert "Accepted" in result.stdout
-    assert "API Key Rejected" not in result.stdout
+    assert "API Token Rejected" not in result.stdout
 
 
 def test_a_failed_connection_fails_and_leaves_the_key_unchecked(
@@ -127,7 +127,7 @@ def test_a_failed_connection_fails_and_leaves_the_key_unchecked(
     assert result.exit_code == 1
     assert "Not checked" in result.stdout
     assert "boom" in result.stdout
-    assert "API Key Rejected" not in result.stdout
+    assert "API Token Rejected" not in result.stdout
 
 
 def test_the_status_panel_is_informational(license_file, monkeypatch):
@@ -157,7 +157,7 @@ def test_a_file_hiding_the_variable_is_noted(license_file, monkeypatch):
     out = result.stdout
     assert result.exit_code == 0
     assert "Note" in out
-    assert "W24TECHREAD_AUTH_TOKEN is also set, to a different key" in out
+    assert "W24TECHREAD_AUTH_TOKEN is also set, to a different token" in out
     assert f"the file {license_file}" in out
     assert "ending in WXYZ" in out
     assert TOKEN not in out

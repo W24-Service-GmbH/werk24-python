@@ -9,9 +9,9 @@ import pytest
 def _keep_the_real_home_license_file(tmp_path_factory, monkeypatch):
     """Point ``werk24 init``'s save path at a temporary folder in every test.
 
-    ``werk24 init`` saves the key to ``USER_LICENSE_PATH`` (``~/.werk24``).
+    ``werk24 init`` saves the token to ``USER_LICENSE_PATH`` (``~/.werk24``).
     Without this, a test that runs it would overwrite the developer's or the
-    CI runner's real key.
+    CI runner's real token.
     """
     import werk24.utils.license as license_module
 

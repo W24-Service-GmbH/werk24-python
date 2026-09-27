@@ -15,7 +15,7 @@ from werk24 import (
     get_test_drawing,
 )
 from werk24.utils.exceptions import (
-    ApiKeyRejectedException,
+    ApiTokenRejectedException,
     BadRequestException,
     InsufficientCreditsException,
     InvalidLicenseException,
@@ -106,17 +106,17 @@ async def test_read_drawing_with_callback(
 @pytest.mark.asyncio
 async def test_invalid_token():
     """
-    Test that a bogus token raises an ApiKeyRejectedException.
+    Test that a bogus token raises an ApiTokenRejectedException.
 
     It is a subclass of UnauthorizedException, which this test used to
     expect. Asserting the subclass pins the real server's refusal (a 403 at
-    the handshake) to the class that names the key and its source.
+    the handshake) to the class that names the token and its source.
     """
-    with pytest.raises(ApiKeyRejectedException) as exc:
+    with pytest.raises(ApiTokenRejectedException) as exc:
         async with Werk24Client(token="not-a-valid-token", region="eu-central-1"):
             ...
     assert exc.value.status_code == 403
-    assert "token argument" in exc.value.key_source
+    assert "token argument" in exc.value.token_source
 
 
 @pytest.mark.asyncio

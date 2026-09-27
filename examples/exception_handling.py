@@ -4,14 +4,14 @@ Every exception below is a subclass of
 ``werk24.utils.exceptions.TechreadException``. What each one means, and
 whether sending the request again can help:
 
-- ``InvalidLicenseException``: no usable API key was found, or the key
-  passed is not an API key. Its subclass ``LicenseNotFoundException`` lists
+- ``InvalidLicenseException``: no usable API token was found, or the token
+  passed is not an API token. Its subclass ``LicenseNotFoundException`` lists
   every place the client looked. Pass ``token=`` to ``Werk24Client``, set
   ``W24TECHREAD_AUTH_TOKEN`` or run ``werk24 init``. Do not retry.
-- ``ApiKeyRejectedException``: the API refused the key, when the connection
+- ``ApiTokenRejectedException``: the API refused the token, when the connection
   opens (403) or in ``read_drawing_with_callback`` (401). The message names
-  the key by its last four characters and says where it was read from.
-  Replace the key. Do not retry. It is an ``UnauthorizedException``, so
+  the token by its last four characters and says where it was read from.
+  Replace the token. Do not retry. It is an ``UnauthorizedException``, so
   catch it before one.
 - ``UnauthorizedException``: any other refusal as not authorized (401 to
   403), for example a forbidden action or an upload or download link that
@@ -53,7 +53,7 @@ that ask has no result; a WARNING-level one leaves the result standing.
 and ``W24ServerError`` are not raised by the client, so this example does
 not catch them.
 
-Run it with an API key configured to read the drawing bundled with the
+Run it with an API token configured to read the drawing bundled with the
 package:
 
     python examples/exception_handling.py
@@ -76,7 +76,7 @@ from werk24 import (
 # package also exports a data model named TechreadException, the entry an
 # ASK message carries in its ``exceptions`` list.
 from werk24.utils.exceptions import (
-    ApiKeyRejectedException,
+    ApiTokenRejectedException,
     BadRequestException,
     CallbackDrawingTooLargeException,
     CallbackFieldsTooLargeException,
@@ -99,7 +99,7 @@ from werk24.utils.exceptions import (
 T = TypeVar("T")
 
 #: The only failures this example sends again. Everything else is a
-#: request, a key or an account that has to change first.
+#: request, a token or an account that has to change first.
 RETRYABLE: Tuple[Type[TechreadException], ...] = (
     RetryableServerError,
     ReadTimeoutError,
@@ -111,22 +111,22 @@ RETRYABLE: Tuple[Type[TechreadException], ...] = (
 ADVICE: Tuple[Tuple[Type[TechreadException], str], ...] = (
     (
         LicenseNotFoundException,
-        "No API key is configured. Run 'werk24 init', set "
+        "No API token is configured. Run 'werk24 init', set "
         "W24TECHREAD_AUTH_TOKEN or pass token= to Werk24Client. Every place "
         "the client looked is listed below.",
     ),
     (
         InvalidLicenseException,
-        "The API key cannot be used, for the reason below. Pass a valid key "
+        "The API token cannot be used, for the reason below. Pass a valid token "
         "with token=, set W24TECHREAD_AUTH_TOKEN or run 'werk24 init'.",
     ),
     (
-        ApiKeyRejectedException,
-        "The API key was refused. Replace the key named below.",
+        ApiTokenRejectedException,
+        "The API token was refused. Replace the token named below.",
     ),
     (
         UnauthorizedException,
-        "The request was refused as not authorized. Check the API key and "
+        "The request was refused as not authorized. Check the API token and "
         "what its account may do.",
     ),
     (

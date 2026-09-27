@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 
 # Defined in werk24.utils.urls, which imports nothing, and kept importable
 # from here.
-from werk24.utils.urls import API_KEYS_URL as API_KEYS_URL
+from werk24.utils.urls import API_TOKENS_URL as API_TOKENS_URL
 from werk24.utils.urls import DEMO_URL as DEMO_URL
 
 

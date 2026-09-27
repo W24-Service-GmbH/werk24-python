@@ -28,7 +28,7 @@ import werk24.utils.exceptions as exceptions_module
 from werk24 import Werk24Client
 from werk24.techread import HTTP_EXCEPTION_CLASSES
 from werk24.utils.exceptions import (
-    ApiKeyRejectedException,
+    ApiTokenRejectedException,
     BadRequestException,
     InsufficientCreditsException,
     InvalidLicenseException,
@@ -131,7 +131,7 @@ class TestTheExampleMatchesTheClient:
         assert quota.splitlines()[0] != server.splitlines()[0]
 
     def test_a_refused_key_gets_its_own_advice(self):
-        rejected = example.advice_for(ApiKeyRejectedException(key_suffix="abcd"))
+        rejected = example.advice_for(ApiTokenRejectedException(token_suffix="abcd"))
         unauthorized = example.advice_for(UnauthorizedException("403"))
         assert "abcd" in rejected
         assert rejected.splitlines()[0] != unauthorized.splitlines()[0]
@@ -162,7 +162,7 @@ class TestTheExampleMatchesTheClient:
             (InsufficientCreditsException("429"), False),
             (ServerException("closed"), False),
             (UnauthorizedException("403"), False),
-            (ApiKeyRejectedException(status_code=403), False),
+            (ApiTokenRejectedException(status_code=403), False),
             (BadRequestException("ask"), False),
             (InvalidLicenseException("none"), False),
             (SSLCertificateError("proxy"), False),
@@ -248,7 +248,7 @@ class TestTheClientBehaviourTheExampleRelies:
         with patch.object(
             client, "_create_websocket_session", AsyncMock(side_effect=refused)
         ):
-            with pytest.raises(ApiKeyRejectedException) as caught:
+            with pytest.raises(ApiTokenRejectedException) as caught:
                 await client._connect_with_retry()
         assert isinstance(caught.value, UnauthorizedException)
 

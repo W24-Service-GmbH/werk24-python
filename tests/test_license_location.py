@@ -1,14 +1,14 @@
-"""Where ``werk24 init`` saves the API key, and what a missing key says.
+"""Where ``werk24 init`` saves the API token, and what a missing token says.
 
-``werk24 init`` used to save the key to ``.werk24`` in whatever folder it ran
-in, so a script started from any other folder found no key and was told its
-license "is invalid or has expired". It also saved the shortened key a key
-list shows, which can never work, and it would not replace an existing key.
+``werk24 init`` used to save the token to ``.werk24`` in whatever folder it ran
+in, so a script started from any other folder found no token and was told its
+license "is invalid or has expired". It also saved the shortened token a token
+list shows, which can never work, and it would not replace an existing token.
 
 Now init saves to ``~/.werk24``, which every client version reads from any
-folder, says where it saved the key, and asks before replacing one. A
-missing key raises LicenseNotFoundException, whose message lists every place
-the client looked. A value that cannot be a key is refused before anything
+folder, says where it saved the token, and asks before replacing one. A
+missing token raises LicenseNotFoundException, whose message lists every place
+the client looked. A value that cannot be a token is refused before anything
 is sent.
 """
 
@@ -34,7 +34,7 @@ from werk24.cli.commands import health_check
 from werk24.cli.commands import init as init_cmd
 from werk24.techread import Werk24Client
 from werk24.utils.exceptions import (
-    API_KEYS_URL,
+    API_TOKENS_URL,
     InvalidLicenseException,
     LicenseNotFoundException,
     TechreadException,
@@ -176,7 +176,7 @@ class TestSaving:
             assert os.stat(layout.home_key).st_mode & 0o777 == 0o600
 
     def test_an_explicit_path_is_honoured(self, layout):
-        target = layout.elsewhere / "key.txt"
+        target = layout.elsewhere / "token.txt"
         saved = save_license_file(License(token="k"), path=str(target))
 
         assert saved == os.path.abspath(str(target))
@@ -187,17 +187,17 @@ class TestSaving:
     def test_a_tilde_path_is_saved_in_the_home_folder(self, layout, monkeypatch):
         _home_is(layout, monkeypatch)
 
-        saved = save_license_file(License(token="k"), path="~/key.txt")
+        saved = save_license_file(License(token="k"), path="~/token.txt")
 
-        assert saved == os.path.abspath(str(layout.home / "key.txt"))
-        assert (layout.home / "key.txt").read_text() == f"{TOKEN_ENV_KEY}=k\n"
+        assert saved == os.path.abspath(str(layout.home / "token.txt"))
+        assert (layout.home / "token.txt").read_text() == f"{TOKEN_ENV_KEY}=k\n"
         assert not (layout.proj / "~").exists()
 
     def test_a_tilde_path_is_read_from_the_home_folder(self, layout, monkeypatch):
         _home_is(layout, monkeypatch)
-        (layout.home / "key.txt").write_text(f"{TOKEN_ENV_KEY}=k\n")
+        (layout.home / "token.txt").write_text(f"{TOKEN_ENV_KEY}=k\n")
 
-        assert parse_license_file("~/key.txt") == License(token="k")
+        assert parse_license_file("~/token.txt") == License(token="k")
 
     def test_an_unresolvable_home_folder_is_refused(self, layout, monkeypatch):
         _home_is_unresolvable(monkeypatch)
@@ -215,7 +215,7 @@ class TestSaving:
         result, out = _init(captured, "1\nwk24_abcDEF123\n\n")
 
         assert result.exit_code == 1, out
-        assert "The key was not saved" in out
+        assert "The token was not saved" in out
         assert TOKEN_ENV_KEY in out
         assert not layout.proj_key.exists()
         assert not (layout.proj / "~").exists()
@@ -252,7 +252,7 @@ class TestInit:
         result, out = _init(captured, "1\nToken wk24_abc\n\nwk24_abc\n\n")
 
         assert result.exit_code == 0, out
-        assert "That key cannot be used: it contains spaces" in out
+        assert "That token cannot be used: it contains spaces" in out
         assert layout.home_key.read_text() == f"{TOKEN_ENV_KEY}=wk24_abc\n"
 
     def test_an_existing_key_is_kept_on_no(self, layout, captured):
@@ -262,7 +262,7 @@ class TestInit:
 
         assert result.exit_code == 0, out
         assert layout.home_key.read_text() == "old_key\n"
-        assert "Kept the existing key" in out
+        assert "Kept the existing token" in out
         assert os.path.abspath(str(layout.home_key)) in out
 
     def test_an_existing_key_is_kept_when_there_is_no_answer(self, layout, captured):
@@ -272,7 +272,7 @@ class TestInit:
 
         assert result.exit_code == 0, out
         assert layout.home_key.read_text() == "old_key\n"
-        assert "Kept the existing key" in out
+        assert "Kept the existing token" in out
 
     def test_an_existing_key_is_replaced_on_yes(self, layout, captured):
         layout.home_key.write_text("old_key\n")
@@ -293,7 +293,7 @@ class TestInit:
         assert layout.home_key.read_text() == f"{TOKEN_ENV_KEY}=new_key\n"
         assert layout.proj_key.read_text() == "old_key\n"
         proj_path = os.path.abspath(str(layout.proj_key))
-        assert f"In this folder the key is still read from the file {proj_path}" in out
+        assert f"In this folder the token is still read from the file {proj_path}" in out
 
     def test_a_key_from_the_environment_says_a_saved_key_would_win(
         self, layout, captured, monkeypatch
@@ -304,7 +304,7 @@ class TestInit:
 
         assert result.exit_code == 0, out
         assert "W24TECHREAD_AUTH_TOKEN environment variable" in out
-        assert "would be used instead of the variable's key" in out
+        assert "would be used instead of the variable's token" in out
         assert not layout.home_key.exists()
 
 
@@ -321,10 +321,10 @@ class TestNoKeyFound:
             assert os.path.abspath(path) in text
         assert "werk24 init" in text
         assert f"It is saved to {os.path.abspath(str(layout.home_key))}" in text
-        assert API_KEYS_URL in text
+        assert API_TOKENS_URL in text
         assert "invalid or has expired" not in text
         assert "Details:" not in text
-        assert exc.reason == "no API key was found"
+        assert exc.reason == "no API token was found"
 
     def test_find_license_raises_the_same_class(self, layout):
         with pytest.raises(LicenseNotFoundException):
@@ -348,7 +348,7 @@ class TestNoKeyFound:
         exc = LicenseNotFoundException()
         assert exc.searched == []
         assert "werk24 init" in str(exc)
-        assert API_KEYS_URL in str(exc)
+        assert API_TOKENS_URL in str(exc)
 
     def test_it_is_exported_from_the_package(self):
         from werk24 import LicenseNotFoundException as exported
@@ -363,7 +363,7 @@ class TestNoKeyFound:
 
         path = os.path.abspath(str(layout.proj_key))
         assert (
-            f"{path}: found, but not usable: it looks like the shortened key"
+            f"{path}: found, but not usable: it looks like the shortened token"
             in str(excinfo.value)
         )
 
@@ -378,7 +378,7 @@ class TestNoKeyFound:
         text = str(excinfo.value)
         assert (
             f"environment variable {TOKEN_ENV_KEY}: set, but not usable: "
-            "it looks like the shortened key" in text
+            "it looks like the shortened token" in text
         )
         assert masked not in text
 
@@ -469,7 +469,7 @@ class TestUnusableKeys:
 
     def test_non_ascii_is_refused(self):
         assert token_problem("wk24_abcé") == (
-            "it contains characters that never appear in an API key"
+            "it contains characters that never appear in an API token"
         )
 
     def test_an_empty_token_argument_is_refused(self):
@@ -513,7 +513,7 @@ class TestHealthCheck:
         for path in license_module.SEARCH_PATHS:
             assert os.path.abspath(path) in out
         assert f"environment variable {TOKEN_ENV_KEY}" in out
-        assert API_KEYS_URL in out
+        assert API_TOKENS_URL in out
 
     def test_a_saved_key_shows_where_it_is_read_from(
         self, layout, captured, monkeypatch

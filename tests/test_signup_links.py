@@ -1,7 +1,7 @@
 """Where ``werk24 init``, the README and the package metadata send a new user.
 
-A developer without an API key is pointed at the Werk24 API signup page, the
-console page where API keys are created, and the free browser demo. Each URL
+A developer without an API token is pointed at the Werk24 API signup page, the
+console page where API tokens are created, and the free browser demo. Each URL
 is printed on one line, so a copy from a narrow terminal still works, and no
 file a user reads promises a free trial.
 
@@ -18,7 +18,7 @@ from rich.console import Console
 from typer.testing import CliRunner
 
 import werk24.cli.commands.init as init_cmd
-from werk24.utils.defaults import API_KEYS_URL, DEMO_URL, Settings
+from werk24.utils.defaults import API_TOKENS_URL, DEMO_URL, Settings
 from werk24.utils.exceptions import InvalidLicenseException
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,7 +45,7 @@ def test_signup_url_env_override_still_works(monkeypatch):
 
 @pytest.fixture
 def run_init(monkeypatch):
-    """Run ``werk24 init`` on a machine without a key.
+    """Run ``werk24 init`` on a machine without a token.
 
     Returns a function that takes the terminal input and returns the Typer
     result, what the Rich console printed (80 columns wide, no colour) and
@@ -87,7 +87,7 @@ def test_init_sign_up_prints_signup_keys_and_demo_on_single_lines(run_init):
     # Whole-line membership at 80 columns: a URL Rich folded across two lines
     # would not match, and would not work when copied.
     assert EXPECTED_SIGNUP in lines
-    assert API_KEYS_URL in lines
+    assert API_TOKENS_URL in lines
     assert DEMO_URL in lines
     assert saved[0].token == "some-token"
     assert not TRIAL.search(out + result.stdout)
@@ -107,7 +107,7 @@ def test_init_menu_offers_api_key_and_signup(run_init):
     result, out, saved = run_init("1\nsome-token\n\n")
 
     assert result.exit_code == 0, out + result.stdout
-    assert "Paste an API key" in out
+    assert "Paste an API token" in out
     assert "Sign up for the Werk24 API" in out
     assert not TRIAL.search(out + result.stdout)
     assert saved[0].token == "some-token"
