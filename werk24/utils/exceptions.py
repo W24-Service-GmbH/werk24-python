@@ -379,6 +379,43 @@ class UserInputError(TechreadException):
     )
 
 
+class OptionalDependencyMissingError(UserInputError):
+    """Raised when an option needs a package that werk24 does not install.
+
+    werk24 keeps packages that only one CLI option uses out of its
+    dependencies, so that code importing the library does not install them.
+    Such a package is installed through an extra instead, and this error
+    names that extra.
+
+    A subclass of :class:`UserInputError`, which the CLI raised for this
+    before, so an existing ``except UserInputError`` keeps catching it.
+
+    Attributes:
+    ----------
+    - package (str): The package that could not be imported, e.g. "Pillow".
+    - extra (str): The werk24 extra that installs it, e.g. "images".
+    - details (str): What needed the package, e.g. the option that was set.
+    - install_command (str): The command that installs the extra.
+    """
+
+    cli_message_header: str = "Optional Dependency Missing"
+    cli_message_body: str = (
+        "This option needs a package that werk24 does not install by default."
+    )
+
+    def __init__(self, package: str, extra: str, details: str = ""):
+        self.package = package
+        self.extra = extra
+        self.details = details
+        self.install_command = f'pip install "werk24[{extra}]"'
+        text = f"{package} is not installed. Install it with: {self.install_command}"
+        super().__init__(f"{details} {text}" if details else text)
+
+    def __reduce__(self):
+        # See CallbackDrawingTooLargeException.__reduce__.
+        return (type(self), (self.package, self.extra, self.details))
+
+
 class InvalidLicenseException(TechreadException):
     """Exception raised when the provided license is invalid.
 

@@ -106,6 +106,14 @@ keywords = [
   "automation",
 ]
 
+[project.optional-dependencies]
+# images: Pillow, which ``werk24 techread --ask-sheet-images`` and
+# ``--ask-view-images`` use to show the images they receive. The library
+# never imports it, so it is not a dependency: code that only calls the
+# client does not install it. 12.3.0 is the first release with no
+# published advisory, and it ships wheels for every Python werk24 supports.
+images = ["pillow>=12.3.0"]
+
 [project.urls]
 homepage = "https://werk24.io"
 signup = "https://studio.werk24.io/console/signup?product=console&plan=payg&utm_source=pypi&utm_medium=project_urls"
