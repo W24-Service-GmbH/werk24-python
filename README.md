@@ -77,6 +77,10 @@ pip install werk24    # install the library
 werk24 init           # paste your API key; it is saved to ~/.werk24 and found from any folder
 ```
 
+Calling the API needs an API key and is billed pay as you go. [Sign up for the Werk24 API](https://studio.werk24.io/console/signup?product=console&plan=payg&utm_source=github&utm_medium=install_signup), then create a key on the [API keys page](https://studio.werk24.io/console/keys) of the Werk24 console. `werk24 init` asks for the key and stores it for the client. On a server or in CI, set the `W24TECHREAD_AUTH_TOKEN` environment variable instead.
+
+To see what Werk24 reads from a drawing before you sign up, try the free [browser demo](https://studio.werk24.io/demo?utm_source=github&utm_medium=install_demo).
+
 ### Where the client looks for your API key
 
 The client uses the first key it finds, in this order:
@@ -168,7 +172,7 @@ asyncio.run(read_drawing([AskMetaData()]))
 
 ## Documentation
 
-See [https://werk24.io/docs/index.html](https://werk24.io/docs/index.html)
+See [v2.docs.werk24.io](https://v2.docs.werk24.io).
 
 ## CLI
 
@@ -185,7 +189,7 @@ $> werk24 --help
 │ --help                            Show this message and exit.                             │
 ╰───────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ────────────────────────────────────────────────────────────────────────────────╮
-│ init           Initialize Werk24 by providing or creating a license.                      │
+│ init           Set up Werk24 with your API key.                                           │
 │ health-check   Run a comprehensive health check for the CLI.                              │
 │ techread       Read a drawing file and extract information.                               │
 │ version        Print the version of the Client.                                           │
