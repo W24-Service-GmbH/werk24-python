@@ -144,3 +144,27 @@ One question. It does not block the merge.
 - core-reader, crew-api, crew-watchdog, werkflow and docs-v2 install from main
   and pick this up on their next build.
 ```
+
+
+## Cutting a release
+
+A release is three steps, in this order:
+
+1. **Bump the version** in `pyproject.toml` on `main`, as one commit named
+   `chore: bump version to X.Y.Z`. Follow SemVer: a removed or renamed field
+   on a model is a major version, because core-reader, crew-api and the other
+   consumers install from `main` and PyPI users get it on `werk24>=X`.
+2. **Create a GitHub release** with the tag `X.Y.Z` (no `v` prefix) on that
+   commit. Write the notes for a public reader: what changed for someone
+   using the client, grouped as New, Clearer errors, Fixes, Command line,
+   Documentation. Name the classes and flags a user touches. Do not mention
+   internal services, customers, metrics or tickets from other repositories.
+3. **Creating the release publishes it.** `python-publish.yml` runs on
+   `release: created`, builds the package and uploads it to PyPI. It can
+   also be started by hand (`workflow_dispatch`), which publishes whatever
+   version `pyproject.toml` on the chosen ref carries, without a release.
+
+A PyPI upload cannot be undone or overwritten, so an agent confirms the
+version number and the notes with the owner before step 2.
+
+Check afterwards that https://pypi.org/project/werk24/ shows the new version.
