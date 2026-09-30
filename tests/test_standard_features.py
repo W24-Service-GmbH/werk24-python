@@ -210,17 +210,25 @@ def test_a_threaded_center_hole_carries_its_thread():
 
 
 def test_a_threaded_center_hole_may_state_the_countersink_instead():
-    """``DIN 332-D 8,4x12,2`` is the M8 row, written by its countersink."""
+    """``DIN 332-D 8,4x12,2`` is the M8 row, written by its countersink.
+
+    DIN 332-2 table 1, M8: d3 = 8.4 and d4 = 12.2. d4 is the outer diameter;
+    d3 is fixed by the thread, which carries it.
+    """
     hole = CenterHole(
         **_features(label="DIN 332-D 8,4x12,2"),
         quantity=1,
         standard="DIN 332",
         form="D",
         outer_diameter=_mm("12.2", SizeType.DIAMETER),
+        thread=_metric("8", "1.25"),
     )
+    restored = CenterHole.model_validate_json(hole.model_dump_json())
 
-    assert hole.thread is None
-    assert hole.outer_diameter.value == Decimal("12.2")
+    assert restored == hole
+    assert restored.thread.diameter.value == Decimal("8")
+    assert restored.outer_diameter.value == Decimal("12.2")
+    assert restored.pilot_diameter is None
 
 
 def test_a_center_hole_without_a_thread_has_none():
