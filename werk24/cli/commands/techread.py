@@ -217,8 +217,6 @@ def report_exceptions(message: TechreadMessage) -> None:
         details = f"page {message.page_number}"
         if exception.ask_type:
             details += f", ask {_name(exception.ask_type)}"
-        if exception.reason:
-            details += f", reason {_name(exception.reason)}"
         typer.echo(
             f"{_name(exception.exception_level)}: "
             f"{_name(exception.exception_type)} on {subtype} ({details})",

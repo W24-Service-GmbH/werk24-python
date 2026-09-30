@@ -194,13 +194,13 @@ def test_unknown_exception_type_still_fails(client, drawing):
         msg(
             "ASK",
             "META_DATA",
-            exceptions=[exc("ERROR", "SOMETHING_NEW", reason="x")],
+            exceptions=[exc("ERROR", "SOMETHING_NEW")],
         ),
         COMPLETED,
     ]
     result = invoke(drawing, "--ask-meta-data")
     assert result.exit_code == 1
-    assert "ERROR: SOMETHING_NEW on META_DATA (page 0, reason x)" in result.stderr
+    assert "ERROR: SOMETHING_NEW on META_DATA (page 0)" in result.stderr
 
 
 def test_warning_keeps_exit_0(client, drawing):
