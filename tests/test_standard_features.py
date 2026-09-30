@@ -6,19 +6,34 @@ for a parallel key (``DIN 6885 A 8x7x56``) or a center hole
 (``DIN 332-A 2,5x5,3``). ``ResponseFeaturesComponentDrawing`` carries them in
 ``undercuts``, ``key_slots`` and ``center_holes``.
 
+Two features are sized on the drawing rather than by a standard alone: an
+elongated hole with round ends (``2x Langloch 14x15``), carried in ``slots``,
+and a groove for a retaining ring (``DIN 471 30x1,5``), carried in
+``retaining_ring_grooves``. A center hole of one of the threaded forms of
+DIN 332-2 (``DIN 332-D M16``) carries its thread.
+
 The lists default to empty so that a response from a server that predates
 them still parses, and a client that predates them ignores them.
 """
 
 from decimal import Decimal
 
+import pytest
+from pydantic import ValidationError
+
 from werk24 import (
     CenterHole,
     CenterHoleRequirement,
     KeySlot,
     ResponseFeaturesComponentDrawing,
+    RetainingRingGroove,
+    RetainingRingSide,
     Size,
     SizeType,
+    Slot,
+    ThreadHandedness,
+    ThreadISOMetric,
+    ThreadSpacing,
     Undercut,
     UndercutType,
 )
@@ -32,6 +47,53 @@ def _mm(value: str, size_type: SizeType = SizeType.LINEAR) -> Size:
 
 def _features(**kwargs) -> dict:
     return {"reference_id": 1, "confidence": None, **kwargs}
+
+
+def _metric(diameter: str, pitch: str) -> ThreadISOMetric:
+    return ThreadISOMetric(
+        reference_id=1,
+        label=f"M{diameter}",
+        confidence=None,
+        quantity=Decimal("1"),
+        diameter=_mm(diameter, SizeType.DIAMETER),
+        spacing=ThreadSpacing(
+            pitch_in_mm=Decimal(pitch),
+            threads_per_inch=(Decimal("25.4") / Decimal(pitch)).quantize(
+                Decimal("0.001")
+            ),
+        ),
+        handedness=ThreadHandedness.RIGHT,
+    )
+
+
+def _threaded_center_hole() -> CenterHole:
+    return CenterHole(
+        **_features(label="DIN 332-D M16"),
+        quantity=1,
+        standard="DIN 332",
+        form="D",
+        thread=_metric("16", "2"),
+    )
+
+
+def _slot() -> Slot:
+    return Slot(
+        **_features(label="2x Langloch 14x15"),
+        quantity=2,
+        width=_mm("14"),
+        length=_mm("15"),
+    )
+
+
+def _retaining_ring_groove() -> RetainingRingGroove:
+    return RetainingRingGroove(
+        **_features(label="DIN 471 30x1,5"),
+        quantity=1,
+        standard="DIN 471",
+        ring_side=RetainingRingSide.SHAFT,
+        nominal_diameter=_mm("30", SizeType.DIAMETER),
+        ring_thickness=_mm("1.5"),
+    )
 
 
 def test_a_relief_groove_carries_form_radius_and_depth():
@@ -135,3 +197,141 @@ def test_a_response_without_the_new_lists_still_parses():
     assert restored.undercuts == []
     assert restored.key_slots == []
     assert restored.center_holes == []
+
+
+def test_a_threaded_center_hole_carries_its_thread():
+    hole = _threaded_center_hole()
+
+    restored = CenterHole.model_validate_json(hole.model_dump_json())
+
+    assert restored == hole
+    assert isinstance(restored.thread, ThreadISOMetric)
+    assert restored.thread.diameter.value == Decimal("16")
+
+
+def test_a_threaded_center_hole_may_state_the_countersink_instead():
+    """``DIN 332-D 8,4x12,2`` is the M8 row, written by its countersink."""
+    hole = CenterHole(
+        **_features(label="DIN 332-D 8,4x12,2"),
+        quantity=1,
+        standard="DIN 332",
+        form="D",
+        outer_diameter=_mm("12.2", SizeType.DIAMETER),
+    )
+
+    assert hole.thread is None
+    assert hole.outer_diameter.value == Decimal("12.2")
+
+
+def test_a_center_hole_without_a_thread_has_none():
+    hole = CenterHole(
+        **_features(label="DIN 332-A 2,5x5,3"),
+        quantity=1,
+        standard="DIN 332",
+        form="A",
+    )
+
+    assert hole.thread is None
+    assert CenterHole.model_validate_json(hole.model_dump_json()).thread is None
+
+
+def test_a_center_hole_payload_without_a_thread_still_parses():
+    """A server that predates the field does not send it."""
+    hole = CenterHole.model_validate(
+        {
+            "reference_id": 1,
+            "label": "DIN 332-A 2,5x5,3",
+            "confidence": None,
+            "quantity": 1,
+            "standard": "DIN 332",
+            "form": "A",
+        }
+    )
+
+    assert hole.thread is None
+
+
+def test_a_slot_carries_width_and_length():
+    slot = _slot()
+
+    restored = Slot.model_validate_json(slot.model_dump_json())
+
+    assert restored == slot
+    assert (restored.width.value, restored.length.value) == (
+        Decimal("14"),
+        Decimal("15"),
+    )
+
+
+def test_a_slot_written_with_a_diameter_needs_only_its_width():
+    """``Ø 10`` is the width of the slot, reported as a linear size."""
+    slot = Slot(
+        **_features(label="3x Langloch Ø 10"),
+        quantity=3,
+        width=_mm("10"),
+    )
+
+    assert slot.width.size_type is SizeType.LINEAR
+    assert slot.label == "3x Langloch Ø 10"
+    assert slot.length is None
+
+
+def test_a_slot_needs_at_least_one_instance():
+    with pytest.raises(ValidationError):
+        Slot(**_features(label="Langloch Ø 10"), quantity=0, width=_mm("10"))
+
+
+def test_a_retaining_ring_groove_carries_the_ring_size():
+    groove = _retaining_ring_groove()
+
+    restored = RetainingRingGroove.model_validate_json(groove.model_dump_json())
+
+    assert restored == groove
+    assert restored.ring_side is RetainingRingSide.SHAFT
+    assert restored.nominal_diameter.value == Decimal("30")
+    assert restored.ring_thickness.value == Decimal("1.5")
+
+
+def test_a_retaining_ring_groove_may_name_only_a_designation():
+    """A maker's designation is reported as written, not decoded."""
+    groove = RetainingRingGroove(
+        **_features(label="Seeger RB 042"),
+        quantity=1,
+        designation="RB 042",
+        manufacturer="Seeger",
+    )
+
+    assert groove.standard is None
+    assert groove.ring_side is None
+    assert groove.nominal_diameter is None
+    assert groove.designation == "RB 042"
+
+
+def test_the_retaining_ring_side_serializes_as_its_name():
+    assert RetainingRingSide("BORE") is RetainingRingSide.BORE
+    assert RetainingRingSide.SHAFT.value == "SHAFT"
+
+
+def test_the_response_round_trips_slots_and_retaining_ring_grooves():
+    response = ResponseFeaturesComponentDrawing(
+        center_holes=[_threaded_center_hole()],
+        slots=[_slot()],
+        retaining_ring_grooves=[_retaining_ring_groove()],
+    )
+
+    restored = ResponseFeaturesComponentDrawing.model_validate_json(
+        response.model_dump_json()
+    )
+
+    assert restored == response
+    assert isinstance(restored.center_holes[0].thread, ThreadISOMetric)
+
+
+def test_a_response_without_slots_or_retaining_ring_grooves_still_parses():
+    """A server that predates the fields sends neither."""
+    restored = ResponseFeaturesComponentDrawing.model_validate(
+        {"center_holes": [], "key_slots": []}
+    )
+
+    assert restored.slots == []
+    assert restored.retaining_ring_grooves == []

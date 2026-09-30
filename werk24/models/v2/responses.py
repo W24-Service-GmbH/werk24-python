@@ -29,8 +29,10 @@ from .models import (
     Radius,
     RedactionZone,
     ReferencePosition,
+    RetainingRingGroove,
     Roughness,
     SecondaryProcess,
+    Slot,
     ThreadUnion,
     Undercut,
     UnitSystem,
@@ -192,6 +194,14 @@ class ResponseFeaturesComponentDrawing(Response):
     center_holes: List[CenterHole] = Field(
         default_factory=list,
         description="Center holes specified by standard (e.g., `DIN 332-A 2,5x5,3`).",
+    )
+    slots: List[Slot] = Field(
+        default_factory=list,
+        description="Elongated holes with round ends (e.g., `3x Langloch Ø 10`, `2x Langloch 14x15`).",
+    )
+    retaining_ring_grooves: List[RetainingRingGroove] = Field(
+        default_factory=list,
+        description="Grooves for retaining rings on a shaft or in a bore (e.g., `DIN 471 30x1,5`, `DIN 472 42x1,75`).",
     )
     fasteners: List[Fastener] = Field(
         default_factory=list,
