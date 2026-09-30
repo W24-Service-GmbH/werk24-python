@@ -1408,9 +1408,11 @@ class CenterHole(Feature):
         description=(
             "The outer diameter of the countersink (e.g. `5.3` in `A 2,5x5,3`), "
             "if stated. For the threaded forms of DIN 332-2 this is the "
-            "countersink's outer diameter d4: a drawing may state the two "
-            "countersink diameters instead of the thread (e.g. `12.2` in "
-            "`DIN 332-D 8,4x12,2`, the row for M8)."
+            "countersink's outer diameter d4. A drawing may state the "
+            "countersink's two diameters d3 x d4 instead of the thread (e.g. "
+            "`DIN 332-D 8,4x12,2`, the row for M8): `12.2` is d4, and d3 "
+            "(`8.4`) is fixed by the thread in the standard's table, so it "
+            "is carried by `thread` rather than by a field of its own."
         ),
     )
     requirement: Optional[CenterHoleRequirement] = Field(
