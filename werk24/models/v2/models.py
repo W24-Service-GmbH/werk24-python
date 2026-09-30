@@ -40,6 +40,7 @@ from .enums import (
     PrimaryProcessType,
     ProjectionMethodType,
     RedactionZoneType,
+    RetainingRingSide,
     RoughnessAcceptanceCriterion,
     RoughnessConditionType,
     RoughnessDirectionOfLay,
@@ -1364,7 +1365,7 @@ class KeySlot(Feature):
 class CenterHole(Feature):
     """
     Represents a center hole specified by a standard (e.g.
-    `DIN 332-A 2,5x5,3`, `ISO 6411-A 2/4.25`).
+    `DIN 332-A 2,5x5,3`, `ISO 6411-A 2/4.25`, `DIN 332-D M16`).
     """
 
     quantity: int = Field(
@@ -1380,12 +1381,19 @@ class CenterHole(Feature):
     )
     form: Optional[str] = Field(
         None,
-        description="The form defined by the standard (e.g. `A`, `B`, `R`), if stated.",
+        description=(
+            "The form defined by the standard (e.g. `A`, `B`, `R`, or `D`, "
+            "`DR`, `DS` for the threaded forms of DIN 332-2), if stated."
+        ),
         examples=["A"],
     )
     pilot_diameter: Optional[Size] = Field(
         None,
-        description="The diameter of the pilot hole (e.g. `2.5` in `A 2,5x5,3`), if stated.",
+        description=(
+            "The diameter of the pilot hole (e.g. `2.5` in `A 2,5x5,3`), if "
+            "stated. For the threaded forms of DIN 332-2 the pilot is the "
+            "thread's core hole and is normally not written."
+        ),
         examples=[
             Size(
                 size_type=SizeType.DIAMETER,
@@ -1397,11 +1405,143 @@ class CenterHole(Feature):
     )
     outer_diameter: Optional[Size] = Field(
         None,
-        description="The outer diameter of the countersink (e.g. `5.3` in `A 2,5x5,3`), if stated.",
+        description=(
+            "The outer diameter of the countersink (e.g. `5.3` in `A 2,5x5,3`), "
+            "if stated. For the threaded forms of DIN 332-2 this is the "
+            "countersink's outer diameter d4: a drawing may state the two "
+            "countersink diameters instead of the thread (e.g. `12.2` in "
+            "`DIN 332-D 8,4x12,2`, the row for M8)."
+        ),
     )
     requirement: Optional[CenterHoleRequirement] = Field(
         None,
         description="Whether the center hole must, may or must not remain on the finished part, if stated.",
+    )
+    thread: Optional[ThreadUnion] = Field(
+        None,
+        description=(
+            "The thread in a threaded center hole (e.g. `M16` in "
+            "`DIN 332-D M16`, DIN 332-2 forms D, DR and DS), or None for a "
+            "center hole without a thread. A pitch that is not written is "
+            "the standard coarse pitch."
+        ),
+    )
+
+
+class Slot(Feature):
+    """
+    Represents an elongated hole with round ends (German "Langloch"), e.g.
+    `3x Langloch Ø 10` or `2x Langloch 14x15`.
+
+    This is a through or blind slot sized by its own width and length. It is
+    distinct from a `KeySlot`, which is the keyway for a parallel key and is
+    specified by a standard.
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of slots or instances. Must be at least 1.",
+        examples=[3],
+    )
+    width: Size = Field(
+        ...,
+        description=(
+            "The width of the slot, which is also the diameter of its round "
+            "ends (e.g. `10` in `Slot Ø10`, `14` in `14x15`). When two sizes "
+            "are written, the smaller. Reported as a linear size even when it "
+            "is written with `Ø`; the label keeps the `Ø`."
+        ),
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("10"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    length: Optional[Size] = Field(
+        None,
+        description=(
+            "The overall length of the slot as written on the drawing (e.g. "
+            "`15` in `14x15`), if stated. When two sizes are written, the "
+            "larger."
+        ),
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("15"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+
+
+class RetainingRingGroove(Feature):
+    """
+    Represents a groove for a retaining ring (circlip), e.g.
+    `DIN 471 30x1,5` on a shaft, `DIN 472 42x1,75` in a bore, or a ring
+    named by its maker's designation such as `Seeger RB 042`.
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of retaining ring grooves or instances. Must be at least 1.",
+        examples=[1],
+    )
+    standard: Optional[str] = Field(
+        None,
+        description="The standard the retaining ring is specified by, as written on the drawing, if one is named.",
+        examples=["DIN 471"],
+    )
+    ring_side: Optional[RetainingRingSide] = Field(
+        None,
+        description="Whether the ring sits on a shaft or in a bore, if known.",
+        examples=[RetainingRingSide.SHAFT],
+    )
+    nominal_diameter: Optional[Size] = Field(
+        None,
+        description=(
+            "The diameter of the shaft or bore the ring is for (e.g. `30` in "
+            "`DIN 471 30x1,5`), if stated."
+        ),
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("30"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    ring_thickness: Optional[Size] = Field(
+        None,
+        description="The thickness of the ring (e.g. `1.5` in `DIN 471 30x1,5`), if stated.",
+        examples=[
+            Size(
+                size_type=SizeType.LINEAR,
+                value=Decimal("1.5"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    designation: Optional[str] = Field(
+        None,
+        description=(
+            "The manufacturer's designation of the ring as written on the "
+            "drawing (e.g. `RB 042`), if one is used. It is reported as "
+            "written and not decoded."
+        ),
+        examples=["RB 042"],
+    )
+    manufacturer: Optional[str] = Field(
+        None,
+        description="The manufacturer, if the drawing names one.",
+        examples=["Seeger"],
     )
 
 
