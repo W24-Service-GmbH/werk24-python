@@ -48,7 +48,6 @@ def test_a_completed_read_can_carry_an_incompleteness_warning():
             "exception_level": "WARNING",
             "exception_type": "READ_INCOMPLETE",
             "ask_type": "DOCUMENT_PROFILE",
-            "reason": "timeout",
         }
     )
     assert message.message_type == TechreadMessageType.PROGRESS
@@ -57,7 +56,6 @@ def test_a_completed_read_can_carry_an_incompleteness_warning():
     assert warning.exception_level is TechreadExceptionLevel.WARNING
     assert warning.exception_type is TechreadExceptionType.READ_INCOMPLETE
     assert warning.ask_type == "DOCUMENT_PROFILE"
-    assert warning.reason == "timeout"
     # The results that were delivered stand.
     assert message.is_successful
 
@@ -83,14 +81,35 @@ def test_info_does_not_fail_the_message():
     assert message.is_successful
 
 
-def test_the_new_fields_are_optional():
-    """What servers send today still parses, with the new fields empty."""
+def test_the_new_field_is_optional():
+    """What servers send today still parses, with ``ask_type`` empty."""
     message = _completed(
         {"exception_level": "ERROR", "exception_type": "DRAWING_FILE_SIZE_TOO_LARGE"}
     )
     (exception,) = message.exceptions
     assert exception.ask_type is None
-    assert exception.reason is None
+
+
+def test_the_warning_does_not_say_why():
+    """core-reader#2453: a READ_INCOMPLETE warning says that a read is
+    incomplete, never why, so the model has no ``reason`` field."""
+    assert "reason" not in TechreadException.model_fields
+
+
+def test_a_message_that_still_carries_a_reason_parses():
+    """A server that sends ``reason`` (core-reader#2450 did, on its test
+    branch only) is not refused: the key is ignored and never dumped again."""
+    message = _completed(
+        {
+            "exception_level": "WARNING",
+            "exception_type": "READ_INCOMPLETE",
+            "reason": "timeout",
+        }
+    )
+    (warning,) = message.exceptions
+    assert warning.exception_type is TechreadExceptionType.READ_INCOMPLETE
+    assert not hasattr(warning, "reason")
+    assert "reason" not in warning.model_dump(mode="json")
 
 
 def test_an_unknown_type_is_kept_rather_than_failing_the_message():
@@ -149,7 +168,6 @@ def test_the_warning_round_trips():
         exception_level=TechreadExceptionLevel.WARNING,
         exception_type=TechreadExceptionType.READ_INCOMPLETE,
         ask_type="BALLOONS",
-        reason="stage_failed",
     )
     again = TechreadException.model_validate_json(exception.model_dump_json())
     assert again == exception
@@ -157,10 +175,10 @@ def test_the_warning_round_trips():
 
 
 def test_an_exception_without_the_new_fields_dumps_as_it_did_before():
-    """Unset ``ask_type`` and ``reason`` stay off the wire and out of dumps.
+    """An unset ``ask_type`` stays off the wire and out of dumps.
 
     core-reader dumps exceptions into its callbacks and its request cache and
-    compares the dicts, so two ``None`` keys appearing in every existing
+    compares the dicts, so a ``None`` key appearing in every existing
     exception would change what it stores and sends without anyone asking.
     """
     exception = TechreadException(
@@ -179,10 +197,10 @@ def test_a_set_field_is_dumped():
     exception = TechreadException(
         exception_level=TechreadExceptionLevel.WARNING,
         exception_type=TechreadExceptionType.READ_INCOMPLETE,
-        reason="timeout",
+        ask_type="BALLOONS",
     )
     assert exception.model_dump(mode="json") == {
         "exception_level": "WARNING",
         "exception_type": "READ_INCOMPLETE",
-        "reason": "timeout",
+        "ask_type": "BALLOONS",
     }

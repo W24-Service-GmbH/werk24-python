@@ -193,8 +193,8 @@ class TechreadExceptionType(str, Enum):
     """ The read completed, but the server knows part of the result is
     missing: a stage timed out or failed, or a region could not be read.
     Sent at the WARNING level, so the results that were delivered stand.
-    ``ask_type`` names the affected ask when it is known, and ``reason``
-    says what went wrong.
+    ``ask_type`` names the affected ask when it is known. The warning says
+    that the read is incomplete, never why.
     """
 
 
@@ -211,8 +211,6 @@ class TechreadException(BaseModel):
         API-user to translate the message to a user-info.
     - ask_type (Optional[str]): The ask the exception concerns, when it
         concerns one. Set on a ``READ_INCOMPLETE`` warning.
-    - reason (Optional[str]): A short, machine-readable code for what
-        happened (for example ``"timeout"``). The set of codes may grow.
 
     A type this client does not know is kept as its plain string rather
     than refused. The server adds types over time, and every consumer that
@@ -227,11 +225,10 @@ class TechreadException(BaseModel):
         ..., union_mode="left_to_right"
     )
     # Left out of a dump while unset, so every exception that does not use
-    # them serializes exactly as it did before they existed. core-reader
-    # dumps these into its callbacks and its request cache, and consumers
-    # compare the dicts.
+    # it serializes exactly as it did before it existed. core-reader dumps
+    # these into its callbacks and its request cache, and consumers compare
+    # the dicts.
     ask_type: Optional[str] = Field(default=None, exclude_if=lambda v: v is None)
-    reason: Optional[str] = Field(default=None, exclude_if=lambda v: v is None)
 
 
 #: Exception levels that leave the results of a message standing.
