@@ -48,6 +48,18 @@ class CenterHoleRequirement(str, Enum):
     NOT_PERMITTED = "NOT_PERMITTED"
 
 
+class RetainingRingSide(str, Enum):
+    """Where a retaining ring sits, and so where its groove is cut.
+
+    - SHAFT: an external ring in a groove on a shaft, e.g. DIN 471 or
+      DIN 6799.
+    - BORE: an internal ring in a groove in a bore, e.g. DIN 472.
+    """
+
+    SHAFT = "SHAFT"
+    BORE = "BORE"
+
+
 class FastenerType(str, Enum):
     """Kinds of fastener a drawing or a bill of material names.
 
