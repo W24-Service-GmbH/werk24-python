@@ -2365,7 +2365,18 @@ class Werk24Client:
                     details=f"The read did not complete within {total_timeout:.0f}s."
                 )
             try:
-                ready.payload_bytes = await asyncio.wait_for(ready_task, timeout=left)
+                payload_bytes = await asyncio.wait_for(ready_task, timeout=left)
+                if ready.payload_encoding == "json":
+                    # Revalidate through the same response deserializer as an
+                    # inline payload, including v1/v2 concrete response models.
+                    payload = json.loads(payload_bytes)
+                    if not isinstance(payload, dict):
+                        raise ValueError("Offloaded structured payload must be an object")
+                    fields = ready.model_dump()
+                    fields.update(payload_dict=payload, payload_bytes=None)
+                    ready = TechreadMessage.model_validate(fields)
+                else:
+                    ready.payload_bytes = payload_bytes
             except asyncio.TimeoutError as exc:
                 raise ReadTimeoutError(
                     details=(

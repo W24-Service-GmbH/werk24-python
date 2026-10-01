@@ -1,6 +1,6 @@
 from contextlib import suppress
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from pydantic import (
     UUID4,
@@ -319,6 +319,9 @@ class TechreadMessage(TechreadBaseResponse):
       are preserved unchanged.
     - payload_url (Optional[HttpUrl]): A URL for downloading binary data
       (e.g., images or large files).
+    - payload_encoding (Optional[Literal["json"]]): Marks a structured JSON offload.
+      The client downloads and decrypts it, then restores `payload_dict` using the
+      normal response deserializer. Unmarked downloads remain binary.
     - payload_bytes (Optional[bytes]): Binary content downloaded from the `payload_url`.
       This wil initially be None, and will be populated when the client downloads the
       content from the `payload_url`. If you implement your own client, you need to
@@ -335,6 +338,11 @@ class TechreadMessage(TechreadBaseResponse):
     payload_dict: Optional[Any] = None
     payload_url: Optional[HttpUrl] = None
     payload_bytes: Optional[bytes] = None
+    # Present only when payload_url contains the JSON for payload_dict.
+    # Binary deliverables, including JSON files, leave this unset.
+    payload_encoding: Optional[Literal["json"]] = Field(
+        default=None, exclude_if=lambda v: v is None
+    )
 
     @field_validator("payload_dict", mode="plain")
     @classmethod

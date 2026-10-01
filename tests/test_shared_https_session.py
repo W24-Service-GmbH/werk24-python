@@ -116,6 +116,7 @@ class TestDownloadsDoNotBlockTheReceiveLoop:
                 "message_subtype": subtype,
                 "payload_url": payload_url,
                 "payload_bytes": None,
+                "payload_encoding": None,
                 "request_id": None,
             },
         )()
@@ -355,6 +356,7 @@ class TestNormalTerminationLosesNothing:
                 "message_subtype": subtype,
                 "payload_url": payload_url,
                 "payload_bytes": None,
+                "payload_encoding": None,
                 "request_id": None,
             },
         )()
