@@ -1957,6 +1957,24 @@ class Werk24Client:
         This method initializes the reading process and registers a callback URL
         that the server will use to send message responses asynchronously.
 
+        Use a public HTTPS endpoint and acknowledge each POST with a 2xx
+        response within 10 seconds. Delivery is at least once: connection
+        failures, timeouts and HTTP 408, 425, 429, 500, 502, 503 or 504 may
+        be retried, up to three attempts within about 20 seconds. The
+        ``X-Werk24-Delivery-Attempt`` header starts at 1 and increases for
+        retries. Retries carry identical body bytes; deduplicate using a
+        hash of those bytes, scoped to the request. Do not deduplicate on
+        request ID, message subtype and page alone: an ask can deliver
+        several distinct messages for the same page.
+
+        Store or enqueue the message durably before acknowledging it, and
+        acknowledge duplicates too. Download any ``payload_url`` promptly,
+        within 10 minutes. Collect ASK messages until PROGRESS / COMPLETED;
+        ASK messages can arrive concurrently and in any order. Retry
+        exhaustion or another non-2xx response ends delivery for the read.
+        See https://docs.werk24.io/getting-started/http-api/ for the message
+        and delivery contract.
+
         Args:
         ----
         - drawing (Union[BufferedReader, bytes]): The drawing to process.
