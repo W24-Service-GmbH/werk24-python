@@ -10,6 +10,8 @@ from pydantic import (
     model_validator,
 )
 
+from werk24.models.thermal_cut_quality import ThermalCutQuality
+
 from .enums import (
     CenterHoleRequirement,
     CertificationType,
@@ -846,6 +848,10 @@ class Roughness(Feature):
         None,
         description="A description of the manufacturing process that affects surface roughness, if provided.",
     )
+    thermal_cut_quality: Optional[ThermalCutQuality] = Field(
+        None, description="Structured ISO 9013 cut-quality designation, if present."
+    )
+
     conditions: list[RoughnessCondition] = Field(
         ...,
         description="A list of roughness conditions specifying upper, lower, or average limits for different parameters.",
