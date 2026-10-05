@@ -23,7 +23,7 @@ pint==0.24.4; python_version < "3.11"
 pydantic-extra-types==2.11.1
 pydantic==2.13.5
 pydantic-settings==2.15.0
-python-dotenv==1.2.3
+python-dotenv==1.2.4
 typer==0.27.2
 
 # websockets 17 requires >=3.11.
