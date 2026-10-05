@@ -4,6 +4,8 @@ from typing import List, Optional
 
 from pydantic import UUID4, BaseModel
 
+from werk24.models.thermal_cut_quality import ThermalCutQuality
+
 from .base_feature import W24BaseFeatureModel
 from .unit import W24UnitLength, W24UnitSystem
 
@@ -361,6 +363,8 @@ class W24RoughnessLabel(BaseModel):
     unit_system: W24UnitSystem
 
     waviness: Optional[W24RoughnessWaviness]
+
+    thermal_cut_quality: Optional[ThermalCutQuality] = None
 
     variable: Optional[str] = None
 

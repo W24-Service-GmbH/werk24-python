@@ -10,6 +10,8 @@ from pydantic import (
     model_validator,
 )
 
+from werk24.models.thermal_cut_quality import ThermalCutQuality
+
 from .enums import (
     CenterHoleRequirement,
     CertificationType,
@@ -147,6 +149,23 @@ class Identifier(Entry):
     )
 
 
+class GeneralToleranceTableRow(BaseModel):
+    """An explicitly printed linear tolerance rule, in the stated length unit.
+
+    A rule applies either to a decimal-place count or to a nominal-size range.
+    Range bounds are lower-exclusive and upper-inclusive; None is unbounded.
+    These rows do not represent angular, fractional or feature-specific rules;
+    those remain available in the verbatim tolerance note.
+    """
+
+    decimal_places: Optional[int] = Field(default=None, ge=0)
+    nominal_min: Optional[Decimal] = None
+    nominal_max: Optional[Decimal] = None
+    deviation_min: Decimal
+    deviation_max: Decimal
+    unit: str = Field(pattern=r"^(mm|inch)$", description="Length unit: mm or inch.")
+
+
 class GeneralTolerances(Reference):
     """
     Model representing general tolerances for a part or drawing.
@@ -171,6 +190,17 @@ class GeneralTolerances(Reference):
         ...,
         description="The principle governing the tolerance application, such as independence or envelope.",
         examples=[GeneralTolerancesPrinciple.INDEPENDENCE],
+    )
+
+    tolerance_note: Optional[str] = Field(
+        default=None,
+        description="Printed general tolerance note/table, including units, ranges "
+        "and deviations. May contain rules that are not represented in tolerance_table.",
+    )
+    tolerance_table: List[GeneralToleranceTableRow] = Field(
+        default_factory=list,
+        description="Explicit linear tolerance rules extracted from the note. "
+        "Empty when the note cannot be represented as a single linear scheme.",
     )
 
 
@@ -818,6 +848,10 @@ class Roughness(Feature):
         None,
         description="A description of the manufacturing process that affects surface roughness, if provided.",
     )
+    thermal_cut_quality: Optional[ThermalCutQuality] = Field(
+        None, description="Structured ISO 9013 cut-quality designation, if present."
+    )
+
     conditions: list[RoughnessCondition] = Field(
         ...,
         description="A list of roughness conditions specifying upper, lower, or average limits for different parameters.",
