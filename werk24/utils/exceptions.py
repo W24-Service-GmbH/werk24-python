@@ -135,7 +135,9 @@ class RequestTooLargeException(TechreadException):
 
     cli_message_header: str = "Request Too Large"
     cli_message_body: str = (
-        "The request size exceeds the maximum allowed size of 10MB.\n\n"
+        "The request size exceeds the maximum allowed size: 10 MiB for a "
+        "drawing sent with read_drawing, about 4.6 MB for a whole callback "
+        "request.\n\n"
         "For more information, visit:\nhttps://v2.docs.werk24.io"
     )
 
