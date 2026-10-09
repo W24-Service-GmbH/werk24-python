@@ -96,10 +96,15 @@ class W24Radius(W24BaseFeatureModel):
 
         label: Label of the radius.
 
-        confidence: Werk24 calcualtes an internal confidence score for
-            reach radius. Depending on your use-case, you might want
+        confidence: Werk24 calculates a confidence score for
+            each radius. Depending on your use-case, you might want
             to consider or discard low-confidence radii. This value
-            allows you to do so. The value ranges from 0.0 to 1.0
+            allows you to do so. The value ranges from
+            0.0 to 1.0. A read with nothing to doubt scores 1.0;
+            0.8 or above is a reasonable read. Below 0.8, at least
+            one concrete reason to doubt it was found (for example
+            a tolerance that is on the drawing but could not be
+            read), and the value is worth checking.
     """
 
     radius_id: UUID4
