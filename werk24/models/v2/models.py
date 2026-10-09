@@ -67,12 +67,14 @@ class Confidence(BaseModel):
     score: Decimal = Field(
         ...,
         description=(
-            "The confidence score of the reading, from 0.0 to 1.0. A reading "
-            "with nothing to doubt scores 1.0, and 0.8 or above is a reasonable "
-            "reading. Below 0.8, at least one concrete reason to doubt it was "
-            "found, such as a tolerance that is on the drawing but could not be "
-            "read, or a value that no standard series contains, and the reading "
-            "is worth checking."
+            "The confidence score of the reading, from 0.0 to 1.0. On "
+            "dimensions, bores, chamfers, threads, radii, roughness and GD&T "
+            "frames, a reading with nothing to doubt scores 1.0, and 0.8 or "
+            "above is a reasonable reading. Below 0.8, at least one concrete "
+            "reason to doubt it was found, such as a tolerance that is on the "
+            "drawing but could not be read, or a value that no standard series "
+            "contains, and the reading is worth checking. Scores on other "
+            "objects, such as notes, do not follow this scale yet."
         ),
         examples=[Decimal("0.95")],
     )
