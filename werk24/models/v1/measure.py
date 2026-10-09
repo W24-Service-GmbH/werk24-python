@@ -205,11 +205,15 @@ class W24Measure(W24BaseFeatureModel):
         warnings: List of Warnings that are associated with the
             measure. See W24MeasureWarning for details.
 
-        confidence:  Werk24 calculates an internal confidence score for
+        confidence:  Werk24 calculates a confidence score for
             each measure. Depending on your use-case, you might want
             to consider or discard low-confidence measures. This
             value allows you to do so. The value ranges from
-            0.0 to 1.0
+            0.0 to 1.0. A read with nothing to doubt scores 1.0;
+            0.8 or above is a reasonable read. Below 0.8, at least
+            one concrete reason to doubt it was found (for example
+            a tolerance that is on the drawing but could not be
+            read), and the value is worth checking.
 
     """
 
