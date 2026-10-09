@@ -497,13 +497,11 @@ class W24AskVariantMeasures(W24Ask):
 
     Attributes:
 
-        confidence_min: Werk24 calculates internal
-            confidence scores for each measure. Depending
-            on your use-case you might want to consider or
-            discard low-confidence results. This parameter
-            allows you to filter the results. The resulting
-            W24Measure objects also contain a confidence score
-            that allows you to filter even further.
+        confidence_min: No longer applied. Every measure
+            that was read is returned, and each W24Measure
+            carries its own confidence score (0.8 or above is a
+            reasonable read) that you can filter on. The field
+            is kept so that requests which set it stay valid.
     """
 
     ask_type: Literal[W24AskType.VARIANT_MEASURES] = W24AskType.VARIANT_MEASURES
