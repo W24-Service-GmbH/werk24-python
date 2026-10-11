@@ -12,7 +12,6 @@ from .alphabet import W24Alphabet
 from .angle import W24Angle
 from .balloon import W24Balloon
 from .file_format import (
-    W24FileFormatTable,
     W24FileFormatThumbnail,
     W24FileFormatVariantCAD,
 )
@@ -160,10 +159,6 @@ class W24AskType(str, Enum):
 
     EXCEL_SUMMARY = "EXCEL_SUMMARY"
     """ Ask to obtain an excel summary of the document.
-    """
-
-    CANVAS_TABLES = "CANVAS_TABLES"
-    """ Ask to obtain the tables from the canvas.
     """
 
 
@@ -1153,22 +1148,6 @@ class W24AskExcelSummary(W24Ask):
     ask_type: Literal[W24AskType.EXCEL_SUMMARY] = W24AskType.EXCEL_SUMMARY
 
 
-class W24AskCanvasTables(W24Ask):
-    """Ask to obtain all the canvas tables from the drawing."""
-
-    ask_type: Literal[W24AskType.CANVAS_TABLES] = W24AskType.CANVAS_TABLES
-
-    split_min_max_columns: bool = Field(
-        description=("Split range columns into min and max columns."),
-        default=False,
-    )
-
-    output_format: W24FileFormatTable = Field(
-        description=("Output format in which to generate the tables."),
-        default=W24FileFormatTable.CSV,
-    )
-
-
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
     W24AskNotes,
@@ -1195,7 +1174,6 @@ W24AskUnion = Union[
     W24AskVariantProcesses,
     W24AskDebug,
     W24AskExcelSummary,
-    W24AskCanvasTables,
     # W24AskVariantToleranceElements
 ]
 """Union of all W24Asks to ensure proper de-serialization """
@@ -1265,7 +1243,6 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         "VARIANT_PROCESSES": W24AskVariantProcesses,
         "EXCEL_SUMMARY": W24AskExcelSummary,
         "DEBUG": W24AskDebug,
-        "CANVAS_TABLES": W24AskCanvasTables,
     }.get(ask_type, None)
 
     if class_ is None:
