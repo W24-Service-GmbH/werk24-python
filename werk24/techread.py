@@ -777,7 +777,8 @@ class Werk24Client:
         - max_pages (int, optional): Maximum number of pages to process.
         - encryption_keys (Optional[EncryptionKeys], optional): Optional encryption keys.
         - priority (Optional[str], optional): Optional priority level for the request.
-            Valid values are "PRIO1", "PRIO2", "PRIO3" (case-insensitive).
+            Valid values are "PRIO1" (Express), "PRIO2" (Priority) and
+            "PRIO3" (Best-effort), case-insensitive.
             If not specified, the account's default tier is used.
 
         Raises:
@@ -830,7 +831,8 @@ class Werk24Client:
         - encryption_keys (Optional[EncryptionKeys], optional): Optional encryption
             keys for secure communication.
         - priority (Optional[str], optional): Optional priority level for the request.
-            Valid values are "PRIO1", "PRIO2", "PRIO3" (case-insensitive).
+            Valid values are "PRIO1" (Express), "PRIO2" (Priority) and
+            "PRIO3" (Best-effort), case-insensitive.
             If not specified, the account's default tier is used.
 
         Yields:
@@ -1988,7 +1990,8 @@ class Werk24Client:
         - public_key (Optional[bytes], optional): Optional public key for encrypting
           the callback request.
         - priority (Optional[str], optional): Optional priority level for the request.
-            Valid values are "PRIO1", "PRIO2", "PRIO3" (case-insensitive).
+            Valid values are "PRIO1" (Express), "PRIO2" (Priority) and
+            "PRIO3" (Best-effort), case-insensitive.
             If not specified, the account's default tier is used.
 
         Raises:
