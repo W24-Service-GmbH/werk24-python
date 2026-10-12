@@ -201,6 +201,67 @@ class TestDownloadsDoNotBlockTheReceiveLoop:
             < order.index("download-end")
         )
 
+    @pytest.mark.parametrize("payload_url", [None, "https://s3/one"])
+    @pytest.mark.asyncio
+    async def test_a_message_is_handed_over_before_the_next_one_arrives(
+        self, monkeypatch, payload_url
+    ):
+        """A result is the caller's as soon as it is here, not one message later.
+
+        The server can go quiet for many seconds between two results: a
+        preview image is ready almost at once, the first extracted values come
+        much later. A message that waited for its successor to arrive reached
+        the caller only when that successor did, so the preview showed up next
+        to the values instead of ahead of them.
+
+        The second recv here does not return until the caller holds the first
+        message. Holding the first one back for the second would wait on
+        itself, so the bound turns that into a failure rather than a hang.
+        """
+        client = _client()
+        first_handed_over = asyncio.Event()
+
+        async def download(url, *_a, **_k):
+            return str(url).encode()
+
+        messages = [
+            self._message(payload_url=payload_url),
+            self._message(subtype=TechreadMessageSubtype.PROGRESS_COMPLETED),
+        ]
+        recvs = {"n": 0}
+
+        async def fake_recv():
+            index = recvs["n"]
+            recvs["n"] += 1
+            if index == 0:
+                return "raw-0"
+            await first_handed_over.wait()
+            return "raw-1"
+
+        client._wss_session = type("S", (), {"recv": staticmethod(fake_recv)})()
+        monkeypatch.setattr(client, "download_payload", download)
+        monkeypatch.setattr(
+            client, "_parse_message", lambda raw: messages[int(raw.split("-")[1])]
+        )
+
+        async def send(*_a, **_k):
+            return None
+
+        monkeypatch.setattr(client, "_send_command", send)
+
+        async def consume():
+            received = []
+            async for message in client._send_command_read():
+                received.append(message)
+                first_handed_over.set()
+            return received
+
+        received = await asyncio.wait_for(consume(), timeout=2.0)
+
+        assert received == messages
+        expected = None if payload_url is None else payload_url.encode()
+        assert received[0].payload_bytes == expected
+
     @pytest.mark.asyncio
     async def test_messages_still_arrive_in_order_with_their_payloads(
         self, monkeypatch
@@ -331,15 +392,58 @@ class TestDownloadsDoNotBlockTheReceiveLoop:
 
         assert all(task.cancelled() or task.done() for task in spawned)
 
+    @pytest.mark.asyncio
+    async def test_abandoning_the_stream_cancels_the_receive_in_flight(
+        self, monkeypatch
+    ):
+        """The next receive runs while the caller holds a message.
+
+        A caller that walks away at that point must not leave it waiting on
+        the socket: the next read on the same connection would then find a
+        second receive already pending on it.
+        """
+        client = _client()
+        receive_cancelled = asyncio.Event()
+
+        async def fake_recv():
+            if not hasattr(fake_recv, "called"):
+                fake_recv.called = True
+                return "raw-0"
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                receive_cancelled.set()
+                raise
+
+        messages = [self._message()]
+        client._wss_session = type("S", (), {"recv": staticmethod(fake_recv)})()
+        monkeypatch.setattr(
+            client, "_parse_message", lambda raw: messages[int(raw.split("-")[1])]
+        )
+
+        async def send(*_a, **_k):
+            return None
+
+        monkeypatch.setattr(client, "_send_command", send)
+
+        generator = client._send_command_read()
+        first = await asyncio.wait_for(generator.__anext__(), timeout=2.0)
+        assert first is messages[0]
+
+        # Let the receive for the next message start before walking away.
+        await asyncio.sleep(0.01)
+        await generator.aclose()
+
+        assert receive_cancelled.is_set()
+
 
 class TestNormalTerminationLosesNothing:
-    """The message held back for the overlap is a real message.
+    """A message still waiting for its download is a real message.
 
-    Holding one back is what creates the overlap, but every way out of the
-    receive loop except an exception is a normal end - and at those ends the
-    held-back message still has to be delivered. Cancelling it instead loses
-    an answer the customer was already sent, and with a message cap of 1 it
-    yields nothing at all.
+    Every way out of the receive loop except an exception is a normal end, and
+    at those ends a message whose payload is still downloading has to be
+    delivered. Cancelling it instead loses an answer the customer was already
+    sent, and with a message cap of 1 it yields nothing at all.
     """
 
     def _message(self, subtype=None, payload_url=None):
