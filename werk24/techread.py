@@ -2347,6 +2347,10 @@ class Werk24Client:
         hit_cap = True
         # (message, download task or None), in receive order.
         pending: deque = deque()
+        # The receive for the next message, while it is outstanding. It runs
+        # as a task so the messages already received can be handed over while
+        # it waits, and so it can be cancelled if the read ends abnormally.
+        recv_task: Optional[asyncio.Future] = None
 
         # Two bounds on the wait, because they catch different failures.
         #
@@ -2397,6 +2401,14 @@ class Werk24Client:
             logger.debug("Payload successfully downloaded")
             return ready
 
+        async def _receive(timeout: float):
+            """The next raw message, within ``timeout``.
+
+            ``recv()`` is called in here rather than passed in, so a receive
+            cancelled before it first runs leaves no coroutine unawaited.
+            """
+            return await asyncio.wait_for(self._wss_session.recv(), timeout=timeout)
+
         try:
             for _ in range(max_messages_per_session):
                 remaining = deadline - time.monotonic()
@@ -2407,12 +2419,33 @@ class Werk24Client:
                         )
                     )
                 idle_budget = min(remaining, settings.read_idle_timeout)
-                try:
-                    raw_message = str(
-                        await asyncio.wait_for(
-                            self._wss_session.recv(), timeout=idle_budget
-                        )
+                recv_task = asyncio.ensure_future(_receive(idle_budget))
+
+                # Hand over every message received so far as soon as its own
+                # payload is in, while the receive for the next one runs.
+                #
+                # The server sends each result when it is ready, and the gap
+                # to the next one can be long: a preview image is ready within
+                # seconds, the first extracted values often tens of seconds
+                # later. A message must therefore never wait for its
+                # successor to arrive, only for its own download. The receive
+                # keeps running meanwhile, so a download still overlaps the
+                # wait for the next message.
+                while pending:
+                    head_task = pending[0][1]
+                    if head_task is None or head_task.done():
+                        yield await _resolve(pending.popleft())
+                        continue
+                    await asyncio.wait(
+                        {recv_task, head_task},
+                        return_when=asyncio.FIRST_COMPLETED,
                     )
+                    if recv_task.done():
+                        break
+
+                try:
+                    raw_message = str(await recv_task)
+                    recv_task = None
                 except asyncio.TimeoutError as exc:
                     raise ReadTimeoutError(
                         details=(
@@ -2453,8 +2486,8 @@ class Werk24Client:
                 #
                 # Messages are still yielded in order and still carry their
                 # ``payload_bytes`` when they are yielded: only the waiting
-                # moves. ``pending`` holds at most one message back, which is
-                # what creates the overlap.
+                # moves. A message stays in ``pending`` only until its own
+                # download is in; the hand-over is at the top of the loop.
                 if message.payload_url:
                     logger.debug(
                         "Downloading payload from URL: %s", message.payload_url
@@ -2484,10 +2517,11 @@ class Werk24Client:
                 if is_completed:
                     self._exchange_open = False
 
-                # Keep one message in flight so its download overlaps the next
-                # receive; on completion there is no next receive, so drain.
-                while len(pending) > (0 if is_completed else 1):
-                    yield await _resolve(pending.popleft())
+                # On completion there is no next receive to hand the queue
+                # over during, so drain it here.
+                if is_completed:
+                    while pending:
+                        yield await _resolve(pending.popleft())
 
                 # Stop once the server signals that the read has completed,
                 # rather than relying on a fixed message count (which would
@@ -2498,11 +2532,11 @@ class Werk24Client:
                     break
 
             # Every way out of that loop except an exception is a NORMAL end,
-            # and the message held back to create the overlap is a real
-            # message. A clean server close (ConnectionClosedOK) and the
-            # message cap both land here with one still queued; dropping it
-            # would lose an answer the customer was sent, and at a cap of 1
-            # would yield nothing at all.
+            # and a message still waiting for its download is a real message.
+            # A clean server close (ConnectionClosedOK) and the message cap
+            # both land here with messages still queued; dropping them would
+            # lose answers the customer was sent, and at a cap of 1 would
+            # yield nothing at all.
             #
             # After a PROGRESS_COMPLETED break this is empty - that path
             # already drained - so it costs nothing there.
@@ -2529,6 +2563,11 @@ class Werk24Client:
             # neither, which is what a cleanup path should do.
             orphans = [task for _, task in pending if task is not None]
             pending.clear()
+            if recv_task is not None:
+                # Cancelling a websockets recv() loses no data: the next
+                # recv() returns the message this one was waiting for.
+                orphans.append(recv_task)
+                recv_task = None
             for orphan in orphans:
                 if not orphan.done():
                     orphan.cancel()
