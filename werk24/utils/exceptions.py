@@ -787,8 +787,8 @@ class PriorityTooHighError(TechreadException):
     """Exception raised when requested priority exceeds account tier (403).
 
     This exception is raised when a user requests a priority level that is
-    higher than their account tier allows. For example, if an account has
-    PRIO2 tier and requests PRIO1 processing.
+    higher than their account tier allows. For example, if an account is on
+    the Priority tier (PRIO2) and requests Express (PRIO1) processing.
 
     Attributes:
         account_tier: The maximum priority level allowed by the account
@@ -799,7 +799,8 @@ class PriorityTooHighError(TechreadException):
     cli_message_body: str = (
         "The requested priority exceeds your account tier.\n\n"
         "You can only request priorities at or below your account tier level.\n"
-        "For example, if your account tier is PRIO2, you can request PRIO2 or PRIO3."
+        "For example, if your account tier is PRIO2 (Priority), you can request\n"
+        "PRIO2 (Priority) or PRIO3 (Best-effort)."
     )
 
     def __init__(

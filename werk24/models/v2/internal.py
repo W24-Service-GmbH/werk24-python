@@ -439,7 +439,7 @@ class TechreadWithCallbackPayload(BaseModel):
 
     priority: Optional[str] = Field(
         default=None,
-        description="Optional priority level for the request. Valid values are PRIO1, PRIO2, PRIO3. If not specified, the account's default tier is used.",
+        description="Optional priority level for the request. Valid values are PRIO1 (Express), PRIO2 (Priority) and PRIO3 (Best-effort). If not specified, the account's default tier is used.",
     )
 
     @field_validator("callback_headers", mode="before")
