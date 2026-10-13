@@ -1726,21 +1726,22 @@ class Priority(str, Enum):
     """
     Valid priority levels for drawing requests.
 
-    Priority determines the order in which drawing requests are processed.
-    Lower numbers indicate higher priority (faster processing).
+    The priority selects the queue a request waits in before processing
+    starts. Each level has a name and a pickup promise: the time within which
+    99% of requests (p99) are picked up. A lower number is picked up sooner.
 
     Attributes:
     ----------
-    - PRIO1: Highest priority, fastest processing
-    - PRIO2: Medium priority
-    - PRIO3: Lowest priority, suitable for batch processing
+    - PRIO1: Express, picked up within 10 seconds (p99).
+    - PRIO2: Priority, picked up within 1 minute (p99).
+    - PRIO3: Best-effort, picked up within 10 minutes (p99).
     """
 
     PRIO1 = "PRIO1"
-    """Highest priority - fastest processing."""
+    """Express: picked up within 10 seconds (p99)."""
 
     PRIO2 = "PRIO2"
-    """Medium priority."""
+    """Priority: picked up within 1 minute (p99)."""
 
     PRIO3 = "PRIO3"
-    """Lowest priority - suitable for batch processing."""
+    """Best-effort: picked up within 10 minutes (p99)."""

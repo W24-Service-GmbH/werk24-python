@@ -17,7 +17,8 @@ def validate_priority(priority: Optional[str]) -> Optional[str]:
 
     Args:
         priority: The priority string to validate (case-insensitive).
-            Valid values are "PRIO1", "PRIO2", "PRIO3" (case-insensitive).
+            Valid values are "PRIO1" (Express), "PRIO2" (Priority) and
+            "PRIO3" (Best-effort), case-insensitive.
             None is also accepted and returns None.
 
     Returns:
