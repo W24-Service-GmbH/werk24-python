@@ -1,3 +1,4 @@
+import logging
 from contextlib import suppress
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -33,6 +34,104 @@ _V2_RESPONSE_BY_ASK_TYPE = {
     if "ask_type" in c.model_fields
     and c.model_fields["ask_type"].default is not None
 }
+
+_logger = logging.getLogger("werk24")
+
+#: What has already been reported, so that a long-running client warns once
+#: per field, not once per message.
+_REPORTED_UNKNOWN_FIELDS: set = set()
+_REPORTED_UNPARSED: set = set()
+
+
+def _unknown_fields(value: Any, path: str = "") -> List[str]:
+    """The paths of the fields in ``value`` that its model does not declare.
+
+    A response parsed by ``_parse_v2_response`` keeps every field the server
+    sent, including the ones this version of the library does not know yet
+    (in ``model_extra``). This lists them, nested models included, as
+    ``slots`` or ``fasteners[].thread``; list positions are left out so the
+    same field in every list item is one path.
+    """
+    found: List[str] = []
+    if isinstance(value, BaseModel):
+        for name in value.model_extra or {}:
+            found.append(f"{path}{name}")
+        for name in type(value).model_fields:
+            found.extend(_unknown_fields(getattr(value, name, None), f"{path}{name}."))
+    elif isinstance(value, (list, tuple)):
+        prefix = f"{path[:-1]}[]." if path else ""
+        for item in value:
+            for name in _unknown_fields(item, prefix):
+                if name not in found:
+                    found.append(name)
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            found.extend(_unknown_fields(item, f"{path}{key}."))
+    return found
+
+
+def _parse_v2_response(c_class: type, payload: dict) -> Any:
+    """Parse a v2 answer, keeping the fields this version does not know.
+
+    The server can be newer than the client: a release that adds a field to
+    a response reaches every caller at once, while each caller upgrades this
+    library on its own schedule. Parsed the default way, pydantic drops the
+    fields a model does not declare, so the caller got an answer with fields
+    missing and nothing to say so. Now they stay on the parsed model, as
+    plain data under their own names (``response.slots``,
+    ``response.model_extra``), and the first time each one is seen a
+    warning names it and says to upgrade.
+
+    The models' own configuration is unchanged, so they still drop unknown
+    fields when constructed directly and still leave them out of
+    ``model_dump()``.
+    """
+    response = c_class.model_validate(payload, extra="allow")
+    new = [
+        name
+        for name in _unknown_fields(response)
+        if (c_class.__name__, name) not in _REPORTED_UNKNOWN_FIELDS
+    ]
+    if new:
+        _REPORTED_UNKNOWN_FIELDS.update((c_class.__name__, name) for name in new)
+        _logger.warning(
+            "The server sent fields that werk24 %s does not know in %s: %s. "
+            "They are kept on the response as plain data (for example "
+            "response.%s, or response.model_extra), but are not typed and "
+            "are left out of model_dump(). Upgrade with `pip install -U werk24` "
+            "to read them as models.",
+            __version__,
+            c_class.__name__,
+            ", ".join(new),
+            new[0].split(".")[0].split("[")[0],
+        )
+    return response
+
+
+def _report_unparsed(c_class: type, error: ValidationError) -> None:
+    """Warn, once per kind of failure, that an answer stays a plain dict.
+
+    This happens when the server sends a value this version cannot accept,
+    such as a new member of an enum. The message still arrives, with
+    ``payload_dict`` as the dict the server sent, which is a different type
+    from every other answer, so it is worth saying why.
+    """
+    first = error.errors()[0]
+    location = ".".join(str(part) for part in first["loc"])
+    key = (c_class.__name__, location, first["type"])
+    if key in _REPORTED_UNPARSED:
+        return
+    _REPORTED_UNPARSED.add(key)
+    _logger.warning(
+        "werk24 %s could not read the server's answer as %s (%d error(s), the "
+        "first at %s: %s), so payload_dict is the plain dict the server sent. "
+        "Upgrade with `pip install -U werk24`.",
+        __version__,
+        c_class.__name__,
+        error.error_count(),
+        location or "the top level",
+        first["msg"],
+    )
 
 
 class TechreadMessageType(str, Enum):
@@ -313,10 +412,14 @@ class TechreadMessage(TechreadBaseResponse):
     - message_subtype (TechreadMessageSubtype): The subtype specifying additional
       details about the message.
     - page_number (int): The page number the message corresponds to (starting from 0).
-    - payload_dict (Optional[Any]): The structured payload data. Usually
-      deserialized into one of the known response models (or kept as a dict),
-      but payloads that cannot be deserialized (e.g., a non-mapping value)
-      are preserved unchanged.
+    - payload_dict (Optional[Any]): The structured payload data. For a v2
+      answer (an ASK message) it is the response model of its ask type, for
+      example ``ResponseFeaturesComponentDrawing``; fields the server sent
+      that this version does not know are kept on it as plain data
+      (``model_extra``) and logged once as a warning. It stays the plain dict
+      the server sent only when the answer cannot be read as that model,
+      also with a warning; payloads that cannot be deserialized at all
+      (e.g., a non-mapping value) are preserved unchanged.
     - payload_url (Optional[HttpUrl]): A URL for downloading binary data
       (e.g., images or large files).
     - payload_bytes (Optional[bytes]): Binary content downloaded from the `payload_url`.
@@ -373,12 +476,14 @@ class TechreadMessage(TechreadBaseResponse):
         if v.get("ask_version") == "v2":
             c_class = _V2_RESPONSE_BY_ASK_TYPE.get(v.get("ask_type"))
             if c_class is not None:
-                with suppress(ValidationError):
-                    return c_class.model_validate(v)
+                try:
+                    return _parse_v2_response(c_class, v)
+                except ValidationError as error:
+                    _report_unparsed(c_class, error)
             # Fallback: unknown ask_type, try each subclass.
             for c_class in RESPONSE_SUBCLASSES:
                 with suppress(ValidationError):
-                    return c_class.model_validate(v)
+                    return _parse_v2_response(c_class, v)
 
         # Desirialize V1 responses
         try:
