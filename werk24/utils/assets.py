@@ -153,8 +153,14 @@ def read_drawing_sync(
         asks (list[AskUnion]): What to extract from the drawing.
 
     Returns:
-        list[TechreadMessage]: The ASK messages, one per answer. Progress
-        messages are left out.
+        list[TechreadMessage]: The ASK messages, one per answer, in the
+        order they arrived. Progress messages are left out. Each answer is
+        in the message's ``payload_dict``: the response model of its ask
+        type (for example ``ResponseFeaturesComponentDrawing``), or for a v1
+        ask its ``W24AskResponse``. The message also carries
+        ``message_subtype`` (the ask type), ``page_number`` and
+        ``exceptions``. This shape is stable from 2.7.0 on; before that the
+        function returned the payloads themselves.
 
     Raises:
         Exception: Whatever the client raises, unchanged, for example
