@@ -190,7 +190,8 @@ raises `RuntimeError: asyncio.run() cannot be called from a running event loop`.
 Run `await main()` in the cell instead.
 
 **Without async.** `read_drawing_sync` reads the drawing and returns the answers
-(the ASK messages) as a list:
+(the ASK messages) as a list. Each answer is the message's `payload_dict`, the
+response model of its ask type:
 
 ```python
 from werk24 import AskMetaData, get_test_drawing, read_drawing_sync
@@ -199,6 +200,13 @@ with get_test_drawing() as drawing:
     for message in read_drawing_sync(drawing, [AskMetaData()]):
         print(message.model_dump_json(include={"message_subtype", "payload_dict"}, indent=2))
 ```
+
+**When the API is newer than your werk24.** New fields reach the API before
+they reach the copy of werk24 you have installed. Since 2.9.0 the client keeps
+a field it does not know on the response, as plain data under its own name
+(`response.slots`, or all of them in `response.model_extra`), and logs one
+warning naming it; `model_dump()` still leaves it out. `pip install -U werk24`
+reads it as a typed model. Older versions drop such fields without a word.
 
 ## Documentation
 
