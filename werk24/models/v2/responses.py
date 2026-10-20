@@ -33,6 +33,7 @@ from .models import (
     Roughness,
     SecondaryProcess,
     Slot,
+    Spline,
     ThreadUnion,
     Undercut,
     UnitSystem,
@@ -202,6 +203,10 @@ class ResponseFeaturesComponentDrawing(Response):
     retaining_ring_grooves: List[RetainingRingGroove] = Field(
         default_factory=list,
         description="Grooves for retaining rings on a shaft or in a bore (e.g., `DIN 471 30x1,5`, `DIN 472 42x1,75`).",
+    )
+    splines: List[Spline] = Field(
+        default_factory=list,
+        description="Straight-sided splines on a shaft or in a hub, specified by standard (e.g., `ISO 14 - 8 x 36 x 40`).",
     )
     fasteners: List[Fastener] = Field(
         default_factory=list,
