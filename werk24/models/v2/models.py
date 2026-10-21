@@ -43,6 +43,7 @@ from .enums import (
     ProjectionMethodType,
     RedactionZoneType,
     RetainingRingSide,
+    SplineSide,
     RoughnessAcceptanceCriterion,
     RoughnessConditionType,
     RoughnessDirectionOfLay,
@@ -1587,6 +1588,73 @@ class RetainingRingGroove(Feature):
         None,
         description="The manufacturer, if the drawing names one.",
         examples=["Seeger"],
+    )
+
+
+class Spline(Feature):
+    """
+    Represents a straight-sided spline specified by standard, e.g.
+    `ISO 14 - 8 x 36 x 40`: 8 splines with a minor diameter of 36 and a
+    major diameter of 40. A tolerance class may follow each diameter
+    (`ISO 14 - 6 x 23 f7 x 26 a11`) and is reported as the diameter's fit.
+    The width of a spline is fixed by the standard and is not reported.
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of splined features or instances. Must be at least 1.",
+        examples=[1],
+    )
+    standard: str = Field(
+        ...,
+        description="The standard the spline is specified by, as written on the drawing.",
+        examples=["ISO 14"],
+    )
+    spline_side: Optional[SplineSide] = Field(
+        None,
+        description=(
+            "Whether the callout specifies the shaft or the hub, if known: from "
+            "a word on the drawing, or from the tolerance classes (lower case "
+            "for a shaft, capitals for a hub)."
+        ),
+        examples=[SplineSide.SHAFT],
+    )
+    number_of_splines: int = Field(
+        ...,
+        ge=1,
+        description="The number of splines around the circumference (e.g. `8` in `8 x 36 x 40`).",
+        examples=[8],
+    )
+    minor_diameter: Size = Field(
+        ...,
+        description=(
+            "The minor diameter (e.g. `36` in `8 x 36 x 40`), with its "
+            "tolerance class as the fit, if stated."
+        ),
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("36"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    major_diameter: Size = Field(
+        ...,
+        description=(
+            "The major diameter (e.g. `40` in `8 x 36 x 40`), with its "
+            "tolerance class as the fit, if stated."
+        ),
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("40"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
     )
 
 
