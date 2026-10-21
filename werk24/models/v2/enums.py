@@ -60,6 +60,17 @@ class RetainingRingSide(str, Enum):
     BORE = "BORE"
 
 
+class SplineSide(str, Enum):
+    """Which part of a spline connection a callout specifies.
+
+    - SHAFT: the external splines on a shaft.
+    - HUB: the internal splines in a hub (a bore).
+    """
+
+    SHAFT = "SHAFT"
+    HUB = "HUB"
+
+
 class FastenerType(str, Enum):
     """Kinds of fastener a drawing or a bill of material names.
 
