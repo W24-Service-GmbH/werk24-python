@@ -1658,6 +1658,74 @@ class Spline(Feature):
     )
 
 
+class InvoluteSpline(Feature):
+    """
+    Represents an involute spline specified by standard, e.g.
+    `DIN 5480 - W 40 x 2 x 30 x 18 x 8f`: a shaft (`W`) with a reference
+    diameter of 40, module 2, a 30 degree pressure angle, 18 teeth and the
+    tolerance class `8f` (quality 8, deviation f). A hub is written with `N`
+    and its class in capitals (`9H`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of splined features or instances. Must be at least 1.",
+        examples=[1],
+    )
+    standard: str = Field(
+        ...,
+        description="The standard the spline is specified by, as written on the drawing.",
+        examples=["DIN 5480"],
+    )
+    spline_side: Optional[SplineSide] = Field(
+        None,
+        description=(
+            "Whether the callout specifies the shaft or the hub, if known: from "
+            "the letter (`W` for a shaft, `N` for a hub), a word on the drawing, "
+            "or the tolerance class (lower case for a shaft, capitals for a hub)."
+        ),
+        examples=[SplineSide.SHAFT],
+    )
+    reference_diameter: Size = Field(
+        ...,
+        description="The reference diameter (e.g. `40` in `W 40 x 2 x 30 x 18`).",
+        examples=[
+            Size(
+                size_type=SizeType.DIAMETER,
+                value=Decimal("40"),
+                tolerance=None,
+                unit="millimeter",
+            )
+        ],
+    )
+    module: Decimal = Field(
+        ...,
+        gt=0,
+        description="The module in millimeters (e.g. `2` in `W 40 x 2 x 30 x 18`).",
+        examples=[Decimal("2")],
+    )
+    pressure_angle: Optional[Decimal] = Field(
+        None,
+        description="The pressure angle in degrees (e.g. `30`), if written.",
+        examples=[Decimal("30")],
+    )
+    number_of_teeth: int = Field(
+        ...,
+        ge=1,
+        description="The number of teeth (e.g. `18` in `W 40 x 2 x 30 x 18`).",
+        examples=[18],
+    )
+    tolerance_class: Optional[str] = Field(
+        None,
+        description=(
+            "The tolerance class as written: quality and deviation, e.g. `8f` "
+            "for a shaft, `9H` for a hub, or `9H/8f` for a fit of the two."
+        ),
+        examples=["8f"],
+    )
+
+
 class UnitSystem(Reference):
     """
     Represents the unit system used in the technical drawing
