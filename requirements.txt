@@ -10,8 +10,8 @@
 # combination a user actually gets from pyproject.toml's floors is the
 # combination CI runs.
 
-aiohttp==3.14.4
-certifi==2026.10.19
+aiohttp==3.14.5
+certifi==2026.10.23
 cryptography==50.0.2
 packaging==26.3
 
