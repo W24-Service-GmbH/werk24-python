@@ -1,19 +1,42 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# One pull request a morning with every dependency update of the day.
+#
+# Both entries join the `daily` multi-ecosystem group, so pip and GitHub
+# Actions land together in one pull request, opened at 06:00 Vienna time and
+# updated in place until it is merged. The same setup as core-reader's and
+# werkflow's.
+#
+# A multi-ecosystem group takes its schedule from the group, not from the
+# entry, and requires `patterns` on every entry that joins it; `["*"]` means
+# everything that entry watches. `ignore` still works per entry.
+#
+# Security updates are not version updates and keep arriving as their own
+# pull requests, as soon as an advisory is published. That is on purpose: a
+# fix for a published vulnerability should not wait for the next morning.
 
 version: 2
-updates:
-  - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+
+multi-ecosystem-groups:
+  daily:
     schedule:
-      interval: "daily"
+      interval: daily
+      # Quoted although yamllint calls it redundant: Dependabot reads this
+      # file with Ruby, which takes a bare 06:00 for the integer 21600.
+      time: "06:00"
+      timezone: Europe/Vienna
+
+updates:
+  # requirements.txt, the exact pins CI installs, and tests/requirements.txt,
+  # which Dependabot finds from the root on its own.
+  - package-ecosystem: pip
+    directory: /
+    multi-ecosystem-group: daily
+    patterns: ["*"]
 
   # The workflows' actions were not watched by anything, which is how they sat
-  # on the Node 20 runtime until GitHub deprecated it. Weekly, because a major
-  # bump here is a workflow change to read rather than a lockfile line.
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+  # on the Node 20 runtime until GitHub deprecated it. A major bump here is a
+  # workflow change to read, not a lockfile line, so read it in the morning's
+  # pull request before merging.
+  - package-ecosystem: github-actions
+    directory: /
+    multi-ecosystem-group: daily
+    patterns: ["*"]
