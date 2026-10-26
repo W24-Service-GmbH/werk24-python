@@ -18,6 +18,7 @@ from .models import (
     GDnT,
     GeneralTolerances,
     Identifier,
+    InvoluteSpline,
     KeySlot,
     Language,
     MaterialCombination,
@@ -33,6 +34,7 @@ from .models import (
     Roughness,
     SecondaryProcess,
     Slot,
+    Spline,
     ThreadUnion,
     Undercut,
     UnitSystem,
@@ -202,6 +204,14 @@ class ResponseFeaturesComponentDrawing(Response):
     retaining_ring_grooves: List[RetainingRingGroove] = Field(
         default_factory=list,
         description="Grooves for retaining rings on a shaft or in a bore (e.g., `DIN 471 30x1,5`, `DIN 472 42x1,75`).",
+    )
+    splines: List[Spline] = Field(
+        default_factory=list,
+        description="Straight-sided splines on a shaft or in a hub, specified by standard (e.g., `ISO 14 - 8 x 36 x 40`).",
+    )
+    involute_splines: List[InvoluteSpline] = Field(
+        default_factory=list,
+        description="Involute splines on a shaft or in a hub, specified by standard (e.g., `DIN 5480 - W 40 x 2 x 30 x 18 x 8f`).",
     )
     fasteners: List[Fastener] = Field(
         default_factory=list,

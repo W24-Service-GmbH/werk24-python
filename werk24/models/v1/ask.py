@@ -157,10 +157,6 @@ class W24AskType(str, Enum):
     """ Ask for internal debugging - internal use only
     """
 
-    EXCEL_SUMMARY = "EXCEL_SUMMARY"
-    """ Ask to obtain an excel summary of the document.
-    """
-
 
 class W24Ask(BaseModel):
     """Base model from which all Asks inherit
@@ -1144,10 +1140,6 @@ class W24AskSheetRebranding(W24Ask):
     )
 
 
-class W24AskExcelSummary(W24Ask):
-    ask_type: Literal[W24AskType.EXCEL_SUMMARY] = W24AskType.EXCEL_SUMMARY
-
-
 W24AskUnion = Union[
     W24AskCanvasThumbnail,
     W24AskNotes,
@@ -1173,7 +1165,6 @@ W24AskUnion = Union[
     W24AskInternalScreening,
     W24AskVariantProcesses,
     W24AskDebug,
-    W24AskExcelSummary,
     # W24AskVariantToleranceElements
 ]
 """Union of all W24Asks to ensure proper de-serialization """
@@ -1241,7 +1232,6 @@ def _deserialize_ask_type(ask_type: str) -> Type[W24Ask]:
         "VARIANT_THREAD_ELEMENTS": W24AskVariantThreadElements,
         # "VARIANT_TOLERANCE_ELEMENTS":W24AskVariantToleranceElements,
         "VARIANT_PROCESSES": W24AskVariantProcesses,
-        "EXCEL_SUMMARY": W24AskExcelSummary,
         "DEBUG": W24AskDebug,
     }.get(ask_type, None)
 
