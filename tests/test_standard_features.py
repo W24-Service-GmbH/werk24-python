@@ -9,7 +9,11 @@ for a parallel key (``DIN 6885 A 8x7x56``) or a center hole
 Two features are sized on the drawing rather than by a standard alone: an
 elongated hole with round ends (``2x Langloch 14x15``), carried in ``slots``,
 and a groove for a retaining ring (``DIN 471 30x1,5``), carried in
-``retaining_ring_grooves``. A center hole of one of the threaded forms of
+``retaining_ring_grooves``. A straight-sided spline is named by its standard
+and sized by its splines and diameters (``ISO 14 - 8 x 36 x 40``), carried in
+``splines``; an involute spline by its reference diameter, module, pressure
+angle and teeth (``DIN 5480 - W 40 x 2 x 30 x 18 x 8f``), carried in
+``involute_splines``. A center hole of one of the threaded forms of
 DIN 332-2 (``DIN 332-D M16``) carries its thread.
 
 The lists default to empty so that a response from a server that predates
@@ -24,6 +28,7 @@ from pydantic import ValidationError
 from werk24 import (
     CenterHole,
     CenterHoleRequirement,
+    InvoluteSpline,
     KeySlot,
     ResponseFeaturesComponentDrawing,
     RetainingRingGroove,
@@ -31,7 +36,10 @@ from werk24 import (
     Size,
     SizeType,
     Slot,
+    Spline,
+    SplineSide,
     ThreadHandedness,
+    Tolerance,
     ThreadISOMetric,
     ThreadSpacing,
     Undercut,
@@ -343,3 +351,158 @@ def test_a_response_without_slots_or_retaining_ring_grooves_still_parses():
 
     assert restored.slots == []
     assert restored.retaining_ring_grooves == []
+
+
+def _spline(**kwargs) -> Spline:
+    return Spline(
+        **_features(label="ISO 14 - 8 x 36 x 40"),
+        quantity=1,
+        standard="ISO 14",
+        number_of_splines=8,
+        minor_diameter=_mm("36", SizeType.DIAMETER),
+        major_diameter=_mm("40", SizeType.DIAMETER),
+        **kwargs,
+    )
+
+
+def test_a_spline_carries_its_splines_and_diameters():
+    spline = _spline()
+
+    restored = Spline.model_validate_json(spline.model_dump_json())
+
+    assert restored == spline
+    assert restored.spline_side is None
+    assert restored.number_of_splines == 8
+    assert restored.minor_diameter.value == Decimal("36")
+    assert restored.major_diameter.value == Decimal("40")
+
+
+def test_a_spline_reports_its_tolerance_classes_as_fits():
+    """``ISO 14 - 6 x 23 f7 x 26 a11``: lower-case classes, so the shaft."""
+    spline = Spline(
+        **_features(label="ISO 14 - 6 x 23 f7 x 26 a11"),
+        quantity=1,
+        standard="ISO 14",
+        spline_side=SplineSide.SHAFT,
+        number_of_splines=6,
+        minor_diameter=Size(
+            size_type=SizeType.DIAMETER,
+            value=Decimal("23"),
+            tolerance=Tolerance(fit="f7"),
+            unit="millimeter",
+        ),
+        major_diameter=Size(
+            size_type=SizeType.DIAMETER,
+            value=Decimal("26"),
+            tolerance=Tolerance(fit="a11"),
+            unit="millimeter",
+        ),
+    )
+
+    restored = Spline.model_validate_json(spline.model_dump_json())
+
+    assert restored.spline_side is SplineSide.SHAFT
+    assert restored.minor_diameter.tolerance.fit == "f7"
+    assert restored.major_diameter.tolerance.fit == "a11"
+
+
+def test_a_spline_needs_at_least_one_spline_and_one_instance():
+    with pytest.raises(ValidationError):
+        _spline_with(number_of_splines=0)
+    with pytest.raises(ValidationError):
+        _spline_with(quantity=0)
+
+
+def _spline_with(**overrides) -> Spline:
+    fields = _spline().model_dump()
+    fields.update(overrides)
+    return Spline(**fields)
+
+
+def test_the_spline_side_serializes_as_its_name():
+    assert SplineSide("HUB") is SplineSide.HUB
+    assert SplineSide.SHAFT.value == "SHAFT"
+
+
+def test_the_response_round_trips_splines():
+    response = ResponseFeaturesComponentDrawing(splines=[_spline()])
+
+    restored = ResponseFeaturesComponentDrawing.model_validate_json(
+        response.model_dump_json()
+    )
+
+    assert restored.splines == [_spline()]
+
+
+def test_a_response_without_splines_still_parses():
+    """A server that predates ``splines`` sends no such key."""
+    payload = ResponseFeaturesComponentDrawing().model_dump(mode="json")
+    del payload["splines"]
+
+    restored = ResponseFeaturesComponentDrawing.model_validate(payload)
+
+    assert restored.splines == []
+
+
+def _involute(**kwargs) -> InvoluteSpline:
+    fields = {
+        **_features(label="DIN 5480 - W 40 x 2 x 30 x 18 x 8f"),
+        "quantity": 1,
+        "standard": "DIN 5480",
+        "spline_side": SplineSide.SHAFT,
+        "reference_diameter": _mm("40", SizeType.DIAMETER),
+        "module": Decimal("2"),
+        "pressure_angle": Decimal("30"),
+        "number_of_teeth": 18,
+        "tolerance_class": "8f",
+    }
+    fields.update(kwargs)
+    return InvoluteSpline(**fields)
+
+
+def test_an_involute_spline_carries_its_toothing():
+    spline = _involute()
+
+    restored = InvoluteSpline.model_validate_json(spline.model_dump_json())
+
+    assert restored == spline
+    assert restored.reference_diameter.value == Decimal("40")
+    assert (restored.module, restored.pressure_angle, restored.number_of_teeth) == (
+        Decimal("2"),
+        Decimal("30"),
+        18,
+    )
+    assert restored.tolerance_class == "8f"
+
+
+def test_an_involute_spline_without_angle_or_class():
+    """The older form leaves out the pressure angle: ``W 40 x 2 x 18``."""
+    spline = _involute(pressure_angle=None, tolerance_class=None, spline_side=None)
+
+    assert spline.pressure_angle is None
+    assert spline.tolerance_class is None
+
+
+def test_an_involute_spline_needs_teeth_a_module_and_an_instance():
+    for bad in ({"number_of_teeth": 0}, {"module": Decimal("0")}, {"quantity": 0}):
+        with pytest.raises(ValidationError):
+            _involute(**bad)
+
+
+def test_the_response_round_trips_involute_splines():
+    response = ResponseFeaturesComponentDrawing(involute_splines=[_involute()])
+
+    restored = ResponseFeaturesComponentDrawing.model_validate_json(
+        response.model_dump_json()
+    )
+
+    assert restored.involute_splines == [_involute()]
+
+
+def test_a_response_without_involute_splines_still_parses():
+    payload = ResponseFeaturesComponentDrawing().model_dump(mode="json")
+    del payload["involute_splines"]
+
+    restored = ResponseFeaturesComponentDrawing.model_validate(payload)
+
+    assert restored.involute_splines == []

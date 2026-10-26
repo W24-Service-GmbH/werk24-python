@@ -36,9 +36,9 @@ def test_the_v1_deserializer_refuses_it():
 
 def test_the_asks_next_to_it_still_resolve():
     asks = TypeAdapter(list[AskUnion]).validate_python(
-        [{"ask_type": "NOTES"}, {"ask_type": "EXCEL_SUMMARY"}]
+        [{"ask_type": "NOTES"}, {"ask_type": "TITLE_BLOCK"}]
     )
     assert [type(ask).__name__ for ask in asks] == [
         "W24AskNotes",
-        "W24AskExcelSummary",
+        "W24AskTitleBlock",
     ]
