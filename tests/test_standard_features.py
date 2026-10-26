@@ -11,7 +11,9 @@ elongated hole with round ends (``2x Langloch 14x15``), carried in ``slots``,
 and a groove for a retaining ring (``DIN 471 30x1,5``), carried in
 ``retaining_ring_grooves``. A straight-sided spline is named by its standard
 and sized by its splines and diameters (``ISO 14 - 8 x 36 x 40``), carried in
-``splines``. A center hole of one of the threaded forms of
+``splines``; an involute spline by its reference diameter, module, pressure
+angle and teeth (``DIN 5480 - W 40 x 2 x 30 x 18 x 8f``), carried in
+``involute_splines``. A center hole of one of the threaded forms of
 DIN 332-2 (``DIN 332-D M16``) carries its thread.
 
 The lists default to empty so that a response from a server that predates
@@ -26,6 +28,7 @@ from pydantic import ValidationError
 from werk24 import (
     CenterHole,
     CenterHoleRequirement,
+    InvoluteSpline,
     KeySlot,
     ResponseFeaturesComponentDrawing,
     RetainingRingGroove,
@@ -439,3 +442,67 @@ def test_a_response_without_splines_still_parses():
     restored = ResponseFeaturesComponentDrawing.model_validate(payload)
 
     assert restored.splines == []
+
+
+def _involute(**kwargs) -> InvoluteSpline:
+    fields = {
+        **_features(label="DIN 5480 - W 40 x 2 x 30 x 18 x 8f"),
+        "quantity": 1,
+        "standard": "DIN 5480",
+        "spline_side": SplineSide.SHAFT,
+        "reference_diameter": _mm("40", SizeType.DIAMETER),
+        "module": Decimal("2"),
+        "pressure_angle": Decimal("30"),
+        "number_of_teeth": 18,
+        "tolerance_class": "8f",
+    }
+    fields.update(kwargs)
+    return InvoluteSpline(**fields)
+
+
+def test_an_involute_spline_carries_its_toothing():
+    spline = _involute()
+
+    restored = InvoluteSpline.model_validate_json(spline.model_dump_json())
+
+    assert restored == spline
+    assert restored.reference_diameter.value == Decimal("40")
+    assert (restored.module, restored.pressure_angle, restored.number_of_teeth) == (
+        Decimal("2"),
+        Decimal("30"),
+        18,
+    )
+    assert restored.tolerance_class == "8f"
+
+
+def test_an_involute_spline_without_angle_or_class():
+    """The older form leaves out the pressure angle: ``W 40 x 2 x 18``."""
+    spline = _involute(pressure_angle=None, tolerance_class=None, spline_side=None)
+
+    assert spline.pressure_angle is None
+    assert spline.tolerance_class is None
+
+
+def test_an_involute_spline_needs_teeth_a_module_and_an_instance():
+    for bad in ({"number_of_teeth": 0}, {"module": Decimal("0")}, {"quantity": 0}):
+        with pytest.raises(ValidationError):
+            _involute(**bad)
+
+
+def test_the_response_round_trips_involute_splines():
+    response = ResponseFeaturesComponentDrawing(involute_splines=[_involute()])
+
+    restored = ResponseFeaturesComponentDrawing.model_validate_json(
+        response.model_dump_json()
+    )
+
+    assert restored.involute_splines == [_involute()]
+
+
+def test_a_response_without_involute_splines_still_parses():
+    payload = ResponseFeaturesComponentDrawing().model_dump(mode="json")
+    del payload["involute_splines"]
+
+    restored = ResponseFeaturesComponentDrawing.model_validate(payload)
+
+    assert restored.involute_splines == []
