@@ -327,6 +327,34 @@ class Depth(BaseModel):
     size: Optional[Size]
 
 
+class Inspection(BaseModel):
+    """
+    Marks a feature for inspection.
+
+    A drawing marks a callout, a dimension or a feature control frame, for
+    inspection by drawing an inspection frame around it: a stadium-shaped frame
+    with rounded ends, sometimes split into fields that carry a criticality
+    before the callout and an inspection rate after it (e.g.,
+    ``CTF | 25 ±0.1 | 100%``).
+    """
+
+    criticality: Optional[InspectionCriticality] = Field(
+        None,
+        description="The criticality given in the inspection frame, if any.",
+        examples=[InspectionCriticality.CRITICAL_TO_FUNCTION],
+    )
+    rate: Optional[Decimal] = Field(
+        None,
+        ge=0,
+        le=100,
+        description=(
+            "The inspection rate as a percentage, e.g., Decimal('100') for "
+            "every part. None when the frame gives no rate."
+        ),
+        examples=[Decimal("100")],
+    )
+
+
 class Dimension(Feature):
     """
     Represents a measurement cue in an engineering or technical drawing.
@@ -342,6 +370,13 @@ class Dimension(Feature):
     size: Size = Field(
         ...,
         description="Details about the size, including type, nominal value, tolerance, and unit.",
+    )
+    inspection: Optional[Inspection] = Field(
+        None,
+        description=(
+            "Set when the dimension is drawn inside an inspection frame. None for "
+            "a dimension that is not marked for inspection."
+        ),
     )
 
 
@@ -973,33 +1008,6 @@ class GDnTReference(BaseModel):
     parameter: Optional[GDnTReferenceParameter] = Field(
         None,
         description="Parameter of the reference element (e.g., peak value, deviation span).",
-    )
-
-
-class Inspection(BaseModel):
-    """
-    Marks a feature for inspection.
-
-    A drawing marks a callout for inspection by drawing an inspection frame
-    around it: a stadium-shaped frame with rounded ends, sometimes split into
-    fields that carry a criticality before the callout and an inspection rate
-    after it (e.g., ``CTF | 0.12 | 100%``).
-    """
-
-    criticality: Optional[InspectionCriticality] = Field(
-        None,
-        description="The criticality given in the inspection frame, if any.",
-        examples=[InspectionCriticality.CRITICAL_TO_FUNCTION],
-    )
-    rate: Optional[Decimal] = Field(
-        None,
-        ge=0,
-        le=100,
-        description=(
-            "The inspection rate as a percentage, e.g., Decimal('100') for "
-            "every part. None when the frame gives no rate."
-        ),
-        examples=[Decimal("100")],
     )
 
 
