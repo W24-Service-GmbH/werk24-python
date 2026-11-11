@@ -28,6 +28,7 @@ from .enums import (
     GDnTState,
     GeneralTolerancesPrinciple,
     GeneralTolerancesStandard,
+    InspectionCriticality,
     GeometryType,
     IdentifierPeriod,
     IdentifierStakeholder,
@@ -975,6 +976,33 @@ class GDnTReference(BaseModel):
     )
 
 
+class Inspection(BaseModel):
+    """
+    Marks a feature for inspection.
+
+    A drawing marks a callout for inspection by drawing an inspection frame
+    around it: a stadium-shaped frame with rounded ends, sometimes split into
+    fields that carry a criticality before the callout and an inspection rate
+    after it (e.g., ``CTF | 0.12 | 100%``).
+    """
+
+    criticality: Optional[InspectionCriticality] = Field(
+        None,
+        description="The criticality given in the inspection frame, if any.",
+        examples=[InspectionCriticality.CRITICAL_TO_FUNCTION],
+    )
+    rate: Optional[Decimal] = Field(
+        None,
+        ge=0,
+        le=100,
+        description=(
+            "The inspection rate as a percentage, e.g., Decimal('100') for "
+            "every part. None when the frame gives no rate."
+        ),
+        examples=[Decimal("100")],
+    )
+
+
 class GDnT(Feature):
     """
     Represents a GD&T (Geometric Dimensioning and Tolerancing) cue in a technical drawing.
@@ -1002,6 +1030,14 @@ class GDnT(Feature):
     datums: list[GDnTDatum] = Field(
         default_factory=list,
         description="List of datums used as references for the GD&T characteristic.",
+    )
+    inspection: Optional[Inspection] = Field(
+        None,
+        description=(
+            "Set when the feature control frame is drawn inside an inspection "
+            "frame. None for a feature control frame that is not marked for "
+            "inspection."
+        ),
     )
 
 

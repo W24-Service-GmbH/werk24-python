@@ -1524,6 +1524,26 @@ class GDnTState(str, Enum):
     FREE = "Ⓕ"
 
 
+class InspectionCriticality(str, Enum):
+    """
+    Enum for the criticality a drawing gives an inspection feature.
+
+    Attributes:
+    ----------
+    - CRITICAL_TO_DELIVERY (CTD)
+    - CRITICAL_TO_FUNCTION (CTF)
+    - CRITICAL_TO_PRICE (CTP)
+    - CRITICAL_TO_QUALITY (CTQ)
+    - CRITICAL_TO_SAFETY (CTS)
+    """
+
+    CRITICAL_TO_DELIVERY = "CTD"
+    CRITICAL_TO_FUNCTION = "CTF"
+    CRITICAL_TO_PRICE = "CTP"
+    CRITICAL_TO_QUALITY = "CTQ"
+    CRITICAL_TO_SAFETY = "CTS"
+
+
 class GDnTMaterialCondition(str, Enum):
     """
     Enum for material condition modifiers in GD&T.
