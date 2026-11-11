@@ -24,6 +24,7 @@ from .models import (
     MaterialCombination,
     Note,
     PageAssessment,
+    PageTransform,
     PrimaryProcessUnion,
     ProcessingTimeEstimate,
     ProjectionMethod,
@@ -328,6 +329,14 @@ class ResponseRedaction(Response):
 
     redaction_zones: list[RedactionZone] = Field(
         default_factory=list, description="A list of redacted areas in the drawing."
+    )
+    page_transform: Optional[PageTransform] = Field(
+        None,
+        description=(
+            "Where this page's sheet image lies on its PDF page, so a zone can be "
+            "edited on the image and sent back as a RedactionArea. None for a "
+            "file that is not a PDF, and for the document-level answer."
+        ),
     )
 
 

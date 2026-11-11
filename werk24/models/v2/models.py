@@ -1942,6 +1942,59 @@ class RedactionZone(BaseModel):
     )
 
 
+class RedactionArea(BaseModel):
+    """
+    An area the caller wants redacted on one page of a PDF.
+
+    Coordinates are PDF points (1/72 inch) on the page as a viewer shows
+    it, with the page's rotation applied, measured from its top-left
+    corner. ``PageTransform`` turns a sheet-image pixel into this space.
+    """
+
+    page_index: int = Field(
+        ...,
+        ge=0,
+        description="Index of the page in the submitted PDF, starting at 0.",
+    )
+    x0: float = Field(..., description="Left edge, in points.")
+    y0: float = Field(..., description="Top edge, in points.")
+    x1: float = Field(..., description="Right edge, in points.")
+    y1: float = Field(..., description="Bottom edge, in points.")
+
+    @model_validator(mode="after")
+    def _has_area(self) -> "RedactionArea":
+        if not (self.x1 > self.x0 and self.y1 > self.y0):
+            raise ValueError("A redaction area needs x1 > x0 and y1 > y0.")
+        return self
+
+
+class PageTransform(BaseModel):
+    """
+    How a pixel of a sheet image maps onto the PDF page it was read from.
+
+    ``matrix`` is ``(a, b, c, d, e, f)``: a pixel position ``(x, y)`` on the
+    sheet image (edges, so the top-left corner of the image is ``(0, 0)``)
+    lies at ``(a*x + c*y + e, b*x + d*y + f)`` on the page, in the
+    coordinates ``RedactionArea`` uses.
+    """
+
+    page_index: int = Field(
+        ...,
+        ge=0,
+        description="Index of the page in the submitted PDF, starting at 0.",
+    )
+    page_width: float = Field(
+        ..., description="Width of the page as displayed, in points."
+    )
+    page_height: float = Field(
+        ..., description="Height of the page as displayed, in points."
+    )
+    matrix: tuple[float, float, float, float, float, float] = Field(
+        ...,
+        description="Affine map (a, b, c, d, e, f) from sheet-image pixels to page points.",
+    )
+
+
 class BoundingDimensions(BaseModel):
     """
     Represents the bounding dimensions of a component.
