@@ -1,11 +1,11 @@
 import abc
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from werk24.models.v1.ask import W24Ask
 from werk24.models.v2.enums import AskType, PostprocessorSlot, ThumbnailFileFormat
-from werk24.models.v2.models import RedactionKeyword
+from werk24.models.v2.models import RedactionArea, RedactionKeyword
 
 
 class AskV2(BaseModel, abc.ABC):
@@ -128,6 +128,28 @@ class AskRedaction(AskV2):
         "#ffffff",
         description="The fill color for the redacted areas. If None, only the polygon outlines for redacted areas are returned, and the user can perform the redaction themselves.",
     )
+    redaction_areas: Optional[list[RedactionArea]] = Field(
+        None,
+        description=(
+            "Areas to redact, chosen by the caller. When set, nothing is searched "
+            "for: exactly these areas are removed from the submitted PDF and the "
+            "redacted PDF is returned, without reading the drawing. A typical use "
+            "is to ask once with fill_color=None, let a person review and edit the "
+            "zones, map them to page points with each page's PageTransform, and "
+            "ask again with the result. Requires a PDF, output_format PDF and a "
+            "fill_color."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _areas_need_a_pdf_fill(self) -> "AskRedaction":
+        if self.redaction_areas is None:
+            return self
+        if self.fill_color is None:
+            raise ValueError("redaction_areas needs a fill_color.")
+        if self.output_format != ThumbnailFileFormat.PDF:
+            raise ValueError("redaction_areas needs output_format PDF.")
+        return self
 
 
 class AskReferencePositions(AskV2):
