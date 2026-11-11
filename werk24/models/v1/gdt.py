@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 from pydantic import UUID4, BaseModel
 
 from .base_feature import W24BaseFeatureModel
+from .test_dimension import W24TestDimension
 
 
 class W24GDTCharacteristic(str, Enum):
@@ -313,6 +314,9 @@ class W24GDTFrame(BaseModel):
 
         data: Ordered list of data
 
+        test_dimension: Set when the frame is drawn inside an inspection
+            frame; None otherwise
+
     """
 
     gdt_id: Optional[UUID4] = None
@@ -346,6 +350,8 @@ class W24GDTFrame(BaseModel):
     state: Optional[W24GDTState] = None
 
     data: List[W24GDTDatum] = []
+
+    test_dimension: Optional[W24TestDimension] = None
 
 
 class W24GDT(W24BaseFeatureModel):
