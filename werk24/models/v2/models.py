@@ -1309,6 +1309,33 @@ class Radius(Feature):
     )
 
 
+class Angle(Feature):
+    """
+    Represents an angle dimension in an engineering or technical drawing,
+    such as the value on a dimension arc or an angle written on a leader
+    (e.g., `4x 90°`, `30° ±0.5°`).
+    """
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+        description="The number of times the angle occurs (e.g., 4 for `4x 90°`). Must be at least 1.",
+        examples=[4],
+    )
+    size: Size = Field(
+        ...,
+        description="The angle, in degrees, with its tolerance when the drawing states one.",
+        examples=[
+            Size(
+                size_type=SizeType.ANGULAR,
+                value=Decimal("90"),
+                tolerance=None,
+                unit="degree",
+            )
+        ],
+    )
+
+
 class Undercut(Feature):
     """
     Represents an undercut specified by a standard: a thread undercut (e.g.
