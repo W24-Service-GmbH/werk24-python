@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .enums import AskType, PageType, PaperSize
 from .models import (
+    Angle,
     Balloon,
     BillOfMaterial,
     Bore,
@@ -158,6 +159,10 @@ class ResponseFeaturesComponentDrawing(Response):
     ask_type: Literal[AskType.FEATURES] = AskType.FEATURES
     page_type: Literal[PageType.COMPONENT_DRAWING] = PageType.COMPONENT_DRAWING
 
+    angles: List[Angle] = Field(
+        default_factory=list,
+        description="Angle dimensions for the component (e.g., `4x 90°`, `30° ±0.5°`).",
+    )
     bores: List[Bore] = Field(
         default_factory=list,
         description="Bore specifications for the component (e.g., `Ø6 H7 (+0.012/0) ↧13.4`, `6x Ø3.3 ↧12.0 ⌵ Ø3.3x45° M4×0.7—6H/6g×8.0`).",
