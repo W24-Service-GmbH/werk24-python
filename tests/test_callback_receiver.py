@@ -387,6 +387,56 @@ class TestTheTunnelFailsLoudly:
             announced.group(1) == "https://never-live-abcdef.trycloudflare.com"
         )
 
+    async def test_the_tunnel_service_host_is_not_taken_for_the_tunnel(
+        self, tmp_path
+    ):
+        """An error naming cloudflared's own API host is not the tunnel URL.
+
+        cloudflared asks ``api.trycloudflare.com`` for a hostname, and logs that
+        address when the request fails or is retried. It matches the shape of
+        a tunnel URL, so the parser has to skip it and keep reading for the
+        hostname the banner announces.
+        """
+        binary = tmp_path / "retrier"
+        binary.write_text(
+            "#!/bin/sh\n"
+            "echo 'ERR failed to request quick Tunnel: "
+            'Post "https://api.trycloudflare.com/tunnel": EOF\'\n'
+            "echo '|  https://second-try-abcdef.trycloudflare.com   |'\n"
+            "exec sleep 30\n"
+        )
+        binary.chmod(0o755)
+
+        tunnel = QuickTunnel(
+            port=1, startup_timeout=5.0, probe_floor=1.0, binary=str(binary)
+        )
+        with pytest.raises(TunnelUnavailable) as excinfo:
+            async with tunnel:
+                ...
+
+        message = str(excinfo.value)
+        announced = re.search(r"Tunnel (\S+) was announced", message)
+        assert announced is not None, message  # noqa: B101
+        assert (  # noqa: B101
+            announced.group(1) == "https://second-try-abcdef.trycloudflare.com"
+        )
+
+    async def test_only_the_tunnel_service_host_means_no_tunnel(self, tmp_path):
+        """With no banner at all, the API host alone must not start a read."""
+        binary = tmp_path / "refused"
+        binary.write_text(
+            "#!/bin/sh\n"
+            "echo 'ERR failed to request quick Tunnel: "
+            'Post "https://api.trycloudflare.com/tunnel": EOF\'\n'
+            "exec sleep 30\n"
+        )
+        binary.chmod(0o755)
+
+        tunnel = QuickTunnel(port=1, startup_timeout=1.0, binary=str(binary))
+        with pytest.raises(TunnelUnavailable, match="did not announce"):
+            async with tunnel:
+                ...
+
     async def test_a_failing_binary_reports_its_output(self, tmp_path):
         """A process that dies on startup fails now, not at the timeout."""
         binary = tmp_path / "loud"
