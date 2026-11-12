@@ -36,7 +36,13 @@ __all__ = ["QuickTunnel", "TunnelUnavailable", "cloudflared_binary"]
 
 # cloudflared prints the hostname inside a boxed banner, so the pattern has to
 # survive surrounding box-drawing characters and whitespace.
-_URL_PATTERN = re.compile(rb"https://[-a-z0-9]+\.trycloudflare\.com")
+#
+# ``api.trycloudflare.com`` is excluded: it is the service cloudflared asks for
+# a hostname, not a hostname it hands out, and it appears in cloudflared's own
+# error lines when that request fails or is retried. Taken as the tunnel, it
+# passes for a public URL that answers, and every callback sent to it is
+# refused.
+_URL_PATTERN = re.compile(rb"https://(?!api\.)[-a-z0-9]+\.trycloudflare\.com")
 
 _LOG_TAIL_LINES = 40
 """How much of cloudflared's output to keep for a failure message.
