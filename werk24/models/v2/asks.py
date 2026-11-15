@@ -218,8 +218,8 @@ def get_ask_subclasses() -> List:
 # ``_names_its_own_ask_type`` keeps the bases out, so exactly one member can
 # match any given tag. Saying so lets pydantic jump straight to it: a
 # three-ask payload validates in about 2.7us instead of about 470us, and that
-# validation runs on every DynamoDB read and write of a request row in
-# crew-api as well as on every ask list a client sends.
+# validation runs on every read and write of a stored request on the server
+# as well as on every ask list a client sends.
 #
 # It is also stricter. An ask whose ``ask_type`` is not one of the 37 is now
 # refused instead of being handed to whichever member happens to accept it -

@@ -1,9 +1,8 @@
 """What ``import werk24`` is allowed to cost.
 
-Five repositories install this package from main, and three of the consumers
-that matter most never construct a client: crew-api's ``handler_read``,
-``handler_initialize`` and ``handler_read_with_callback`` import werk24 only
-to validate a payload. They are Lambdas, so the import is paid on every cold
+Several services install this package from main, and three of the consumers
+that matter most never construct a client: the API's request handlers import
+werk24 only to validate a payload. They are Lambdas, so the import is paid on every cold
 start, in front of a customer request, on the WebSocket and callback submit
 paths.
 
@@ -100,7 +99,7 @@ class TestTheClientIsNotImportedUntilItIsAsked:
         assert "werk24" in loaded
 
     def test_importing_a_model_does_not_load_the_client(self):
-        """The crew-api case, spelled the way those handlers spell it."""
+        """The request handler case, spelled the way those handlers spell it."""
         loaded = _modules_after(
             "from werk24 import TechreadWithCallbackPayload  # noqa: F401"
         )
@@ -198,7 +197,7 @@ class TestTheUnitRegistryIsBuiltOnFirstUse:
     """``import werk24`` must not parse pint's unit database.
 
     182ms of the import, for an object most consumers never touch. The three
-    crew-api handlers that made this worth doing validate a payload and never
+    request handlers that made this worth doing validate a payload and never
     look at a quantity at all.
     """
 

@@ -4,7 +4,7 @@
 ``ask_type`` as a ``Literal``. Without ``Field(discriminator="ask_type")``
 pydantic still validated an ask against member after member until one accepted
 it, which costs on the order of 470us per three-ask payload -- paid on every
-DynamoDB read and write of a request row in crew-api (crew-api#144), and on
+read and write of a stored request on the server, and on
 every ask list the client sends.
 
 With the discriminator the tag selects the one member that can match, at about

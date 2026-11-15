@@ -6,8 +6,8 @@ download - used to build its own `ClientSession` and `TCPConnector`. The SSL
 separate DNS, TCP and TLS handshakes to S3.
 
 Worse, the download ran inside the receive loop, so each transfer blocked
-receipt of the next ASK message. crew-watchdog reads per-ask latency off that
-loop, so it was inside the status page numbers too.
+receipt of the next ASK message. A monitoring probe reads per-ask latency off
+that loop, so it was inside the published latency numbers too.
 
 Pure unit tests: nothing connects to anything.
 """
