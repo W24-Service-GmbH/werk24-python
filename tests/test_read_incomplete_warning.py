@@ -1,6 +1,6 @@
 """A knowingly incomplete read can say so without failing (werk24-python#586).
 
-core-reader knows when a read is incomplete (a stage timed out, a region had
+The server knows when a read is incomplete (a stage timed out, a region had
 no text) and records it in its own metrics, but the result reached the
 customer through the ordinary success path with nothing to mark it. The
 client models had no place to carry a marker, and adding one server-side
@@ -91,14 +91,14 @@ def test_the_new_field_is_optional():
 
 
 def test_the_warning_does_not_say_why():
-    """core-reader#2453: a READ_INCOMPLETE warning says that a read is
+    """A READ_INCOMPLETE warning says that a read is
     incomplete, never why, so the model has no ``reason`` field."""
     assert "reason" not in TechreadException.model_fields
 
 
 def test_a_message_that_still_carries_a_reason_parses():
-    """A server that sends ``reason`` (core-reader#2450 did, on its test
-    branch only) is not refused: the key is ignored and never dumped again."""
+    """A server that sends ``reason`` (a pre-release build did) is not
+    refused: the key is ignored and never dumped again."""
     message = _completed(
         {
             "exception_level": "WARNING",
@@ -124,8 +124,8 @@ def test_an_unknown_type_is_kept_rather_than_failing_the_message():
 def test_an_unknown_level_is_still_refused():
     """The level decides ``is_successful``, so it is not guessed at.
 
-    core-reader also relies on this to refuse a request-cache manifest it
-    could not replay faithfully.
+    The server also relies on this to refuse a cached result it could not
+    replay faithfully.
     """
     with pytest.raises(ValidationError):
         TechreadException.model_validate(
@@ -150,7 +150,7 @@ class _ClientBefore586(BaseModel):
 
 
 def test_an_error_serialized_by_this_model_still_parses_in_an_older_client():
-    """core-reader serializes with this model and sends to every client.
+    """The server serializes with this model and sends to every client.
 
     The two new fields must be ignorable by a client that predates them, or
     upgrading the server's copy of this package breaks every ERROR message.
@@ -177,7 +177,7 @@ def test_the_warning_round_trips():
 def test_an_exception_without_the_new_fields_dumps_as_it_did_before():
     """An unset ``ask_type`` stays off the wire and out of dumps.
 
-    core-reader dumps exceptions into its callbacks and its request cache and
+    The server dumps exceptions into its callbacks and its own cache and
     compares the dicts, so a ``None`` key appearing in every existing
     exception would change what it stores and sends without anyone asking.
     """

@@ -62,7 +62,7 @@ class TestTheReceiverRecordsWhatArrives:
         assert delivery.headers["x-custom"] == "value"  # noqa: B101
 
     async def test_the_receiver_answers_200(self):
-        """core-reader stops sending after a non-2xx.
+        """The server stops sending after a non-2xx.
 
         A receiver that answered anything else would truncate the message
         sequence and the check would report a missing COMPLETED that the

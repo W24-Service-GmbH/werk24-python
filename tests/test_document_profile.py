@@ -167,9 +167,8 @@ class TestForwardCompatibility:
 
 
 class TestPaperSize:
-    #: Every named format core-reader's `classify_paper_size` can return,
-    #: verified against `_ISO_A_SERIES` + `_OTHER_FORMATS` in
-    #: `lib/cost_tracking/document_shape.py` at the time of writing. Kept here
+    #: Every named format the server's paper size classification can return,
+    #: verified against the server's own lists at the time of writing. Kept here
     #: as a literal because the client cannot import the reader: this is the
     #: contract between two repositories, and the only way it stays honest is
     #: by being written down on both sides and compared.

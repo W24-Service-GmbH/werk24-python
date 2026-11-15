@@ -6,14 +6,13 @@ Two reliability gaps, same file.
 detect a live socket that will never deliver `PROGRESS_COMPLETED`, and nothing
 else bounded `_send_command_read`, so a stalled server held the caller until
 `wss_close_timeout` (600s) — or, for an SDK user driving it directly,
-indefinitely. crew-watchdog is one of those callers: a stalled read pins its
-Lambda to the Lambda's own timeout and delays the status page exactly when it
-matters.
+indefinitely. A scheduled monitoring probe is one of those callers: a stalled
+read pins it to its own timeout and delays its report exactly when it matters.
 
 **Retries that did not exist.** `max_https_retries` was configured and read
 nowhere. The upload and the payload download each did one request and re-raised,
 and `_raise_for_status` turns any 5xx into a terminal `ServerException`, so a
-transient S3 blip failed a request whose quota crew-api had already spent.
+transient S3 blip failed a request whose quota had already been spent.
 
 Pure unit tests: nothing connects, and every wait is a stand-in.
 """
