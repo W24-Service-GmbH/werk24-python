@@ -133,7 +133,7 @@ def test_the_period_enum_is_untouched():
 # v2
 #
 # `IdentifierType` in `models/v2/enums.py` is the enum the v2 API returns AND
-# the one the public documentation renders: the documentation site's `api-reference/identifier`
+# the one the public documentation renders: its `api-reference/identifier`
 # page is `::: werk24.models.v2.models.Identifier`, so the docstring below the
 # class IS the published reference. Widening v1 alone would have left the v2
 # API unable to express the same kinds, and the docs describing a shorter list

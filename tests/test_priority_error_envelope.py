@@ -4,9 +4,8 @@
 
     {"error": "PRIORITY_TOO_HIGH", "message": ..., "details": {...}}
 
-the API never sends that. Every refusal it returns goes through
-``the API's error helper``, which builds an
-``ErrorResponse`` of ``code`` / ``message`` / ``details`` / ``request_id`` and
+The API never sends that. Every refusal it returns is built in one place, as
+an ``ErrorResponse`` of ``code`` / ``message`` / ``details`` / ``request_id`` and
 nothing else. So both priority refusals fell through to the generic
 ``ServerException`` -- the one whose message tells the customer the Werk24
 service team has been notified -- for a 4xx that is theirs to fix and that the
@@ -17,8 +16,7 @@ code alone, so a priority refusal on ``read_drawing_with_callback`` surfaced as
 a bare ``UnauthorizedException`` or ``BadRequestException`` with the tiers
 dropped, even though that method documents both typed exceptions.
 
-The bodies below are copied from what the API produces; see
-``the API's error helper`` in that repo.
+The bodies below are copied from what the API produces.
 """
 
 import json
@@ -38,7 +36,7 @@ from werk24.utils.exceptions import (
 
 
 def _too_high(account_tier="PRIO3", requested="PRIO1"):
-    """The body the API's priority-too-high refusal returns."""
+    """The body the API returns for a priority above the account's tier."""
     return {
         "code": "403",
         "message": f"Requested priority {requested} exceeds account tier {account_tier}",
@@ -51,7 +49,7 @@ def _too_high(account_tier="PRIO3", requested="PRIO1"):
 
 
 def _invalid(value="URGENT"):
-    """The body the API's bad-request refusal returns for a bad priority."""
+    """The body the API returns for a priority it does not know."""
     return {
         "code": "400",
         "message": f"Invalid priority value: {value}",

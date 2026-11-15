@@ -381,8 +381,8 @@ class Werk24Client:
         # INITIALIZEd and never read to the end. Set just before INITIALIZE is
         # sent, cleared only when the read's PROGRESS_COMPLETED arrives.
         #
-        # the API refuses a READ while more than one request on a connection
-        # is unread (MultipleOpenRequests, an internal change), and closes the
+        # The server refuses a READ while more than one request on a connection
+        # is unread (MultipleOpenRequests), and closes the
         # connection. So a request left behind - an upload that failed, an
         # exception or a cancellation before READ, a caller that stopped
         # iterating - would get the NEXT read on this connection refused. It
@@ -928,7 +928,7 @@ class Werk24Client:
 
         # Initiate the request
         init_message, init_response = await self.init_request(asks, max_pages)
-        # The connection the request is bound to. the API scopes a request to
+        # The connection the request is bound to. The server scopes a request to
         # the connection that INITIALIZEd it, so READ must go out on this one.
         initialized_on = self._wss_session
         yield init_message
@@ -1134,7 +1134,7 @@ class Werk24Client:
             supported_key_exchanges=list(SUPPORTED_KEY_EXCHANGES),
         )
 
-        # Never INITIALIZE next to an unread request: the API would refuse
+        # Never INITIALIZE next to an unread request: the server would refuse
         # the READ that follows. Then mark this one open before sending, so
         # every way out between here and PROGRESS_COMPLETED leaves the flag
         # set without having to be caught.
@@ -1278,7 +1278,7 @@ class Werk24Client:
     ) -> Optional[Union[PriorityTooHighError, InvalidPriorityError]]:
         """Return the typed exception for a priority refusal, or None.
 
-        the API answers every refusal with the same envelope -- ``code``,
+        The server answers every refusal with the same envelope -- ``code``,
         ``message``, ``details``, ``request_id`` -- and never with a top-level
         ``error`` key. Both priority refusals are identified from that
         envelope:
@@ -2130,7 +2130,7 @@ class Werk24Client:
         the payload download each did one request and re-raised, and
         ``_raise_for_status`` turns any 5xx into a terminal
         ``ServerException``. So a transient S3 blip failed a request whose
-        quota the API had already spent.
+        quota had already been spent.
 
         Only 5xx and connection errors are retried, and that is enforced by
         the exception type rather than by ordering ``except`` clauses.
@@ -2361,9 +2361,9 @@ class Werk24Client:
         # a *dead* socket. It cannot detect a live socket that will never
         # deliver PROGRESS_COMPLETED, and nothing else bounded this loop, so a
         # stalled server held the caller until wss_close_timeout - 600s - or,
-        # for an SDK user driving it directly, indefinitely. the status monitor is
-        # one of those callers: a stalled read pins its Lambda to the Lambda's
-        # own timeout, is billed for the whole wall clock, and reports
+        # for an SDK user driving it directly, indefinitely. A scheduled probe is
+        # one of those callers: a stalled read pins it to its own
+        # timeout, is billed for the whole wall clock, and reports
         # MAJOR_OUTAGE only after it, delaying the status page exactly when it
         # matters.
         #

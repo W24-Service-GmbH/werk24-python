@@ -15,8 +15,8 @@ the first that validates. Two things made that resolve to the wrong class:
 The result was that 17 of the 28 v1 asks could not survive a round-trip.
 ``{"version": "v1", "ask_type": "PRODUCT_PMI_EXTRACT"}`` came back as a
 ``W24AskThumbnail`` carrying a fabricated ``file_format: JPEG`` and
-``balloons: []``, and those invented fields were then persisted into
-``the API's request table`` and into ``ask_details`` on the request log.
+``balloons: []``, and those invented fields were then persisted with the
+request on the server.
 
 Nothing lost a value, because ``W24AskThumbnail`` happens to be a permissive
 superset of the asks it swallowed. That is luck, not design: an ask given a
@@ -73,7 +73,7 @@ class TestEveryAskResolvesToItself:
 
 
 class TestTheSpecificAsksThatWereWrong:
-    """The three Laserhub sends, and the shape they arrive in."""
+    """Three asks a client sends in practice, and the shape they arrive in."""
 
     @pytest.mark.parametrize(
         "ask_type,expected",
@@ -97,7 +97,7 @@ class TestTheSpecificAsksThatWereWrong:
         assert "balloons" not in resolved
 
     def test_the_version_key_does_not_decide_the_class(self):
-        """Laserhub sends ``ask_version`` on a v1 ask, which is not the field.
+        """A client can send ``ask_version`` on a v1 ask, which is not the field.
 
         v1 asks key off ``version`` and v2 off ``ask_version``. The wrong one
         is an unknown key, ignored, and ``ask_type`` alone still has to land
