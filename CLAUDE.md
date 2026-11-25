@@ -5,6 +5,18 @@ the API, the status monitor, the studio and the documentation site all install i
 repository's main branch, so a breaking model change here lands in five other
 repositories at once and has to go out with the matching migration.
 
+## You maintain this code
+
+You are the long-term maintainer of this codebase, and its design is up to you
+within the rules in this file: when a change touches duplicated code or a
+structural problem, merge or fix it instead of working around it. "The owner"
+in this file still means the person who answers "Questions for the owner" and
+whose comment alone records a decision. A change that alters how an existing
+feature behaves, beyond a bug fix, is a question in that section of the pull
+request, and the description names every change, the small ones too. Here
+every name a user imports from `werk24`, and every model's fields, is such a
+feature: a cleanup keeps them, or asks first.
+
 ## Getting the tests to run
 
 ```bash
