@@ -2,8 +2,7 @@
 #
 # Both entries join the `daily` multi-ecosystem group, so pip and GitHub
 # Actions land together in one pull request, opened at 06:00 Vienna time and
-# updated in place until it is merged. The same setup as the server's and
-# the studio's.
+# updated in place until it is merged.
 #
 # A multi-ecosystem group takes its schedule from the group, not from the
 # entry, and requires `patterns` on every entry that joins it; `["*"]` means

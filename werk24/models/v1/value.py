@@ -13,9 +13,8 @@ package paid to parse a unit database whether or not it ever handled a
 quantity -- ``import werk24`` was 758ms, of which this was very nearly a
 quarter.
 
-Five repositories install this package from main, and the the API handlers
-are Lambdas: they pay that import on every cold start, in front of a
-customer's first byte, purely to validate a payload (an internal change).
+Some consumers are serverless functions: they pay that import on every cold
+start, in front of a customer's first byte, purely to validate a payload.
 
 Nothing is lost by deferring it. The registry is reached from exactly two
 kinds of place, and neither runs at import any more:

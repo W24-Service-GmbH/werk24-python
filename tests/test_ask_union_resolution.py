@@ -16,7 +16,7 @@ The result was that 17 of the 28 v1 asks could not survive a round-trip.
 ``{"version": "v1", "ask_type": "PRODUCT_PMI_EXTRACT"}`` came back as a
 ``W24AskThumbnail`` carrying a fabricated ``file_format: JPEG`` and
 ``balloons: []``, and those invented fields were then persisted into
-``the API's request table`` and into ``ask_details`` on the request log.
+the server's stored request and into its request log.
 
 Nothing lost a value, because ``W24AskThumbnail`` happens to be a permissive
 superset of the asks it swallowed. That is luck, not design: an ask given a

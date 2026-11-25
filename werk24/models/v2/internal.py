@@ -316,7 +316,7 @@ class TechreadException(BaseModel):
     installs this package would otherwise fail to parse the whole message,
     results included, the day it starts sending a new one. The level stays
     strict: it decides ``is_successful``, and the server validates what it
-    replays from its request cache against it.
+    replays from its cache against it.
     """
 
     exception_level: TechreadExceptionLevel
@@ -324,8 +324,8 @@ class TechreadException(BaseModel):
         ..., union_mode="left_to_right"
     )
     # Left out of a dump while unset, so every exception that does not use
-    # it serializes exactly as it did before it existed. the server dumps
-    # these into its callbacks and its request cache, and consumers compare
+    # it serializes exactly as it did before it existed. The server dumps
+    # these into its callbacks and its cache, and consumers compare
     # the dicts.
     ask_type: Optional[str] = Field(default=None, exclude_if=lambda v: v is None)
 

@@ -1,10 +1,10 @@
 """A request that is never READ must not stay open on the reused connection.
 
-an internal change refuses a READ while more than one request on a WebSocket
+The API refuses a READ while more than one request on a WebSocket
 connection is unread (``MultipleOpenRequests``) and closes the connection.
 ``Werk24Client`` keeps one connection for every ``read_drawing`` inside
 ``async with client:``, so any read that INITIALIZEs and then stops short of
-READ - an upload S3 refuses, an exception, a cancellation, a caller that stops
+READ - an upload the storage refuses, an exception, a cancellation, a caller that stops
 iterating - would get the next read on that client refused, and that read's
 result stream would end empty.
 
@@ -58,7 +58,7 @@ def _message(request_id, message_type, subtype, payload=None) -> str:
 
 
 class _Connection:
-    """One WebSocket connection to a the API that enforces #213."""
+    """One WebSocket connection to an API that enforces that rule."""
 
     def __init__(self, asks_per_read: int = 0):
         self.sent: list = []
@@ -92,7 +92,7 @@ class _Connection:
             )
             return
 
-        # READ. the API answers a refusal by closing the connection; the
+        # READ. The API answers a refusal by closing the connection; the
         # client sees the close, not the 400 body.
         if len(self.unread) != 1:
             self.refused = True
