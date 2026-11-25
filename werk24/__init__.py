@@ -8,10 +8,9 @@ eagerly, which meant that ``from werk24 import W24AskUnion`` -- or any other
 model -- also built the websocket client and everything under it, aiohttp
 included.
 
-That is not a hypothetical cost. Five repositories install this package from
-main, and three of them never construct a client at all: crew-api's
-``handler_read``, ``handler_initialize`` and ``handler_read_with_callback``
-import werk24 only to validate a payload, and they are Lambdas, so they pay
+That is not a hypothetical cost. Some consumers never construct a client at
+all: they import werk24 only to validate a payload, and they are serverless
+functions, so they pay
 the import on every cold start in front of a customer request. Measured on
 python 3.13 with the pinned requirements, ``import werk24`` was 784ms, of
 which ``werk24.techread`` was 183ms (aiohttp alone 118ms).

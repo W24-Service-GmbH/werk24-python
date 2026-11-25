@@ -1,14 +1,14 @@
 """A request that is never READ must not stay open on the reused connection.
 
-crew-api#213 refuses a READ while more than one request on a WebSocket
+The API refuses a READ while more than one request on a WebSocket
 connection is unread (``MultipleOpenRequests``) and closes the connection.
 ``Werk24Client`` keeps one connection for every ``read_drawing`` inside
 ``async with client:``, so any read that INITIALIZEs and then stops short of
-READ - an upload S3 refuses, an exception, a cancellation, a caller that stops
+READ - an upload the storage refuses, an exception, a cancellation, a caller that stops
 iterating - would get the next read on that client refused, and that read's
 result stream would end empty.
 
-The fake connection below applies that rule the way crew-api does: a READ with
+The fake connection below applies that rule the way the API does: a READ with
 exactly one unread request on the connection takes it; anything else closes
 the connection instead of answering. The socket is otherwise stubbed as in
 ``test_ask_validation_integration.py``: ``_connect_with_retry`` hands out a
@@ -58,7 +58,7 @@ def _message(request_id, message_type, subtype, payload=None) -> str:
 
 
 class _Connection:
-    """One WebSocket connection to a crew-api that enforces #213."""
+    """One WebSocket connection to an API that enforces that rule."""
 
     def __init__(self, asks_per_read: int = 0):
         self.sent: list = []
@@ -92,7 +92,7 @@ class _Connection:
             )
             return
 
-        # READ. crew-api answers a refusal by closing the connection; the
+        # READ. The API answers a refusal by closing the connection; the
         # client sees the close, not the 400 body.
         if len(self.unread) != 1:
             self.refused = True
@@ -183,7 +183,7 @@ async def test_a_failed_upload_reconnects_before_the_next_read(refusal):
     ]
     assert failed[1].exceptions
 
-    # The next read is not refused. Without the reconnect crew-api sees two
+    # The next read is not refused. Without the reconnect the API sees two
     # unread requests on the connection, closes it, and the stream ends empty.
     assert not any(c.refused for c in h.connections)
     assert len(_completed(second)) == 1
@@ -331,7 +331,7 @@ async def test_an_overlapping_read_does_not_take_the_other_reads_request():
 
     The second finds the first's request open and reconnects. The first must
     not then send its READ on the new connection: the only unread request
-    there is the second's, and crew-api would hand it over.
+    there is the second's, and the API would hand it over.
     """
     h = _Harness()
 

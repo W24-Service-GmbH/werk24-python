@@ -1,11 +1,11 @@
 """The drawing can be encrypted to an X25519 key, not only an RSA one.
 
-crew-api generates a fresh key pair on the INITIALIZE path for every
+The API generates a fresh key pair on the INITIALIZE path for every
 end-to-end request and sends the public half to the client, which encrypts the
 drawing with it. RSA-2048 generation is a random prime search: measured at a
 29.4ms median and a 92.7ms worst case of fifteen on a fast machine, several
-times that on a Lambda vCPU, and with a right tail that is unbounded by
-construction. X25519 is 0.028ms and has no tail (crew-api#146).
+times that on a small cloud vCPU, and with a right tail that is unbounded by
+construction. X25519 is 0.028ms and has no tail.
 
 That is a wire-format change, so it is negotiated rather than switched: the
 client declares what it can do, the server picks, and the KEY TYPE then tells
@@ -76,7 +76,7 @@ class TestTheX25519Format(unittest.TestCase):
     def test_the_package_opens_with_a_32_byte_ephemeral_key(self):
         """The layout the recipient parses: key block, IV, tag, ciphertext.
 
-        core-reader reads this package as a STREAM and must know how many
+        The server reads this package as a STREAM and must know how many
         bytes to take before the IV, so the prefix length is part of the
         format rather than an implementation detail.
         """
@@ -117,7 +117,7 @@ class TestTheX25519Format(unittest.TestCase):
         """Pinned against RFC 5869 worked by hand, not against itself.
 
         Calling `derive_x25519_key` twice and comparing proves only that it
-        is a function. This is the wire-format contract with core-reader and
+        is a function. This is the wire-format contract with the server and
         with every drawing already encrypted under it: a changed hash, salt
         or `info` would silently make old packages undecryptable, and a
         self-comparison would pass through all three.

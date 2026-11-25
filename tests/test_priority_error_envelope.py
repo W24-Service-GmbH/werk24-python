@@ -4,8 +4,7 @@
 
     {"error": "PRIORITY_TOO_HIGH", "message": ..., "details": {...}}
 
-crew-api never sends that. Every refusal it returns goes through
-``utils.error_responses.create_error_response``, which builds an
+The API never sends that. Every refusal it returns is an
 ``ErrorResponse`` of ``code`` / ``message`` / ``details`` / ``request_id`` and
 nothing else. So both priority refusals fell through to the generic
 ``ServerException`` -- the one whose message tells the customer the Werk24
@@ -17,8 +16,7 @@ code alone, so a priority refusal on ``read_drawing_with_callback`` surfaced as
 a bare ``UnauthorizedException`` or ``BadRequestException`` with the tiers
 dropped, even though that method documents both typed exceptions.
 
-The bodies below are copied from what crew-api produces; see
-``utils/error_responses.py`` in that repo.
+The bodies below are copied from what the API produces.
 """
 
 import json
@@ -38,7 +36,7 @@ from werk24.utils.exceptions import (
 
 
 def _too_high(account_tier="PRIO3", requested="PRIO1"):
-    """The body crew-api's error_403_priority_too_high returns."""
+    """The body the API returns when the requested priority is too high."""
     return {
         "code": "403",
         "message": f"Requested priority {requested} exceeds account tier {account_tier}",
@@ -51,7 +49,7 @@ def _too_high(account_tier="PRIO3", requested="PRIO1"):
 
 
 def _invalid(value="URGENT"):
-    """The body crew-api's error_400_bad_request returns for a bad priority."""
+    """The body the API returns for a priority it does not know."""
     return {
         "code": "400",
         "message": f"Invalid priority value: {value}",

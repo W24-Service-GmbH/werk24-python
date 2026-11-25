@@ -87,7 +87,7 @@ async def test_read_drawing_with_callback(
     """The submission is accepted and returns a request id.
 
     That is the whole of it, and the URL is why: ``https://werk24.io`` is on
-    the server's ``SUPPRESSED_CALLBACKS`` list, so no callback is ever posted
+    a URL the server never posts callbacks to, so no callback is ever posted
     to it. This test covers the *request* side of the callback endpoint and
     nothing about delivery -- deliberately, since a test asserting on delivery
     would need somewhere public to receive it.

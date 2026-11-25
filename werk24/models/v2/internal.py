@@ -163,7 +163,7 @@ class TechreadMessageSubtype(str, Enum):
 #: drawing it cannot send.
 #:
 #: Declared rather than inferred from ``client_version``, because the version
-#: only identifies THIS client. There are others -- crew-api has seen a
+#: only identifies THIS client. There are others -- the API has seen a
 #: ``node22-werk24-client/1.0.0`` -- and a server that read the Python
 #: version string would hand an X25519 key to a JavaScript client that cannot
 #: use one. A capability list says what the sender can actually do, in any
@@ -315,8 +315,8 @@ class TechreadException(BaseModel):
     than refused. The server adds types over time, and every consumer that
     installs this package would otherwise fail to parse the whole message,
     results included, the day it starts sending a new one. The level stays
-    strict: it decides ``is_successful``, and core-reader validates what it
-    replays from its request cache against it.
+    strict: it decides ``is_successful``, and the server validates what it
+    replays from its cache against it.
     """
 
     exception_level: TechreadExceptionLevel
@@ -324,8 +324,8 @@ class TechreadException(BaseModel):
         ..., union_mode="left_to_right"
     )
     # Left out of a dump while unset, so every exception that does not use
-    # it serializes exactly as it did before it existed. core-reader dumps
-    # these into its callbacks and its request cache, and consumers compare
+    # it serializes exactly as it did before it existed. The server dumps
+    # these into its callbacks and its cache, and consumers compare
     # the dicts.
     ask_type: Optional[str] = Field(default=None, exclude_if=lambda v: v is None)
 

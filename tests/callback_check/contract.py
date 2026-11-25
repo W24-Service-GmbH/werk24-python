@@ -1,8 +1,7 @@
 """What a correct Werk24 callback looks like, in one place.
 
 The rules here are the ones the server actually commits to, read off the
-delivery path in core-reader (``lib/techreader_helper/callback/callback_proxy.py``)
-rather than off the documentation:
+server's delivery path rather than off the documentation:
 
 - The body is ``TechreadMessage.model_dump_json()`` and nothing else, so a
   client's ``TechreadMessage.model_validate_json`` must accept it verbatim.
@@ -165,8 +164,8 @@ def _check_sequence(
     if TechreadMessageSubtype.PROGRESS_STARTED not in subtypes:
         problems.append("no PROGRESS/STARTED message was delivered")
     elif subtypes[0] != TechreadMessageSubtype.PROGRESS_STARTED:
-        # Position, not just presence. core-reader joins the STARTED task at
-        # the top of every schedule_callback precisely so nothing overtakes it,
+        # Position, not just presence. The server sends STARTED before
+        # anything else precisely so nothing overtakes it,
         # so an ASK that arrives first is a real ordering defect -- and a
         # customer keying off STARTED to open a record would miss it.
         problems.append(

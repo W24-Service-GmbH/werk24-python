@@ -107,7 +107,7 @@ def test_materials_of_one_combination_may_disagree():
 def test_the_origin_is_the_only_new_field():
     """A producer that predates the field keeps validating.
 
-    core-reader installs this package from main, so the field has to be
+    The server installs this package from main, so the field has to be
     additive in both merge orders: optional here, ignored there.
     """
     payload = {
