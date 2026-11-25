@@ -110,7 +110,7 @@ class CallbackReceiver:
         # its own predicate and clears the event itself.
         self._event.set()
 
-        # 200 with a JSON body. the server treats a non-2xx as a delivery
+        # 200 with a JSON body. The server treats a non-2xx as a delivery
         # failure and stops sending, so a receiver that answered anything else
         # would truncate the very message sequence the check is here to
         # inspect.

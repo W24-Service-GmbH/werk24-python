@@ -1,9 +1,9 @@
 # werk24-python
 
-The public client library, published to PyPI as `werk24`. the server,
-the API, the status monitor, the studio and the documentation site all install it straight from this
-repository's main branch, so a breaking model change here lands in five other
-repositories at once and has to go out with the matching migration.
+The public client library, published to PyPI as `werk24`. Several of Werk24's
+own services install it straight from this repository's main branch, so a
+breaking model change here lands in all of them at once and has to go out
+with the matching migration.
 
 ## You maintain this code
 
@@ -72,7 +72,7 @@ with patch.multiple(
 
 A registered callback used to be unobserved end to end. The only test that
 touched one submitted to `https://werk24.io` and asserted a request id came
-back — and that URL is in the server's `suppressed-callback list`, so the server
+back — and the server never posts callbacks to that URL, so the server
 returns before posting anything. Nothing had ever looked at a delivered
 callback.
 
@@ -114,10 +114,7 @@ push rather than on the next paid run.
 Every pull request body here ends with a section headed **Questions for the
 owner**, even when all it says is "None". The owner decides from that section
 without reading the diff, so a question buried in the middle of a description
-is a question nobody answers. It is the same rule in every repository in the
-group (an internal change); the list on an internal change
-((internal link))
-is the one to match:
+is a question nobody answers. The shape:
 
 - **One opening line**: how many questions, and whether any blocks the merge.
 - **Numbered questions, each in bold**, asked as yes/no or as a choice between
@@ -136,26 +133,25 @@ a question is answered in the thread, write the answer into the body under it
 (`*Answer:*`, with a link to the comment), so the body stays the record of what
 was decided.
 
-Trimmed from an internal change:
+An example:
 
 ```markdown
 ## Questions for the owner
 
 Two questions. None blocks the merge; each has a recommendation.
 
-1. **Turn on the page-OCR fallback for unread labels (`LABEL_FALLBACK`)?**
+1. **Release this as a minor version rather than a patch?**
 
-   - It fills a label Textract could not read from the page's own OCR. It is off.
-   - Switching it on wants a check of about 100 unread label crops first.
-   - _Recommendation:_ keep it off until that check is done.
+   - It adds an optional field to `Dimension`. Code that ignores it keeps working.
+   - A patch release would reach everyone who pins `~=` on their next install.
+   - _Recommendation:_ minor version.
 
-2. **Add a Sentry alert when pages fail inside a read?**
-   - This PR starts counting failed pages. An alert per release would catch a
-     release that breaks pages.
+2. **Deprecate the old `read_drawing` keyword now?**
+   - The new keyword covers it. Deprecating warns callers for one release before it goes.
    - _Recommendation:_ yes.
-   - _Answer:_ yes ((internal link)).
+   - _Answer:_ yes (a link to the owner's comment goes here).
 
-**Not questions, for after the deploy:**
+**Not questions, for after the release:**
 
-- Watch memory on multi-page A0 reads; revert an internal change if it gets close to the limit.
+- Check that the PyPI page renders the new README section.
 ```
